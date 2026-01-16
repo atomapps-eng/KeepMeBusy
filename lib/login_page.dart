@@ -1,9 +1,10 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'machinery_page.dart';
+
+import '../services/auth_service.dart';
 import 'register_page.dart';
-import 'home_page_after_login.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -14,6 +15,8 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
+
+  final AuthService _authService = AuthService();
 
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
@@ -52,7 +55,7 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   // =====================================================
-  // GLASS SNACKBAR (TIDAK DIUBAH)
+  // GLASS SNACKBAR
   // =====================================================
   void showGlassSnackBar(
     String message, {
@@ -100,7 +103,7 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   // =====================================================
-  // FORGOT PASSWORD (TIDAK DIUBAH)
+  // FORGOT PASSWORD
   // =====================================================
   Future<void> _forgotPassword() async {
     final email = emailController.text.trim();
@@ -114,29 +117,14 @@ class _LoginPageState extends State<LoginPage> {
     }
 
     try {
-      await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
-
-      if (!mounted) return;
-
-      showDialog(
-        context: context,
-        builder: (_) => AlertDialog(
-          title: const Text('Email terkirim'),
-          content: const Text(
-            'Link reset password telah dikirim ke email Anda.\n'
-            'Silakan cek inbox atau folder spam.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('OK'),
-            ),
-          ],
-        ),
-      );
-    } on FirebaseAuthException catch (e) {
+      await _authService.sendPasswordReset(email);
       showGlassSnackBar(
-        e.message ?? 'Gagal mengirim email reset password',
+        'Link reset password telah dikirim ke email Anda',
+        backgroundColor: Colors.green,
+      );
+    } catch (e) {
+      showGlassSnackBar(
+        e.toString(),
         backgroundColor: Colors.red,
       );
     }
@@ -150,7 +138,7 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   // =====================================================
-  // UI (LOGIN LOGIC DIMODIFIKASI MINIMAL)
+  // UI
   // =====================================================
   @override
   Widget build(BuildContext context) {
@@ -219,13 +207,12 @@ class _LoginPageState extends State<LoginPage> {
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(20),
                         child: BackdropFilter(
-                          filter:
-                              ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                          filter: ImageFilter.blur(
+                            sigmaX: 12,
+                            sigmaY: 12,
+                          ),
                           child: Container(
                             padding: const EdgeInsets.all(24),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(20),
-                            ),
                             child: Form(
                               key: _formKey,
                               child: Column(
@@ -274,21 +261,19 @@ class _LoginPageState extends State<LoginPage> {
                                           ? null
                                           : () async {
                                               if (!_formKey.currentState!
-                                                  .validate()) return;
+                                                  .validate()) {
+                                                return;
+                                              }
 
-                                              setState(
-                                                  () => _isLoading = true);
+                                              setState(() => _isLoading = true);
 
                                               try {
-                                                await FirebaseAuth.instance
-                                                    .signInWithEmailAndPassword(
+                                                await _authService.login(
                                                   email: emailController.text.trim(),
-                                                  password: passwordController
-                                                      .text
-                                                      .trim(),
+                                                  password:
+                                                      passwordController.text.trim(),
                                                 );
 
-                                                // SIMPAN CREDENTIAL SETELAH LOGIN SUKSES
                                                 final prefs =
                                                     await SharedPreferences
                                                         .getInstance();
@@ -300,29 +285,16 @@ class _LoginPageState extends State<LoginPage> {
                                                   'saved_password',
                                                   passwordController.text.trim(),
                                                 );
-
-                                                if (!mounted) return;
-
-                                                setState(
-                                                    () => _isLoading = false);
-
-                                                Navigator.pushReplacement(
-                                                  context,
-                                                  MaterialPageRoute(
-                                                    builder: (_) =>
-                                                        const HomePageAfterLogin(),
-                                                  ),
-                                                );
-                                              } on FirebaseAuthException catch (e) {
-                                                if (!mounted) return;
-
-                                                setState(
-                                                    () => _isLoading = false);
-
+                                              } catch (e) {
                                                 showGlassSnackBar(
-                                                  e.message ?? 'Login gagal',
+                                                  e.toString(),
                                                   backgroundColor: Colors.red,
                                                 );
+                                              } finally {
+                                                if (mounted) {
+                                                  setState(
+                                                      () => _isLoading = false);
+                                                }
                                               }
                                             },
                                       child: _isLoading
@@ -339,7 +311,8 @@ class _LoginPageState extends State<LoginPage> {
                                       Navigator.push(
                                         context,
                                         MaterialPageRoute(
-                                          builder: (_) => RegisterPage(),
+                                          builder: (_) =>
+                                              const RegisterPage(),
                                         ),
                                       );
                                     },
@@ -347,8 +320,7 @@ class _LoginPageState extends State<LoginPage> {
                                   ),
                                   TextButton(
                                     onPressed: _forgotPassword,
-                                    child:
-                                        const Text('Forgot Password?'),
+                                    child: const Text('Forgot Password?'),
                                   ),
                                 ],
                               ),
