@@ -21,6 +21,28 @@ class _AddSparePartPageState extends State<AddSparePartPage> {
   final stockController = TextEditingController();
   final weightController = TextEditingController();
 
+  String normalizeLocation(String location) {
+  return location
+      .trim()
+      .toUpperCase()
+      .replaceAll(' ', '')
+      .replaceAll('.', '-');
+}
+
+
+
+
+Future<bool> isLocationAvailable(String location) async {
+  final locationKey = normalizeLocation(location);
+
+  final doc = await FirebaseFirestore.instance
+      .collection('locations')
+      .doc(locationKey)
+      .get();
+
+  return !doc.exists;
+  }
+
   File? selectedImage;
   final picker = ImagePicker();
 
@@ -137,6 +159,7 @@ request.fields['public_id'] = uniqueId;
     String name = nameController.text.trim();
     String nameEn = nameEnController.text.trim();
     String location = locationController.text.trim();
+    final locationKey = normalizeLocation(location);
     String inputWeight = weightController.text.replaceAll(',', '.');
 
     if (partCode.isEmpty) {
@@ -168,6 +191,19 @@ request.fields['public_id'] = uniqueId;
       return;
     }
 
+    // CEK DUPLIKAT LOCATIONS
+    if (location.isEmpty) {
+  showMessage('Location wajib diisi');
+  return;
+}
+
+final locationAvailable = await isLocationAvailable(location);
+
+if (!locationAvailable) {
+  showMessage('Location sudah digunakan oleh spare part lain');
+  return;
+}
+
     // 🔥 UPLOAD IMAGE KE CLOUDINARY
     String imageUrl = await uploadImageToCloudinary(partCode);
 
@@ -177,12 +213,23 @@ request.fields['public_id'] = uniqueId;
       'name': name,
       'nameEn': nameEn,
       'location': location,
+      'initialStock': stock,
+      'currentStock': stock,
       'stock': stock,
       'weight': weight,
       'weightUnit': weightUnit,
       'imageUrl': imageUrl,
       'createdAt': Timestamp.now(),
     });
+
+    await FirebaseFirestore.instance
+    .collection('locations')
+    .doc(locationKey)
+    .set({
+  'partCode': partCode,
+  'createdAt': Timestamp.now(),
+});
+
 
     showMessage('Spare part berhasil ditambahkan');
 

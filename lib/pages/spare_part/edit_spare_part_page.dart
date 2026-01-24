@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../models/spare_part.dart';
@@ -6,6 +5,8 @@ import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:crypto/crypto.dart';
+
 
 class EditSparePartPage extends StatefulWidget {
   final SparePart part;
@@ -25,6 +26,43 @@ class _EditSparePartPageState extends State<EditSparePartPage>
   late TextEditingController stockController;
   late TextEditingController weightController;
 
+  String formatLocation(String input) {
+  String value = input
+      .toUpperCase()
+      .replaceAll(' ', '')
+      .replaceAll('.', '-');
+
+  // Heuristik: A11 → A1-1
+  final match = RegExp(r'^([A-Z]\d+)(\d+)$').firstMatch(value);
+  if (match != null) {
+    value = '${match.group(1)}-${match.group(2)}';
+  }
+
+  return value;
+}
+
+
+  String normalizeLocation(String location) {
+  return location
+      .trim()
+      .toUpperCase()
+      .replaceAll(' ', '')
+      .replaceAll('.', '-');
+}
+
+
+Future<bool> isLocationAvailable(String location) async {
+  final locationKey = normalizeLocation(location);
+
+  final doc = await FirebaseFirestore.instance
+      .collection('locations')
+      .doc(locationKey)
+      .get();
+
+  return !doc.exists;
+}
+
+
   String weightUnit = 'Kg';
 
   File? selectedImage;
@@ -34,6 +72,9 @@ class _EditSparePartPageState extends State<EditSparePartPage>
   // Cloudinary config
   final String cloudName = 'djl2sukor';
   final String uploadPreset = 'spare_parts_images';
+
+  final String apiKey = '379534721643839';
+  final String apiSecret = 'LzsTB5Cq5ycrkZ2mGEkdyD7y6Ho';
 
   // ===== UPLOAD ANIMATION STATE =====
   bool isUploadingImage = false;
@@ -50,7 +91,10 @@ class _EditSparePartPageState extends State<EditSparePartPage>
     partCodeController = TextEditingController(text: widget.part.partCode);
     nameController = TextEditingController(text: widget.part.name);
     nameEnController = TextEditingController(text: widget.part.nameEn);
-    locationController = TextEditingController(text: widget.part.location);
+    locationController = TextEditingController(
+  text: formatLocation(widget.part.location),
+);
+
     stockController = TextEditingController(text: widget.part.stock.toString());
     weightController =
         TextEditingController(text: widget.part.weight.toString());
@@ -172,7 +216,7 @@ class _EditSparePartPageState extends State<EditSparePartPage>
     uploadProgress = 0.0;
   });
 
-  // Smooth fake progress animation (UX friendly)
+  // Smooth fake progress animation
   Future.doWhile(() async {
     await Future.delayed(const Duration(milliseconds: 120));
     if (!isUploadingImage) return false;
@@ -194,8 +238,7 @@ class _EditSparePartPageState extends State<EditSparePartPage>
   request.fields['upload_preset'] = uploadPreset;
   request.fields['folder'] = 'spare_parts';
   final uniqueId = '${partCode}_${DateTime.now().millisecondsSinceEpoch}';
-request.fields['public_id'] = uniqueId;
-
+  request.fields['public_id'] = uniqueId;
 
   request.files.add(
     await http.MultipartFile.fromPath('file', selectedImage!.path),
@@ -213,86 +256,236 @@ request.fields['public_id'] = uniqueId;
   }
 
   if (response.statusCode == 200) {
-    // ✅ CACHE BUSTING (KUNCI UTAMA)
-    final baseUrl = data['secure_url'];
-    final timestamp = DateTime.now().millisecondsSinceEpoch;
-    final newUrl = '$baseUrl?v=$timestamp';
+    final baseUrl = data['secure_url']; // ✅ untuk Firestore
+    final ts = DateTime.now().millisecondsSinceEpoch;
+    final previewUrl = '$baseUrl?ts=$ts'; // ✅ untuk UI refresh
 
-    // ✅ update image langsung di edit page
+    // ✅ refresh foto di Edit Page
     setState(() {
-      currentImageUrl = newUrl;
-      selectedImage = null; // reset local file preview
+      currentImageUrl = previewUrl;
+      selectedImage = null;
     });
 
     _fadeController.reset();
     _fadeController.forward();
 
-    return newUrl;
+    return baseUrl; // ⚠️ SIMPAN KE FIRESTORE TANPA timestamp
   } else {
     showMessage('Upload image failed');
     return currentImageUrl;
   }
 }
 
+Future<void> safeDeleteCloudinaryImage(String oldUrl, String newUrl) async {
+  if (oldUrl.isEmpty) return;
+  if (oldUrl == newUrl) return;
+
+  // ✅ bersihkan query string (?ts=...)
+  final cleanUrl = oldUrl.split('?').first;
+
+  // ✅ pastikan berasal dari folder spare_parts
+  if (!cleanUrl.contains('/spare_parts/')) {
+    debugPrint('Skip delete: not spare_parts image');
+    return;
+  }
+
+  try {
+    // ✅ extract public_id dengan aman
+    final parts = cleanUrl.split('/upload/');
+    if (parts.length < 2) return;
+
+    final path = parts[1];
+
+    // hapus version prefix (v123456789/)
+    final pathWithoutVersion = path.replaceFirst(RegExp(r'^v\d+/'), '');
+
+    // hapus extension (.jpg, .png, dll)
+    final publicId = pathWithoutVersion.replaceAll(RegExp(r'\.[a-zA-Z0-9]+$'), '');
+
+    debugPrint('Deleting Cloudinary public_id: $publicId');
+
+    final timestamp = (DateTime.now().millisecondsSinceEpoch / 1000).round();
+
+    final signatureBase =
+        'public_id=$publicId&timestamp=$timestamp$apiSecret';
+
+    final signature = sha1.convert(utf8.encode(signatureBase)).toString();
+
+    final url = Uri.parse(
+      'https://api.cloudinary.com/v1_1/$cloudName/image/destroy',
+    );
+
+    final response = await http.post(
+      url,
+      body: {
+        'public_id': publicId,
+        'api_key': apiKey,
+        'timestamp': timestamp.toString(),
+        'signature': signature,
+      },
+    );
+
+    debugPrint('Cloudinary delete response: ${response.body}');
+
+    if (response.statusCode == 200) {
+      debugPrint('✅ Old image deleted successfully');
+    } else {
+      debugPrint('❌ Delete failed');
+    }
+  } catch (e) {
+    debugPrint('❌ Cloudinary delete error: $e');
+  }
+}
+
+
+Future<void> deleteCloudinaryImage(String imageUrl) async {
+  if (imageUrl.isEmpty) return;
+
+  try {
+    // Ambil public_id dari URL Cloudinary
+    final uriPart = imageUrl.split('/upload/').last;
+    final publicId = uriPart.split('.').first; // tanpa extension
+
+    final timestamp = (DateTime.now().millisecondsSinceEpoch / 1000).round();
+
+    final signatureBase =
+        'public_id=$publicId&timestamp=$timestamp$apiSecret';
+
+    final signature = sha1.convert(utf8.encode(signatureBase)).toString();
+
+    final url = Uri.parse(
+      'https://api.cloudinary.com/v1_1/$cloudName/image/destroy',
+    );
+
+    final response = await http.post(
+      url,
+      body: {
+        'public_id': publicId,
+        'api_key': apiKey,
+        'timestamp': timestamp.toString(),
+        'signature': signature,
+      },
+    );
+
+    if (response.statusCode == 200) {
+      debugPrint('Old image deleted: $publicId');
+    } else {
+      debugPrint('Failed to delete old image: ${response.body}');
+    }
+  } catch (e) {
+    debugPrint('Cloudinary delete error: $e');
+  }
+}
 
   // =========================
   // UPDATE DATA
   // =========================
   Future<void> updateData() async {
-    String name = nameController.text.trim();
-    String nameEn = nameEnController.text.trim();
-    String location = locationController.text.trim();
-    String inputWeight = weightController.text.replaceAll(',', '.');
+  final oldImageUrl = widget.part.imageUrl;
 
-    if (name.isEmpty) {
-      showMessage('Name wajib diisi');
+  final String name = nameController.text.trim();
+  final String nameEn = nameEnController.text.trim();
+  final String location = locationController.text.trim();
+  final String inputWeight = weightController.text.replaceAll(',', '.');
+
+  if (name.isEmpty) {
+    showMessage('Name wajib diisi');
+    return;
+  }
+
+  if (nameEn.isEmpty) {
+    showMessage('Name (English) wajib diisi');
+    return;
+  }
+
+  // =========================
+  // LOCATION VALIDATION (STEP 8.4)
+  // =========================
+  final oldLocation = widget.part.location;
+  final newLocation = location;
+
+  final oldLocationKey = normalizeLocation(oldLocation);
+  final newLocationKey = normalizeLocation(newLocation);
+
+  if (oldLocationKey != newLocationKey) {
+    final available = await isLocationAvailable(newLocation);
+
+    if (!available) {
+      showMessage('Location sudah digunakan oleh spare part lain');
       return;
     }
+  }
 
-    if (nameEn.isEmpty) {
-      showMessage('Name (English) wajib diisi');
-      return;
-    }
+  int stock = int.tryParse(stockController.text) ?? 0;
+  double weight = double.tryParse(inputWeight) ?? 0.0;
 
-    int stock = int.tryParse(stockController.text) ?? 0;
-    double weight = double.tryParse(inputWeight) ?? 0.0;
+  final String newImageUrl =
+      await uploadImageToCloudinary(widget.part.partCode);
 
-    String imageUrl = await uploadImageToCloudinary(widget.part.partCode);
+  await safeDeleteCloudinaryImage(oldImageUrl, newImageUrl);
+
+  // =========================
+  // UPDATE SPARE PART
+  // =========================
+  await FirebaseFirestore.instance
+      .collection('spare_parts')
+      .doc(widget.part.partCode)
+      .update({
+    'name': name,
+    'nameEn': nameEn,
+    'location': location,
+    'stock': stock,
+    'weight': weight,
+    'weightUnit': weightUnit,
+    'imageUrl': newImageUrl,
+    'updatedAt': Timestamp.now(),
+  });
+
+  // =========================
+  // UPDATE LOCATION MAPPING
+  // =========================
+  if (oldLocationKey != newLocationKey) {
+    await FirebaseFirestore.instance
+        .collection('locations')
+        .doc(oldLocationKey)
+        .delete();
 
     await FirebaseFirestore.instance
-        .collection('spare_parts')
-        .doc(widget.part.partCode)
-        .update({
-      'name': name,
-      'nameEn': nameEn,
-      'location': location,
-      'stock': stock,
-      'weight': weight,
-      'weightUnit': weightUnit,
-      'imageUrl': imageUrl,
-      'updatedAt': Timestamp.now(),
+        .collection('locations')
+        .doc(newLocationKey)
+        .set({
+      'partCode': widget.part.partCode,
+      'createdAt': Timestamp.now(),
     });
-
-    showMessage('Data berhasil diupdate');
-
-    await Future.delayed(const Duration(milliseconds: 600));
-    Navigator.pop(context);
   }
+
+  showMessage('Data berhasil diupdate');
+
+  await Future.delayed(const Duration(milliseconds: 600));
+  Navigator.pop(context);
+}
 
   // =========================
   // DELETE DATA
   // =========================
   Future<void> deleteData() async {
-    await FirebaseFirestore.instance
-        .collection('spare_parts')
-        .doc(widget.part.partCode)
-        .delete();
+  final locationKey = normalizeLocation(widget.part.location);
 
-    Navigator.pop(context);
-    Navigator.pop(context);
+  await FirebaseFirestore.instance
+      .collection('spare_parts')
+      .doc(widget.part.partCode)
+      .delete();
 
-    showMessage('Spare part berhasil dihapus');
-  }
+  await FirebaseFirestore.instance
+      .collection('locations')
+      .doc(locationKey)
+      .delete();
+
+  Navigator.pop(context);
+  Navigator.pop(context);
+
+  showMessage('Spare part berhasil dihapus');
+}
 
   // =========================
   // DELETE DIALOG
@@ -515,11 +708,13 @@ request.fields['public_id'] = uniqueId;
                       ),
                       const SizedBox(height: 12),
                       TextField(
-                        controller: stockController,
-                        keyboardType: TextInputType.number,
-                        decoration:
-                            const InputDecoration(labelText: 'Stock'),
-                      ),
+  controller: stockController,
+  enabled: false, // 🔒 KUNCI EDIT
+  decoration: const InputDecoration(
+    labelText: 'Stock (Auto)',
+  ),
+),
+
                       const SizedBox(height: 12),
                       TextField(
                         controller: weightController,

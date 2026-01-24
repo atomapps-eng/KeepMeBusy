@@ -5,6 +5,8 @@ import '../../models/spare_part.dart';
 import 'add_spare_part_page.dart';
 import 'edit_spare_part_page.dart';
 import 'barcode_scanner_page.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+
 
 class SparePartListPage extends StatefulWidget {
   const SparePartListPage({super.key});
@@ -230,28 +232,31 @@ class _SparePartListPageState extends State<SparePartListPage> {
                                           color: Colors.white
                                               .withOpacity(0.4),
                                           child: part.imageUrl.isNotEmpty
-                                              ? Image.network(
-                                                  part.imageUrl,
-                                                  fit: BoxFit.cover,
-                                                  key: ValueKey(
-                                                      part.imageUrl), // ⭐ refresh key
-                                                  gaplessPlayback: true,
-                                                  errorBuilder:
-                                                      (context, error,
-                                                              stackTrace) =>
-                                                          const Icon(
-                                                    Icons.inventory,
-                                                    size: 28,
-                                                    color:
-                                                        Colors.blueGrey,
-                                                  ),
-                                                )
-                                              : const Icon(
-                                                  Icons.inventory,
-                                                  size: 28,
-                                                  color:
-                                                      Colors.blueGrey,
-                                                ),
+    ? CachedNetworkImage(
+        imageUrl:
+            '${part.imageUrl}?ts=${DateTime.now().millisecondsSinceEpoch}',
+        fit: BoxFit.cover,
+        key: ValueKey(part.imageUrl),
+        placeholder: (context, url) => const Center(
+          child: SizedBox(
+            width: 18,
+            height: 18,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+        ),
+        errorWidget: (context, url, error) => const Icon(
+          Icons.inventory,
+          size: 28,
+          color: Colors.blueGrey,
+        ),
+      )
+    : const Icon(
+        Icons.inventory,
+        size: 28,
+        color: Colors.blueGrey,
+      ),
+
+
                                         ),
                                       ),
 
@@ -285,7 +290,7 @@ class _SparePartListPageState extends State<SparePartListPage> {
                                       ),
 
                                       Text(
-                                        'Stock: ${part.stock}',
+                                        'Stock: ${part.currentStock}',
                                         style: const TextStyle(
                                           fontWeight:
                                               FontWeight.w600,

@@ -5,33 +5,23 @@ class SparePartService {
   final _db = FirebaseFirestore.instance;
 
   Stream<List<SparePart>> getSpareParts() {
-      // ==========================
-  // CREATE (ADD SPARE PART)
-  // ==========================
+    return _db.collection('spare_parts').snapshots().map((snapshot) {
+      return snapshot.docs.map((doc) {
+        final data = doc.data();
+        return SparePart.fromMap(data, doc.id);
+      }).toList();
+    });
+  }
+
   Future<void> addSparePart(String id, Map<String, dynamic> data) async {
     await _db.collection('spare_parts').doc(id).set(data);
   }
 
-  // ==========================
-  // UPDATE (EDIT SPARE PART)
-  // ==========================
   Future<void> updateSparePart(String id, Map<String, dynamic> data) async {
     await _db.collection('spare_parts').doc(id).update(data);
   }
 
-  // ==========================
-  // DELETE (REMOVE SPARE PART)
-  // ==========================
   Future<void> deleteSparePart(String id) async {
     await _db.collection('spare_parts').doc(id).delete();
   }
-    return _db.collection('spare_parts').snapshots().map((snapshot) {
-      return snapshot.docs.map((doc) {
-  final data = doc.data();
-  data['partCode'] = doc.id; // inject doc.id ke data
-  return SparePart.fromFirestore(data);
-}).toList();
-    });
-  }
 }
-
