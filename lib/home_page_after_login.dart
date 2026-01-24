@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import 'login_page.dart';
-import 'pages/spare_part/spare_part_list_page.dart';
 
 import 'pages/common/placeholder_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -27,7 +26,7 @@ class _HomePageAfterLoginState extends State<HomePageAfterLogin> {
   Future<void> _confirmLogout(BuildContext context) async {
     final bool? result = await showDialog<bool>(
       context: context,
-      barrierColor: Colors.black.withOpacity(0.4),
+      barrierColor: Colors.black.withValues(alpha:0.4),
       builder: (context) => AlertDialog(
         title: const Text('Logout'),
         content: const Text('Are you sure you want to log out?'),
@@ -106,7 +105,6 @@ class _HomePageAfterLoginState extends State<HomePageAfterLogin> {
   label: 'Database',
   color: Colors.blueGrey,
   onTap: () {
-    debugPrint('Database menu tapped');
   FloatingMenuLauncher.open(
     context,
     inventoryMenus.first,
@@ -318,9 +316,9 @@ class _HomePageAfterLoginState extends State<HomePageAfterLogin> {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.3),
+            color: Colors.white.withValues(alpha:0.3),
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.white.withOpacity(0.4)),
+            border: Border.all(color: Colors.white.withValues(alpha:0.4)),
           ),
           child: Row(
             children: [
@@ -535,9 +533,9 @@ class _DashboardCard extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.28),
+              color: Colors.white.withValues(alpha:0.28),
               borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: Colors.white.withOpacity(0.35)),
+              border: Border.all(color: Colors.white.withValues(alpha:0.35)),
             ),
             child: Row(
               children: [

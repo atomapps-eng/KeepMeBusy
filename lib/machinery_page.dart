@@ -61,8 +61,8 @@ class _GlassMachineryMenuCard extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         borderRadius: BorderRadius.circular(20),
-        splashColor: color.withOpacity(0.15),
-        highlightColor: color.withOpacity(0.08),
+        splashColor: color.withValues(alpha:0.15),
+        highlightColor: color.withValues(alpha:0.08),
         onTap: () {
           debugPrint('$label tapped');
           // nanti: navigasi ke halaman detail
@@ -72,7 +72,7 @@ class _GlassMachineryMenuCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.12),
+                color: Colors.black.withValues(alpha:0.12),
                 blurRadius: 20,
                 offset: const Offset(0, 10),
               ),
@@ -115,7 +115,7 @@ class _GlassMachineryMenuCard extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: color.withOpacity(0.85),
+                        color: color.withValues(alpha:0.85),
                       ),
                     ),
 
@@ -126,7 +126,7 @@ class _GlassMachineryMenuCard extends StatelessWidget {
                       width: 28,
                       height: 3,
                       decoration: BoxDecoration(
-                        color: color.withOpacity(0.6),
+                        color: color.withValues(alpha:0.6),
                         borderRadius: BorderRadius.circular(10),
                       ),
                     ),

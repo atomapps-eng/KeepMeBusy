@@ -90,12 +90,12 @@ class _SparePartListPageState extends State<SparePartListPage> {
                           ),
                           decoration: BoxDecoration(
                             color:
-                                Colors.white.withOpacity(0.25),
+                                Colors.white.withValues(alpha:0.25),
                             borderRadius:
                                 BorderRadius.circular(20),
                             border: Border.all(
                               color: Colors.white
-                                  .withOpacity(0.35),
+                                  .withValues(alpha:0.35),
                             ),
                           ),
                           child: Row(
@@ -137,12 +137,12 @@ class _SparePartListPageState extends State<SparePartListPage> {
                               horizontal: 12),
                           decoration: BoxDecoration(
                             color:
-                                Colors.white.withOpacity(0.25),
+                                Colors.white.withValues(alpha:0.25),
                             borderRadius:
                                 BorderRadius.circular(14),
                             border: Border.all(
                               color: Colors.white
-                                  .withOpacity(0.35),
+                                  .withValues(alpha:0.35),
                             ),
                           ),
                           child: TextField(
@@ -207,12 +207,6 @@ class _SparePartListPageState extends State<SparePartListPage> {
                       final keyword = widget.isCompact
     ? (widget.searchKeyword ?? '').toLowerCase()
     : searchController.text.toLowerCase();
-
-print('DEBUG ▶ isCompact=${widget.isCompact}, '
-    'searchKeyword=${widget.searchKeyword}, '
-    'keywordUsed="$keyword"');
-
-
                       final filteredParts = parts.where(
                         (part) {
                           return part.partCode
@@ -270,13 +264,13 @@ print('DEBUG ▶ isCompact=${widget.isCompact}, '
                                           12),
                                   decoration: BoxDecoration(
                                     color: Colors.white
-                                        .withOpacity(0.25),
+                                        .withValues(alpha:0.25),
                                     borderRadius:
                                         BorderRadius
                                             .circular(14),
                                     border: Border.all(
                                       color: Colors.white
-                                          .withOpacity(0.35),
+                                          .withValues(alpha:.35),
                                     ),
                                   ),
                                   child: Row(
@@ -291,8 +285,8 @@ print('DEBUG ▶ isCompact=${widget.isCompact}, '
                                           height: 48,
                                           color: Colors
                                               .white
-                                              .withOpacity(
-                                                  0.4),
+                                              .withValues(
+                                                  alpha:0.4),
                                           child: part
                                                   .imageUrl
                                                   .isNotEmpty
@@ -303,7 +297,7 @@ print('DEBUG ▶ isCompact=${widget.isCompact}, '
                                                       BoxFit
                                                           .cover,
                                                   placeholder:
-                                                      (_, __) =>
+                                                      (_, _) =>
                                                           const Center(
                                                     child:
                                                         SizedBox(
@@ -319,7 +313,7 @@ print('DEBUG ▶ isCompact=${widget.isCompact}, '
                                                     ),
                                                   ),
                                                   errorWidget:
-                                                      (_, __, ___) =>
+                                                      (_, _, _) =>
                                                           const Icon(
                                                     Icons
                                                         .inventory,

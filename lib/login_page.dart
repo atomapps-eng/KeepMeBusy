@@ -78,10 +78,10 @@ class _LoginPageState extends State<LoginPage> {
                 vertical: 14,
               ),
               decoration: BoxDecoration(
-                color: backgroundColor.withOpacity(0.25),
+                color: backgroundColor.withValues(alpha:0.25),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: Colors.white.withOpacity(0.35),
+                  color: Colors.white.withValues(alpha:0.35),
                 ),
               ),
               child: Text(
@@ -282,40 +282,36 @@ class _LoginPageState extends State<LoginPage> {
                                                   () => _isLoading = true);
 
                                               try {
-                                                await FirebaseAuth.instance
-                                                    .signInWithEmailAndPassword(
-                                                  email: emailController.text.trim(),
-                                                  password: passwordController
-                                                      .text
-                                                      .trim(),
-                                                );
+  final navigator = Navigator.of(context); // ✅ SIMPAN SEBELUM await
 
-                                                // SIMPAN CREDENTIAL SETELAH LOGIN SUKSES
-                                                final prefs =
-                                                    await SharedPreferences
-                                                        .getInstance();
-                                                await prefs.setString(
-                                                  'saved_email',
-                                                  emailController.text.trim(),
-                                                );
-                                                await prefs.setString(
-                                                  'saved_password',
-                                                  passwordController.text.trim(),
-                                                );
+  await FirebaseAuth.instance
+      .signInWithEmailAndPassword(
+    email: emailController.text.trim(),
+    password: passwordController.text.trim(),
+  );
 
-                                                if (!mounted) return;
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.setString(
+    'saved_email',
+    emailController.text.trim(),
+  );
+  await prefs.setString(
+    'saved_password',
+    passwordController.text.trim(),
+  );
 
-                                                setState(
-                                                    () => _isLoading = false);
+  if (!mounted) return;
 
-                                                Navigator.pushReplacement(
-                                                  context,
-                                                  MaterialPageRoute(
-                                                    builder: (_) =>
-                                                        const HomePageAfterLogin(),
-                                                  ),
-                                                );
-                                              } on FirebaseAuthException catch (e) {
+  setState(() => _isLoading = false);
+
+  navigator.pushReplacement(
+    MaterialPageRoute(
+      builder: (_) => const HomePageAfterLogin(),
+    ),
+  );
+}
+                                              
+                                              on FirebaseAuthException catch (e) {
                                                 if (!mounted) return;
 
                                                 setState(

@@ -53,13 +53,16 @@ Future<bool> isLocationAvailable(String location) async {
   final String uploadPreset = 'spare_parts_images';
 
   void showMessage(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.blueGrey,
-      ),
-    );
-  }
+  if (!mounted) return;
+
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text(message),
+      backgroundColor: Colors.blueGrey,
+    ),
+  );
+}
+
 
   // =========================
   // PICK IMAGE (CAMERA / GALLERY)
@@ -155,87 +158,97 @@ request.fields['public_id'] = uniqueId;
   // SAVE DATA
   // =========================
   Future<void> saveData() async {
-    String partCode = partCodeController.text.trim();
-    String name = nameController.text.trim();
-    String nameEn = nameEnController.text.trim();
-    String location = locationController.text.trim();
-    final locationKey = normalizeLocation(location);
-    String inputWeight = weightController.text.replaceAll(',', '.');
+  // ✅ AMBIL DEPENDENCY CONTEXT DI AWAL
+  final navigator = Navigator.of(context);
+  final messenger = ScaffoldMessenger.of(context);
 
-    if (partCode.isEmpty) {
-      showMessage('Part Code wajib diisi');
-      return;
-    }
+  String partCode = partCodeController.text.trim();
+  String name = nameController.text.trim();
+  String nameEn = nameEnController.text.trim();
+  String location = locationController.text.trim();
+  final locationKey = normalizeLocation(location);
+  String inputWeight = weightController.text.replaceAll(',', '.');
 
-    if (name.isEmpty) {
-      showMessage('Name wajib diisi');
-      return;
-    }
-
-    if (nameEn.isEmpty) {
-      showMessage('Name (English) wajib diisi');
-      return;
-    }
-
-    int stock = int.tryParse(stockController.text) ?? 0;
-    double weight = double.tryParse(inputWeight) ?? 0.0;
-
-    // CEK DUPLIKAT PART CODE
-    final doc = await FirebaseFirestore.instance
-        .collection('spare_parts')
-        .doc(partCode)
-        .get();
-
-    if (doc.exists) {
-      showMessage('Part Code sudah ada!');
-      return;
-    }
-
-    // CEK DUPLIKAT LOCATIONS
-    if (location.isEmpty) {
-  showMessage('Location wajib diisi');
-  return;
-}
-
-final locationAvailable = await isLocationAvailable(location);
-
-if (!locationAvailable) {
-  showMessage('Location sudah digunakan oleh spare part lain');
-  return;
-}
-
-    // 🔥 UPLOAD IMAGE KE CLOUDINARY
-    String imageUrl = await uploadImageToCloudinary(partCode);
-
-    // 🔥 SIMPAN KE FIRESTORE
-    await FirebaseFirestore.instance.collection('spare_parts').doc(partCode).set({
-      'partCode': partCode,
-      'name': name,
-      'nameEn': nameEn,
-      'location': location,
-      'initialStock': stock,
-      'currentStock': stock,
-      'stock': stock,
-      'weight': weight,
-      'weightUnit': weightUnit,
-      'imageUrl': imageUrl,
-      'createdAt': Timestamp.now(),
-    });
-
-    await FirebaseFirestore.instance
-    .collection('locations')
-    .doc(locationKey)
-    .set({
-  'partCode': partCode,
-  'createdAt': Timestamp.now(),
-});
-
-
-    showMessage('Spare part berhasil ditambahkan');
-
-    await Future.delayed(const Duration(milliseconds: 800));
-    Navigator.pop(context);
+  if (partCode.isEmpty) {
+    showMessage('Part Code wajib diisi');
+    return;
   }
+
+  if (name.isEmpty) {
+    showMessage('Name wajib diisi');
+    return;
+  }
+
+  if (nameEn.isEmpty) {
+    showMessage('Name (English) wajib diisi');
+    return;
+  }
+
+  int stock = int.tryParse(stockController.text) ?? 0;
+  double weight = double.tryParse(inputWeight) ?? 0.0;
+
+  final doc = await FirebaseFirestore.instance
+      .collection('spare_parts')
+      .doc(partCode)
+      .get();
+
+  if (doc.exists) {
+    showMessage('Part Code sudah ada!');
+    return;
+  }
+
+  if (location.isEmpty) {
+    showMessage('Location wajib diisi');
+    return;
+  }
+
+  final locationAvailable = await isLocationAvailable(location);
+
+  if (!locationAvailable) {
+    showMessage('Location sudah digunakan oleh spare part lain');
+    return;
+  }
+
+  String imageUrl = await uploadImageToCloudinary(partCode);
+
+  await FirebaseFirestore.instance
+      .collection('spare_parts')
+      .doc(partCode)
+      .set({
+    'partCode': partCode,
+    'name': name,
+    'nameEn': nameEn,
+    'location': location,
+    'initialStock': stock,
+    'currentStock': stock,
+    'stock': stock,
+    'weight': weight,
+    'weightUnit': weightUnit,
+    'imageUrl': imageUrl,
+    'createdAt': Timestamp.now(),
+  });
+
+  await FirebaseFirestore.instance
+      .collection('locations')
+      .doc(locationKey)
+      .set({
+    'partCode': partCode,
+    'createdAt': Timestamp.now(),
+  });
+
+  if (!mounted) return;
+
+  messenger.showSnackBar(
+    const SnackBar(content: Text('Spare part berhasil ditambahkan')),
+  );
+
+  await Future.delayed(const Duration(milliseconds: 800));
+
+  if (!mounted) return;
+
+  navigator.pop();
+}
+
 
   @override
   Widget build(BuildContext context) {
@@ -266,9 +279,9 @@ if (!locationAvailable) {
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.25),
+                          color: Colors.white.withValues(alpha:0.25),
                           borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: Colors.white.withOpacity(0.35)),
+                          border: Border.all(color: Colors.white.withValues(alpha:0.35)),
                         ),
                         child: Row(
                           children: [
@@ -299,9 +312,9 @@ if (!locationAvailable) {
                             width: double.infinity,
                             margin: const EdgeInsets.only(bottom: 16),
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.25),
+                              color: Colors.white.withValues(alpha:0.25),
                               borderRadius: BorderRadius.circular(14),
-                              border: Border.all(color: Colors.white.withOpacity(0.35)),
+                              border: Border.all(color: Colors.white.withValues(alpha:0.35)),
                             ),
                             child: selectedImage == null
                                 ? const Center(

@@ -121,13 +121,16 @@ Future<bool> isLocationAvailable(String location) async {
   }
 
   void showMessage(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.blueGrey,
-      ),
-    );
-  }
+  if (!mounted) return;
+
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text(message),
+      backgroundColor: Colors.blueGrey,
+    ),
+  );
+}
+
 
   // =========================
   // FULLSCREEN IMAGE PREVIEW
@@ -380,7 +383,10 @@ Future<void> deleteCloudinaryImage(String imageUrl) async {
   // =========================
   // UPDATE DATA
   // =========================
-  Future<void> updateData() async {
+Future<void> updateData() async {
+  final navigator = Navigator.of(context);
+  final messenger = ScaffoldMessenger.of(context);
+
   final oldImageUrl = widget.part.imageUrl;
 
   final String name = nameController.text.trim();
@@ -398,18 +404,11 @@ Future<void> deleteCloudinaryImage(String imageUrl) async {
     return;
   }
 
-  // =========================
-  // LOCATION VALIDATION (STEP 8.4)
-  // =========================
-  final oldLocation = widget.part.location;
-  final newLocation = location;
-
-  final oldLocationKey = normalizeLocation(oldLocation);
-  final newLocationKey = normalizeLocation(newLocation);
+  final oldLocationKey = normalizeLocation(widget.part.location);
+  final newLocationKey = normalizeLocation(location);
 
   if (oldLocationKey != newLocationKey) {
-    final available = await isLocationAvailable(newLocation);
-
+    final available = await isLocationAvailable(location);
     if (!available) {
       showMessage('Location sudah digunakan oleh spare part lain');
       return;
@@ -419,14 +418,11 @@ Future<void> deleteCloudinaryImage(String imageUrl) async {
   int stock = int.tryParse(stockController.text) ?? 0;
   double weight = double.tryParse(inputWeight) ?? 0.0;
 
-  final String newImageUrl =
+  final newImageUrl =
       await uploadImageToCloudinary(widget.part.partCode);
 
   await safeDeleteCloudinaryImage(oldImageUrl, newImageUrl);
 
-  // =========================
-  // UPDATE SPARE PART
-  // =========================
   await FirebaseFirestore.instance
       .collection('spare_parts')
       .doc(widget.part.partCode)
@@ -441,9 +437,6 @@ Future<void> deleteCloudinaryImage(String imageUrl) async {
     'updatedAt': Timestamp.now(),
   });
 
-  // =========================
-  // UPDATE LOCATION MAPPING
-  // =========================
   if (oldLocationKey != newLocationKey) {
     await FirebaseFirestore.instance
         .collection('locations')
@@ -459,16 +452,27 @@ Future<void> deleteCloudinaryImage(String imageUrl) async {
     });
   }
 
-  showMessage('Data berhasil diupdate');
+  if (!mounted) return;
+
+  messenger.showSnackBar(
+    const SnackBar(content: Text('Data berhasil diupdate')),
+  );
 
   await Future.delayed(const Duration(milliseconds: 600));
-  Navigator.pop(context);
+
+  if (!mounted) return;
+
+  navigator.pop();
 }
+
 
   // =========================
   // DELETE DATA
   // =========================
   Future<void> deleteData() async {
+  final navigator = Navigator.of(context);
+  final messenger = ScaffoldMessenger.of(context);
+
   final locationKey = normalizeLocation(widget.part.location);
 
   await FirebaseFirestore.instance
@@ -481,11 +485,20 @@ Future<void> deleteCloudinaryImage(String imageUrl) async {
       .doc(locationKey)
       .delete();
 
-  Navigator.pop(context);
-  Navigator.pop(context);
+  if (!mounted) return;
 
-  showMessage('Spare part berhasil dihapus');
+messenger.showSnackBar(
+  const SnackBar(content: Text('Spare part berhasil dihapus')),
+);
+
+await Future.delayed(const Duration(milliseconds: 600));
+
+if (!mounted) return;
+
+navigator.pop();
+// kembali ke list
 }
+
 
   // =========================
   // DELETE DIALOG
@@ -566,7 +579,7 @@ Future<void> deleteCloudinaryImage(String imageUrl) async {
                     begin: Alignment.bottomCenter,
                     end: Alignment.topCenter,
                     colors: [
-                      Colors.black.withOpacity(0.25),
+                      Colors.black.withValues(alpha:0.25),
                       Colors.transparent,
                     ],
                   ),
@@ -582,7 +595,7 @@ Future<void> deleteCloudinaryImage(String imageUrl) async {
                   child: Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.45),
+                      color: Colors.black.withValues(alpha:0.45),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
@@ -598,7 +611,7 @@ Future<void> deleteCloudinaryImage(String imageUrl) async {
               if (isUploadingImage)
                 Positioned.fill(
                   child: Container(
-                    color: Colors.black.withOpacity(0.45),
+                    color: Colors.black.withValues(alpha:0.45),
                     child: Center(
                       child: Column(
                         mainAxisSize: MainAxisSize.min,

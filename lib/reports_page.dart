@@ -63,7 +63,7 @@ class _ReportMenuCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.12),
+                color: Colors.black.withValues(alpha:0.12),
                 blurRadius: 20,
                 offset: const Offset(0, 10),
               ),
@@ -71,10 +71,10 @@ class _ReportMenuCard extends StatelessWidget {
           ),
           child: Container(
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.30),
+              color: Colors.white.withValues(alpha:0.30),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: Colors.white.withOpacity(0.40),
+                color: Colors.white.withValues(alpha:0.40),
               ),
             ),
             child: Column(
@@ -103,7 +103,7 @@ class _ReportMenuCard extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: color.withOpacity(0.9),
+                    color: color.withValues(alpha: 0.9),
                   ),
                 ),
               ],

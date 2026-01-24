@@ -29,7 +29,7 @@ class FloatingMenuLauncher {
       context: context,
       barrierDismissible: false,
       barrierLabel: 'Floating',
-      barrierColor: Colors.black.withOpacity(0.35),
+      barrierColor: Colors.black.withValues(alpha:0.35),
       transitionDuration: const Duration(milliseconds: 220),
 
       pageBuilder: (
@@ -141,11 +141,11 @@ class _FloatingOverlayContainer extends StatelessWidget {
             ),
             borderRadius: BorderRadius.circular(24),
             border: Border.all(
-              color: Colors.white.withOpacity(0.4),
+              color: Colors.white.withValues(alpha:0.4),
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.25),
+                color: Colors.black.withValues(alpha:0.25),
                 blurRadius: 30,
                 offset: const Offset(0, 20),
               ),
@@ -178,7 +178,7 @@ class _FloatingOverlayContainer extends StatelessWidget {
                             ),
                             filled: true,
                             fillColor:
-                                Colors.white.withOpacity(0.7),
+                                Colors.white.withValues(alpha:0.7),
                             border: OutlineInputBorder(
                               borderRadius:
                                   BorderRadius.circular(18),
