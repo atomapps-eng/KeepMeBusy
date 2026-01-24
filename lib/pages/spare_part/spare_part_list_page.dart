@@ -7,37 +7,57 @@ import 'edit_spare_part_page.dart';
 import 'barcode_scanner_page.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
-
 class SparePartListPage extends StatefulWidget {
-  const SparePartListPage({super.key});
+  final bool isCompact;
+  final String? searchKeyword;
+
+  const SparePartListPage({
+    super.key,
+    this.isCompact = false,
+    this.searchKeyword,
+  });
 
   @override
   State<SparePartListPage> createState() => _SparePartListPageState();
 }
 
 class _SparePartListPageState extends State<SparePartListPage> {
-  final searchController = TextEditingController();
+  final TextEditingController searchController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Sinkron keyword dari floating / fullscreen
+    if (widget.searchKeyword != null &&
+        widget.searchKeyword!.isNotEmpty) {
+      searchController.text = widget.searchKeyword!;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final service = SparePartService();
 
     return Scaffold(
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: Colors.blueGrey,
-        foregroundColor: Colors.white,
-        child: const Icon(Icons.add),
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => const AddSparePartPage(),
+      floatingActionButton: widget.isCompact
+          ? null
+          : FloatingActionButton(
+              backgroundColor: Colors.blueGrey,
+              foregroundColor: Colors.white,
+              child: const Icon(Icons.add),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const AddSparePartPage(),
+                  ),
+                );
+              },
             ),
-          );
-        },
-      ),
       body: Stack(
         children: [
+          // ===== BACKGROUND =====
           Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
@@ -50,100 +70,123 @@ class _SparePartListPageState extends State<SparePartListPage> {
               ),
             ),
           ),
-          IgnorePointer(
-            ignoring: true,
-            child: Container(
-              color: Colors.black.withOpacity(0.05),
-            ),
-          ),
+
           SafeArea(
             child: Column(
               children: [
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(20),
-                    child: BackdropFilter(
-                      filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 14,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.25),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: Colors.white.withOpacity(0.35),
+                // ===== HEADER (HANYA FULLSCREEN) =====
+                if (!widget.isCompact)
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(20),
+                      child: BackdropFilter(
+                        filter:
+                            ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 14,
+                          ),
+                          decoration: BoxDecoration(
+                            color:
+                                Colors.white.withOpacity(0.25),
+                            borderRadius:
+                                BorderRadius.circular(20),
+                            border: Border.all(
+                              color: Colors.white
+                                  .withOpacity(0.35),
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              IconButton(
+                                icon: const Icon(
+                                    Icons.arrow_back),
+                                onPressed: () =>
+                                    Navigator.pop(context),
+                              ),
+                              const SizedBox(width: 8),
+                              const Text(
+                                'Spare Part Database',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                        child: Row(
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.arrow_back),
-                              onPressed: () => Navigator.pop(context),
+                      ),
+                    ),
+                  ),
+
+                // ===== SEARCH BAR (HANYA FULLSCREEN) =====
+                if (!widget.isCompact)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16),
+                    child: ClipRRect(
+                      borderRadius:
+                          BorderRadius.circular(14),
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(
+                            sigmaX: 8, sigmaY: 8),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12),
+                          decoration: BoxDecoration(
+                            color:
+                                Colors.white.withOpacity(0.25),
+                            borderRadius:
+                                BorderRadius.circular(14),
+                            border: Border.all(
+                              color: Colors.white
+                                  .withOpacity(0.35),
                             ),
-                            const SizedBox(width: 8),
-                            const Text(
-                              'Spare Part Database',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
+                          ),
+                          child: TextField(
+                            controller: searchController,
+                            decoration: InputDecoration(
+                              hintText:
+                                  'Search spare part...',
+                              border: InputBorder.none,
+                              icon:
+                                  const Icon(Icons.search),
+                              suffixIcon: IconButton(
+                                icon: const Icon(
+                                    Icons.qr_code_scanner),
+                                onPressed: () async {
+                                  final result =
+                                      await Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) =>
+                                          const BarcodeScannerPage(),
+                                    ),
+                                  );
+
+                                  if (result != null &&
+                                      result is String) {
+                                    searchController.text =
+                                        result;
+                                    setState(() {});
+                                  }
+                                },
                               ),
                             ),
-                          ],
+                            onChanged: (_) =>
+                                setState(() {}),
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(14),
-                    child: BackdropFilter(
-                      filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.25),
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(
-                            color: Colors.white.withOpacity(0.35),
-                          ),
-                        ),
-                        child: TextField(
-                          controller: searchController,
-                          decoration: InputDecoration(
-                            hintText: 'Search spare part...',
-                            border: InputBorder.none,
-                            icon: const Icon(Icons.search),
-                            suffixIcon: IconButton(
-                              icon: const Icon(Icons.qr_code_scanner),
-                              onPressed: () async {
-                                final result = await Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) =>
-                                        const BarcodeScannerPage(),
-                                  ),
-                                );
 
-                                if (result != null && result is String) {
-                                  searchController.text = result;
-                                  setState(() {});
-                                }
-                              },
-                            ),
-                          ),
-                          onChanged: (_) => setState(() {}),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
+                if (!widget.isCompact)
+                  const SizedBox(height: 12),
 
+                // ===== LIST =====
                 Expanded(
                   child: StreamBuilder<List<SparePart>>(
                     stream: service.getSpareParts(),
@@ -161,20 +204,28 @@ class _SparePartListPageState extends State<SparePartListPage> {
                       }
 
                       final parts = snapshot.data!;
-                      final keyword =
-                          searchController.text.toLowerCase();
+                      final keyword = widget.isCompact
+    ? (widget.searchKeyword ?? '').toLowerCase()
+    : searchController.text.toLowerCase();
 
-                      final filteredParts = parts.where((part) {
-                        return part.partCode
-                                .toLowerCase()
-                                .contains(keyword) ||
-                            part.name
-                                .toLowerCase()
-                                .contains(keyword) ||
-                            part.nameEn
-                                .toLowerCase()
-                                .contains(keyword);
-                      }).toList();
+print('DEBUG ▶ isCompact=${widget.isCompact}, '
+    'searchKeyword=${widget.searchKeyword}, '
+    'keywordUsed="$keyword"');
+
+
+                      final filteredParts = parts.where(
+                        (part) {
+                          return part.partCode
+                                  .toLowerCase()
+                                  .contains(keyword) ||
+                              part.name
+                                  .toLowerCase()
+                                  .contains(keyword) ||
+                              part.nameEn
+                                  .toLowerCase()
+                                  .contains(keyword);
+                        },
+                      ).toList();
 
                       if (filteredParts.isEmpty) {
                         return const Center(
@@ -184,10 +235,12 @@ class _SparePartListPageState extends State<SparePartListPage> {
 
                       return ListView.builder(
                         padding:
-                            const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                            const EdgeInsets.fromLTRB(
+                                16, 0, 16, 16),
                         itemCount: filteredParts.length,
                         itemBuilder: (context, index) {
-                          final part = filteredParts[index];
+                          final part =
+                              filteredParts[index];
 
                           return GestureDetector(
                             onTap: () {
@@ -195,26 +248,32 @@ class _SparePartListPageState extends State<SparePartListPage> {
                                 context,
                                 MaterialPageRoute(
                                   builder: (_) =>
-                                      EditSparePartPage(part: part),
+                                      EditSparePartPage(
+                                          part: part),
                                 ),
                               );
                             },
                             child: ClipRRect(
-                              borderRadius: BorderRadius.circular(14),
+                              borderRadius:
+                                  BorderRadius.circular(14),
                               child: BackdropFilter(
                                 filter: ImageFilter.blur(
                                   sigmaX: 8,
                                   sigmaY: 8,
                                 ),
                                 child: Container(
-                                  margin: const EdgeInsets.only(
-                                      bottom: 12),
-                                  padding: const EdgeInsets.all(12),
+                                  margin:
+                                      const EdgeInsets.only(
+                                          bottom: 12),
+                                  padding:
+                                      const EdgeInsets.all(
+                                          12),
                                   decoration: BoxDecoration(
                                     color: Colors.white
                                         .withOpacity(0.25),
                                     borderRadius:
-                                        BorderRadius.circular(14),
+                                        BorderRadius
+                                            .circular(14),
                                     border: Border.all(
                                       color: Colors.white
                                           .withOpacity(0.35),
@@ -222,76 +281,102 @@ class _SparePartListPageState extends State<SparePartListPage> {
                                   ),
                                   child: Row(
                                     children: [
-                                      // ✅ THUMBNAIL AUTO REFRESH (FIXED)
                                       ClipRRect(
                                         borderRadius:
-                                            BorderRadius.circular(10),
+                                            BorderRadius
+                                                .circular(
+                                                    10),
                                         child: Container(
                                           width: 48,
                                           height: 48,
-                                          color: Colors.white
-                                              .withOpacity(0.4),
-                                          child: part.imageUrl.isNotEmpty
-    ? CachedNetworkImage(
-        imageUrl:
-            '${part.imageUrl}?ts=${DateTime.now().millisecondsSinceEpoch}',
-        fit: BoxFit.cover,
-        key: ValueKey(part.imageUrl),
-        placeholder: (context, url) => const Center(
-          child: SizedBox(
-            width: 18,
-            height: 18,
-            child: CircularProgressIndicator(strokeWidth: 2),
-          ),
-        ),
-        errorWidget: (context, url, error) => const Icon(
-          Icons.inventory,
-          size: 28,
-          color: Colors.blueGrey,
-        ),
-      )
-    : const Icon(
-        Icons.inventory,
-        size: 28,
-        color: Colors.blueGrey,
-      ),
-
-
+                                          color: Colors
+                                              .white
+                                              .withOpacity(
+                                                  0.4),
+                                          child: part
+                                                  .imageUrl
+                                                  .isNotEmpty
+                                              ? CachedNetworkImage(
+                                                  imageUrl:
+                                                      part.imageUrl,
+                                                  fit:
+                                                      BoxFit
+                                                          .cover,
+                                                  placeholder:
+                                                      (_, __) =>
+                                                          const Center(
+                                                    child:
+                                                        SizedBox(
+                                                      width:
+                                                          18,
+                                                      height:
+                                                          18,
+                                                      child:
+                                                          CircularProgressIndicator(
+                                                        strokeWidth:
+                                                            2,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  errorWidget:
+                                                      (_, __, ___) =>
+                                                          const Icon(
+                                                    Icons
+                                                        .inventory,
+                                                    size:
+                                                        28,
+                                                    color:
+                                                        Colors
+                                                            .blueGrey,
+                                                  ),
+                                                )
+                                              : const Icon(
+                                                  Icons
+                                                      .inventory,
+                                                  size:
+                                                      28,
+                                                  color:
+                                                      Colors
+                                                          .blueGrey,
+                                                ),
                                         ),
                                       ),
-
-                                      const SizedBox(width: 12),
-
+                                      const SizedBox(
+                                          width: 12),
                                       Expanded(
                                         child: Column(
                                           crossAxisAlignment:
-                                              CrossAxisAlignment.start,
+                                              CrossAxisAlignment
+                                                  .start,
                                           children: [
                                             Text(
                                               part.name,
                                               style:
                                                   const TextStyle(
                                                 fontWeight:
-                                                    FontWeight.w600,
+                                                    FontWeight
+                                                        .w600,
                                               ),
                                             ),
-                                            const SizedBox(height: 4),
+                                            const SizedBox(
+                                                height: 4),
                                             Text(
                                               part.partCode,
                                               style:
                                                   const TextStyle(
-                                                fontSize: 12,
-                                                color:
-                                                    Colors.black54,
+                                                fontSize:
+                                                    12,
+                                                color: Colors
+                                                    .black54,
                                               ),
                                             ),
                                           ],
                                         ),
                                       ),
-
                                       Text(
                                         'Stock: ${part.currentStock}',
-                                        style: const TextStyle(
+                                        style:
+                                            const TextStyle(
                                           fontWeight:
                                               FontWeight.w600,
                                         ),

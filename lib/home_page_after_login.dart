@@ -9,6 +9,9 @@ import 'pages/common/placeholder_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'pages/settings/settings_page.dart';
+import 'core/menu/floating_menu_launcher.dart';
+import 'core/menu/menu_registry.dart';
+
 
 
 
@@ -103,13 +106,13 @@ class _HomePageAfterLoginState extends State<HomePageAfterLogin> {
   label: 'Database',
   color: Colors.blueGrey,
   onTap: () {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => const SparePartListPage(),
-      ),
-    );
-  },
+    debugPrint('Database menu tapped');
+  FloatingMenuLauncher.open(
+    context,
+    inventoryMenus.first,
+  );
+},
+
 ),
 
     _MenuCard(
