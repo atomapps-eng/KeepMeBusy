@@ -528,126 +528,98 @@ navigator.pop();
   // IMAGE WIDGET (PRO)
   // =========================
   Widget _buildImage() {
-    return GestureDetector(
-      onTap: showFullScreenImage,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(22),
-        child: AspectRatio(
-          aspectRatio: 4 / 3,
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              FadeTransition(
-                opacity: _fadeAnimation,
-                child: selectedImage != null
-                    ? Image.file(
-  selectedImage!,
-  fit: BoxFit.cover,
-  key: ValueKey(selectedImage!.path),
-)
-
-
-                    : (currentImageUrl.isNotEmpty
-                        ? Image.network(
-  currentImageUrl,
-  fit: BoxFit.cover,
-  key: ValueKey(currentImageUrl), // ✅ PAKSA REFRESH
-  loadingBuilder: (context, child, loadingProgress) {
-    if (loadingProgress == null) return child;
-    return Container(
-      color: Colors.grey.shade300,
-      child: const Center(
-        child: CircularProgressIndicator(),
+  return GestureDetector(
+    onTap: showFullScreenImage,
+    child: Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha:0.36), // shadow tipis
+            blurRadius: 20,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
-    );
-  },
-)
-
-
-                        : Container(
-                            color: Colors.grey.shade200,
-                            child: const Center(
-                              child: Icon(Icons.camera_alt, size: 50),
-                            ),
-                          )),
-              ),
-
-              // Gradient overlay
-              Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.bottomCenter,
-                    end: Alignment.topCenter,
-                    colors: [
-                      Colors.black.withValues(alpha:0.25),
-                      Colors.transparent,
-                    ],
-                  ),
-                ),
-              ),
-
-              // Camera button
-              Positioned(
-                bottom: 12,
-                right: 12,
-                child: GestureDetector(
-                  onTap: isUploadingImage ? null : showImageSourceDialog,
-                  child: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha:0.45),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.camera_alt,
-                      color: isUploadingImage ? Colors.grey : Colors.white,
-                      size: 26,
-                    ),
-                  ),
-                ),
-              ),
-
-              // Upload overlay
-              if (isUploadingImage)
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(14),
+        child: Container(
+          color: const Color.fromARGB(255, 252, 227, 139),
+          child: AspectRatio(
+            aspectRatio: 1, // 3/3 → 1:1
+            child: Stack(
+              children: [
+                // ===== IMAGE =====
                 Positioned.fill(
-                  child: Container(
-                    color: Colors.black.withValues(alpha:0.45),
-                    child: Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 3,
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            '${(uploadProgress * 100).toInt()}%',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          SizedBox(
-                            width: 140,
-                            child: LinearProgressIndicator(
-                              value: uploadProgress,
-                              backgroundColor: Colors.white24,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ],
+                  child: FadeTransition(
+                    opacity: _fadeAnimation,
+                    child: selectedImage != null
+                        ? Image.file(
+                            selectedImage!,
+                            fit: BoxFit.contain,
+                          )
+                        : (currentImageUrl.isNotEmpty
+                            ? Image.network(
+                                currentImageUrl,
+                                fit: BoxFit.contain,
+                              )
+                            : const Center(
+                                child: Icon(
+                                  Icons.camera_alt,
+                                  size: 48,
+                                  color: Colors.black45,
+                                ),
+                              )),
+                  ),
+                ),
+
+                // ===== CAMERA BUTTON =====
+                Positioned(
+                  bottom: 12,
+                  right: 12,
+                  child: GestureDetector(
+                    onTap:
+                        isUploadingImage ? null : showImageSourceDialog,
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha:0.45),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.camera_alt,
+                        color: isUploadingImage
+                            ? Colors.grey
+                            : Colors.white,
+                        size: 26,
                       ),
                     ),
                   ),
                 ),
-            ],
+
+                // ===== UPLOAD OVERLAY =====
+                if (isUploadingImage)
+                  Positioned.fill(
+                    child: Container(
+                      color: Colors.black.withValues(alpha:0.45),
+                      child: const Center(
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 3,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
+
+
 
   @override
   Widget build(BuildContext context) {
