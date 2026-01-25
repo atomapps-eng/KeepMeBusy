@@ -1,4 +1,5 @@
 class SparePart {
+  final String id;
   final String partCode;
   final String name;
   final String nameEn;
@@ -12,6 +13,7 @@ class SparePart {
   final int imageVersion;
 
   SparePart({
+    required this.id,
     required this.partCode,
     required this.name,
     required this.nameEn,
@@ -27,6 +29,7 @@ class SparePart {
 
   factory SparePart.fromMap(Map<String, dynamic> data, String id) {
     return SparePart(
+      id: id,
       partCode: (data['partCode'] ?? id).toString(),
       name: (data['name'] ?? '').toString(),
       nameEn: (data['nameEn'] ?? '').toString(),

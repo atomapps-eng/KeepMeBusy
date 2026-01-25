@@ -2,6 +2,9 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import '../spare_part/spare_part_list_page.dart';
+import '../../models/spare_part.dart';
+
 class OrderOutPage extends StatefulWidget {
   final bool isCompact;
   final String? searchKeyword;
@@ -17,38 +20,158 @@ class OrderOutPage extends StatefulWidget {
 }
 
 /// =====================================================
-/// MODEL LOKAL ORDER ITEM
+/// LOCAL MODEL
 /// =====================================================
 class OrderOutItem {
-  final String partCode;
-  final String name;
-  final String nameEn;
-  final String location;
+  final SparePart part;
   final int qty;
-  final double weight;
 
   OrderOutItem({
-    required this.partCode,
-    required this.name,
-    required this.nameEn,
-    required this.location,
+    required this.part,
     required this.qty,
-    required this.weight,
   });
 }
 
 class _OrderOutPageState extends State<OrderOutPage> {
-  // ================= HEADER STATE (STEP 2) =================
+  // ================= CREATE ORDER STATE =================
   DateTime? orderDate;
   String? selectedClient;
   final TextEditingController poController = TextEditingController();
-
-  // ================= STEP 3 STATE =================
+  final FocusNode fullscreenSearchFocusNode = FocusNode();
   final List<OrderOutItem> items = [];
+
+  void _openEditOrder(Map<String, dynamic> data) {
+  final orderItems = data['items'] as List<dynamic>;
+
+  setState(() {
+    isCreateMode = true;
+    isEditMode = true;
+    editingOrderId = data['id'];
+
+    orderDate = (data['orderDate'] as Timestamp).toDate();
+    selectedClient = data['client'];
+    poController.text = data['poNumber'];
+
+    items.clear();
+    for (final item in orderItems) {
+      items.add(
+        OrderOutItem(
+          part: SparePart(
+            id: item['partId'],
+            partCode: item['partCode'],
+            name: '',
+            nameEn: item['nameEn'],
+            location: item['location'],
+
+            // ===== FIELD WAJIB (DUMMY AMAN) =====
+            stock: 0,
+            initialStock: 0,
+            currentStock: 0,
+            weight: 0,
+            weightUnit: 'pcs',
+            imageUrl: '',
+          ),
+          qty: item['qty'],
+        ),
+      );
+    }
+  });
+}
+
+  Widget _buildFullscreenHeader() {
+  return Padding(
+    padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+    child: Row(
+      children: [
+        IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context),
+        ),
+        const SizedBox(width: 8),
+        const Text(
+          'Order Out',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+Future<void> _deleteOrder(
+  BuildContext context,
+  String orderId,
+  Map<String, dynamic> data,
+) async {
+  final confirm = await showDialog<bool>(
+    context: context,
+    builder: (_) => AlertDialog(
+      title: const Text('Delete Order'),
+      content:
+          const Text('Order ini akan dihapus dan stock dikembalikan. Lanjutkan?'),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, false),
+          child: const Text('Cancel'),
+        ),
+        ElevatedButton(
+          onPressed: () => Navigator.pop(context, true),
+          child: const Text('Delete'),
+        ),
+      ],
+    ),
+  );
+
+  if (confirm != true) return;
+
+  final firestore = FirebaseFirestore.instance;
+  final orderRef = firestore.collection('order_out').doc(orderId);
+
+  try {
+    await firestore.runTransaction((tx) async {
+      final snap = await tx.get(orderRef);
+      if (!snap.exists) return;
+
+      final items = snap['items'] as List<dynamic>;
+
+      for (final item in items) {
+        final partRef = firestore
+            .collection('spare_parts')
+            .doc(item['partId']);
+
+        final partSnap = await tx.get(partRef);
+        final currentStock = partSnap['currentStock'] as int;
+
+        tx.update(partRef, {
+          'currentStock': currentStock + (item['qty'] as int),
+        });
+      }
+
+      tx.delete(orderRef);
+    });
+  } catch (e) {
+    _showError(e.toString());
+  }
+}
+
+
+  // ================= FULLSCREEN SEARCH & FILTER =================
+  final TextEditingController fullscreenSearchController =
+      TextEditingController();
+  DateTime? fullscreenFilterDate;
+
+  bool isCreateMode = false;
+  bool isEditMode = false;
+  String? editingOrderId;
+
 
   @override
   void dispose() {
     poController.dispose();
+    fullscreenSearchController.dispose();
+    fullscreenSearchFocusNode.dispose();
     super.dispose();
   }
 
@@ -61,95 +184,588 @@ class _OrderOutPageState extends State<OrderOutPage> {
       firstDate: DateTime(now.year - 3),
       lastDate: DateTime(now.year + 3),
     );
-
     if (picked != null) {
       setState(() => orderDate = picked);
     }
   }
 
-  // ================= OPEN ADD PART =================
-  Future<void> _openAddPartSheet() async {
-    await showModalBottomSheet(
+  // ================= ADD PART =================
+  Future<void> _addPart() async {
+    final SparePart? selected = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const SparePartListPage(
+          selectionMode: true,
+        ),
+      ),
+    );
+
+    if (selected == null) return;
+
+    final int? qty = await _showQtyDialog(selected);
+    if (qty == null) return;
+
+    setState(() {
+      items.add(OrderOutItem(part: selected, qty: qty));
+    });
+  }
+
+  // ================= QTY DIALOG =================
+  Future<int?> _showQtyDialog(SparePart part) async {
+    final controller = TextEditingController();
+    String? error;
+
+    return showDialog<int>(
       context: context,
-      isScrollControlled: true,
-      builder: (_) => _AddPartSheet(
-        onAdd: (item) {
-          setState(() {
-            items.add(item);
-          });
-        },
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setLocal) {
+            return AlertDialog(
+              title: Text(part.partCode),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(part.nameEn),
+                  const SizedBox(height: 8),
+                  Text('Stock tersedia: ${part.currentStock}'),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: controller,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      labelText: 'Qty',
+                      errorText: error,
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    final qty = int.tryParse(controller.text) ?? 0;
+                    if (qty <= 0) {
+                      setLocal(() => error = 'Qty tidak valid');
+                      return;
+                    }
+                    if (qty > part.currentStock) {
+                      setLocal(() => error = 'Qty melebihi stock');
+                      return;
+                    }
+                    Navigator.pop(ctx, qty);
+                  },
+                  child: const Text('Add'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  // ================= COMMIT FIRESTORE =================
+  Future<void> _commitOrderOut() async {
+    if (isEditMode) {
+  _showError('EDIT LOGIC BELUM DIIMPLEMENTASIKAN');
+  return;
+}
+    if (orderDate == null ||
+        selectedClient == null ||
+        poController.text.trim().isEmpty ||
+        items.isEmpty) {
+      _showError('Lengkapi Order Date, Client, PO, dan Item');
+      return;
+    }
+
+    final firestore = FirebaseFirestore.instance;
+    final orderRef = firestore.collection('order_out').doc();
+
+    try {
+      await firestore.runTransaction((tx) async {
+  // ===== 1. READ SEMUA STOCK DULU =====
+  final Map<DocumentReference, int> currentStocks = {};
+
+  for (final item in items) {
+    final partRef =
+        firestore.collection('spare_parts').doc(item.part.id);
+
+    final snap = await tx.get(partRef);
+    final stock = snap['currentStock'] as int;
+
+    if (stock < item.qty) {
+      throw Exception(
+        'Stock ${item.part.partCode} tidak mencukupi',
+      );
+    }
+
+    currentStocks[partRef] = stock;
+  }
+
+  // ===== 2. WRITE UPDATE STOCK =====
+  currentStocks.forEach((partRef, stock) {
+    final item =
+        items.firstWhere((e) => e.part.id == partRef.id);
+
+    tx.update(partRef, {
+      'currentStock': stock - item.qty,
+    });
+  });
+
+  // ===== 3. WRITE ORDER =====
+  tx.set(orderRef, {
+    'orderDate': Timestamp.fromDate(orderDate!),
+    'client': selectedClient,
+    'poNumber': poController.text.trim(),
+    'createdAt': FieldValue.serverTimestamp(),
+    'items': items.map((e) {
+      return {
+        'partId': e.part.id,
+        'partCode': e.part.partCode,
+        'nameEn': e.part.nameEn,
+        'qty': e.qty,
+        'location': e.part.location,
+      };
+    }).toList(),
+  });
+});
+
+
+      setState(() {
+        isCreateMode = false;
+        items.clear();
+        orderDate = null;
+        selectedClient = null;
+        poController.clear();
+      });
+    } catch (e) {
+      _showError(e.toString());
+    }
+  }
+
+  void _showError(String message) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Error'),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          ),
+        ],
       ),
     );
   }
 
-  // ================= MAIN BUILD =================
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => FocusScope.of(context).unfocus(),
-      child: Scaffold(
-        floatingActionButton: widget.isCompact
-            ? null
-            : FloatingActionButton(
-                child: const Icon(Icons.add),
-                onPressed: _openAddPartSheet,
+  // ================= ORDER DETAIL =================
+  void _showOrderDetail(
+      BuildContext context, Map<String, dynamic> data) {
+    final items = data['items'] as List<dynamic>;
+
+    showDialog(
+      context: context,
+      builder: (_) => Dialog(
+        insetPadding: const EdgeInsets.all(16),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'PO: ${data['poNumber']}',
+                style: const TextStyle(
+                    fontSize: 16, fontWeight: FontWeight.bold),
               ),
-        body: Stack(
-          children: [
-            Container(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Color(0xFFFFE0B2),
-                    Color(0xFFFFFFFF),
-                  ],
+              Text('Client: ${data['client']}'),
+              const Divider(height: 24),
+              SizedBox(
+                height: 250,
+                child: ListView.builder(
+                  itemCount: items.length,
+                  itemBuilder: (_, i) {
+                    final item = items[i];
+                    return ListTile(
+                      dense: true,
+                      title: Text(item['partCode']),
+                      subtitle: Text(item['nameEn']),
+                      trailing: Text('Qty: ${item['qty']}'),
+                    );
+                  },
                 ),
               ),
-            ),
-            SafeArea(
-              child: Column(
-                children: [
-                  if (!widget.isCompact)
-                    _OrderHeader(
-                      orderDate: orderDate,
-                      onPickDate: _selectOrderDate,
-                      selectedClient: selectedClient,
-                      onClientChanged: (v) =>
-                          setState(() => selectedClient = v),
-                      poController: poController,
-                    ),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Close'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
-                  Expanded(
-                    child: items.isEmpty
-                        ? const Center(
-                            child: Text(
-                              'Belum ada item\nGunakan tombol +',
-                              textAlign: TextAlign.center,
-                            ),
-                          )
-                        : ListView.builder(
-                            padding: const EdgeInsets.all(16),
-                            itemCount: items.length,
-                            itemBuilder: (_, i) {
-                              final item = items[i];
-                              return _ItemCard(item: item);
-                            },
-                          ),
-                  ),
+  // ================= BUILD =================
+  @override
+Widget build(BuildContext context) {
+  return GestureDetector(
+    behavior: HitTestBehavior.translucent,
+    onTap: () {
+      FocusScope.of(context).unfocus();
+    },
+    child: Scaffold(
+      backgroundColor: Colors.transparent,
+
+      floatingActionButton: (!widget.isCompact && !isCreateMode)
+          ? FloatingActionButton(
+              backgroundColor: Colors.blueGrey,
+              foregroundColor: Colors.white,
+              onPressed: () => setState(() => isCreateMode = true),
+              child: const Icon(Icons.add),
+            )
+          : null,
+
+      body: Stack(
+        children: [
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Color(0xFFFFE0B2),
+                  Color(0xFFFFFFFF),
                 ],
               ),
             ),
-          ],
-        ),
+          ),
+          SafeArea(
+            child: widget.isCompact
+                ? const _OrderOutQuickView()
+                : Column(
+                    children: [
+                      _buildFullscreenHeader(),
+
+                      if (!isCreateMode)
+                        _OrderOutSearchFilterBar(
+                          controller: fullscreenSearchController,
+                          focusNode: fullscreenSearchFocusNode,
+                          filterDate: fullscreenFilterDate,
+                          onPickDate: () async {
+                            final picked = await showDatePicker(
+                              context: context,
+                              initialDate:
+                                  fullscreenFilterDate ?? DateTime.now(),
+                              firstDate: DateTime(2020),
+                              lastDate: DateTime(2030),
+                            );
+                            if (picked != null) {
+                              setState(() =>
+                                  fullscreenFilterDate = picked);
+                            }
+                          },
+                          onClearDate: () =>
+                              setState(() => fullscreenFilterDate = null),
+                          onSearch: (_) => setState(() {}),
+                        ),
+
+                      Expanded(
+                        child: isCreateMode
+                            ? _buildCreateForm()
+                            : _OrderOutListView(
+  searchKeyword: fullscreenSearchController.text,
+  filterDate: fullscreenFilterDate,
+  onTap: _showOrderDetail,
+  onDelete: (orderId, data) {
+    _deleteOrder(context, orderId, data);
+  },
+  onEdit: (data) {
+    _openEditOrder(data);
+  },
+),
+
+
+                      ),
+                    ],
+                  ),
+          ),
+        ],
       ),
+    ),
+  );
+}  
+
+  Widget _buildHeader(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        children: [
+          IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => Navigator.pop(context),
+          ),
+          const Text(
+            'Order Out',
+            style:
+                TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCreateForm() {
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(16),
+          child: _OrderHeader(
+            orderDate: orderDate,
+            onPickDate: _selectOrderDate,
+            selectedClient: selectedClient,
+            onClientChanged: (v) =>
+                setState(() => selectedClient = v),
+            poController: poController,
+            onSave: _commitOrderOut,
+            onBack: () => setState(() => isCreateMode = false),
+          ),
+        ),
+        Expanded(
+          child: items.isEmpty
+              ? const Center(child: Text('Belum ada item'))
+              : ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: items.length,
+                  itemBuilder: (_, i) =>
+                      _ItemCard(item: items[i]),
+                ),
+        ),
+        Padding(
+          padding: const EdgeInsets.all(16),
+          child: OutlinedButton.icon(
+            onPressed: _addPart,
+            icon: const Icon(Icons.add),
+            label: const Text('Tambah Item'),
+          ),
+        ),
+      ],
     );
   }
 }
 
 /// =====================================================
-/// HEADER (STEP 2 – TETAP)
+/// FULLSCREEN LIST
+/// =====================================================
+class _OrderOutListView extends StatelessWidget {
+  final String searchKeyword;
+  final DateTime? filterDate;
+  final void Function(BuildContext, Map<String, dynamic>) onTap;
+  final void Function(String orderId, Map<String, dynamic> data) onDelete;
+  final void Function(Map<String, dynamic> data) onEdit;
+
+
+  const _OrderOutListView({
+    required this.searchKeyword,
+    required this.filterDate,
+    required this.onTap,
+    required this.onDelete,
+    required this.onEdit,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('order_out')
+          .orderBy('createdAt', descending: true)
+          .snapshots(),
+      builder: (_, snapshot) {
+        if (!snapshot.hasData) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        final docs = snapshot.data!.docs.where((doc) {
+          final data = doc.data() as Map<String, dynamic>;
+          final keyword = searchKeyword.toLowerCase();
+          if (keyword.isNotEmpty &&
+              !data['poNumber']
+                  .toString()
+                  .toLowerCase()
+                  .contains(keyword) &&
+              !data['client']
+                  .toString()
+                  .toLowerCase()
+                  .contains(keyword)) {
+            return false;
+          }
+
+          if (filterDate != null) {
+            final date =
+                (data['orderDate'] as Timestamp).toDate();
+            if (date.year != filterDate!.year ||
+                date.month != filterDate!.month ||
+                date.day != filterDate!.day) {
+              return false;
+            }
+          }
+          return true;
+        }).toList();
+
+        if (docs.isEmpty) {
+          return const Center(child: Text('Belum ada Order'));
+        }
+
+        return ListView.builder(
+          padding: const EdgeInsets.all(16),
+          itemCount: docs.length,
+          itemBuilder: (_, i) {
+  final data = docs[i].data() as Map<String, dynamic>;
+  final orderId = docs[i].id; // ✅ AMAN
+
+  return InkWell(
+    onTap: () => onTap(context, data),
+    child: _OrderHistoryCard(
+      data: {
+        ...data,
+        'id': orderId, // inject id dengan BENAR
+      },
+      isFullscreen: true,
+      onDelete: () => onDelete(orderId, data),
+      onEdit: () => onEdit(data),
+    ),
+  );
+},
+
+        );
+      },
+    );
+  }
+}
+
+/// =====================================================
+/// QUICK VIEW (FLOATING)
+/// =====================================================
+class _OrderOutQuickView extends StatelessWidget {
+  const _OrderOutQuickView();
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('order_out')
+          .orderBy('createdAt', descending: true)
+          .limit(10)
+          .snapshots(),
+      builder: (_, snapshot) {
+        if (!snapshot.hasData) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        return ListView.builder(
+          padding: const EdgeInsets.all(16),
+          itemCount: snapshot.data!.docs.length,
+          itemBuilder: (_, i) {
+            final data =
+                snapshot.data!.docs[i].data() as Map<String, dynamic>;
+            return _OrderHistoryCard(data: data);
+          },
+        );
+      },
+    );
+  }
+}
+
+/// =====================================================
+/// HISTORY CARD
+/// =====================================================
+class _OrderHistoryCard extends StatelessWidget {
+  final Map<String, dynamic> data;
+  final bool isFullscreen;
+  final VoidCallback? onDelete;
+  final VoidCallback? onEdit;
+
+  const _OrderHistoryCard({
+    required this.data,
+    this.isFullscreen = false,
+    this.onDelete,
+    this.onEdit,
+  });
+
+
+  @override
+Widget build(BuildContext context) {
+  final date =
+      (data['orderDate'] as Timestamp?)?.toDate();
+
+  return Container(
+    margin: const EdgeInsets.only(bottom: 12),
+    padding: const EdgeInsets.all(12),
+    decoration: BoxDecoration(
+      color: Colors.white.withValues(alpha: 0.25),
+      borderRadius: BorderRadius.circular(14),
+      border: Border.all(
+        color: Colors.white.withValues(alpha: 0.35),
+      ),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'PO: ${data['poNumber']}',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Text('Client: ${data['client']}'),
+                  if (date != null)
+                    Text(
+                      '${date.day}/${date.month}/${date.year}',
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                ],
+              ),
+            ),
+
+            // ===== ACTIONS (FULLSCREEN ONLY) =====
+            if (isFullscreen) ...[
+              IconButton(
+  icon: const Icon(Icons.edit, size: 20),
+  onPressed: onEdit,
+),
+
+              IconButton(
+  icon: const Icon(Icons.delete, size: 20),
+  onPressed: onDelete,
+),
+            ],
+          ],
+        ),
+      ],
+    ),
+  );
+}
+
+}
+
+/// =====================================================
+/// HEADER (CREATE FORM)
 /// =====================================================
 class _OrderHeader extends StatelessWidget {
   final DateTime? orderDate;
@@ -157,6 +773,8 @@ class _OrderHeader extends StatelessWidget {
   final String? selectedClient;
   final ValueChanged<String?> onClientChanged;
   final TextEditingController poController;
+  final VoidCallback onSave;
+  final VoidCallback onBack;
 
   const _OrderHeader({
     required this.orderDate,
@@ -164,69 +782,130 @@ class _OrderHeader extends StatelessWidget {
     required this.selectedClient,
     required this.onClientChanged,
     required this.poController,
+    required this.onSave,
+    required this.onBack,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.25),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: Colors.white.withValues(alpha: 0.35),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.25),
+            borderRadius: BorderRadius.circular(20),
+            border:
+                Border.all(color: Colors.white.withValues(alpha: 0.35)),
+          ),
+          child: Column(
+            children: [
+              // ===== HEADER ROW =====
+              Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.arrow_back),
+                    onPressed: onBack,
+                  ),
+                  const SizedBox(width: 8),
+                  const Text(
+                    'Order Out',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
               ),
-            ),
-            child: Column(
-              children: [
-                Row(
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.arrow_back),
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                    const Text('Order Out'),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                _HeaderRow(
-                  label: 'Order Date',
-                  child: InkWell(
-                    onTap: onPickDate,
-                    child: _Box(
-                      text: orderDate == null
-                          ? 'Select date'
-                          : '${orderDate!.day}/${orderDate!.month}/${orderDate!.year}',
-                    ),
+
+              const SizedBox(height: 12),
+
+              // ===== ORDER DATE =====
+              _HeaderRow(
+                label: 'Order Date',
+                child: InkWell(
+                  onTap: onPickDate,
+                  child: _Box(
+                    text: orderDate == null
+                        ? 'Select date'
+                        : '${orderDate!.day}/${orderDate!.month}/${orderDate!.year}',
                   ),
                 ),
-                const SizedBox(height: 8),
-                _HeaderRow(
-                  label: 'Client',
-                  child: DropdownButtonFormField<String>(
-                    initialValue: selectedClient,
-                    items: const [
-                      DropdownMenuItem(
-                          value: 'Client A', child: Text('Client A')),
-                      DropdownMenuItem(
-                          value: 'Client B', child: Text('Client B')),
-                    ],
-                    onChanged: onClientChanged,
-                  ),
+              ),
+
+              const SizedBox(height: 8),
+
+              // ===== CLIENT =====
+              _HeaderRow(
+  label: 'Client',
+  child: StreamBuilder<QuerySnapshot>(
+    stream: FirebaseFirestore.instance
+        .collection('partners')
+        .orderBy('name')
+        .snapshots(),
+    builder: (context, snapshot) {
+      if (!snapshot.hasData) {
+        return const SizedBox(
+          height: 48,
+          child: Center(child: CircularProgressIndicator()),
+        );
+      }
+
+      final docs = snapshot.data!.docs;
+
+      final partnerNames = docs
+    .map((doc) => (doc.data() as Map<String, dynamic>)['name'] as String)
+    .toList();
+
+final safeValue =
+    partnerNames.contains(selectedClient) ? selectedClient : null;
+
+return DropdownButtonFormField<String>(
+  initialValue: safeValue,
+  items: partnerNames.map((name) {
+    return DropdownMenuItem<String>(
+      value: name,
+      child: Text(name),
+    );
+  }).toList(),
+  onChanged: onClientChanged,
+  decoration: const InputDecoration(
+    border: OutlineInputBorder(),
+    isDense: true,
+  ),
+);
+
+    },
+  ),
+),
+
+
+              const SizedBox(height: 8),
+
+              // ===== PO NUMBER =====
+              _HeaderRow(
+                label: 'PO Number',
+                child: TextField(
+                  controller: poController,
+                  decoration:
+                      const InputDecoration(border: OutlineInputBorder()),
                 ),
-                const SizedBox(height: 8),
-                _HeaderRow(
-                  label: 'PO Number',
-                  child: TextField(controller: poController),
+              ),
+
+              const SizedBox(height: 16),
+
+              // ===== SAVE BUTTON =====
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: onSave,
+                  icon: const Icon(Icons.save),
+                  label: const Text('Save Order Out'),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
@@ -234,107 +913,6 @@ class _OrderHeader extends StatelessWidget {
   }
 }
 
-/// =====================================================
-/// ADD PART BOTTOM SHEET
-/// =====================================================
-class _AddPartSheet extends StatefulWidget {
-  final ValueChanged<OrderOutItem> onAdd;
-
-  const _AddPartSheet({required this.onAdd});
-
-  @override
-  State<_AddPartSheet> createState() => _AddPartSheetState();
-}
-
-class _AddPartSheetState extends State<_AddPartSheet> {
-  final TextEditingController partCodeCtrl = TextEditingController();
-  final TextEditingController qtyCtrl = TextEditingController();
-
-  DocumentSnapshot? partDoc;
-  String? error;
-
-  Future<void> _searchPart() async {
-    final snap = await FirebaseFirestore.instance
-        .collection('spare_parts')
-        .where('partCode', isEqualTo: partCodeCtrl.text.trim())
-        .limit(1)
-        .get();
-
-    if (snap.docs.isEmpty) {
-      setState(() => error = 'Part tidak ditemukan');
-      return;
-    }
-
-    setState(() {
-      partDoc = snap.docs.first;
-      error = null;
-    });
-  }
-
-  void _add() {
-    if (partDoc == null) return;
-
-    final qty = int.tryParse(qtyCtrl.text) ?? 0;
-    final stock = partDoc!['currentStock'] as int;
-
-    if (qty <= 0 || qty > stock) {
-      setState(() => error = 'Qty tidak valid / melebihi stock');
-      return;
-    }
-
-    widget.onAdd(
-      OrderOutItem(
-        partCode: partDoc!['partCode'],
-        name: partDoc!['name'],
-        nameEn: partDoc!['nameEn'],
-        location: partDoc!['location'],
-        qty: qty,
-        weight: (partDoc!['weight'] as num).toDouble() * qty,
-      ),
-    );
-
-    Navigator.pop(context);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding:
-          EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: partCodeCtrl,
-              decoration: const InputDecoration(labelText: 'Part Code'),
-            ),
-            ElevatedButton(
-              onPressed: _searchPart,
-              child: const Text('Search'),
-            ),
-            if (partDoc != null) ...[
-              Text(partDoc!['nameEn']),
-              Text('Stock: ${partDoc!['currentStock']}'),
-              TextField(
-                controller: qtyCtrl,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: 'Qty'),
-              ),
-              ElevatedButton(
-                onPressed: _add,
-                child: const Text('Add'),
-              ),
-            ],
-            if (error != null)
-              Text(error!, style: const TextStyle(color: Colors.red)),
-          ],
-        ),
-      ),
-    );
-  }
-}
 
 /// =====================================================
 /// ITEM CARD
@@ -346,39 +924,98 @@ class _ItemCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: ListTile(
-        title: Text(item.nameEn),
-        subtitle: Text(
-          '${item.partCode} • ${item.location}',
-        ),
-        trailing: Text('Qty: ${item.qty}'),
-      ),
+    return ListTile(
+      title: Text(item.part.partCode),
+      subtitle: Text(item.part.nameEn),
+      trailing: Text('Qty: ${item.qty}'),
     );
   }
 }
 
 /// =====================================================
-/// SHARED WIDGETS
+/// SEARCH BAR
+/// =====================================================
+class _OrderOutSearchFilterBar extends StatelessWidget {
+  final TextEditingController controller;
+  final FocusNode focusNode;
+  final DateTime? filterDate;
+  final VoidCallback onPickDate;
+  final VoidCallback onClearDate;
+  final ValueChanged<String> onSearch;
+
+  const _OrderOutSearchFilterBar({
+    required this.controller,
+    required this.focusNode,
+    required this.filterDate,
+    required this.onPickDate,
+    required this.onClearDate,
+    required this.onSearch,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+      child: Row(
+        children: [
+          Expanded(
+            child: TextField(
+              controller: controller,
+              onChanged: onSearch,
+              decoration: const InputDecoration(
+                prefixIcon: Icon(Icons.search),
+                hintText: 'Search PO / Client',
+              ),
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.date_range),
+            onPressed: onPickDate,
+          ),
+          if (filterDate != null)
+            IconButton(
+              icon: const Icon(Icons.clear),
+              onPressed: onClearDate,
+            ),
+        ],
+      ),
+    );
+  }
+}
+/// =====================================================
+/// SHARED HEADER ROW
 /// =====================================================
 class _HeaderRow extends StatelessWidget {
   final String label;
   final Widget child;
 
-  const _HeaderRow({required this.label, required this.child});
+  const _HeaderRow({
+    required this.label,
+    required this.child,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        SizedBox(width: 90, child: Text(label)),
+        SizedBox(
+          width: 90,
+          child: Text(
+            label,
+            style: const TextStyle(fontSize: 13),
+          ),
+        ),
+        const SizedBox(width: 8),
         Expanded(child: child),
       ],
     );
   }
 }
 
+/// =====================================================
+/// SHARED BOX (DATE DISPLAY)
+/// =====================================================
 class _Box extends StatelessWidget {
   final String text;
 
@@ -387,12 +1024,19 @@ class _Box extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(10),
+      padding:
+          const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.7),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: Colors.grey.withValues(alpha: 0.3),
+        ),
       ),
-      child: Text(text),
+      child: Text(
+        text,
+        style: const TextStyle(fontSize: 13),
+      ),
     );
   }
 }

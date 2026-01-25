@@ -10,12 +10,18 @@ import 'package:cached_network_image/cached_network_image.dart';
 class SparePartListPage extends StatefulWidget {
   final bool isCompact;
   final String? searchKeyword;
+  final bool selectionMode;
+  final ValueChanged<SparePart>? onSelected;
 
-  const SparePartListPage({
-    super.key,
-    this.isCompact = false,
-    this.searchKeyword,
-  });
+
+ const SparePartListPage({
+  super.key,
+  this.isCompact = false,
+  this.searchKeyword,
+  this.selectionMode = false,
+  this.onSelected,
+});
+
 
   @override
   State<SparePartListPage> createState() => _SparePartListPageState();
@@ -119,17 +125,24 @@ Widget build(BuildContext context) {
                           final part = filteredParts[index];
 
                           return GestureDetector(
-                            onTap: widget.isCompact
-                                ? null
-                                : () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) =>
-                                            EditSparePartPage(part: part),
-                                      ),
-                                    );
-                                  },
+                            onTap: () {
+  // ===== SELECTION MODE =====
+  if (widget.selectionMode) {
+    Navigator.pop(context, part);
+    return;
+  }
+
+  // ===== NORMAL MODE =====
+  if (!widget.isCompact) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => EditSparePartPage(part: part),
+      ),
+    );
+  }
+},
+
                             child: _GlassCard(
                               child: widget.isCompact
                                   ? _CompactItem(part: part)
@@ -170,10 +183,12 @@ Widget build(BuildContext context) {
                 onPressed: () => Navigator.pop(context),
               ),
               const SizedBox(width: 8),
-              const Text(
-                'Spare Part Database',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-              ),
+              Text(
+  widget.selectionMode
+      ? 'Select Spare Part'
+      : 'Spare Part Database',
+),
+
             ],
           ),
         ),
