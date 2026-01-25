@@ -133,13 +133,14 @@ class _HomePageAfterLoginState extends State<HomePageAfterLogin> {
       label: 'Orders Out',
       color: Colors.redAccent,
       onTap: () {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => const PlaceholderPage(title: 'Orders Out'),
-      ),
-    );
-  },
+  FloatingMenuLauncher.open(
+    context,
+    inventoryMenus.firstWhere(
+      (menu) => menu.label == 'Orders Out',
+    ),
+  );
+},
+
 ),
     _MenuCard(
       icon: Icons.groups,

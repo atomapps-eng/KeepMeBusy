@@ -2,11 +2,13 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'menu_config.dart';
 
+
 class FloatingMenuLauncher {
   static void open(
     BuildContext context,
     MenuConfig config,
   ) {
+
     // Jika menu tidak mendukung floating → langsung fullscreen
     if (!config.enableFloating) {
       Navigator.push(
