@@ -43,6 +43,7 @@ class _OrderOutPageState extends State<OrderOutPage> {
   void _openEditOrder(Map<String, dynamic> data) {
   final orderItems = data['items'] as List<dynamic>;
 
+
   setState(() {
     isCreateMode = true;
     isEditMode = true;
@@ -209,6 +210,21 @@ Future<void> _deleteOrder(
       items.add(OrderOutItem(part: selected, qty: qty));
     });
   }
+  
+  Future<void> _editItemAtIndex(int index) async {
+  final current = items[index];
+
+  final int? newQty = await _showQtyDialog(current.part);
+  if (newQty == null) return;
+
+  setState(() {
+    items[index] = OrderOutItem(
+      part: current.part,
+      qty: newQty,
+    );
+  });
+}
+
 
   // ================= QTY DIALOG =================
   Future<int?> _showQtyDialog(SparePart part) async {
@@ -548,7 +564,13 @@ Widget build(BuildContext context) {
                   padding: const EdgeInsets.all(16),
                   itemCount: items.length,
                   itemBuilder: (_, i) =>
-                      _ItemCard(item: items[i]),
+                      _ItemCard(
+  item: items[i],
+  onEdit: () {
+    _editItemAtIndex(i);
+  },
+),
+
                 ),
         ),
         Padding(
@@ -919,12 +941,18 @@ return DropdownButtonFormField<String>(
 /// =====================================================
 class _ItemCard extends StatelessWidget {
   final OrderOutItem item;
+  final VoidCallback onEdit;
 
-  const _ItemCard({required this.item});
+  const _ItemCard({
+    required this.item,
+    required this.onEdit,
+  });
+
 
   @override
   Widget build(BuildContext context) {
     return ListTile(
+      onTap: onEdit,
       title: Text(item.part.partCode),
       subtitle: Text(item.part.nameEn),
       trailing: Text('Qty: ${item.qty}'),
