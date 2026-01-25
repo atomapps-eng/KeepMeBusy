@@ -5,18 +5,18 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../spare_part/spare_part_list_page.dart';
 import '../../models/spare_part.dart';
 
-class OrderOutPage extends StatefulWidget {
+class OrderInPage extends StatefulWidget {
   final bool isCompact;
   final String? searchKeyword;
 
-  const OrderOutPage({
+  const OrderInPage({
     super.key,
     this.isCompact = false,
     this.searchKeyword,
   });
 
   @override
-  State<OrderOutPage> createState() => _OrderOutPageState();
+  State<OrderInPage> createState() => _OrderOutPageState();
 }
 
 /// =====================================================
@@ -32,7 +32,7 @@ class OrderOutItem {
   });
 }
 
-class _OrderOutPageState extends State<OrderOutPage> {
+class _OrderOutPageState extends State<OrderInPage> {
   // ================= CREATE ORDER STATE =================
   DateTime? orderDate;
   String? selectedClient;
@@ -41,8 +41,8 @@ class _OrderOutPageState extends State<OrderOutPage> {
   final List<OrderOutItem> items = [];
 
   void _openEditOrder(Map<String, dynamic> data) {
-    editingOrderId = data['id']; // ← sekarang VALID
   final orderItems = data['items'] as List<dynamic>;
+
 
   setState(() {
     isCreateMode = true;
@@ -79,123 +79,6 @@ class _OrderOutPageState extends State<OrderOutPage> {
   });
 }
 
-Future<void> _commitEditOrderOut() async {
-  if (editingOrderId == null) {
-    _showError('Order ID tidak valid');
-    return;
-  }
-
-  if (orderDate == null ||
-      selectedClient == null ||
-      poController.text.trim().isEmpty ||
-      items.isEmpty) {
-    _showError('Data order belum lengkap');
-    return;
-  }
-
-  final firestore = FirebaseFirestore.instance;
-  final orderRef =
-      firestore.collection('order_out').doc(editingOrderId);
-
-  try {
-    await firestore.runTransaction((tx) async {
-      // ===============================
-      // 1. READ SEMUA DATA (WAJIB DI AWAL)
-      // ===============================
-      final oldSnap = await tx.get(orderRef);
-      if (!oldSnap.exists) {
-        throw Exception('Order tidak ditemukan');
-      }
-
-      final oldItems = oldSnap['items'] as List<dynamic>;
-
-      final Map<String, int> stockMap = {};
-
-      // baca stock part lama
-      for (final old in oldItems) {
-        final ref =
-            firestore.collection('spare_parts').doc(old['partId']);
-        final snap = await tx.get(ref);
-        stockMap[old['partId']] =
-            (snap['currentStock'] as num).toInt();
-      }
-
-      // baca stock part baru (jika belum kebaca)
-      for (final item in items) {
-        if (!stockMap.containsKey(item.part.id)) {
-          final ref = firestore
-              .collection('spare_parts')
-              .doc(item.part.id);
-          final snap = await tx.get(ref);
-          stockMap[item.part.id] =
-              (snap['currentStock'] as num).toInt();
-        }
-      }
-
-      // ===============================
-      // 2. HITUNG (TANPA FIRESTORE)
-      // ===============================
-      // kembalikan stock lama
-      for (final old in oldItems) {
-        stockMap[old['partId']] =
-            stockMap[old['partId']]! +
-            (old['qty'] as num).toInt();
-      }
-
-      // validasi & potong stock baru
-      for (final item in items) {
-        if (stockMap[item.part.id]! < item.qty) {
-          throw Exception(
-            'Stock ${item.part.partCode} tidak mencukupi',
-          );
-        }
-        stockMap[item.part.id] =
-            stockMap[item.part.id]! - item.qty;
-      }
-
-      // ===============================
-      // 3. WRITE (SETELAH SEMUA READ)
-      // ===============================
-      for (final entry in stockMap.entries) {
-        tx.update(
-          firestore
-              .collection('spare_parts')
-              .doc(entry.key),
-          {'currentStock': entry.value},
-        );
-      }
-
-      tx.update(orderRef, {
-        'orderDate': Timestamp.fromDate(orderDate!),
-        'client': selectedClient,
-        'poNumber': poController.text.trim(),
-        'items': items.map((e) => {
-              'partId': e.part.id,
-              'partCode': e.part.partCode,
-              'nameEn': e.part.nameEn,
-              'qty': e.qty,
-              'location': e.part.location,
-            }).toList(),
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
-    });
-
-    // reset UI
-    setState(() {
-      isEditMode = false;
-      isCreateMode = false;
-      editingOrderId = null;
-      items.clear();
-      orderDate = null;
-      selectedClient = null;
-      poController.clear();
-    });
-  } catch (e) {
-    _showError(e.toString());
-  }
-}
-
-
   Widget _buildFullscreenHeader() {
   return Padding(
     padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
@@ -207,7 +90,7 @@ Future<void> _commitEditOrderOut() async {
         ),
         const SizedBox(width: 8),
         const Text(
-          'Order Out',
+          'Order In',
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
@@ -262,8 +145,7 @@ Future<void> _deleteOrder(
             .doc(item['partId']);
 
         final partSnap = await tx.get(partRef);
-        final currentStock =
-    (partSnap['currentStock'] as num).toInt();
+        final currentStock = partSnap['currentStock'] as int;
 
         tx.update(partRef, {
           'currentStock': currentStock + (item['qty'] as int),
@@ -345,9 +227,7 @@ Future<void> _editItemAtIndex(int index) async {
     return;
   }
 
-  final realStock =
-    (snap['currentStock'] as num).toInt();
-
+  final realStock = snap['currentStock'] as int;
 
   // ===== 2. BUAT PART SEMENTARA DENGAN STOCK ASLI =====
   final partWithRealStock = SparePart(
@@ -437,72 +317,85 @@ Future<void> _editItemAtIndex(int index) async {
   }
 
   // ================= COMMIT FIRESTORE =================
-  Future<void> _commitOrderOut() async {
-  if (isEditMode) {
-    await _commitEditOrderOut();
-    return;
-  }
-
-  if (orderDate == null ||
-      selectedClient == null ||
-      poController.text.trim().isEmpty ||
-      items.isEmpty) {
-    _showError('Lengkapi Order Date, Client, PO, dan Item');
-    return;
-  }
-
-  final firestore = FirebaseFirestore.instance;
-  final orderRef = firestore.collection('order_out').doc();
-
-  try {
-    await firestore.runTransaction((tx) async {
-      // 1. VALIDASI & POTONG STOCK
-      for (final item in items) {
-        final partRef =
-            firestore.collection('spare_parts').doc(item.part.id);
-
-        final snap = await tx.get(partRef);
-        final stock = (snap['currentStock'] as num).toInt();
-
-        if (stock < item.qty) {
-          throw Exception(
-            'Stock ${item.part.partCode} tidak mencukupi',
-          );
-        }
-
-        tx.update(partRef, {
-          'currentStock': stock - item.qty,
-        });
-      }
-
-      // 2. SIMPAN ORDER BARU
-      tx.set(orderRef, {
-        'orderDate': Timestamp.fromDate(orderDate!),
-        'client': selectedClient,
-        'poNumber': poController.text.trim(),
-        'createdAt': FieldValue.serverTimestamp(),
-        'createdBy': 'Admin',
-        'items': items.map((e) => {
-          'partId': e.part.id,
-          'partCode': e.part.partCode,
-          'nameEn': e.part.nameEn,
-          'qty': e.qty,
-          'location': e.part.location,
-        }).toList(),
-      });
-    });
-
-    setState(() {
-      isCreateMode = false;
-      items.clear();
-      orderDate = null;
-      selectedClient = null;
-      poController.clear();
-    });
-  } catch (e) {
-    _showError(e.toString());
-  }
+  Future<void> _commitOrderIn() async {
+    if (isEditMode) {
+  _showError('EDIT LOGIC BELUM DIIMPLEMENTASIKAN');
+  return;
 }
+    if (orderDate == null ||
+        selectedClient == null ||
+        poController.text.trim().isEmpty ||
+        items.isEmpty) {
+      _showError('Lengkapi Order Date, Client, PO, dan Item');
+      return;
+    }
+
+    final firestore = FirebaseFirestore.instance;
+    final orderRef = firestore.collection('order_out').doc();
+
+    try {
+      await firestore.runTransaction((tx) async {
+  // ===== 1. READ SEMUA STOCK DULU =====
+  final Map<DocumentReference, int> currentStocks = {};
+
+  for (final item in items) {
+    final partRef =
+        firestore.collection('spare_parts').doc(item.part.id);
+
+    final snap = await tx.get(partRef);
+    final stock = snap['currentStock'] as int;
+
+    if (stock < item.qty) {
+      throw Exception(
+        'Stock ${item.part.partCode} tidak mencukupi',
+      );
+    }
+
+    currentStocks[partRef] = stock;
+  }
+
+  // ===== 2. WRITE UPDATE STOCK =====
+  currentStocks.forEach((partRef, stock) {
+    final item =
+        items.firstWhere((e) => e.part.id == partRef.id);
+
+    tx.update(partRef, {
+      'currentStock': stock + item.qty,
+    });
+  });
+
+  // ===== 3. WRITE ORDER =====
+  tx.set(orderRef, {
+  'orderDate': Timestamp.fromDate(orderDate!),
+  'client': selectedClient,
+  'poNumber': poController.text.trim(),
+  'createdAt': FieldValue.serverTimestamp(),
+  'createdBy': 'Admin',
+  'items': items.map((e) {
+    return {
+      'partId': e.part.id,
+      'partCode': e.part.partCode,
+      'nameEn': e.part.nameEn,
+      'qty': e.qty,
+      'location': e.part.location,
+    };
+  }).toList(),
+});
+
+});
+
+
+      setState(() {
+        isCreateMode = false;
+        items.clear();
+        orderDate = null;
+        selectedClient = null;
+        poController.clear();
+      });
+    } catch (e) {
+      _showError(e.toString());
+    }
+  }
 
   void _showError(String message) {
     showDialog(
@@ -570,7 +463,7 @@ Text(
 
               if (orderDate != null)
   Text(
-   'Tanggal: ${orderDate.day}/${orderDate.month}/${orderDate.year}',
+   'Tanggal: ${orderDate!.day}/${orderDate!.month}/${orderDate!.year}',
 
     style: const TextStyle(fontSize: 12),
   ),
@@ -701,21 +594,10 @@ Widget build(BuildContext context) {
         children: [
           IconButton(
             icon: const Icon(Icons.arrow_back),
-            onPressed: () {
-  setState(() {
-    isCreateMode = false;
-    isEditMode = false;
-    editingOrderId = null;
-    items.clear();
-    orderDate = null;
-    selectedClient = null;
-    poController.clear();
-  });
-},
-
+            onPressed: () => Navigator.pop(context),
           ),
           const Text(
-            'Order Out',
+            'Order In',
             style:
                 TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
           ),
@@ -736,7 +618,7 @@ Widget build(BuildContext context) {
             onClientChanged: (v) =>
                 setState(() => selectedClient = v),
             poController: poController,
-            onSave: _commitOrderOut,
+            onSave: _commitOrderIn,
             onBack: () => setState(() => isCreateMode = false),
           ),
         ),
@@ -792,7 +674,7 @@ class _OrderOutListView extends StatelessWidget {
   Widget build(BuildContext context) {
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
-          .collection('order_out')
+          .collection('order_in')
           .orderBy('createdAt', descending: true)
           .snapshots(),
       builder: (_, snapshot) {
@@ -847,11 +729,7 @@ class _OrderOutListView extends StatelessWidget {
       },
       isFullscreen: true,
       onDelete: () => onDelete(orderId, data),
-      onEdit: () => onEdit({
-  ...data,
-  'id': orderId,
-}),
-
+      onEdit: () => onEdit(data),
     ),
   );
 },
@@ -872,7 +750,7 @@ class _OrderOutQuickView extends StatelessWidget {
   Widget build(BuildContext context) {
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
-          .collection('order_out')
+          .collection('order_in')
           .orderBy('createdAt', descending: true)
           .limit(10)
           .snapshots(),
@@ -1041,7 +919,7 @@ class _OrderHeader extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   const Text(
-                    'Order Out',
+                    'Order In',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
