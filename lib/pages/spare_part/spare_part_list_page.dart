@@ -23,12 +23,25 @@ class SparePartListPage extends StatefulWidget {
 
 class _SparePartListPageState extends State<SparePartListPage> {
   final TextEditingController searchController = TextEditingController();
+  final FocusNode searchFocusNode = FocusNode();
 
   @override
-  Widget build(BuildContext context) {
-    final service = SparePartService();
+void dispose() {
+  searchFocusNode.dispose(); // STEP 1
+  searchController.dispose(); // sudah ada controller
+  super.dispose();
+}
 
-    return Scaffold(
+  @override
+Widget build(BuildContext context) {
+  final service = SparePartService();
+
+  return GestureDetector(
+    behavior: HitTestBehavior.translucent,
+    onTap: () {
+      FocusScope.of(context).unfocus(); // STEP 2
+    },
+    child: Scaffold(
       floatingActionButton: widget.isCompact
           ? null
           : FloatingActionButton(
@@ -99,7 +112,8 @@ class _SparePartListPageState extends State<SparePartListPage> {
                       }
 
                       return ListView.builder(
-                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                        padding:
+                            const EdgeInsets.fromLTRB(16, 0, 16, 16),
                         itemCount: filteredParts.length,
                         itemBuilder: (context, index) {
                           final part = filteredParts[index];
@@ -132,8 +146,10 @@ class _SparePartListPageState extends State<SparePartListPage> {
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
+
 
   Widget _buildHeader(BuildContext context) {
     return ClipRRect(
@@ -179,6 +195,7 @@ class _SparePartListPageState extends State<SparePartListPage> {
           ),
           child: TextField(
             controller: searchController,
+            focusNode: searchFocusNode, // ✅ STEP 1
             decoration: InputDecoration(
               hintText: 'Search spare part...',
               border: InputBorder.none,
