@@ -366,20 +366,22 @@ Future<void> _editItemAtIndex(int index) async {
 
   // ===== 3. WRITE ORDER =====
   tx.set(orderRef, {
-    'orderDate': Timestamp.fromDate(orderDate!),
-    'client': selectedClient,
-    'poNumber': poController.text.trim(),
-    'createdAt': FieldValue.serverTimestamp(),
-    'items': items.map((e) {
-      return {
-        'partId': e.part.id,
-        'partCode': e.part.partCode,
-        'nameEn': e.part.nameEn,
-        'qty': e.qty,
-        'location': e.part.location,
-      };
-    }).toList(),
-  });
+  'orderDate': Timestamp.fromDate(orderDate!),
+  'client': selectedClient,
+  'poNumber': poController.text.trim(),
+  'createdAt': FieldValue.serverTimestamp(),
+  'createdBy': 'Admin',
+  'items': items.map((e) {
+    return {
+      'partId': e.part.id,
+      'partCode': e.part.partCode,
+      'nameEn': e.part.nameEn,
+      'qty': e.qty,
+      'location': e.part.location,
+    };
+  }).toList(),
+});
+
 });
 
 
@@ -416,6 +418,10 @@ Future<void> _editItemAtIndex(int index) async {
       BuildContext context, Map<String, dynamic> data) {
     final items = data['items'] as List<dynamic>;
 
+    final DateTime? orderDate =
+    (data['orderDate'] as Timestamp?)?.toDate();
+
+
     showDialog(
       context: context,
       builder: (_) => Dialog(
@@ -435,6 +441,26 @@ Future<void> _editItemAtIndex(int index) async {
                     fontSize: 16, fontWeight: FontWeight.bold),
               ),
               Text('Client: ${data['client']}'),
+
+const SizedBox(height: 4),
+
+Text(
+  orderDate == null
+      ? 'Date: -'
+      : 'Date: '
+        '${orderDate.day.toString().padLeft(2, '0')}/'
+        '${orderDate.month.toString().padLeft(2, '0')}/'
+        '${orderDate.year}',
+  style: const TextStyle(fontSize: 13),
+),
+
+              
+              if (data['createdBy'] != null)
+  Text(
+    'Created By: ${data['createdBy']}',
+    style: const TextStyle(fontSize: 12),
+  ),
+
               if (orderDate != null)
   Text(
    'Tanggal: ${orderDate!.day}/${orderDate!.month}/${orderDate!.year}',
@@ -795,6 +821,17 @@ Widget build(BuildContext context) {
                     ),
                   ),
                   Text('Client: ${data['client']}'),
+
+                  if (data['createdBy'] != null)
+  Text(
+    'Created By: ${data['createdBy']}',
+    style: const TextStyle(
+      fontSize: 12,
+      color: Colors.black54,
+    ),
+  ),
+
+
                   if (date != null)
                     Text(
                       '${date.day}/${date.month}/${date.year}',
