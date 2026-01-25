@@ -2,75 +2,65 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/partner.dart';
 
 class PartnerService {
-  final _collection =
+  final CollectionReference _ref =
       FirebaseFirestore.instance.collection('partners');
 
-  // =========================
-  // STREAM ALL PARTNERS
-  // =========================
   Stream<List<Partner>> getPartners() {
-    return _collection
+    return _ref
         .orderBy('name')
         .snapshots()
         .map((snapshot) {
       return snapshot.docs
-          .map((doc) => Partner.fromDoc(doc))
+          .map((doc) => Partner.fromFirestore(doc))
           .toList();
     });
   }
 
-  // =========================
-  // CREATE PARTNER
-  // =========================
   Future<void> addPartner({
     required String name,
     required String address,
-    required double lat,
-    required double lng,
+    double? lat,
+    double? lng,
+    String? phone,
+    String? email,
     required String logoUrl,
   }) async {
-    final now = Timestamp.now();
-
-    await _collection.add({
-      'name': name.trim(),
-      'address': address.trim(),
-      'geo': {
-        'lat': lat,
-        'lng': lng,
-      },
+    await _ref.add({
+      'name': name,
+      'address': address,
+      'lat': lat,
+      'lng': lng,
+      'phone': phone,
+      'email': email,
       'logoUrl': logoUrl,
-      'createdAt': now,
-      'updatedAt': now,
+      'createdAt': Timestamp.now(),
+      'updatedAt': Timestamp.now(),
     });
   }
 
-  // =========================
-  // UPDATE PARTNER
-  // =========================
   Future<void> updatePartner({
     required String id,
     required String name,
     required String address,
-    required double lat,
-    required double lng,
+    double? lat,
+    double? lng,
+    String? phone,
+    String? email,
     required String logoUrl,
   }) async {
-    await _collection.doc(id).update({
-      'name': name.trim(),
-      'address': address.trim(),
-      'geo': {
-        'lat': lat,
-        'lng': lng,
-      },
+    await _ref.doc(id).update({
+      'name': name,
+      'address': address,
+      'lat': lat,
+      'lng': lng,
+      'phone': phone,
+      'email': email,
       'logoUrl': logoUrl,
       'updatedAt': Timestamp.now(),
     });
   }
 
-  // =========================
-  // DELETE PARTNER
-  // =========================
   Future<void> deletePartner(String id) async {
-    await _collection.doc(id).delete();
+    await _ref.doc(id).delete();
   }
 }

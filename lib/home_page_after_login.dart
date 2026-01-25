@@ -10,6 +10,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'pages/settings/settings_page.dart';
 import 'core/menu/floating_menu_launcher.dart';
 import 'core/menu/menu_registry.dart';
+import 'pages/partners/partner_list_page.dart';
+
 
 
 
@@ -144,13 +146,14 @@ class _HomePageAfterLoginState extends State<HomePageAfterLogin> {
       label: 'Partners',
       color: Colors.deepPurple,
       onTap: () {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => const PlaceholderPage(title: 'Partners'),
-      ),
-    );
-  },
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (_) => const PartnerListPage(),
+    ),
+  );
+},
+
 ),
   ],
 ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../pages/spare_part/spare_part_list_page.dart';
+import '../../pages/partners/partner_list_page.dart';
 import '../../pages/common/placeholder_page.dart';
 import 'menu_config.dart';
 
@@ -59,19 +60,21 @@ final List<MenuConfig> inventoryMenus = [
 
   // ===== PARTNERS =====
   MenuConfig(
-    label: 'Partners',
-    icon: Icons.groups,
-    color: Colors.deepPurple,
-    category: MenuCategory.inventory,
-    enableFloating: true,
-    enableFullscreen: true,
-    pageBuilder: ({
-      required bool isCompact,
-      String? searchKeyword,
-    }) {
-      return const PlaceholderPage(title: 'Partners');
-    },
-  ),
+  label: 'Partners',
+  icon: Icons.groups,
+  color: Colors.deepPurple,
+  category: MenuCategory.inventory,
+  enableFloating: false, // fullscreen only
+  enableFullscreen: false,
+  pageBuilder: ({
+    required bool isCompact,
+    String? searchKeyword,
+  }) {
+    return const PartnerListPage();
+  },
+),
+
+
 ];
 
 final List<MenuConfig> machineryMenus = [

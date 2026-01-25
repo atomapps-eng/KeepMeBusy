@@ -1,49 +1,57 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class Partner {
-  final String id; // Firestore auto ID
+  final String id;
   final String name;
   final String address;
-  final double lat;
-  final double lng;
+  final double? lat;
+  final double? lng;
+  final String? phone;
+  final String? email;
   final String logoUrl;
-  final Timestamp createdAt;
-  final Timestamp updatedAt;
+
+  // ⬇️ BUAT NULLABLE
+  final Timestamp? createdAt;
+  final Timestamp? updatedAt;
 
   Partner({
     required this.id,
     required this.name,
     required this.address,
-    required this.lat,
-    required this.lng,
+    this.lat,
+    this.lng,
+    this.phone,
+    this.email,
     required this.logoUrl,
-    required this.createdAt,
-    required this.updatedAt,
+    this.createdAt,
+    this.updatedAt,
   });
 
-  factory Partner.fromDoc(DocumentSnapshot doc) {
+  factory Partner.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
 
     return Partner(
       id: doc.id,
       name: data['name'] ?? '',
       address: data['address'] ?? '',
-      lat: (data['geo']?['lat'] ?? 0).toDouble(),
-      lng: (data['geo']?['lng'] ?? 0).toDouble(),
+      lat: (data['lat'] as num?)?.toDouble(),
+      lng: (data['lng'] as num?)?.toDouble(),
+      phone: data['phone'],
+      email: data['email'],
       logoUrl: data['logoUrl'] ?? '',
-      createdAt: data['createdAt'] ?? Timestamp.now(),
-      updatedAt: data['updatedAt'] ?? Timestamp.now(),
+      createdAt: data['createdAt'],
+      updatedAt: data['updatedAt'],
     );
   }
 
-  Map<String, dynamic> toMap() {
+  Map<String, dynamic> toFirestore() {
     return {
       'name': name,
       'address': address,
-      'geo': {
-        'lat': lat,
-        'lng': lng,
-      },
+      'lat': lat,
+      'lng': lng,
+      'phone': phone,
+      'email': email,
       'logoUrl': logoUrl,
       'createdAt': createdAt,
       'updatedAt': updatedAt,
