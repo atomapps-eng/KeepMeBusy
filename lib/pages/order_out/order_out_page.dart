@@ -106,6 +106,8 @@ Future<void> _deleteOrder(
   String orderId,
   Map<String, dynamic> data,
 ) async {
+  final DateTime? orderDate =
+      (data['orderDate'] as Timestamp?)?.toDate();
   final confirm = await showDialog<bool>(
     context: context,
     builder: (_) => AlertDialog(
@@ -211,19 +213,50 @@ Future<void> _deleteOrder(
     });
   }
   
-  Future<void> _editItemAtIndex(int index) async {
+Future<void> _editItemAtIndex(int index) async {
   final current = items[index];
 
-  final int? newQty = await _showQtyDialog(current.part);
+  // ===== 1. AMBIL STOCK ASLI DARI FIRESTORE =====
+  final snap = await FirebaseFirestore.instance
+      .collection('spare_parts')
+      .doc(current.part.id)
+      .get();
+
+  if (!snap.exists) {
+    _showError('Spare part tidak ditemukan');
+    return;
+  }
+
+  final realStock = snap['currentStock'] as int;
+
+  // ===== 2. BUAT PART SEMENTARA DENGAN STOCK ASLI =====
+  final partWithRealStock = SparePart(
+    id: current.part.id,
+    partCode: current.part.partCode,
+    name: current.part.name,
+    nameEn: current.part.nameEn,
+    location: current.part.location,
+    stock: realStock,
+    initialStock: realStock,
+    currentStock: realStock,
+    weight: current.part.weight,
+    weightUnit: current.part.weightUnit,
+    imageUrl: current.part.imageUrl,
+  );
+
+  // ===== 3. TAMPILKAN DIALOG QTY =====
+  final int? newQty = await _showQtyDialog(partWithRealStock);
   if (newQty == null) return;
 
+  // ===== 4. UPDATE ITEM =====
   setState(() {
     items[index] = OrderOutItem(
-      part: current.part,
+      part: current.part, // part lama tetap
       qty: newQty,
     );
   });
 }
+
 
 
   // ================= QTY DIALOG =================
@@ -402,6 +435,12 @@ Future<void> _deleteOrder(
                     fontSize: 16, fontWeight: FontWeight.bold),
               ),
               Text('Client: ${data['client']}'),
+              if (orderDate != null)
+  Text(
+   'Tanggal: ${orderDate!.day}/${orderDate!.month}/${orderDate!.year}',
+
+    style: const TextStyle(fontSize: 12),
+  ),
               const Divider(height: 24),
               SizedBox(
                 height: 250,
@@ -767,16 +806,26 @@ Widget build(BuildContext context) {
 
             // ===== ACTIONS (FULLSCREEN ONLY) =====
             if (isFullscreen) ...[
-              IconButton(
-  icon: const Icon(Icons.edit, size: 20),
-  onPressed: onEdit,
-),
+  IconButton(
+    icon: const Icon(
+      Icons.edit,
+      size: 20,
+      color: Colors.blueGrey,
+    ),
+    tooltip: 'Edit Order',
+    onPressed: onEdit,
+  ),
+  IconButton(
+    icon: const Icon(
+      Icons.delete,
+      size: 20,
+      color: Colors.redAccent,
+    ),
+    tooltip: 'Delete Order',
+    onPressed: onDelete,
+  ),
+],
 
-              IconButton(
-  icon: const Icon(Icons.delete, size: 20),
-  onPressed: onDelete,
-),
-            ],
           ],
         ),
       ],
