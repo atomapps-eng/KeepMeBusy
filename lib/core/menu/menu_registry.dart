@@ -4,6 +4,8 @@ import '../../pages/spare_part/spare_part_list_page.dart';
 import '../../pages/partners/partner_list_page.dart';
 import '../../pages/common/placeholder_page.dart';
 import '../../pages/order_out/order_out_page.dart';
+import '../../pages/order_in/order_in_page.dart';
+
 
 import 'menu_config.dart';
 
@@ -30,19 +32,22 @@ final List<MenuConfig> inventoryMenus = [
 
   // ===== ORDERS IN =====
   MenuConfig(
-    label: 'Orders In',
-    icon: Icons.input,
-    color: Colors.green,
-    category: MenuCategory.inventory,
-    enableFloating: true,
-    enableFullscreen: true,
-    pageBuilder: ({
-      required bool isCompact,
-      String? searchKeyword,
-    }) {
-      return const PlaceholderPage(title: 'Orders In');
-    },
-  ),
+  label: 'Orders In',
+  icon: Icons.output,
+  color: Colors.greenAccent,
+  category: MenuCategory.inventory,
+  enableFloating: true, // WAJIB true
+  enableFullscreen: true,
+  pageBuilder: ({
+    required bool isCompact,
+    String? searchKeyword,
+  }) {
+    return OrderInPage(
+      isCompact: isCompact,
+      searchKeyword: searchKeyword,
+    );
+  },
+),
 
   // ===== ORDERS OUT =====
  MenuConfig(
