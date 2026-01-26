@@ -4,6 +4,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../spare_part/spare_part_list_page.dart';
 import '../../models/spare_part.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
 
 class OrderInPage extends StatefulWidget {
   final bool isCompact;
@@ -33,6 +35,16 @@ class OrderInItem {
 }
 
 class _OrderInPageState extends State<OrderInPage> {
+  // ================= USER LOGIN HELPER =================
+  String _getCurrentUsername() {
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) return 'Unknown';
+    if (user.displayName != null && user.displayName!.isNotEmpty) {
+      return user.displayName!;
+    }
+    return user.email ?? 'Unknown';
+  }
   // ================= CREATE ORDER STATE =================
   DateTime? orderDate;
   String? selectedClient;
@@ -187,6 +199,13 @@ for (final item in items) {
       selectedClient = null;
       poController.clear();
     });
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Order In berhasil diperbarui'),
+        backgroundColor: Colors.green,
+        duration: Duration(seconds: 2),
+      ),
+    );
   } catch (e) {
     _showError(e.toString());
   }
@@ -220,28 +239,8 @@ Future<void> _deleteOrder(
   String orderId,
   Map<String, dynamic> data,
 ) async {
-  final DateTime? orderDate =
-      (data['orderDate'] as Timestamp?)?.toDate();
-  final confirm = await showDialog<bool>(
-    context: context,
-    builder: (_) => AlertDialog(
-      title: const Text('Delete Order'),
-      content:
-          const Text('Order ini akan dihapus dan stock dikembalikan. Lanjutkan?'),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context, false),
-          child: const Text('Cancel'),
-        ),
-        ElevatedButton(
-          onPressed: () => Navigator.pop(context, true),
-          child: const Text('Delete'),
-        ),
-      ],
-    ),
-  );
-
-  if (confirm != true) return;
+  final confirmed = await _confirmDeleteOrder(context);
+  if (!confirmed) return;
 
   final firestore = FirebaseFirestore.instance;
   final orderRef = firestore.collection('order_in').doc(orderId);
@@ -254,13 +253,12 @@ Future<void> _deleteOrder(
       final items = snap['items'] as List<dynamic>;
 
       for (final item in items) {
-        final partRef = firestore
-            .collection('spare_parts')
-            .doc(item['partId']);
+        final partRef =
+            firestore.collection('spare_parts').doc(item['partId']);
 
         final partSnap = await tx.get(partRef);
         final currentStock =
-    (partSnap['currentStock'] as num).toInt();
+            (partSnap['currentStock'] as num).toInt();
 
         tx.update(partRef, {
           'currentStock': currentStock - (item['qty'] as int),
@@ -269,11 +267,18 @@ Future<void> _deleteOrder(
 
       tx.delete(orderRef);
     });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Order berhasil dihapus'),
+        backgroundColor: Colors.redAccent,
+        duration: Duration(seconds: 2),
+      ),
+    );
   } catch (e) {
     _showError(e.toString());
   }
 }
-
 
   // ================= FULLSCREEN SEARCH & FILTER =================
   final TextEditingController fullscreenSearchController =
@@ -478,7 +483,7 @@ Future<void> _editItemAtIndex(int index) async {
         'client': selectedClient,
         'poNumber': poController.text.trim(),
         'createdAt': FieldValue.serverTimestamp(),
-        'createdBy': 'Admin',
+        'createdBy': _getCurrentUsername(),
         'items': items.map((e) => {
           'partId': e.part.id,
           'partCode': e.part.partCode,
@@ -496,6 +501,13 @@ Future<void> _editItemAtIndex(int index) async {
       selectedClient = null;
       poController.clear();
     });
+    ScaffoldMessenger.of(context).showSnackBar(
+  const SnackBar(
+    content: Text('Order In berhasil dibuat'),
+    backgroundColor: Colors.green,
+    duration: Duration(seconds: 2),
+  ),
+);
   } catch (e) {
     _showError(e.toString());
   }
@@ -675,9 +687,19 @@ Widget build(BuildContext context) {
   onDelete: (orderId, data) {
     _deleteOrder(context, orderId, data);
   },
-  onEdit: (data) {
-    _openEditOrder(data);
-  },
+  onEdit: (data) async {
+  final confirm = await _confirmEditOrder(context);
+  if (!confirm) return;
+
+  _openEditOrder(data);
+
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(
+      content: Text('Mode edit diaktifkan'),
+      duration: Duration(seconds: 2),
+    ),
+  );
+},
 ),
 
 
@@ -1272,4 +1294,49 @@ class _Box extends StatelessWidget {
       ),
     );
   }
+}
+Future<bool> _confirmEditOrder(BuildContext context) async {
+  final result = await showDialog<bool>(
+    context: context,
+    builder: (_) => AlertDialog(
+      title: const Text('Edit Order'),
+      content: const Text('Apakah Anda yakin ingin mengedit order ini?'),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, false),
+          child: const Text('Batal'),
+        ),
+        ElevatedButton(
+          onPressed: () => Navigator.pop(context, true),
+          child: const Text('Edit'),
+        ),
+      ],
+    ),
+  );
+
+  return result == true;
+}
+Future<bool> _confirmDeleteOrder(BuildContext context) async {
+  final result = await showDialog<bool>(
+    context: context,
+    builder: (_) => AlertDialog(
+      title: const Text('Hapus Order'),
+      content: const Text(
+        'Order ini akan dihapus dan stock akan dikembalikan.\nLanjutkan?',
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, false),
+          child: const Text('Batal'),
+        ),
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+          onPressed: () => Navigator.pop(context, true),
+          child: const Text('Hapus'),
+        ),
+      ],
+    ),
+  );
+
+  return result == true;
 }
