@@ -133,25 +133,22 @@ Future<void> _commitEditOrderIn() async {
       }
 
       // ===============================
-      // 2. HITUNG (TANPA FIRESTORE)
-      // ===============================
-      // kembalikan stock lama
-      for (final old in oldItems) {
-        stockMap[old['partId']] =
-            stockMap[old['partId']]! +
-            (old['qty'] as num).toInt();
-      }
+// 2. HITUNG STOCK FINAL (BENAR)
+// ===============================
 
-      // validasi & potong stock baru
-      for (final item in items) {
-        if (stockMap[item.part.id]! < item.qty) {
-          throw Exception(
-            'Stock ${item.part.partCode} tidak mencukupi',
-          );
-        }
-        stockMap[item.part.id] =
-            stockMap[item.part.id]! - item.qty;
-      }
+// rollback qty lama
+for (final old in oldItems) {
+  final oldQty = (old['qty'] as num).toInt();
+  stockMap[old['partId']] =
+      stockMap[old['partId']]! - oldQty;
+}
+
+// apply qty baru
+for (final item in items) {
+  stockMap[item.part.id] =
+      stockMap[item.part.id]! + item.qty;
+}
+
 
       // ===============================
       // 3. WRITE (SETELAH SEMUA READ)
@@ -266,7 +263,7 @@ Future<void> _deleteOrder(
     (partSnap['currentStock'] as num).toInt();
 
         tx.update(partRef, {
-          'currentStock': currentStock + (item['qty'] as int),
+          'currentStock': currentStock - (item['qty'] as int),
         });
       }
 

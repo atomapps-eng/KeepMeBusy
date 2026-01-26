@@ -515,10 +515,14 @@ navigator.pop();
             child: const Text('Batal'),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            onPressed: deleteData,
-            child: const Text('Hapus'),
-          ),
+  style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+  onPressed: () async {
+    Navigator.pop(context); // ✅ TUTUP DIALOG
+    await deleteData();     // ✅ DELETE + POP PAGE
+  },
+  child: const Text('Hapus'),
+),
+
         ],
       ),
     );
