@@ -7,6 +7,7 @@ class SparePart {
   final int stock; // LEGACY - jangan dipakai untuk logic baru
   final int initialStock;
   final int currentStock;
+  final int minimumStock;
   final double weight;
   final String weightUnit;
   final String imageUrl;
@@ -20,7 +21,8 @@ class SparePart {
     required this.location,
     required this.stock,
     required this.initialStock,   // ⬅️ baru
-    required this.currentStock,   // ⬅️ baru
+    required this.currentStock,
+    required this.minimumStock,   // ⬅️ baru
     required this.weight,
     required this.weightUnit,
     required this.imageUrl,
@@ -39,7 +41,7 @@ class SparePart {
       stock: _safeInt(data['stock']),
       initialStock: data['initialStock'] ?? data['stock'] ?? 0,
       currentStock: data['currentStock'] ?? data['stock'] ?? 0,
-
+      minimumStock: (data['minimumStock'] ?? 0) as int,
       weight: _safeDouble(data['weight']),
 
       weightUnit: (data['weightUnit'] ?? 'Kg').toString(),

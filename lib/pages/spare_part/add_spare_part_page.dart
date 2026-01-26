@@ -20,6 +20,7 @@ class _AddSparePartPageState extends State<AddSparePartPage> {
   final locationController = TextEditingController();
   final stockController = TextEditingController();
   final weightController = TextEditingController();
+  final minimumStockController = TextEditingController();
 
   String normalizeLocation(String location) {
   return location
@@ -184,6 +185,9 @@ request.fields['public_id'] = uniqueId;
     return;
   }
 
+  int minimumStock =
+  int.tryParse(minimumStockController.text) ?? 0;
+
   int stock = int.tryParse(stockController.text) ?? 0;
   double weight = double.tryParse(inputWeight) ?? 0.0;
 
@@ -222,6 +226,7 @@ request.fields['public_id'] = uniqueId;
     'initialStock': stock,
     'currentStock': stock,
     'stock': stock,
+    'minimumStock': minimumStock,
     'weight': weight,
     'weightUnit': weightUnit,
     'imageUrl': imageUrl,
@@ -268,136 +273,173 @@ request.fields['public_id'] = uniqueId;
             ),
           ),
           SafeArea(
-            child: Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(20),
-                    child: BackdropFilter(
-                      filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha:0.25),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: Colors.white.withValues(alpha:0.35)),
-                        ),
-                        child: Row(
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.arrow_back),
-                              onPressed: () => Navigator.pop(context),
-                            ),
-                            const SizedBox(width: 8),
-                            const Text(
-                              'Add Spare Part',
-                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                            ),
-                          ],
-                        ),
-                      ),
+  child: SingleChildScrollView(
+    padding: const EdgeInsets.only(bottom: 24),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+
+
+        // ===== FORM =====
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Column(
+            children: [
+              // IMAGE
+              GestureDetector(
+                onTap: showImageSourceDialog,
+                child: Container(
+                  height: 150,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.25),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.35),
                     ),
                   ),
-                ),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: ListView(
-                      children: [
-                        GestureDetector(
-                          onTap: showImageSourceDialog,
-                          child: Container(
-                            height: 150,
+                  child: selectedImage == null
+                      ? const Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.camera_alt,
+                                  size: 40, color: Colors.blueGrey),
+                              SizedBox(height: 8),
+                              Text(
+                                'Tap to add image',
+                                style:
+                                    TextStyle(color: Colors.blueGrey),
+                              ),
+                            ],
+                          ),
+                        )
+                      : ClipRRect(
+                          borderRadius: BorderRadius.circular(14),
+                          child: Image.file(
+                            selectedImage!,
+                            fit: BoxFit.cover,
                             width: double.infinity,
-                            margin: const EdgeInsets.only(bottom: 16),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha:0.25),
-                              borderRadius: BorderRadius.circular(14),
-                              border: Border.all(color: Colors.white.withValues(alpha:0.35)),
-                            ),
-                            child: selectedImage == null
-                                ? const Center(
-                                    child: Column(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        Icon(Icons.camera_alt, size: 40, color: Colors.blueGrey),
-                                        SizedBox(height: 8),
-                                        Text('Tap to add image',
-                                            style: TextStyle(color: Colors.blueGrey)),
-                                      ],
-                                    ),
-                                  )
-                                : ClipRRect(
-                                    borderRadius: BorderRadius.circular(14),
-                                    child: Image.file(
-                                      selectedImage!,
-                                      fit: BoxFit.cover,
-                                      width: double.infinity,
-                                    ),
-                                  ),
                           ),
                         ),
-
-                        TextField(
-                          controller: partCodeController,
-                          decoration: const InputDecoration(labelText: 'Part Code'),
-                        ),
-                        const SizedBox(height: 12),
-
-                        TextField(
-                          controller: nameController,
-                          decoration: const InputDecoration(labelText: 'Name'),
-                        ),
-                        const SizedBox(height: 12),
-
-                        TextField(
-                          controller: nameEnController,
-                          decoration: const InputDecoration(labelText: 'Name (English)'),
-                        ),
-                        const SizedBox(height: 12),
-
-                        TextField(
-                          controller: locationController,
-                          decoration: const InputDecoration(labelText: 'Location'),
-                        ),
-                        const SizedBox(height: 12),
-
-                        TextField(
-                          controller: stockController,
-                          keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(labelText: 'Stock'),
-                        ),
-                        const SizedBox(height: 12),
-
-                        TextField(
-                          controller: weightController,
-                          keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(labelText: 'Weight'),
-                        ),
-                        const SizedBox(height: 12),
-
-                        DropdownButtonFormField<String>(
-                          initialValue: weightUnit,
-                          items: ['Kg', 'g', 'Ton']
-                              .map((e) => DropdownMenuItem(value: e, child: Text(e)))
-                              .toList(),
-                          onChanged: (v) => setState(() => weightUnit = v!),
-                          decoration: const InputDecoration(labelText: 'Weight Unit'),
-                        ),
-                        const SizedBox(height: 20),
-
-                        ElevatedButton(
-                          onPressed: saveData,
-                          child: const Text('Save'),
-                        ),
-                      ],
-                    ),
-                  ),
                 ),
-              ],
-            ),
+              ),
+
+              TextField(
+                controller: partCodeController,
+                decoration:
+                    const InputDecoration(labelText: 'Part Code'),
+              ),
+              const SizedBox(height: 12),
+
+              TextField(
+                controller: nameController,
+                decoration:
+                    const InputDecoration(labelText: 'Name'),
+              ),
+              const SizedBox(height: 12),
+
+              TextField(
+                controller: nameEnController,
+                decoration:
+                    const InputDecoration(labelText: 'Name (English)'),
+              ),
+              const SizedBox(height: 12),
+
+              TextField(
+                controller: locationController,
+                decoration:
+                    const InputDecoration(labelText: 'Location'),
+              ),
+              const SizedBox(height: 12),
+
+              TextField(
+                controller: stockController,
+                keyboardType: TextInputType.number,
+                decoration:
+                    const InputDecoration(labelText: 'Stock'),
+              ),
+              const SizedBox(height: 12),
+
+              TextField(
+                controller: minimumStockController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'Minimum Stock',
+                  helperText:
+                      'Digunakan untuk status Low Stock',
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              TextField(
+                controller: weightController,
+                keyboardType: TextInputType.number,
+                decoration:
+                    const InputDecoration(labelText: 'Weight'),
+              ),
+              const SizedBox(height: 12),
+
+              DropdownButtonFormField<String>(
+                value: weightUnit,
+                items: ['Kg', 'g', 'Ton']
+                    .map(
+                      (e) => DropdownMenuItem(
+                        value: e,
+                        child: Text(e),
+                      ),
+                    )
+                    .toList(),
+                onChanged: (v) =>
+                    setState(() => weightUnit = v!),
+                decoration:
+                    const InputDecoration(labelText: 'Weight Unit'),
+              ),
+
+              const SizedBox(height: 24),
+
+              // ===== SAVE BUTTON =====
+              Row(
+  children: [
+    // ===== CANCEL =====
+    Expanded(
+      child: OutlinedButton(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: Colors.redAccent,
+          side: const BorderSide(color: Colors.redAccent),
+          padding: const EdgeInsets.symmetric(vertical: 14),
+        ),
+        onPressed: () {
+          Navigator.pop(context);
+        },
+        child: const Text('Cancel'),
+      ),
+    ),
+
+    const SizedBox(width: 12),
+
+    // ===== SAVE CANCEL BUTTON=====
+    Expanded(
+      child: ElevatedButton(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.green,
+          padding: const EdgeInsets.symmetric(vertical: 14),
+        ),
+        onPressed: saveData,
+        child: const Text('Save'),
+      ),
+    ),
+  ],
+),
+
+            ],
           ),
+        ),
+      ],
+    ),
+  ),
+),
+
         ],
       ),
     );

@@ -11,6 +11,8 @@ import 'pages/settings/settings_page.dart';
 import 'core/menu/floating_menu_launcher.dart';
 import 'core/menu/menu_registry.dart';
 import 'pages/partners/partner_list_page.dart';
+import 'pages/spare_part/low_stock_page.dart';
+
 
 
 
@@ -24,6 +26,20 @@ class HomePageAfterLogin extends StatefulWidget {
 }
 
 class _HomePageAfterLoginState extends State<HomePageAfterLogin> {
+  // ================= LOW STOCK STREAM =================
+  Stream<int> lowStockCountStream() {
+    return FirebaseFirestore.instance
+        .collection('spare_parts')
+        .snapshots()
+        .map((snapshot) {
+          return snapshot.docs.where((doc) {
+            final data = doc.data();
+            final int currentStock = data['currentStock'] ?? 0;
+            final int minimumStock = data['minimumStock'] ?? 0;
+            return currentStock <= minimumStock;
+          }).length;
+        });
+  }
   // ================= LOGOUT =================
   Future<void> _confirmLogout(BuildContext context) async {
     final bool? result = await showDialog<bool>(
@@ -373,48 +389,68 @@ Widget _buildDashboardCards() {
       Expanded(
         child: StreamBuilder<QuerySnapshot>(
           stream: FirebaseFirestore.instance
-              .collection('spare_parts') // ❗ SESUAIKAN dengan collection Anda
+              .collection('spare_parts')
               .snapshots(),
           builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const _DashboardCard(
-                title: 'Spare Parts',
-                value: '-',
-                icon: Icons.inventory_2,
-                color: Colors.blueGrey,
-              );
-            }
-
-            if (snapshot.hasError) {
-              return const _DashboardCard(
-                title: 'Spare Parts',
-                value: '!',
-                icon: Icons.inventory_2,
-                color: Colors.blueGrey,
-              );
-            }
-
             final count = snapshot.data?.docs.length ?? 0;
 
             return _DashboardCard(
               title: 'Spare Parts',
-              value: count.toString(),
+              value: snapshot.connectionState == ConnectionState.waiting
+                  ? '-'
+                  : count.toString(),
               icon: Icons.inventory_2,
               color: Colors.blueGrey,
             );
           },
         ),
       ),
-      const SizedBox(width: 12),
-      const _DashboardCard(
+      const SizedBox(width: 12), // ✅ JAGA JARAK
+      Expanded(
+  child: StreamBuilder<int>(
+    stream: lowStockCountStream(),
+    builder: (context, snapshot) {
+      if (snapshot.connectionState == ConnectionState.waiting) {
+        return const _DashboardCard(
+          title: 'Low Stock',
+          value: '-',
+          icon: Icons.warning,
+          color: Colors.redAccent,
+        );
+      }
+
+      if (snapshot.hasError) {
+        return const _DashboardCard(
+          title: 'Low Stock',
+          value: '!',
+          icon: Icons.warning,
+          color: Colors.redAccent,
+        );
+      }
+
+      final count = snapshot.data ?? 0;
+
+      return _DashboardCard(
         title: 'Low Stock',
-        value: '7', // nanti bisa kita buat dinamis juga
+        value: count.toString(),
         icon: Icons.warning,
         color: Colors.redAccent,
-      ),
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => const LowStockPage(),
+            ),
+          );
+        },
+      );
+    },
+  ),
+),
     ],
   );
 }
+
 
 }
 
@@ -519,54 +555,45 @@ class _DashboardCard extends StatelessWidget {
   final String value;
   final IconData icon;
   final Color color;
+  final VoidCallback? onTap; // ✅ TAMBAH
 
   const _DashboardCard({
     required this.title,
     required this.value,
     required this.icon,
     required this.color,
+    this.onTap, // ✅ TAMBAH
   });
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(18),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha:0.28),
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: Colors.white.withValues(alpha:0.35)),
+    return InkWell( // ✅ BUNGKUS
+      borderRadius: BorderRadius.circular(16),
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha:0.15),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, color: color),
+            const SizedBox(height: 8),
+            Text(title),
+            const SizedBox(height: 4),
+            Text(
+              value,
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
             ),
-            child: Row(
-              children: [
-                Icon(icon, size: 32, color: color),
-                const SizedBox(width: 12),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      value,
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: color,
-                      ),
-                    ),
-                    Text(
-                      title,
-                      style: const TextStyle(fontSize: 12),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
+          ],
         ),
       ),
     );
   }
 }
+
