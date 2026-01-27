@@ -126,22 +126,21 @@ Widget build(BuildContext context) {
 
                           return GestureDetector(
                             onTap: () {
-  // ===== SELECTION MODE =====
   if (widget.selectionMode) {
     Navigator.pop(context, part);
     return;
   }
 
-  // ===== NORMAL MODE =====
   if (!widget.isCompact) {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => EditSparePartPage(part: part),
+        builder: (_) => EditSparePartPage(part: part), // ⬅️ DETAIL
       ),
     );
   }
 },
+
 
                             child: _GlassCard(
                               child: widget.isCompact
@@ -315,83 +314,80 @@ class _FullscreenItem extends StatelessWidget {
   const _FullscreenItem({required this.part});
 
   @override
-  Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // LEFT DATA
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // PART CODE (COLORED)
-              Text(
-                part.partCode,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                  color: Colors.blueGrey,
-                ),
-              ),
-              const SizedBox(height: 4),
-
-              Text(part.name),
-              Text(
-                part.nameEn,
-                style: const TextStyle(fontSize: 13),
-              ),
-              const SizedBox(height: 6),
-
-              Text(
-                'Stock: ${part.currentStock}',
-                style: const TextStyle(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 2),
-
-              Row(
-                children: [
-                  const Icon(
-                    Icons.location_on,
-                    size: 14,
-                    color: Colors.green,
+Widget build(BuildContext context) {
+  return Stack(
+    children: [
+      Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // LEFT DATA
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  part.partCode,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    color: Colors.blueGrey,
                   ),
-                  const SizedBox(width: 4),
-                  Text(
-                    part.location,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: Colors.blueAccent,
-                      fontWeight: FontWeight.w500,
+                ),
+                const SizedBox(height: 4),
+                Text(part.name),
+                Text(
+                  part.nameEn,
+                  style: const TextStyle(fontSize: 13),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Stock: ${part.currentStock}',
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 2),
+                Row(
+                  children: [
+                    const Icon(Icons.location_on,
+                        size: 14, color: Colors.green),
+                    const SizedBox(width: 4),
+                    Text(
+                      part.location,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: Colors.blueAccent,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
-                  ),
-                ],
-              ),
-            ],
+                  ],
+                ),
+              ],
+            ),
           ),
-        ),
 
-        const SizedBox(width: 12),
+          const SizedBox(width: 12),
 
-        // RIGHT THUMBNAIL
-        ClipRRect(
-          borderRadius: BorderRadius.circular(10),
-          child: Container(
-            width: 112,
-            height: 112,
-            color: Colors.white.withValues(alpha:0.4),
-            child: part.imageUrl.isNotEmpty
-                ? CachedNetworkImage(
-                    imageUrl: part.imageUrl,
-                    fit: BoxFit.cover,
-                  )
-                : const Icon(Icons.inventory, size: 28),
+          // RIGHT THUMBNAIL (TETAP)
+          ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: Container(
+              width: 112,
+              height: 112,
+              padding: const EdgeInsets.all(6),
+              color: const Color.fromARGB(0, 244, 234, 221).withValues(alpha: 0.4),
+              child: part.imageUrl.isNotEmpty
+                  ? CachedNetworkImage(
+                      imageUrl: part.imageUrl,
+                      fit: BoxFit.contain,
+                    )
+                  : const Icon(Icons.inventory, size: 28),
+            ),
           ),
-        ),
-      ],
-    );
-  }
+        ],
+      ),
+    ],
+  );
+}
+
 }
 
 // =====================================================

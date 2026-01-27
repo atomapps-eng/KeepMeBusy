@@ -25,6 +25,8 @@ class _EditSparePartPageState extends State<EditSparePartPage>
   late TextEditingController locationController;
   late TextEditingController stockController;
   late TextEditingController weightController;
+  late TextEditingController currentStockController;
+
 
   String formatLocation(String input) {
   String value = input
@@ -95,7 +97,10 @@ Future<bool> isLocationAvailable(String location) async {
   text: formatLocation(widget.part.location),
 );
 
-    stockController = TextEditingController(text: widget.part.stock.toString());
+    stockController = 
+        TextEditingController(text: widget.part.stock.toString());
+    currentStockController =
+        TextEditingController(text: widget.part.currentStock.toString());
     weightController =
         TextEditingController(text: widget.part.weight.toString());
     weightUnit = widget.part.weightUnit;
@@ -531,7 +536,7 @@ navigator.pop();
   // =========================
   // IMAGE WIDGET (PRO)
   // =========================
-  Widget _buildImage() {
+  Widget _buildImage({bool showCameraButton = true}) {
   return GestureDetector(
     onTap: showFullScreenImage,
     child: Container(
@@ -548,7 +553,7 @@ navigator.pop();
       child: ClipRRect(
         borderRadius: BorderRadius.circular(14),
         child: Container(
-          color: const Color.fromARGB(255, 252, 227, 139),
+          color: const Color.fromARGB(255, 243, 228, 172),
           child: AspectRatio(
             aspectRatio: 1, // 3/3 → 1:1
             child: Stack(
@@ -578,10 +583,11 @@ navigator.pop();
                 ),
 
                 // ===== CAMERA BUTTON =====
-                Positioned(
-                  bottom: 12,
-                  right: 12,
-                  child: GestureDetector(
+                if (showCameraButton)
+  Positioned(
+    bottom: 12,
+    right: 12,
+    child: GestureDetector(
                     onTap:
                         isUploadingImage ? null : showImageSourceDialog,
                     child: Container(
@@ -626,8 +632,13 @@ navigator.pop();
 
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
+Widget build(BuildContext context) {
+  return GestureDetector(
+    behavior: HitTestBehavior.translucent,
+    onTap: () {
+      FocusScope.of(context).unfocus();
+    },
+    child: Scaffold(
       body: Stack(
         children: [
           Container(
@@ -646,7 +657,7 @@ navigator.pop();
             child: CustomScrollView(
               slivers: [
                 SliverAppBar(
-                  expandedHeight: 260,
+                  expandedHeight: 280,
                   pinned: true,
                   backgroundColor: Colors.transparent,
                   elevation: 0,
@@ -663,7 +674,26 @@ navigator.pop();
                         right: 16,
                         bottom: 16,
                       ),
-                      child: Center(child: _buildImage()),
+                      child: Center(
+  child: Column(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      SizedBox(
+        width: 160,
+        height: 160,
+        child: _buildImage(showCameraButton: false),
+      ),
+      const SizedBox(height: 6),
+      IconButton(
+  onPressed: isUploadingImage ? null : showImageSourceDialog,
+  icon: const Icon(Icons.camera_alt),
+  tooltip: 'Ganti Foto',
+),
+    ],
+  ),
+),
+
+
                     ),
                   ),
                 ),
@@ -698,11 +728,22 @@ navigator.pop();
                       const SizedBox(height: 12),
                       TextField(
   controller: stockController,
-  enabled: false, // 🔒 KUNCI EDIT
+  enabled: false,
   decoration: const InputDecoration(
-    labelText: 'Stock (Auto)',
+    labelText: 'Initial Stock (Auto)',
   ),
 ),
+
+const SizedBox(height: 12),
+
+TextField(
+  controller: currentStockController,
+  enabled: false,
+  decoration: const InputDecoration(
+    labelText: 'Current Stock',
+  ),
+),
+
 
                       const SizedBox(height: 12),
                       TextField(
@@ -751,6 +792,7 @@ navigator.pop();
           ),
         ],
       ),
-    );
+    ),
+   );
   }
 }

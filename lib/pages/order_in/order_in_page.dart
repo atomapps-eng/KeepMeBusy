@@ -612,26 +612,34 @@ Text(
     'Created By: ${data['createdBy']}',
     style: const TextStyle(fontSize: 12),
   ),
-
-              if (orderDate != null)
-  Text(
-   'Tanggal: ${orderDate.day}/${orderDate.month}/${orderDate.year}',
-
-    style: const TextStyle(fontSize: 12),
-  ),
               const Divider(height: 24),
               SizedBox(
                 height: 250,
                 child: ListView.builder(
-                  itemCount: items.length,
-                  itemBuilder: (_, i) {
+  physics: const BouncingScrollPhysics(),
+  itemCount: items.length,
+  itemBuilder: (_, i) {
                     final item = items[i];
                     return ListTile(
-                      dense: true,
-                      title: Text(item['partCode']),
-                      subtitle: Text(item['nameEn']),
-                      trailing: Text('Qty: ${item['qty']}'),
-                    );
+  dense: true,
+  title: Text(item['partCode']),
+  subtitle: Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(item['nameEn']),
+      const SizedBox(height: 2),
+      Text(
+        'Location: ${item['location'] ?? '-'}',
+        style: const TextStyle(
+          fontSize: 12,
+          color: Colors.black54,
+        ),
+      ),
+    ],
+  ),
+  trailing: Text('Qty: ${item['qty']}'),
+);
+
                   },
                 ),
               ),

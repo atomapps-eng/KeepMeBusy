@@ -381,7 +381,7 @@ request.fields['public_id'] = uniqueId;
               const SizedBox(height: 12),
 
               DropdownButtonFormField<String>(
-                value: weightUnit,
+                initialValue: weightUnit,
                 items: ['Kg', 'g', 'Ton']
                     .map(
                       (e) => DropdownMenuItem(
