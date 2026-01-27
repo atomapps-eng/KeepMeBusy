@@ -68,6 +68,7 @@ class _RegisterPageState extends State<RegisterPage> {
   // CEK EMAIL DI WHITELIST
   // =====================================================
   Future<bool> _isEmailWhitelisted(String email) async {
+    debugPrint('CHECK WHITELIST FOR: $email');
     final doc = await FirebaseFirestore.instance
         .collection('whitelist_emails')
         .doc(email.toLowerCase())
@@ -120,7 +121,7 @@ class _RegisterPageState extends State<RegisterPage> {
     setState(() => _isLoading = true);
 
     // CEK USERNAME DUPLIKAT
-    ('CHECK USERNAME START');
+    debugPrint ('CHECK USERNAME START');
     final isUsernameFree = await _isUsernameAvailable(username);
     if (!mounted) return;
 
@@ -135,6 +136,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
     try {
       final isAllowed = await _isEmailWhitelisted(email);
+      debugPrint('CHECK WHITELIST FOR: $email');
       if (!mounted) return;
 
       if (!isAllowed) {
