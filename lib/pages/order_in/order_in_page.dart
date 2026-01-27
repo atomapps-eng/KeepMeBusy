@@ -6,6 +6,10 @@ import '../spare_part/spare_part_list_page.dart';
 import '../../models/spare_part.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+enum QtyDialogMode {
+  orderIn,
+  orderOut,
+}
 
 class OrderInPage extends StatefulWidget {
   final bool isCompact;
@@ -326,7 +330,21 @@ Future<void> _deleteOrder(
 
     if (selected == null) return;
 
-    final int? qty = await _showQtyDialog(selected);
+    final snap = await FirebaseFirestore.instance
+    .collection('spare_parts')
+    .doc(selected.id)
+    .get();
+
+final firestoreStock =
+    (snap['currentStock'] as num).toInt();
+
+final int? qty = await _showQtyDialog(
+  part: selected,
+  mode: QtyDialogMode.orderIn,
+  firestoreStock: firestoreStock,
+);
+
+
     if (qty == null) return;
 
     setState(() {
@@ -337,7 +355,6 @@ Future<void> _deleteOrder(
 Future<void> _editItemAtIndex(int index) async {
   final current = items[index];
 
-  // ===== 1. AMBIL STOCK ASLI DARI FIRESTORE =====
   final snap = await FirebaseFirestore.instance
       .collection('spare_parts')
       .doc(current.part.id)
@@ -348,97 +365,119 @@ Future<void> _editItemAtIndex(int index) async {
     return;
   }
 
-  final realStock =
-    (snap['currentStock'] as num).toInt();
+  final firestoreStock =
+    (snap['currentStock'] as num).toInt(); // 100
+
+final rollbackStock =
+    firestoreStock - current.qty;
+
+final partForEdit = SparePart(
+  id: current.part.id,
+  partCode: current.part.partCode,
+  name: current.part.name,
+  nameEn: current.part.nameEn,
+  location: current.part.location,
+
+  // 🔢 dipakai untuk LOGIKA (rollback)
+  stock: rollbackStock,
+  initialStock: rollbackStock,
+  currentStock: rollbackStock,
+
+  minimumStock: current.part.minimumStock,
+  weight: current.part.weight,
+  weightUnit: current.part.weightUnit,
+  imageUrl: current.part.imageUrl,
+);
 
 
-  // ===== 2. BUAT PART SEMENTARA DENGAN STOCK ASLI =====
-  final partWithRealStock = SparePart(
-    id: current.part.id,
-    partCode: current.part.partCode,
-    name: current.part.name,
-    nameEn: current.part.nameEn,
-    location: current.part.location,
-    stock: realStock,
-    initialStock: realStock,
-    currentStock: realStock,
-    minimumStock: current.part.minimumStock,
-    weight: current.part.weight,
-    weightUnit: current.part.weightUnit,
-    imageUrl: current.part.imageUrl,
-  );
+  final int? newQty = await _showQtyDialog(
+  part: partForEdit,
+  mode: QtyDialogMode.orderIn,
+  firestoreStock: firestoreStock,
+);
 
-  // ===== 3. TAMPILKAN DIALOG QTY =====
-  final int? newQty = await _showQtyDialog(partWithRealStock);
+
   if (newQty == null) return;
 
-  // ===== 4. UPDATE ITEM =====
   setState(() {
     items[index] = OrderInItem(
-      part: current.part, // part lama tetap
+      part: current.part,
       qty: newQty,
     );
   });
 }
 
-
-
   // ================= QTY DIALOG =================
-  Future<int?> _showQtyDialog(SparePart part) async {
-    final controller = TextEditingController();
-    String? error;
+  Future<int?> _showQtyDialog({
+  required SparePart part,
+  required QtyDialogMode mode,
+  required int firestoreStock,
+}) async {
+  final controller = TextEditingController();
+  String? error;
 
-    return showDialog<int>(
-      context: context,
-      builder: (ctx) {
-        return StatefulBuilder(
-          builder: (ctx, setLocal) {
-            return AlertDialog(
-              title: Text(part.partCode),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(part.nameEn),
-                  const SizedBox(height: 8),
-                  Text('Stock tersedia: ${part.currentStock}'),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: controller,
-                    keyboardType: TextInputType.number,
-                    decoration: InputDecoration(
-                      labelText: 'Qty',
-                      errorText: error,
-                    ),
+  return showDialog<int>(
+    context: context,
+    builder: (ctx) {
+      return StatefulBuilder(
+        builder: (ctx, setLocal) {
+          return AlertDialog(
+            title: Text(part.partCode),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(part.nameEn),
+                const SizedBox(height: 8),
+
+                // INFO STOCK (HANYA INFORMASI)
+               Text('Stock saat ini: $firestoreStock'),
+
+                const SizedBox(height: 12),
+                TextField(
+                  controller: controller,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    labelText: 'Qty',
+                    errorText: error,
                   ),
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(ctx),
-                  child: const Text('Cancel'),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    final qty = int.tryParse(controller.text) ?? 0;
-                    if (qty <= 0) {
-                      setLocal(() => error = 'Qty tidak valid');
-                      return;
-                    }
-                    if (qty > part.currentStock) {
-                      setLocal(() => error = 'Qty melebihi stock');
-                      return;
-                    }
-                    Navigator.pop(ctx, qty);
-                  },
-                  child: const Text('Add'),
                 ),
               ],
-            );
-          },
-        );
-      },
-    );
-  }
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  final qty = int.tryParse(controller.text) ?? 0;
+
+                  // ===== VALIDASI UMUM =====
+                  if (qty <= 0) {
+                    setLocal(() => error = 'Qty tidak valid');
+                    return;
+                  }
+
+                  // ===== VALIDASI KHUSUS ORDER OUT =====
+                  if (mode == QtyDialogMode.orderOut &&
+                      qty > part.currentStock) {
+                    setLocal(() => error = 'Qty melebihi stock');
+                    return;
+                  }
+
+                  // ===== ORDER IN TIDAK PUNYA VALIDASI STOCK =====
+                  Navigator.pop(ctx, qty);
+                },
+                child: const Text('Simpan'),
+              ),
+            ],
+          );
+        },
+      );
+    },
+  );
+}
+
 
   // ================= COMMIT FIRESTORE =================
   Future<void> _commitOrderIn() async {
@@ -462,22 +501,17 @@ Future<void> _editItemAtIndex(int index) async {
     await firestore.runTransaction((tx) async {
       // 1. VALIDASI & POTONG STOCK
       for (final item in items) {
-        final partRef =
-            firestore.collection('spare_parts').doc(item.part.id);
+  final partRef =
+      firestore.collection('spare_parts').doc(item.part.id);
 
-        final snap = await tx.get(partRef);
-        final stock = (snap['currentStock'] as num).toInt();
+  final snap = await tx.get(partRef);
+  final stock = (snap['currentStock'] as num).toInt();
 
-        if (stock < item.qty) {
-          throw Exception(
-            'Stock ${item.part.partCode} tidak mencukupi',
-          );
-        }
-
-        tx.update(partRef, {
-          'currentStock': stock + item.qty,
-        });
-      }
+  // ✅ ORDER IN SELALU MENAMBAH STOCK
+  tx.update(partRef, {
+    'currentStock': stock + item.qty,
+  });
+}
 
       // 2. SIMPAN ORDER BARU
       tx.set(orderRef, {

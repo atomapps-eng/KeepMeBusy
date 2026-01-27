@@ -343,7 +343,6 @@ Future<void> _deleteOrder(
 Future<void> _editItemAtIndex(int index) async {
   final current = items[index];
 
-  // ===== 1. AMBIL STOCK ASLI DARI FIRESTORE =====
   final snap = await FirebaseFirestore.instance
       .collection('spare_parts')
       .doc(current.part.id)
@@ -354,40 +353,37 @@ Future<void> _editItemAtIndex(int index) async {
     return;
   }
 
-  final realStock =
-    (snap['currentStock'] as num).toInt();
+  final currentStock =
+      (snap['currentStock'] as num).toInt();
 
+  // 🔑 STOCK SEBENARNYA SAAT EDIT
+  final availableStock = currentStock + current.qty;
 
-  // ===== 2. BUAT PART SEMENTARA DENGAN STOCK ASLI =====
-  final partWithRealStock = SparePart(
+  final partForEdit = SparePart(
     id: current.part.id,
     partCode: current.part.partCode,
     name: current.part.name,
     nameEn: current.part.nameEn,
     location: current.part.location,
-    stock: realStock,
-    initialStock: realStock,
-    currentStock: realStock,
+    stock: availableStock,
+    initialStock: availableStock,
+    currentStock: availableStock,
     minimumStock: current.part.minimumStock,
     weight: current.part.weight,
     weightUnit: current.part.weightUnit,
     imageUrl: current.part.imageUrl,
   );
 
-  // ===== 3. TAMPILKAN DIALOG QTY =====
-  final int? newQty = await _showQtyDialog(partWithRealStock);
+  final int? newQty = await _showQtyDialog(partForEdit);
   if (newQty == null) return;
 
-  // ===== 4. UPDATE ITEM =====
   setState(() {
     items[index] = OrderOutItem(
-      part: current.part, // part lama tetap
+      part: current.part,
       qty: newQty,
     );
   });
 }
-
-
 
   // ================= QTY DIALOG =================
   Future<int?> _showQtyDialog(SparePart part) async {
