@@ -1,3 +1,14 @@
+enum SparePartCategory {
+  autoCutting,
+  manualCutting,
+}
+
+enum SparePartOrigin {
+  atomItaly,
+  atomShanghai,
+  local,
+}
+
 class SparePart {
   final String id;
   final String partCode;
@@ -12,6 +23,9 @@ class SparePart {
   final String weightUnit;
   final String imageUrl;
   final int imageVersion;
+  final SparePartCategory category;
+  final SparePartOrigin origin;
+
 
   SparePart({
     required this.id,
@@ -27,6 +41,9 @@ class SparePart {
     required this.weightUnit,
     required this.imageUrl,
     this.imageVersion = 0,
+    this.category = SparePartCategory.autoCutting,
+    this.origin = SparePartOrigin.local,
+
   });
 
   factory SparePart.fromMap(Map<String, dynamic> data, String id) {
@@ -47,6 +64,17 @@ class SparePart {
       weightUnit: (data['weightUnit'] ?? 'Kg').toString(),
       imageUrl: (data['imageUrl'] ?? '').toString(),
       imageVersion: _safeInt(data['imageVersion']),
+
+      category: SparePartCategory.values.firstWhere(
+     (e) => e.name.toUpperCase() == (data['category'] ?? 'AUTO_CUTTING'),
+     orElse: () => SparePartCategory.autoCutting,
+     ),
+
+     origin: SparePartOrigin.values.firstWhere(
+     (e) => e.name.toUpperCase() == (data['origin'] ?? 'LOCAL'),
+     orElse: () => SparePartOrigin.local,
+     ),
+
     );
   }
 
@@ -57,10 +85,30 @@ class SparePart {
     return int.tryParse(v.toString()) ?? 0;
   }
 
-  static double _safeDouble(dynamic v) {
-    if (v == null) return 0.0;
-    if (v is double) return v;
-    if (v is int) return v.toDouble();
-    return double.tryParse(v.toString()) ?? 0.0;
-  }
+ static double _safeDouble(dynamic v) {
+  if (v == null) return 0.0;
+  if (v is double) return v;
+  if (v is int) return v.toDouble();
+  return double.tryParse(v.toString()) ?? 0.0;
+}
+
+Map<String, dynamic> toMap() {
+  return {
+    'partCode': partCode,
+    'name': name,
+    'nameEn': nameEn,
+    'location': location,
+    'stock': stock,
+    'initialStock': initialStock,
+    'currentStock': currentStock,
+    'minimumStock': minimumStock,
+    'weight': weight,
+    'weightUnit': weightUnit,
+    'imageUrl': imageUrl,
+    'imageVersion': imageVersion,
+    'category': category.name.toUpperCase(),
+    'origin': origin.name.toUpperCase(),
+  };
+}
+
 }

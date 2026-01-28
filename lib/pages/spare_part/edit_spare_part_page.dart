@@ -25,6 +25,8 @@ class _EditSparePartPageState extends State<EditSparePartPage>
   late TextEditingController locationController;
   late TextEditingController stockController;
   late TextEditingController weightController;
+  late SparePartCategory _selectedCategory;
+  late SparePartOrigin _selectedOrigin;
   late TextEditingController currentStockController;
 
 
@@ -104,6 +106,8 @@ Future<bool> isLocationAvailable(String location) async {
     weightController =
         TextEditingController(text: widget.part.weight.toString());
     weightUnit = widget.part.weightUnit;
+    _selectedCategory = widget.part.category;
+    _selectedOrigin = widget.part.origin;
 
     currentImageUrl = widget.part.imageUrl;
 
@@ -439,6 +443,8 @@ Future<void> updateData() async {
     'weight': weight,
     'weightUnit': weightUnit,
     'imageUrl': newImageUrl,
+    'category': _selectedCategory.name.toUpperCase(),
+    'origin': _selectedOrigin.name.toUpperCase(),
     'updatedAt': Timestamp.now(),
   });
 
@@ -765,6 +771,56 @@ TextField(
                             labelText: 'Weight Unit'),
                       ),
                       const SizedBox(height: 20),
+
+DropdownButtonFormField<SparePartCategory>(
+  initialValue: _selectedCategory,
+  decoration: const InputDecoration(labelText: 'Category'),
+  items: const [
+    DropdownMenuItem(
+      value: SparePartCategory.autoCutting,
+      child: Text('AUTO CUTTING'),
+    ),
+    DropdownMenuItem(
+      value: SparePartCategory.manualCutting,
+      child: Text('MANUAL CUTTING'),
+    ),
+  ],
+  onChanged: (value) {
+    if (value != null) {
+      setState(() => _selectedCategory = value);
+    }
+  },
+),
+
+const SizedBox(height: 12),
+
+DropdownButtonFormField<SparePartOrigin>(
+  initialValue: _selectedOrigin,
+  decoration: const InputDecoration(labelText: 'Origin'),
+  items: const [
+    DropdownMenuItem(
+      value: SparePartOrigin.atomItaly,
+      child: Text('ATOM ITALY'),
+    ),
+    DropdownMenuItem(
+      value: SparePartOrigin.atomShanghai,
+      child: Text('ATOM SHANGHAI'),
+    ),
+    DropdownMenuItem(
+      value: SparePartOrigin.local,
+      child: Text('LOCAL'),
+    ),
+  ],
+  onChanged: (value) {
+    if (value != null) {
+      setState(() => _selectedOrigin = value);
+    }
+  },
+),
+
+const SizedBox(height: 12),
+
+
                       Row(
                         children: [
                           Expanded(

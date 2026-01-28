@@ -70,6 +70,7 @@ flutter:
   assets:
     - assets/images/Atom.png
     - assets/icon/app_icon.png
+    - assets/data/spare_parts.json
   uses-material-design: true
 
 flutter_icons:

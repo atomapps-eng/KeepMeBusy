@@ -1,0 +1,16 @@
+[
+  {
+    "partCode": "01039999",
+    "name": "Lama",
+    "nameEn": "Knife 01039999",
+    "location": "A1.2",
+    "initialStock": 100,
+    "minimumStock": 20,
+    "weight": 50,
+    "weightUnit": "g",
+    "category": "AUTO CUTTING",
+    "origin": "ATOM ITALY",
+    "imageUrl": "",
+    "active": true
+  }
+]

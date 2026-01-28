@@ -3,9 +3,10 @@ import 'package:flutter/material.dart';
 import '../../services/spare_part_service.dart';
 import '../../models/spare_part.dart';
 import 'add_spare_part_page.dart';
-import 'edit_spare_part_page.dart';
 import 'barcode_scanner_page.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'spare_part_detail_page.dart';
+
 
 class SparePartListPage extends StatefulWidget {
   final bool isCompact;
@@ -126,20 +127,23 @@ Widget build(BuildContext context) {
 
                           return GestureDetector(
                             onTap: () {
+  // ===== SELECTION MODE =====
   if (widget.selectionMode) {
     Navigator.pop(context, part);
     return;
   }
 
+  // ===== NORMAL MODE → DETAIL =====
   if (!widget.isCompact) {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => EditSparePartPage(part: part), // ⬅️ DETAIL
+        builder: (_) => SparePartDetailPage(part: part),
       ),
     );
   }
 },
+
 
 
                             child: _GlassCard(

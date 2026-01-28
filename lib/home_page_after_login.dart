@@ -97,7 +97,7 @@ class _HomePageAfterLoginState extends State<HomePageAfterLogin> {
 
           SafeArea(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.only(bottom: 24),
+              padding: const EdgeInsets.only(bottom: 8),
               child: Column(
                 children: [
                   // ===== HEADER (ASLI ANDA - TIDAK DIUBAH) =====
@@ -518,7 +518,7 @@ class _MenuCard extends StatelessWidget {
       onTap: onTap,
       radius: 40,
       child: Padding(
-        padding: const EdgeInsets.only(top: 8),
+        padding: const EdgeInsets.only(top: 4),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.start,
           children: [
