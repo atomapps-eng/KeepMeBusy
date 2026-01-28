@@ -19,6 +19,8 @@ class _SettingsPageState extends State<SettingsPage> {
   int importCurrent = 0;
   int importTotal = 0;
 
+  bool isResetting = false;
+
   @override
   void initState() {
     super.initState();
@@ -65,7 +67,47 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   // =========================
-  // RUN IMPORT WITH PROGRESS
+  // TEST LOAD JSON
+  // =========================
+  Future<void> _handleTestLoadJson() async {
+    if (!isAdmin) {
+      _showAdminWarning();
+      return;
+    }
+
+    try {
+      final jsonString =
+          await rootBundle.loadString('assets/data/spare_parts.json');
+      final List<dynamic> data = json.decode(jsonString);
+      _showSuccess('JSON berhasil dimuat: ${data.length} data');
+    } catch (e) {
+      _showError('Gagal load JSON: $e');
+    }
+  }
+
+  // =========================
+  // TEST FIRESTORE
+  // =========================
+  Future<void> _handleTestFirestore() async {
+    if (!isAdmin) {
+      _showAdminWarning();
+      return;
+    }
+
+    try {
+      final firestore = FirebaseFirestore.instance;
+      await firestore.collection('test_connection').doc('ping').set({
+        'message': 'hello firestore',
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+      _showSuccess('Firestore connection OK');
+    } catch (e) {
+      _showError('Firestore connection FAILED: $e');
+    }
+  }
+
+  // =========================
+  // IMPORT WITH PROGRESS
   // =========================
   Future<void> runImportWithProgress() async {
     final jsonString =
@@ -120,58 +162,82 @@ class _SettingsPageState extends State<SettingsPage> {
         });
       }
 
-      setState(() {
-        importCurrent++;
-      });
+      setState(() => importCurrent++);
     }
 
-    setState(() {
-      isImporting = false;
-    });
-
-    _showSuccess('Import selesai: $importTotal spare part diproses');
+    setState(() => isImporting = false);
+    _showSuccess('Import selesai: $importTotal spare part');
   }
 
   // =========================
-  // TEST LOAD JSON (UI RESULT)
+  // 🔥 RESET ALL DATA (ADMIN)
   // =========================
-  Future<void> _handleTestLoadJson() async {
+  Future<void> _handleResetAllData() async {
     if (!isAdmin) {
       _showAdminWarning();
       return;
     }
 
-    try {
-      final jsonString =
-          await rootBundle.loadString('assets/data/spare_parts.json');
-      final List<dynamic> data = json.decode(jsonString);
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('⚠️ RESET SEMUA DATA'),
+        content: const Text(
+          'Aksi ini akan MENGHAPUS SELURUH DATA:\n\n'
+          '- Spare Parts\n'
+          '- Order In\n'
+          '- Order Out\n\n'
+          'Tindakan ini TIDAK BISA DIBATALKAN.\n\n'
+          'Apakah Anda yakin?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('BATAL'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('HAPUS SEMUA'),
+          ),
+        ],
+      ),
+    );
 
-      _showSuccess('JSON berhasil dimuat: ${data.length} data');
+    if (confirm != true) return;
+
+    setState(() => isResetting = true);
+
+    try {
+      await _deleteCollection('spare_parts');
+      await _deleteCollection('order_in');
+      await _deleteCollection('order_out');
+
+      _showSuccess('Semua data berhasil dihapus');
     } catch (e) {
-      _showError('Gagal load JSON: $e');
+      _showError('Gagal reset data: $e');
+    } finally {
+      setState(() => isResetting = false);
     }
   }
 
-  // =========================
-  // TEST FIRESTORE (UI RESULT)
-  // =========================
-  Future<void> _handleTestFirestore() async {
-    if (!isAdmin) {
-      _showAdminWarning();
-      return;
-    }
+  Future<void> _deleteCollection(String collectionName) async {
+    final firestore = FirebaseFirestore.instance;
+    final batchSize = 300;
 
-    try {
-      final firestore = FirebaseFirestore.instance;
+    while (true) {
+      final snapshot = await firestore
+          .collection(collectionName)
+          .limit(batchSize)
+          .get();
 
-      await firestore.collection('test_connection').doc('ping').set({
-        'message': 'hello firestore',
-        'timestamp': FieldValue.serverTimestamp(),
-      });
+      if (snapshot.docs.isEmpty) break;
 
-      _showSuccess('Firestore connection OK');
-    } catch (e) {
-      _showError('Firestore connection FAILED: $e');
+      final batch = firestore.batch();
+      for (final doc in snapshot.docs) {
+        batch.delete(doc.reference);
+      }
+      await batch.commit();
     }
   }
 
@@ -200,7 +266,6 @@ class _SettingsPageState extends State<SettingsPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // ===== HEADER =====
                   _GlassHeader(
                     title: 'Settings',
                     onBack: () => Navigator.pop(context),
@@ -208,34 +273,23 @@ class _SettingsPageState extends State<SettingsPage> {
 
                   const SizedBox(height: 20),
 
-                  // ===== CONTENT =====
                   _GlassCard(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        // TEST LOAD JSON
                         ElevatedButton(
                           onPressed: _handleTestLoadJson,
                           child: const Text('TEST LOAD JSON'),
                         ),
-
                         const SizedBox(height: 8),
-
-                        // TEST FIRESTORE
                         ElevatedButton(
                           onPressed: _handleTestFirestore,
-                          child: const Text(
-                            'TEST FIRESTORE CONNECTION',
-                          ),
+                          child: const Text('TEST FIRESTORE CONNECTION'),
                         ),
-
                         const SizedBox(height: 16),
-
-                        // IMPORT
                         ElevatedButton(
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.red,
-                          ),
+                              backgroundColor: Colors.red),
                           onPressed: isImporting
                               ? null
                               : () {
@@ -264,6 +318,25 @@ class _SettingsPageState extends State<SettingsPage> {
                             textAlign: TextAlign.center,
                           ),
                         ],
+
+                        const Divider(height: 32),
+
+                        // 🔥 RESET BUTTON
+                        ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.black,
+                          ),
+                          onPressed:
+                              isResetting ? null : _handleResetAllData,
+                          child: isResetting
+                              ? const CircularProgressIndicator(
+                                  color: Colors.white,
+                                )
+                              : const Text(
+                                  'RESET ALL DATA (DANGEROUS)',
+                                  style: TextStyle(color: Colors.white),
+                                ),
+                        ),
 
                         const Divider(height: 32),
 
@@ -388,7 +461,7 @@ Future<bool> isCurrentUserAdmin() async {
 }
 
 // ======================================================
-// CONFIRM IMPORT DIALOG
+// CONFIRM IMPORT
 // ======================================================
 void confirmImport(
   BuildContext context,
