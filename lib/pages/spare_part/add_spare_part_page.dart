@@ -402,19 +402,20 @@ request.fields['public_id'] = uniqueId;
                     const InputDecoration(labelText: 'Weight Unit'),
               ),
 
-              DropdownButtonFormField<SparePartCategory>(
+DropdownButtonFormField<SparePartCategory>(
   initialValue: _selectedCategory,
   decoration: const InputDecoration(labelText: 'Category'),
-  items: const [
-    DropdownMenuItem(
-      value: SparePartCategory.autoCutting,
-      child: Text('AUTO CUTTING'),
-    ),
-    DropdownMenuItem(
-      value: SparePartCategory.manualCutting,
-      child: Text('MANUAL CUTTING'),
-    ),
-  ],
+  items: SparePartCategory.values.map((e) {
+    return DropdownMenuItem(
+      value: e,
+      child: Text(e.toString()), // 🔑 PAKAI LABEL
+    );
+  }).toList(),
+  selectedItemBuilder: (context) {
+    return SparePartCategory.values.map((e) {
+      return Text(e.toString()); // 🔑 INI YANG MENGATASI autoCutting
+    }).toList();
+  },
   onChanged: (value) {
     if (value != null) {
       setState(() => _selectedCategory = value);
@@ -422,31 +423,30 @@ request.fields['public_id'] = uniqueId;
   },
 ),
 
+
 const SizedBox(height: 12),
 
 DropdownButtonFormField<SparePartOrigin>(
   initialValue: _selectedOrigin,
   decoration: const InputDecoration(labelText: 'Origin'),
-  items: const [
-    DropdownMenuItem(
-      value: SparePartOrigin.atomItaly,
-      child: Text('ATOM ITALY'),
-    ),
-    DropdownMenuItem(
-      value: SparePartOrigin.atomShanghai,
-      child: Text('ATOM SHANGHAI'),
-    ),
-    DropdownMenuItem(
-      value: SparePartOrigin.local,
-      child: Text('LOCAL'),
-    ),
-  ],
+  items: SparePartOrigin.values.map((e) {
+    return DropdownMenuItem(
+      value: e,
+      child: Text(e.toString()),
+    );
+  }).toList(),
+  selectedItemBuilder: (context) {
+    return SparePartOrigin.values.map((e) {
+      return Text(e.toString());
+    }).toList();
+  },
   onChanged: (value) {
     if (value != null) {
       setState(() => _selectedOrigin = value);
     }
   },
 ),
+
 
 const SizedBox(height: 12),
 

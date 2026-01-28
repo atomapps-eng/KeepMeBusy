@@ -1,10 +1,30 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
 import '../../models/spare_part.dart';
+import 'edit_spare_part_page.dart';
 
 class SparePartDetailPage extends StatelessWidget {
   final SparePart part;
 
   const SparePartDetailPage({super.key, required this.part});
+
+  // =========================
+  // ADMIN CHECK
+  // =========================
+  Future<bool> _isAdmin() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return false;
+
+    final doc = await FirebaseFirestore.instance
+        .collection('admin_whitelist')
+        .doc(uid)
+        .get();
+
+    return doc.exists;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -49,23 +69,18 @@ class SparePartDetailPage extends StatelessWidget {
                     ],
                   ),
 
-                  const SizedBox(height: 16),
-
-                  // ===== IMAGE =====
-                  if (part.imageUrl.isNotEmpty)
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(16),
-                      child: Image.network(
-                        part.imageUrl,
-                        width: double.infinity,
-                        height: 220,
-                        fit: BoxFit.contain,
-                      ),
-                    ),
-
                   const SizedBox(height: 20),
 
-                  // ===== BASIC INFO =====
+                  // ===== HERO IMAGE =====
+                  Center(
+                    child: Hero(
+                      tag: 'spare-part-image-${part.partCode}',
+                      child: _DetailImage(imageUrl: part.imageUrl),
+                    ),
+                  ),
+
+                  const SizedBox(height: 24),
+
                   _infoRow('Part Code', part.partCode),
                   _infoRow('Name', part.name),
                   _infoRow('Name (EN)', part.nameEn),
@@ -73,14 +88,12 @@ class SparePartDetailPage extends StatelessWidget {
 
                   const Divider(height: 32),
 
-                  // ===== STOCK INFO =====
                   _infoRow('Initial Stock', part.initialStock.toString()),
                   _infoRow('Current Stock', part.currentStock.toString()),
                   _infoRow('Minimum Stock', part.minimumStock.toString()),
 
                   const Divider(height: 32),
 
-                  // ===== CATEGORY & ORIGIN (INI YANG ANDA MINTA) =====
                   _infoRow(
                     'Category',
                     part.category.name.replaceAll('_', ' '),
@@ -92,10 +105,109 @@ class SparePartDetailPage extends StatelessWidget {
 
                   const Divider(height: 32),
 
-                  // ===== WEIGHT =====
                   _infoRow(
                     'Weight',
                     '${part.weight} ${part.weightUnit}',
+                  ),
+
+                  const SizedBox(height: 28),
+
+                  // ===== ACTIONS =====
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          icon: const Icon(Icons.edit),
+                          label: const Text('Edit'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blueGrey,
+                            padding:
+                                const EdgeInsets.symmetric(vertical: 14),
+                          ),
+                          onPressed: () async {
+                            await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) =>
+                                    EditSparePartPage(part: part),
+                              ),
+                            );
+
+                            if (context.mounted) {
+                              Navigator.pop(context, true); // 🔥 auto refresh
+                            }
+                          },
+                        ),
+                      ),
+
+                      const SizedBox(width: 12),
+
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          icon: const Icon(Icons.delete),
+                          label: const Text('Hapus'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red,
+                            padding:
+                                const EdgeInsets.symmetric(vertical: 14),
+                          ),
+                          onPressed: () async {
+                            final isAdmin = await _isAdmin();
+
+                            if (!context.mounted) return;
+
+                            if (!isAdmin) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    'Anda tidak memiliki hak akses untuk menghapus data ini',
+                                  ),
+                                  backgroundColor: Colors.orange,
+                                ),
+                              );
+                              return;
+                            }
+
+                            final confirm = await showDialog<bool>(
+                              context: context,
+                              builder: (_) => AlertDialog(
+                                title:
+                                    const Text('Hapus Spare Part'),
+                                content: Text(
+                                  'Yakin ingin menghapus "${part.name}"?',
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () =>
+                                        Navigator.pop(context, false),
+                                    child: const Text('Batal'),
+                                  ),
+                                  ElevatedButton(
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.red,
+                                    ),
+                                    onPressed: () =>
+                                        Navigator.pop(context, true),
+                                    child: const Text('Hapus'),
+                                  ),
+                                ],
+                              ),
+                            );
+
+                            if (confirm != true) return;
+
+                            await FirebaseFirestore.instance
+                                .collection('spare_parts')
+                                .doc(part.partCode)
+                                .delete();
+
+                            if (context.mounted) {
+                              Navigator.pop(context, true); // 🔥 auto refresh
+                            }
+                          },
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -129,6 +241,45 @@ class SparePartDetailPage extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// =========================
+// IMAGE (SAME VISUAL AS EDIT)
+// =========================
+class _DetailImage extends StatelessWidget {
+  final String imageUrl;
+
+  const _DetailImage({required this.imageUrl});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 180,
+      height: 180,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.35),
+            blurRadius: 20,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(14),
+        child: Container(
+          color: const Color.fromARGB(255, 243, 228, 172),
+          child: AspectRatio(
+            aspectRatio: 1,
+            child: imageUrl.isNotEmpty
+                ? Image.network(imageUrl, fit: BoxFit.contain)
+                : const Icon(Icons.inventory, size: 48),
+          ),
+        ),
       ),
     );
   }

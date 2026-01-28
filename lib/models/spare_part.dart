@@ -1,13 +1,37 @@
 enum SparePartCategory {
   autoCutting,
-  manualCutting,
+  manualCutting;
+
+  @override
+  String toString() {
+    switch (this) {
+      case SparePartCategory.autoCutting:
+        return 'AUTO CUTTING';
+      case SparePartCategory.manualCutting:
+        return 'MANUAL CUTTING';
+    }
+  }
 }
 
 enum SparePartOrigin {
   atomItaly,
   atomShanghai,
-  local,
+  local;
+
+  @override
+  String toString() {
+    switch (this) {
+      case SparePartOrigin.atomItaly:
+        return 'ATOM ITALY';
+      case SparePartOrigin.atomShanghai:
+        return 'ATOM SHANGHAI';
+      case SparePartOrigin.local:
+        return 'LOCAL';
+    }
+  }
 }
+
+
 
 class SparePart {
   final String id;
@@ -65,15 +89,24 @@ class SparePart {
       imageUrl: (data['imageUrl'] ?? '').toString(),
       imageVersion: _safeInt(data['imageVersion']),
 
-      category: SparePartCategory.values.firstWhere(
-     (e) => e.name.toUpperCase() == (data['category'] ?? 'AUTO_CUTTING'),
-     orElse: () => SparePartCategory.autoCutting,
-     ),
+     category: SparePartCategory.values.firstWhere(
+  (e) =>
+      e.name.replaceAll('_', '').toUpperCase() ==
+      (data['category'] ?? '')
+          .replaceAll(' ', '')
+          .toUpperCase(),
+  orElse: () => SparePartCategory.autoCutting,
+),
 
-     origin: SparePartOrigin.values.firstWhere(
-     (e) => e.name.toUpperCase() == (data['origin'] ?? 'LOCAL'),
-     orElse: () => SparePartOrigin.local,
-     ),
+origin: SparePartOrigin.values.firstWhere(
+  (e) =>
+      e.name.replaceAll('_', '').toUpperCase() ==
+      (data['origin'] ?? '')
+          .replaceAll(' ', '')
+          .toUpperCase(),
+  orElse: () => SparePartOrigin.local,
+),
+
 
     );
   }

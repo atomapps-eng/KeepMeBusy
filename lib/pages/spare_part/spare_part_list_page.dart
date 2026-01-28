@@ -371,8 +371,8 @@ Widget build(BuildContext context) {
           const SizedBox(width: 12),
 
           // RIGHT THUMBNAIL (TETAP)
-          ClipRRect(
-            borderRadius: BorderRadius.circular(10),
+          Hero(
+            tag: 'spare-part-image-${part.partCode}',
             child: Container(
               width: 112,
               height: 112,

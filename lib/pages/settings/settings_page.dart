@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:flutter/services.dart';
@@ -32,6 +33,38 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   // =========================
+  // SNACKBARS
+  // =========================
+  void _showAdminWarning() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Anda tidak memiliki hak akses untuk menjalankan aksi ini',
+        ),
+        backgroundColor: Colors.orange,
+      ),
+    );
+  }
+
+  void _showSuccess(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.green,
+      ),
+    );
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
+
+  // =========================
   // RUN IMPORT WITH PROGRESS
   // =========================
   Future<void> runImportWithProgress() async {
@@ -61,17 +94,13 @@ class _SettingsPageState extends State<SettingsPage> {
           'location': item['location'],
           'category': item['category'],
           'origin': item['origin'],
-
           'initialStock': item['initialStock'],
           'currentStock': item['initialStock'],
           'minimumStock': item['minimumStock'],
-
           'weight': item['weight'],
           'weightUnit': item['weightUnit'],
-
           'imageUrl': item['imageUrl'],
           'active': item['active'],
-
           'createdAt': FieldValue.serverTimestamp(),
           'updatedAt': FieldValue.serverTimestamp(),
         });
@@ -82,13 +111,11 @@ class _SettingsPageState extends State<SettingsPage> {
           'location': item['location'],
           'category': item['category'],
           'origin': item['origin'],
-
           'minimumStock': item['minimumStock'],
           'weight': item['weight'],
           'weightUnit': item['weightUnit'],
           'imageUrl': item['imageUrl'],
           'active': item['active'],
-
           'updatedAt': FieldValue.serverTimestamp(),
         });
       }
@@ -102,73 +129,262 @@ class _SettingsPageState extends State<SettingsPage> {
       isImporting = false;
     });
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Import completed')),
-    );
+    _showSuccess('Import selesai: $importTotal spare part diproses');
+  }
+
+  // =========================
+  // TEST LOAD JSON (UI RESULT)
+  // =========================
+  Future<void> _handleTestLoadJson() async {
+    if (!isAdmin) {
+      _showAdminWarning();
+      return;
+    }
+
+    try {
+      final jsonString =
+          await rootBundle.loadString('assets/data/spare_parts.json');
+      final List<dynamic> data = json.decode(jsonString);
+
+      _showSuccess('JSON berhasil dimuat: ${data.length} data');
+    } catch (e) {
+      _showError('Gagal load JSON: $e');
+    }
+  }
+
+  // =========================
+  // TEST FIRESTORE (UI RESULT)
+  // =========================
+  Future<void> _handleTestFirestore() async {
+    if (!isAdmin) {
+      _showAdminWarning();
+      return;
+    }
+
+    try {
+      final firestore = FirebaseFirestore.instance;
+
+      await firestore.collection('test_connection').doc('ping').set({
+        'message': 'hello firestore',
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+
+      _showSuccess('Firestore connection OK');
+    } catch (e) {
+      _showError('Firestore connection FAILED: $e');
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
+      body: Stack(
         children: [
-          ElevatedButton(
-            onPressed: testLoadJson,
-            child: const Text('TEST LOAD JSON'),
-          ),
-          const SizedBox(height: 8),
-          ElevatedButton(
-            onPressed: testFirestoreConnection,
-            child: const Text('TEST FIRESTORE CONNECTION'),
-          ),
-
-          // =========================
-          // IMPORT SECTION (ADMIN)
-          // =========================
-          if (isAdmin) ...[
-            const Divider(height: 32),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-              onPressed: isImporting
-                  ? null
-                  : () => confirmImport(context, runImportWithProgress),
-              child: const Text('IMPORT SPARE PARTS'),
+          // ===== BACKGROUND =====
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Color(0xFFFFE0B2),
+                  Color(0xFFFFFFFF),
+                ],
+              ),
             ),
-
-            if (isImporting) ...[
-              const SizedBox(height: 16),
-              LinearProgressIndicator(
-                value: importTotal == 0
-                    ? null
-                    : importCurrent / importTotal,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Importing $importCurrent / $importTotal',
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ],
-
-          const Divider(height: 32),
-          const ListTile(
-            leading: Icon(Icons.info_outline),
-            title: Text('About App'),
           ),
-          const ListTile(
-            leading: Icon(Icons.language),
-            title: Text('Language'),
-          ),
-          const ListTile(
-            leading: Icon(Icons.verified),
-            title: Text('License Info'),
+
+          SafeArea(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // ===== HEADER =====
+                  _GlassHeader(
+                    title: 'Settings',
+                    onBack: () => Navigator.pop(context),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // ===== CONTENT =====
+                  _GlassCard(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // TEST LOAD JSON
+                        ElevatedButton(
+                          onPressed: _handleTestLoadJson,
+                          child: const Text('TEST LOAD JSON'),
+                        ),
+
+                        const SizedBox(height: 8),
+
+                        // TEST FIRESTORE
+                        ElevatedButton(
+                          onPressed: _handleTestFirestore,
+                          child: const Text(
+                            'TEST FIRESTORE CONNECTION',
+                          ),
+                        ),
+
+                        const SizedBox(height: 16),
+
+                        // IMPORT
+                        ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red,
+                          ),
+                          onPressed: isImporting
+                              ? null
+                              : () {
+                                  if (!isAdmin) {
+                                    _showAdminWarning();
+                                    return;
+                                  }
+                                  confirmImport(
+                                    context,
+                                    runImportWithProgress,
+                                  );
+                                },
+                          child: const Text('IMPORT SPARE PARTS'),
+                        ),
+
+                        if (isImporting) ...[
+                          const SizedBox(height: 16),
+                          LinearProgressIndicator(
+                            value: importTotal == 0
+                                ? null
+                                : importCurrent / importTotal,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Importing $importCurrent / $importTotal',
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+
+                        const Divider(height: 32),
+
+                        const ListTile(
+                          leading: Icon(Icons.info_outline),
+                          title: Text('About App'),
+                        ),
+                        const ListTile(
+                          leading: Icon(Icons.language),
+                          title: Text('Language'),
+                        ),
+                        const ListTile(
+                          leading: Icon(Icons.verified),
+                          title: Text('License Info'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ],
       ),
     );
   }
+}
+
+// =========================
+// GLASS HEADER
+// =========================
+class _GlassHeader extends StatelessWidget {
+  final String title;
+  final VoidCallback onBack;
+
+  const _GlassHeader({
+    required this.title,
+    required this.onBack,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+        child: Container(
+          padding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.25),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.35),
+            ),
+          ),
+          child: Row(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: onBack,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// =========================
+// GLASS CARD
+// =========================
+class _GlassCard extends StatelessWidget {
+  final Widget child;
+
+  const _GlassCard({required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.25),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.35),
+            ),
+          ),
+          child: child,
+        ),
+      ),
+    );
+  }
+}
+
+// ======================================================
+// ADMIN CHECK
+// ======================================================
+Future<bool> isCurrentUserAdmin() async {
+  final user = FirebaseAuth.instance.currentUser;
+  if (user == null || user.email == null) return false;
+
+  final doc = await FirebaseFirestore.instance
+      .collection('admin_whitelist')
+      .doc(user.email!.toLowerCase())
+      .get();
+
+  return doc.exists && doc.data()?['active'] == true;
 }
 
 // ======================================================
@@ -203,44 +419,4 @@ void confirmImport(
       ],
     ),
   );
-}
-
-// ======================================================
-// ADMIN CHECK
-// ======================================================
-Future<bool> isCurrentUserAdmin() async {
-  final user = FirebaseAuth.instance.currentUser;
-  if (user == null || user.email == null) return false;
-
-  final doc = await FirebaseFirestore.instance
-      .collection('admin_whitelist')
-      .doc(user.email!.toLowerCase())
-      .get();
-
-  return doc.exists && doc.data()?['active'] == true;
-}
-
-// ======================================================
-// TEST JSON
-// ======================================================
-Future<void> testLoadJson() async {
-  final jsonString =
-      await rootBundle.loadString('assets/data/spare_parts.json');
-  final List<dynamic> data = json.decode(jsonString);
-
-  debugPrint('TOTAL PART: ${data.length}');
-}
-
-// ======================================================
-// TEST FIRESTORE
-// ======================================================
-Future<void> testFirestoreConnection() async {
-  final firestore = FirebaseFirestore.instance;
-
-  await firestore.collection('test_connection').doc('ping').set({
-    'message': 'hello firestore',
-    'timestamp': FieldValue.serverTimestamp(),
-  });
-
-  debugPrint('FIRESTORE CONNECTED');
 }
