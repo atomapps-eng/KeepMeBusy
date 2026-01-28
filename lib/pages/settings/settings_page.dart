@@ -15,11 +15,15 @@ class SettingsPage extends StatefulWidget {
 class _SettingsPageState extends State<SettingsPage> {
   bool isAdmin = false;
 
+  // ===== IMPORT STATE =====
   bool isImporting = false;
   int importCurrent = 0;
   int importTotal = 0;
 
+  // ===== RESET STATE =====
   bool isResetting = false;
+  int resetCurrent = 0;
+  int resetTotal = 0;
 
   @override
   void initState() {
@@ -29,9 +33,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Future<void> _checkAdmin() async {
     final result = await isCurrentUserAdmin();
-    setState(() {
-      isAdmin = result;
-    });
+    setState(() => isAdmin = result);
   }
 
   // =========================
@@ -107,7 +109,7 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   // =========================
-  // IMPORT WITH PROGRESS
+  // IMPORT DATA (UNCHANGED)
   // =========================
   Future<void> runImportWithProgress() async {
     final jsonString =
@@ -170,7 +172,7 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   // =========================
-  // 🔥 RESET ALL DATA (ADMIN)
+  // RESET ALL DATA WITH PROGRESS
   // =========================
   Future<void> _handleResetAllData() async {
     if (!isAdmin) {
@@ -183,12 +185,12 @@ class _SettingsPageState extends State<SettingsPage> {
       builder: (_) => AlertDialog(
         title: const Text('⚠️ RESET SEMUA DATA'),
         content: const Text(
-          'Aksi ini akan MENGHAPUS SELURUH DATA:\n\n'
+          'Aksi ini akan MENGHAPUS:\n\n'
           '- Spare Parts\n'
           '- Order In\n'
           '- Order Out\n\n'
           'Tindakan ini TIDAK BISA DIBATALKAN.\n\n'
-          'Apakah Anda yakin?',
+          'Lanjutkan?',
         ),
         actions: [
           TextButton(
@@ -206,12 +208,20 @@ class _SettingsPageState extends State<SettingsPage> {
 
     if (confirm != true) return;
 
-    setState(() => isResetting = true);
+    setState(() {
+      isResetting = true;
+      resetCurrent = 0;
+      resetTotal = 0;
+    });
 
     try {
-      await _deleteCollection('spare_parts');
-      await _deleteCollection('order_in');
-      await _deleteCollection('order_out');
+      resetTotal += await _countCollection('spare_parts');
+      resetTotal += await _countCollection('order_in');
+      resetTotal += await _countCollection('order_out');
+
+      await _deleteCollectionWithProgress('spare_parts');
+      await _deleteCollectionWithProgress('order_in');
+      await _deleteCollectionWithProgress('order_out');
 
       _showSuccess('Semua data berhasil dihapus');
     } catch (e) {
@@ -221,15 +231,19 @@ class _SettingsPageState extends State<SettingsPage> {
     }
   }
 
-  Future<void> _deleteCollection(String collectionName) async {
+  Future<int> _countCollection(String name) async {
+    final snap =
+        await FirebaseFirestore.instance.collection(name).get();
+    return snap.size;
+  }
+
+  Future<void> _deleteCollectionWithProgress(String name) async {
     final firestore = FirebaseFirestore.instance;
-    final batchSize = 300;
+    const batchSize = 200;
 
     while (true) {
-      final snapshot = await firestore
-          .collection(collectionName)
-          .limit(batchSize)
-          .get();
+      final snapshot =
+          await firestore.collection(name).limit(batchSize).get();
 
       if (snapshot.docs.isEmpty) break;
 
@@ -237,7 +251,12 @@ class _SettingsPageState extends State<SettingsPage> {
       for (final doc in snapshot.docs) {
         batch.delete(doc.reference);
       }
+
       await batch.commit();
+
+      setState(() {
+        resetCurrent += snapshot.docs.length;
+      });
     }
   }
 
@@ -246,7 +265,6 @@ class _SettingsPageState extends State<SettingsPage> {
     return Scaffold(
       body: Stack(
         children: [
-          // ===== BACKGROUND =====
           Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
@@ -259,7 +277,6 @@ class _SettingsPageState extends State<SettingsPage> {
               ),
             ),
           ),
-
           SafeArea(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(16),
@@ -270,9 +287,7 @@ class _SettingsPageState extends State<SettingsPage> {
                     title: 'Settings',
                     onBack: () => Navigator.pop(context),
                   ),
-
                   const SizedBox(height: 20),
-
                   _GlassCard(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -284,7 +299,8 @@ class _SettingsPageState extends State<SettingsPage> {
                         const SizedBox(height: 8),
                         ElevatedButton(
                           onPressed: _handleTestFirestore,
-                          child: const Text('TEST FIRESTORE CONNECTION'),
+                          child:
+                              const Text('TEST FIRESTORE CONNECTION'),
                         ),
                         const SizedBox(height: 16),
                         ElevatedButton(
@@ -304,7 +320,6 @@ class _SettingsPageState extends State<SettingsPage> {
                                 },
                           child: const Text('IMPORT SPARE PARTS'),
                         ),
-
                         if (isImporting) ...[
                           const SizedBox(height: 16),
                           LinearProgressIndicator(
@@ -318,40 +333,30 @@ class _SettingsPageState extends State<SettingsPage> {
                             textAlign: TextAlign.center,
                           ),
                         ],
-
                         const Divider(height: 32),
-
-                        // 🔥 RESET BUTTON
                         ElevatedButton(
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.black,
-                          ),
+                              backgroundColor: Colors.black),
                           onPressed:
                               isResetting ? null : _handleResetAllData,
-                          child: isResetting
-                              ? const CircularProgressIndicator(
-                                  color: Colors.white,
-                                )
-                              : const Text(
-                                  'RESET ALL DATA (DANGEROUS)',
-                                  style: TextStyle(color: Colors.white),
-                                ),
+                          child: const Text(
+                            'RESET ALL DATA (DANGEROUS)',
+                            style: TextStyle(color: Colors.white),
+                          ),
                         ),
-
-                        const Divider(height: 32),
-
-                        const ListTile(
-                          leading: Icon(Icons.info_outline),
-                          title: Text('About App'),
-                        ),
-                        const ListTile(
-                          leading: Icon(Icons.language),
-                          title: Text('Language'),
-                        ),
-                        const ListTile(
-                          leading: Icon(Icons.verified),
-                          title: Text('License Info'),
-                        ),
+                        if (isResetting) ...[
+                          const SizedBox(height: 16),
+                          LinearProgressIndicator(
+                            value: resetTotal == 0
+                                ? null
+                                : resetCurrent / resetTotal,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Deleting $resetCurrent / $resetTotal',
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
                       ],
                     ),
                   ),
@@ -445,9 +450,9 @@ class _GlassCard extends StatelessWidget {
   }
 }
 
-// ======================================================
+// =========================
 // ADMIN CHECK
-// ======================================================
+// =========================
 Future<bool> isCurrentUserAdmin() async {
   final user = FirebaseAuth.instance.currentUser;
   if (user == null || user.email == null) return false;
@@ -460,9 +465,9 @@ Future<bool> isCurrentUserAdmin() async {
   return doc.exists && doc.data()?['active'] == true;
 }
 
-// ======================================================
+// =========================
 // CONFIRM IMPORT
-// ======================================================
+// =========================
 void confirmImport(
   BuildContext context,
   Future<void> Function() onConfirm,

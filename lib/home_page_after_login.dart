@@ -14,10 +14,6 @@ import 'pages/partners/partner_list_page.dart';
 import 'pages/spare_part/low_stock_page.dart';
 
 
-
-
-
-
 class HomePageAfterLogin extends StatefulWidget {
   const HomePageAfterLogin({super.key});
 
@@ -36,7 +32,7 @@ class _HomePageAfterLoginState extends State<HomePageAfterLogin> {
             final data = doc.data();
             final int currentStock = data['currentStock'] ?? 0;
             final int minimumStock = data['minimumStock'] ?? 0;
-            return currentStock <= minimumStock;
+            return currentStock < minimumStock;
           }).length;
         });
   }

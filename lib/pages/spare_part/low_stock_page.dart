@@ -103,7 +103,7 @@ class LowStockPage extends StatelessWidget {
                         final int minimumStock =
                             (data['minimumStock'] ?? 0) as int;
 
-                        return currentStock <= minimumStock;
+                        return currentStock < minimumStock;
                       }).toList();
 
                       if (lowStockDocs.isEmpty) {

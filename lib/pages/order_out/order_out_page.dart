@@ -533,7 +533,7 @@ Future<void> _editItemAtIndex(int index) async {
     );
   }
 
-  // ================= ORDER DETAIL =================
+  // ================= ORDER DETAIL =================//
   void _showOrderDetail(
       BuildContext context, Map<String, dynamic> data) {
     final items = data['items'] as List<dynamic>;
