@@ -15,16 +15,17 @@ class SparePartDetailPage extends StatelessWidget {
   // ADMIN CHECK
   // =========================
   Future<bool> _isAdmin() async {
-    final uid = FirebaseAuth.instance.currentUser?.uid;
-    if (uid == null) return false;
+  final user = FirebaseAuth.instance.currentUser;
+  if (user == null || user.email == null) return false;
 
-    final doc = await FirebaseFirestore.instance
-        .collection('admin_whitelist')
-        .doc(uid)
-        .get();
+  final doc = await FirebaseFirestore.instance
+      .collection('admin_whitelist')
+      .doc(user.email!.toLowerCase())
+      .get();
 
-    return doc.exists;
-  }
+  return doc.exists && doc.data()?['active'] == true;
+}
+
 
   @override
   Widget build(BuildContext context) {
