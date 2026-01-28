@@ -5,6 +5,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../spare_part/spare_part_list_page.dart';
 import '../../models/spare_part.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'order_out_detail_page.dart';
+
 
 
 class OrderOutPage extends StatefulWidget {
@@ -691,33 +693,32 @@ Widget build(BuildContext context) {
                         ),
 
                       Expanded(
-                        child: isCreateMode
-                            ? _buildCreateForm()
-                            : _OrderOutListView(
-  searchKeyword: fullscreenSearchController.text,
-  filterDate: fullscreenFilterDate,
-  onTap: _showOrderDetail,
-  onDelete: (orderId, data) {
-    _deleteOrder(context, orderId, data);
-  },
-  onEdit: (data) async {
-  final confirmed = await _confirmEditOrderOut(context);
-  if (!confirmed) return;
-
-  _openEditOrder(data);
-
-  ScaffoldMessenger.of(context).showSnackBar(
-    const SnackBar(
-      content: Text('Mode edit Order Out diaktifkan'),
-      duration: Duration(seconds: 2),
+  child: isCreateMode
+      ? _buildCreateForm()
+      : _OrderOutListView(
+          searchKeyword: fullscreenSearchController.text,
+          filterDate: fullscreenFilterDate,
+         onTap: (context, data) async {
+  final result = await Navigator.push<Map<String, dynamic>>(
+    context,
+    MaterialPageRoute(
+      builder: (_) => OrderOutDetailPage(
+        data: data,
+      ),
     ),
   );
+
+  if (result != null) {
+    _openEditOrder(result);
+  }
 },
 
+
+          onDelete: (_, __) {},
+          onEdit: (_) {},
+        ),
 ),
 
-
-                      ),
                     ],
                   ),
           ),
@@ -869,25 +870,32 @@ class _OrderOutListView extends StatelessWidget {
           itemCount: docs.length,
           itemBuilder: (_, i) {
   final data = docs[i].data() as Map<String, dynamic>;
-  final orderId = docs[i].id; // ✅ AMAN
+  final orderId = docs[i].id;
 
   return InkWell(
-    onTap: () => onTap(context, data),
+    onTap: () => onTap(
+      context,
+      {
+        ...data,
+        'id': orderId,
+      },
+    ),
     child: _OrderHistoryCard(
       data: {
         ...data,
-        'id': orderId, // inject id dengan BENAR
+        'id': orderId,
       },
       isFullscreen: true,
       onDelete: () => onDelete(orderId, data),
       onEdit: () => onEdit({
-  ...data,
-  'id': orderId,
-}),
-
+        ...data,
+        'id': orderId,
+      }),
     ),
   );
 },
+
+
 
         );
       },
