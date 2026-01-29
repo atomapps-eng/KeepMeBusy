@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:printing/printing.dart';
 import '../../utils/order_out_pdf.dart';
+import 'dart:io';
+import 'package:path_provider/path_provider.dart';
+import 'package:open_filex/open_filex.dart';
+
 
 
 class OrderOutDetailPage extends StatelessWidget {
@@ -211,10 +214,18 @@ class OrderOutDetailPage extends StatelessWidget {
     data: data,
   );
 
-  await Printing.layoutPdf(
-    onLayout: (_) => pdfData,
-    name: 'OrderOut-${data['poNumber']}.pdf',
-  );
+  final bytes = pdfData; // Uint8List hasil generate PDF
+
+final dir = await getApplicationDocumentsDirectory();
+final file = File(
+  '${dir.path}/OrderOut-${data['poNumber']}.pdf',
+);
+
+await file.writeAsBytes(bytes, flush: true);
+
+// Buka PDF dengan aplikasi default (PDF viewer / print dari sana)
+await OpenFilex.open(file.path);
+
 },
 
                               ),
