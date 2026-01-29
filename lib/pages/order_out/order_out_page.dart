@@ -810,8 +810,9 @@ class _OrderOutListView extends StatelessWidget {
   final String searchKeyword;
   final DateTime? filterDate;
   final void Function(BuildContext, Map<String, dynamic>) onTap;
-  final void Function(String orderId, Map<String, dynamic> data) onDelete;
-  final void Function(Map<String, dynamic> data) onEdit;
+  final void Function(String orderId, Map<String, dynamic> data)? onDelete;
+  final void Function(Map<String, dynamic> data)? onEdit;
+
 
 
   const _OrderOutListView({
@@ -873,26 +874,24 @@ class _OrderOutListView extends StatelessWidget {
   final orderId = docs[i].id;
 
   return InkWell(
-    onTap: () => onTap(
-      context,
-      {
-        ...data,
-        'id': orderId,
-      },
-    ),
-    child: _OrderHistoryCard(
-      data: {
-        ...data,
-        'id': orderId,
-      },
-      isFullscreen: true,
-      onDelete: () => onDelete(orderId, data),
-      onEdit: () => onEdit({
-        ...data,
-        'id': orderId,
-      }),
-    ),
-  );
+  onTap: () => onTap(
+    context,
+    {
+      ...data,
+      'id': orderId,
+    },
+  ),
+  child: _OrderHistoryCard(
+    data: {
+      ...data,
+      'id': orderId,
+    },
+    // ⛔ JANGAN kirim isFullscreen = true
+    // ⛔ JANGAN kirim onEdit
+    // ⛔ JANGAN kirim onDelete
+  ),
+);
+
 },
 
 
@@ -928,7 +927,11 @@ class _OrderOutQuickView extends StatelessWidget {
           itemBuilder: (_, i) {
             final data =
                 snapshot.data!.docs[i].data() as Map<String, dynamic>;
-            return _OrderHistoryCard(data: data);
+            return _OrderHistoryCard(
+  data: data,
+  isFullscreen: false,
+);
+
           },
         );
       },
@@ -946,11 +949,11 @@ class _OrderHistoryCard extends StatelessWidget {
   final VoidCallback? onEdit;
 
   const _OrderHistoryCard({
-    required this.data,
-    this.isFullscreen = false,
-    this.onDelete,
-    this.onEdit,
-  });
+  required this.data,
+  this.isFullscreen = false,
+  this.onEdit,
+  this.onDelete,
+});
 
 
   @override
