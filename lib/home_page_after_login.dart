@@ -13,6 +13,10 @@ import 'core/menu/menu_registry.dart';
 import 'pages/partners/partner_list_page.dart';
 import 'pages/spare_part/low_stock_page.dart';
 
+import '../attendance/pages/attendance_page.dart';
+import '../attendance/services/attendance_period_helper.dart';
+
+
 
 class HomePageAfterLogin extends StatefulWidget {
   const HomePageAfterLogin({super.key});
@@ -246,15 +250,24 @@ class _HomePageAfterLoginState extends State<HomePageAfterLogin> {
       label: 'Daily Attendance',
       color: Colors.blue,
       onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) =>
-                const PlaceholderPage(title: 'Daily Attendance'),
-          ),
-        );
-      },
+  final user = FirebaseAuth.instance.currentUser!;
+  final employeeId = user.displayName!; // ⬅️ INI FIX-NYA
+
+  final now = DateTime.now();
+  final period = AttendancePeriodHelper.resolvePeriod(now);
+
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (_) => AttendancePage(
+        employeeId: employeeId,
+        period: period,
+      ),
     ),
+  );
+},
+),
+
     _MenuCard(
       icon: Icons.build_circle,
       label: 'Service Report',
