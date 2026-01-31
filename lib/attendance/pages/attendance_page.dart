@@ -9,6 +9,8 @@ import '../../pages/common/app_background_wrapper.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'activity_list_page.dart';
 import 'attendance_list_page.dart';
+import 'add_overnight_page.dart';
+import 'overnight_detail_page.dart';
 
 
 class AttendancePage extends StatefulWidget {
@@ -58,6 +60,50 @@ class _AttendancePageState extends State<AttendancePage> {
     return activities.take(3).toList();
   });
 }
+
+Stream<List<Map<String, dynamic>>> _overnightPreviewStream() {
+  return FirebaseFirestore.instance
+      .collection('attendance')
+      .doc(widget.employeeId) // <-- Basuki Rahmat
+      .collection('overnight')
+      .orderBy('startDate', descending: true)
+      .limit(3)
+      .snapshots()
+      .map((snap) {
+        print('OVERNIGHT DOC COUNT: ${snap.docs.length}');
+        return snap.docs.map((d) => d.data()).toList();
+      });
+}
+
+Stream<Map<String, int>> _overnightSummaryStream() {
+  return FirebaseFirestore.instance
+      .collection('attendance')
+      .doc(widget.employeeId)
+      .collection('overnight')
+      .snapshots()
+      .map((snap) {
+        int domestic = 0;
+        int overseas = 0;
+
+        for (final d in snap.docs) {
+          final data = d.data();
+          final nights = (data['totalNights'] ?? 0) as int;
+          final category = data['customerCategory'];
+
+          if (category == 'domestic') {
+            domestic += nights;
+          } else if (category == 'overseas') {
+            overseas += nights;
+          }
+        }
+
+        return {
+          'domestic': domestic,
+          'overseas': overseas,
+        };
+      });
+}
+
 
   @override
   Widget build(BuildContext context) {
@@ -248,25 +294,69 @@ class _AttendancePageState extends State<AttendancePage> {
                         const SizedBox(height: 12),
 
                         // ===== SUMMARY CHIPS PLACEHOLDER =====
-                        Wrap(
-                          spacing: 8,
-                          children: const [
-                            _StaticChip(
-                                label: 'Domestic 0',
-                                color: Colors.blue),
-                            _StaticChip(
-                                label: 'Overseas 0',
-                                color: Colors.purple),
-                          ],
-                        ),
+                        StreamBuilder<Map<String, int>>(
+  stream: _overnightSummaryStream(),
+  builder: (context, snapshot) {
+    final summary = snapshot.data ?? {
+      'domestic': 0,
+      'overseas': 0,
+    };
+
+    return Wrap(
+      spacing: 8,
+      children: [
+        _StaticChip(
+          label: 'Domestic ${summary['domestic']}',
+          color: Colors.blue,
+        ),
+        _StaticChip(
+          label: 'Overseas ${summary['overseas']}',
+          color: Colors.purple,
+        ),
+      ],
+    );
+  },
+),
+
 
                         const Divider(height: 24),
 
-                        const Text(
-                          'No overnight data',
-                          style:
-                              TextStyle(color: Colors.black54),
-                        ),
+StreamBuilder<List<Map<String, dynamic>>>(
+  stream: _overnightPreviewStream(),
+  builder: (context, snapshot) {
+    final data = snapshot.data ?? [];
+
+    if (data.isEmpty) {
+      return const Text(
+        'No overnight data',
+        style: TextStyle(color: Colors.black54),
+      );
+    }
+
+    return Column(
+      children: data.map((o) {
+        final start = (o['startDate'] as Timestamp).toDate();
+        final end = (o['endDate'] as Timestamp).toDate();
+
+        return ListTile(
+          dense: true,
+          title: Text(
+            o['customerName'] ?? '-',
+            style: const TextStyle(fontWeight: FontWeight.w600),
+          ),
+          subtitle: Text(
+            '${o['customerCategory']} • '
+            '${start.day}/${start.month} → ${end.day}/${end.month} '
+            '(${o['totalNights']} nights)',
+          ),
+          trailing: const Icon(Icons.chevron_right, size: 18),
+        );
+      }).toList(),
+    );
+  },
+),
+
+
 
                         const SizedBox(height: 12),
 
@@ -278,8 +368,16 @@ class _AttendancePageState extends State<AttendancePage> {
         icon: const Icon(Icons.add),
         label: const Text('Add Overnight'),
         onPressed: () {
-          // TODO: Add Overnight logic
-        },
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (_) => AddOvernightPage(
+        employeeId: widget.employeeId,
+      ),
+    ),
+  );
+},
+
       ),
     ),
     const SizedBox(height: 8),
@@ -291,8 +389,17 @@ class _AttendancePageState extends State<AttendancePage> {
           foregroundColor: Colors.black87,
         ),
         onPressed: () {
-          // TODO: View Overnight
-        },
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (_) => OvernightDetailPage(
+        employeeId: widget.employeeId,
+        period: widget.period,
+      ),
+    ),
+  );
+},
+
         child: const Text('View Overnight'),
       ),
     ),

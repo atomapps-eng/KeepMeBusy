@@ -21,6 +21,7 @@ class _AddPartnerPageState extends State<AddPartnerPage> {
   final lngController = TextEditingController();
   final phoneController = TextEditingController();
   final emailController = TextEditingController();
+  String category = 'domestic';
   
 
   File? selectedImage;
@@ -76,9 +77,10 @@ if (selectedImage != null) {
 }
 
 
-      await PartnerService().addPartner(
+  await PartnerService().addPartner(
   name: nameController.text.trim(),
   address: addressController.text.trim(),
+  category: category, // ⬅️ WAJIB
   lat: latController.text.isEmpty
       ? null
       : double.tryParse(latController.text),
@@ -93,6 +95,7 @@ if (selectedImage != null) {
       : emailController.text.trim(),
   logoUrl: logoUrl,
 );
+
 
       if (!mounted) return;
       Navigator.pop(context);
@@ -170,6 +173,28 @@ _input(
   controller: emailController,
   label: 'Email',
   keyboard: TextInputType.emailAddress,
+),
+
+DropdownButtonFormField<String>(
+  initialValue: category,
+  decoration: const InputDecoration(
+    labelText: 'Category',
+  ),
+  items: const [
+    DropdownMenuItem(
+      value: 'domestic',
+      child: Text('Domestic'),
+    ),
+    DropdownMenuItem(
+      value: 'overseas',
+      child: Text('Overseas'),
+    ),
+  ],
+  onChanged: (v) {
+    setState(() {
+      category = v!;
+    });
+  },
 ),
 
 

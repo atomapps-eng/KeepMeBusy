@@ -8,6 +8,7 @@ class Partner {
   final double? lng;
   final String? phone;
   final String? email;
+  final String category;
   final String logoUrl;
 
   // ⬇️ BUAT NULLABLE
@@ -18,6 +19,7 @@ class Partner {
     required this.id,
     required this.name,
     required this.address,
+    required this.category,
     this.lat,
     this.lng,
     this.phone,
@@ -34,6 +36,7 @@ class Partner {
       id: doc.id,
       name: data['name'] ?? '',
       address: data['address'] ?? '',
+      category: data['category'] ?? 'domestic',
       lat: (data['lat'] as num?)?.toDouble(),
       lng: (data['lng'] as num?)?.toDouble(),
       phone: data['phone'],
@@ -48,6 +51,7 @@ class Partner {
     return {
       'name': name,
       'address': address,
+      'category': category,
       'lat': lat,
       'lng': lng,
       'phone': phone,

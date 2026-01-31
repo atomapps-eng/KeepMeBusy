@@ -19,6 +19,7 @@ class PartnerService {
   Future<void> addPartner({
     required String name,
     required String address,
+    required String category,
     double? lat,
     double? lng,
     String? phone,
@@ -28,6 +29,7 @@ class PartnerService {
     await _ref.add({
       'name': name,
       'address': address,
+      'category': category,
       'lat': lat,
       'lng': lng,
       'phone': phone,
@@ -42,6 +44,7 @@ class PartnerService {
     required String id,
     required String name,
     required String address,
+    required String category,
     double? lat,
     double? lng,
     String? phone,
@@ -51,6 +54,7 @@ class PartnerService {
     await _ref.doc(id).update({
       'name': name,
       'address': address,
+      'category': category,
       'lat': lat,
       'lng': lng,
       'phone': phone,

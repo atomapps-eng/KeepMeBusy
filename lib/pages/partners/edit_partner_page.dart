@@ -102,6 +102,7 @@ class _EditPartnerPageState extends State<EditPartnerPage> {
         id: widget.partner.id,
         name: nameController.text.trim(),
         address: addressController.text.trim(),
+        category: widget.partner.category,
         lat: latController.text.isEmpty
     ? null
     : double.tryParse(latController.text),
