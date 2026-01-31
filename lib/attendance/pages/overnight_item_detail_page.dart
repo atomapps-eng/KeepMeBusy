@@ -141,7 +141,7 @@ Future<void> _deleteOvernight(BuildContext context) async {
         totalNights: data['totalNights'],
         customerName: data['customerName'],
         customerCategory: data['customerCategory'],
-      );
+      ); //overnight entry
 
       Navigator.push(
         context,

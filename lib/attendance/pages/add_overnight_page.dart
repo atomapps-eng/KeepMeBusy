@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/overnight_helper.dart';
 
 
@@ -76,7 +75,7 @@ Future<void> _save() async {
       endDate!,
     ),
     customerName: selectedPartner!.name,
-    customerCategory: selectedPartner!.category!,
+    customerCategory: selectedPartner!.category,
   );
 
   setState(() => isSaving = true);

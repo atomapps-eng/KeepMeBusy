@@ -29,6 +29,8 @@ class AttendanceInputPage extends StatefulWidget {
 }
 
 class _AttendanceInputPageState extends State<AttendanceInputPage> {
+  bool _isSaving = false;
+
   late DateTime _selectedDate;
 
   late AttendanceStatus status;
@@ -42,6 +44,37 @@ class _AttendanceInputPageState extends State<AttendanceInputPage> {
 
   TimeOfDay checkIn = const TimeOfDay(hour: 8, minute: 0);
   TimeOfDay checkOut = const TimeOfDay(hour: 17, minute: 0);
+
+  Future<bool> _showConfirmDialog({
+  required String title,
+  required String message,
+  String confirmText = 'Yes',
+  String cancelText = 'Cancel',
+  Color confirmColor = Colors.red,
+}) async {
+  final result = await showDialog<bool>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: Text(title),
+      content: Text(message),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, false),
+          child: Text(cancelText),
+        ),
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: confirmColor,
+          ),
+          onPressed: () => Navigator.pop(context, true),
+          child: Text(confirmText),
+        ),
+      ],
+    ),
+  );
+
+  return result ?? false;
+}
 
   @override
   void initState() {
@@ -144,6 +177,11 @@ Future<void> _loadExistingActivities() async {
 
 
   Future<void> _saveAttendance() async {
+  if (_isSaving) return;
+
+  setState(() => _isSaving = true);
+
+  try {
     final date = _selectedDate;
     final period = AttendancePeriodHelper.resolvePeriod(date);
 
@@ -179,30 +217,35 @@ Future<void> _loadExistingActivities() async {
         .doc(dateKey)
         .set(attendanceData, SetOptions(merge: true));
 
-   for (final a in activities) {
-  await FirebaseFirestore.instance
-      .collection('attendance')
-      .doc(widget.employeeId)
-      .collection('days')
-      .doc(dateKey)
-      .collection('activities')
-      .add({
-    'date': a.date,
-    'factoryClient': a.factoryClient,
-    'machine': a.machine,
-    'serialNumber': a.serialNumber,
-    'activityType': a.activityType,
-    'description': a.description,
-    'status': a.status,
-    'note': a.note,
-    'createdAt': FieldValue.serverTimestamp(),
-  });
-}
-
+    for (final a in activities) {
+      await FirebaseFirestore.instance
+          .collection('attendance')
+          .doc(widget.employeeId)
+          .collection('days')
+          .doc(dateKey)
+          .collection('activities')
+          .add({
+        'date': a.date,
+        'factoryClient': a.factoryClient,
+        'machine': a.machine,
+        'serialNumber': a.serialNumber,
+        'activityType': a.activityType,
+        'description': a.description,
+        'status': a.status,
+        'note': a.note,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+    }
 
     if (!mounted) return;
     Navigator.pop(context);
+  } finally {
+    if (mounted) {
+      setState(() => _isSaving = false);
+    }
   }
+}
+
 
   @override
   Widget build(BuildContext context) {
@@ -391,7 +434,20 @@ Row(
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.red,
           ),
-          onPressed: _deleteAttendance,
+          onPressed: () async {
+  final confirm = await _showConfirmDialog(
+    title: 'Delete Attendance',
+    message:
+        'Attendance dan seluruh activity pada tanggal ini akan DIHAPUS PERMANEN.\n\nLanjutkan?',
+    confirmText: 'Delete',
+    confirmColor: Colors.red,
+  );
+
+  if (confirm) {
+    await _deleteAttendance();
+  }
+},
+
           child: const Text('Delete'),
         ),
       ),
@@ -399,12 +455,26 @@ Row(
     if (widget.existingDay != null)
       const SizedBox(width: 12),
 
-    Expanded(
-      child: ElevatedButton(
-        onPressed: _saveAttendance,
-        child: const Text('Save Attendance'),
-      ),
-    ),
+   Expanded(
+  child: ElevatedButton(
+    onPressed: () async {
+      final confirm = await _showConfirmDialog(
+        title: 'Save Attendance',
+        message: widget.existingDay != null
+            ? 'Perubahan attendance akan disimpan.\n\nLanjutkan?'
+            : 'Attendance baru akan dibuat.\n\nLanjutkan?',
+        confirmText: 'Save',
+        confirmColor: Colors.green,
+      );
+
+      if (confirm) {
+        await _saveAttendance();
+      }
+    },
+    child: const Text('Save Attendance'),
+  ),
+),
+
   ],
 ),
 // ===== ACTIVITIES PREVIEW =====
