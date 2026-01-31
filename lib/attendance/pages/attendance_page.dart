@@ -498,6 +498,22 @@ class _StatusChips extends StatelessWidget {
             Colors.deepPurple, AttendanceStatus.traveling),
         _chip('Join Holiday', summary['joinHoliday'] ?? 0,
             Colors.pink, AttendanceStatus.joinHoliday),
+        Container(
+  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+  decoration: BoxDecoration(
+    color: Colors.red.withValues(alpha: 0.15),
+    borderRadius: BorderRadius.circular(14),
+    border: Border.all(color: Colors.red.withValues(alpha: 0.45)),
+  ),
+  child: Text(
+    'Overtime ${summary['overtime'] ?? 0}',
+    style: const TextStyle(
+      fontSize: 12,
+      fontWeight: FontWeight.w600,
+      color: Colors.red,
+    ),
+  ),
+),
       ],
     );
   }

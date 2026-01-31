@@ -11,6 +11,7 @@ class AttendanceSummaryHelper {
       'annualLeave': 0,
       'traveling': 0,
       'joinHoliday': 0,
+      'overtime': calculateTotalOvertime(days),
     };
 
     for (final day in days) {
@@ -26,4 +27,31 @@ class AttendanceSummaryHelper {
   ) {
     return days.where((d) => d.overnightEnabled).length;
   }
+
+  static bool isOvertimeDay(AttendanceDay d) {
+  if (d.status != AttendanceStatus.present) return false;
+
+  if (d.checkOutHour == null) return false;
+
+  if (d.checkOutHour! > 18) return true;
+
+  if (d.checkOutHour == 18 && (d.checkOutMinute ?? 0) > 0) {
+    return true;
+  }
+
+  return false;
+}
+static int calculateTotalOvertime(List<AttendanceDay> days) {
+  int total = 0;
+
+  for (final d in days) {
+    if (isOvertimeDay(d)) {
+      total++;
+    }
+  }
+
+  return total;
+}
+
+
 }
