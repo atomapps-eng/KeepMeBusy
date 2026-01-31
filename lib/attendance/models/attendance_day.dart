@@ -24,6 +24,7 @@ class AttendanceDay {
   final AttendanceLocation location;
 
   final String? customerId;
+  final String? customerName;
   final String? note;
 
   final bool overnightEnabled;
@@ -56,6 +57,7 @@ this.checkOutHour,
 this.checkOutMinute,
     this.note,
     this.customerId,
+    this.customerName,
     this.overnightEnabled = false,
     this.overnightLocation,
     this.overnightCustomerId,
@@ -79,6 +81,7 @@ this.checkOutMinute,
         (e) => e.name == data['location'],
       ),
       customerId: data['customerId'],
+      customerName: data['customerName'],
       note: data['note'],
       overnightEnabled: data['overnight']?['enabled'] ?? false,
       overnightLocation: data['overnight']?['location'],

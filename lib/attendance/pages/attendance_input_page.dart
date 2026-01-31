@@ -164,6 +164,7 @@ Future<void> _loadExistingActivities() async {
       attendanceData.addAll({
         'location': location?.name,
         'customerId': selectedCustomerId,
+        'customerName': selectedCustomerName,
         'checkInHour': checkIn.hour,
         'checkInMinute': checkIn.minute,
         'checkOutHour': checkOut.hour,
