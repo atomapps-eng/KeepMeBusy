@@ -32,6 +32,14 @@ class AttendanceDay {
   final DateTime? overnightStartDate;
   final DateTime? overnightEndDate;
 
+  final String? customer;
+final int? checkInHour;
+final int? checkInMinute;
+final int? checkOutHour;
+final int? checkOutMinute;
+
+
+
   final bool approved;
 
   AttendanceDay({
@@ -41,8 +49,13 @@ class AttendanceDay {
     required this.period,
     required this.status,
     required this.location,
-    this.customerId,
+    this.customer,
+    this.checkInHour,
+this.checkInMinute,
+this.checkOutHour,
+this.checkOutMinute,
     this.note,
+    this.customerId,
     this.overnightEnabled = false,
     this.overnightLocation,
     this.overnightCustomerId,
@@ -76,6 +89,13 @@ class AttendanceDay {
       overnightEndDate: data['overnight']?['endDate'] != null
           ? (data['overnight']['endDate'] as Timestamp).toDate()
           : null,
+          customer: data['customer'],
+checkInHour: data['checkInHour'],
+checkInMinute: data['checkInMinute'],
+checkOutHour: data['checkOutHour'],
+checkOutMinute: data['checkOutMinute'],
+
+
       approved: data['approved'] ?? false,
     );
   }
@@ -100,6 +120,11 @@ class AttendanceDay {
             ? Timestamp.fromDate(overnightEndDate!)
             : null,
       },
+      'checkInHour': checkInHour,
+'checkInMinute': checkInMinute,
+'checkOutHour': checkOutHour,
+'checkOutMinute': checkOutMinute,
+
       'approved': approved,
       'updatedAt': FieldValue.serverTimestamp(),
     };
