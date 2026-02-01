@@ -1,6 +1,5 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-
 import '../services/attendance_service.dart';
 import '../services/attendance_summary_helper.dart';
 import '../models/attendance_day.dart';
@@ -11,6 +10,8 @@ import 'activity_list_page.dart';
 import 'attendance_list_page.dart';
 import 'add_overnight_page.dart';
 import 'overnight_detail_page.dart';
+import '../attendance_summary/attendance_summary_page.dart';
+
 
 
 class AttendancePage extends StatefulWidget {
@@ -28,6 +29,21 @@ class AttendancePage extends StatefulWidget {
 }
 
 class _AttendancePageState extends State<AttendancePage> {
+
+void _exportAttendanceToPdf() {
+  // TODO:
+  // 1. Ambil data attendance by employeeId & period
+  // 2. Generate PDF
+  // 3. Share / save file
+
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(
+      content: Text('Export PDF clicked'),
+    ),
+  );
+}
+
+
   AttendanceStatus? _activeStatus;
 
   Stream<List<Map<String, dynamic>>> _activityPreviewStream() {
@@ -104,6 +120,38 @@ Stream<Map<String, int>> _overnightSummaryStream() {
       });
 }
 
+// ================= SUMMARY =================
+void _openAttendanceSummary() {
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    ),
+    builder: (_) {
+      return Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: const [
+            Text(
+              'Attendance Summary',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            SizedBox(height: 12),
+            Text('• Total days'),
+            Text('• Present / Off / Leave'),
+            Text('• Overtime count'),
+          ],
+        ),
+      );
+    },
+  );
+}
 
   @override
   Widget build(BuildContext context) {
@@ -111,11 +159,40 @@ Stream<Map<String, int>> _overnightSummaryStream() {
 
     return Scaffold(
   extendBodyBehindAppBar: true,
-  appBar: AppBar(
-    title: Text('Attendance • ${widget.period}'),
-    backgroundColor: Colors.transparent,
-    elevation: 0,
-  ),
+ appBar: AppBar(
+  title: Text('Attendance • ${widget.period}'),
+  backgroundColor: Colors.transparent,
+  elevation: 0,
+  actions: [
+    // ===== EXPORT PDF =====
+    IconButton(
+      tooltip: 'Export to PDF',
+      icon: const Icon(Icons.picture_as_pdf),
+      onPressed: () {
+        _exportAttendanceToPdf();
+      },
+    ),
+
+    // ===== SUMMARY =====
+    IconButton(
+  tooltip: 'Summary',
+  icon: const Icon(Icons.bar_chart),
+  onPressed: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AttendanceSummaryPage(
+          employeeId: widget.employeeId,
+          period: widget.period,
+        ),
+      ),
+    );
+  },
+),
+
+  ],
+),
+
   body: AppBackgroundWrapper(
     padding: const EdgeInsets.fromLTRB(
       16,

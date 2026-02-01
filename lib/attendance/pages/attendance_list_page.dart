@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../models/attendance_day.dart';
 import '../../pages/common/app_background_wrapper.dart';
+import '../pages/attendance_input_page.dart';
 
 class AttendanceListPage extends StatefulWidget {
   final String employeeId;
@@ -166,8 +167,23 @@ class _AttendanceListPageState extends State<AttendanceListPage> {
   // =====================================================
   // CARD
   // =====================================================
-  Widget _attendanceCard(AttendanceDay d) {
-    return _glass(
+ Widget _attendanceCard(AttendanceDay d) {
+  return InkWell(
+    borderRadius: BorderRadius.circular(20), // 🔥 wajib sama dengan _glass
+    splashColor: Colors.black12,
+    highlightColor: Colors.black.withOpacity(0.05),
+    onTap: () {
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => AttendanceInputPage(
+            employeeId: widget.employeeId,
+            date: d.date,
+            existingDay: d, // 👉 masuk EDIT mode
+          ),
+        ),
+      );
+    },
+    child: _glass(
       Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -194,25 +210,19 @@ class _AttendanceListPageState extends State<AttendanceListPage> {
               Text('Out: ${_time(d.checkOutHour, d.checkOutMinute)}'),
             ],
           ),
-Column(
-  crossAxisAlignment: CrossAxisAlignment.start,
-  children: [
-    Text(
-      d.checkOutHour != null
-          ? '${d.checkOutHour!.toString().padLeft(2, '0')}:${(d.checkOutMinute ?? 0).toString().padLeft(2, '0')}'
-          : '-',
-    ),
-    if (isOvertime(d))
-      const Text(
-        'Overtime',
-        style: TextStyle(
-          fontSize: 11,
-          color: Colors.redAccent,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-  ],
-),
+
+          if (isOvertime(d))
+            const Padding(
+              padding: EdgeInsets.only(top: 4),
+              child: Text(
+                'Overtime',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: Colors.redAccent,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
 
           if (d.note?.isNotEmpty == true) ...[
             const SizedBox(height: 6),
@@ -220,8 +230,11 @@ Column(
           ],
         ],
       ),
-    );
-  }
+    ),
+  );
+}
+
+
 
   // =====================================================
   // HELPERS
