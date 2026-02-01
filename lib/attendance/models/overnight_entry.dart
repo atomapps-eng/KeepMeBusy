@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+
 class OvernightEntry {
   final String id;
   final DateTime startDate;
@@ -7,6 +8,7 @@ class OvernightEntry {
   final int totalNights;
   final String customerName;
   final String customerCategory;
+  final String period; // ✅ TAMBAH
 
   OvernightEntry({
     required this.id,
@@ -15,10 +17,12 @@ class OvernightEntry {
     required this.totalNights,
     required this.customerName,
     required this.customerCategory,
+    required this.period, // ✅ TAMBAH
   });
 
   Map<String, dynamic> toFirestore() {
     return {
+      'period': period, // ✅ SIMPAN PERIOD
       'startDate': Timestamp.fromDate(startDate),
       'endDate': Timestamp.fromDate(endDate),
       'totalNights': totalNights,

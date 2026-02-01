@@ -92,6 +92,8 @@ class OvernightDetailPage extends StatelessWidget {
                                 OvernightItemDetailPage(
                               employeeId: employeeId,
                               docId: doc.id,
+                              period: period,
+
                             ),
                           ),
                         );

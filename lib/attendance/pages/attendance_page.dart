@@ -460,6 +460,7 @@ StreamBuilder<List<Map<String, dynamic>>>(
     MaterialPageRoute(
       builder: (_) => AddOvernightPage(
         employeeId: widget.employeeId,
+        period: widget.period,
       ),
     ),
   );

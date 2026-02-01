@@ -1,7 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-
 import '../../pages/common/app_background_wrapper.dart';
 import '../models/overnight_entry.dart';
 import 'add_overnight_page.dart';
@@ -9,6 +8,7 @@ import 'add_overnight_page.dart';
 class OvernightItemDetailPage extends StatelessWidget {
   final String employeeId;
   final String docId;
+  final String period;
 
 Future<void> _deleteOvernight(BuildContext context) async {
   final navigator = Navigator.of(context);
@@ -58,6 +58,7 @@ Future<void> _deleteOvernight(BuildContext context) async {
     super.key,
     required this.employeeId,
     required this.docId,
+    required this.period,
   });
 
   DocumentReference<Map<String, dynamic>> _ref() {
@@ -141,6 +142,7 @@ Future<void> _deleteOvernight(BuildContext context) async {
         totalNights: data['totalNights'],
         customerName: data['customerName'],
         customerCategory: data['customerCategory'],
+        period: period,
       ); //overnight entry
 
       Navigator.push(
@@ -150,6 +152,7 @@ Future<void> _deleteOvernight(BuildContext context) async {
             employeeId: employeeId,
             existingEntry: entry,
             docId: docId,
+            period: period,
           ),
         ),
       );

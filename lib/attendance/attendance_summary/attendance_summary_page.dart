@@ -23,7 +23,6 @@ class AttendanceSummaryPage extends StatefulWidget {
 class _AttendanceSummaryPageState
     extends State<AttendanceSummaryPage> {
   late Future<AttendanceSummaryModel> _future;
-  int _touchedIndex = -1;
 
   @override
   void initState() {
@@ -89,6 +88,13 @@ class _AttendanceSummaryPageState
                     title: 'Activity Type',
                     data: s.activityByType,
                   ),
+                  _donutSection(
+  title: 'Overnight',
+  data: {
+    'Domestic': s.domesticNights,
+    'Overseas': s.internationalNights,
+  },
+),
                 ],
               ),
             );
@@ -136,44 +142,72 @@ class _AttendanceSummaryPageState
 
   // ================= KPI =================
   Widget _kpiSection(AttendanceSummaryModel s) {
-    return Row(
+  return _glass(
+    GridView.count(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      crossAxisCount: 3,
+      mainAxisSpacing: 8,
+      crossAxisSpacing: 8,
+      childAspectRatio: 1.6, // cukup lebar, pendek
       children: [
-        Expanded(
-          child: _kpiCard(
-              'Present', s.present, Icons.check_circle, Colors.green),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _kpiCard(
-              'Overtime', s.overtime, Icons.access_time, Colors.red),
-        ),
+        _kpiMini('Present', s.present, Icons.check_circle, Colors.green),
+        _kpiMini('Overtime', s.overtime, Icons.access_time, Colors.red),
+        _kpiMini('Sick', s.sickLeave, Icons.healing, Colors.orange),
+        _kpiMini('Annual', s.annualLeave, Icons.beach_access, Colors.blue),
+        _kpiMini('Travel', s.traveling, Icons.flight, Colors.purple),
+        _kpiMini('Holiday', s.joinHoliday, Icons.celebration, Colors.pink),
       ],
-    );
-  }
+    ),
+  );
+}
 
-  Widget _kpiCard(
-      String label, int value, IconData icon, Color color) {
-    return _glass(
-      Row(
-        children: [
-          Icon(icon, color: color, size: 28),
-          const SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(label,
+
+
+Widget _kpiMini(
+  String label,
+  int value,
+  IconData icon,
+  Color color,
+) {
+  return _glass(
+    Center(
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: color, size: 18),
+            const SizedBox(width: 6),
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  value.toString(),
                   style: const TextStyle(
-                      fontSize: 12, color: Colors.black54)),
-              const SizedBox(height: 4),
-              Text(value.toString(),
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  label,
                   style: const TextStyle(
-                      fontSize: 22, fontWeight: FontWeight.bold)),
-            ],
-          ),
-        ],
+                    fontSize: 14,
+                    color: Colors.black54,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
-    );
-  }
+    ),
+  );
+}
+
+
+
 
   // ================= CHART =================
   Widget _pieSection({
@@ -306,22 +340,36 @@ Color _colorForKey(String key) {
   switch (key.toLowerCase()) {
     case 'present':
       return Colors.green;
+
     case 'off':
       return Colors.grey;
+
     case 'leave':
       return Colors.blue;
+
     case 'traveling':
       return Colors.purple;
+
     case 'join holiday':
       return Colors.pink;
+
     case 'office':
       return Colors.blue;
+
     case 'outstation':
       return Colors.orange;
+
+    case 'domestic':
+      return Colors.teal;
+
+    case 'overseas':
+      return Colors.redAccent;
+
     default:
       return Colors.grey.shade600;
   }
 }
+
 
 Widget _glass(Widget child) {
   return ClipRRect(

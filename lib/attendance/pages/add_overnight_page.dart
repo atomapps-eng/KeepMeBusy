@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/overnight_helper.dart';
-
-
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../pages/common/app_background_wrapper.dart';
 import '../services/overnight_service.dart';
 import '../models/overnight_entry.dart';
@@ -10,12 +9,14 @@ import '../../models/partner.dart';
 
 class AddOvernightPage extends StatefulWidget {
   final String employeeId;
+  final String period;
   final OvernightEntry? existingEntry;
   final String? docId;
 
   const AddOvernightPage({
   super.key,
   required this.employeeId,
+  required this.period,
   this.existingEntry,
   this.docId,
 });
@@ -76,6 +77,7 @@ Future<void> _save() async {
     ),
     customerName: selectedPartner!.name,
     customerCategory: selectedPartner!.category,
+    period: widget.period,
   );
 
   setState(() => isSaving = true);
