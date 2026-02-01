@@ -88,6 +88,8 @@ class _AttendanceSummaryPageState
                     title: 'Activity Type',
                     data: s.activityByType,
                   ),
+  const SizedBox(height: 24),
+
                   _donutSection(
   title: 'Overnight',
   data: {
@@ -149,7 +151,7 @@ class _AttendanceSummaryPageState
       crossAxisCount: 3,
       mainAxisSpacing: 8,
       crossAxisSpacing: 8,
-      childAspectRatio: 1.6, // cukup lebar, pendek
+      childAspectRatio: 1.5, // cukup lebar, pendek
       children: [
         _kpiMini('Present', s.present, Icons.check_circle, Colors.green),
         _kpiMini('Overtime', s.overtime, Icons.access_time, Colors.red),
