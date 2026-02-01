@@ -128,6 +128,16 @@ class _AttendanceListPageState extends State<AttendanceListPage> {
     return StreamBuilder<List<AttendanceDay>>(
       stream: _attendanceStream(),
       builder: (context, snapshot) {
+        if (snapshot.hasError) {
+  debugPrint('ATTENDANCE STREAM ERROR: ${snapshot.error}');
+  return Center(
+    child: Text(
+      'Attendance stream error',
+      style: TextStyle(color: Colors.red),
+    ),
+  );
+}
+
         if (!snapshot.hasData) {
           return const Center(child: CircularProgressIndicator());
         }

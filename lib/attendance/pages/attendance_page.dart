@@ -203,6 +203,16 @@ void _openAttendanceSummary() {
         child: StreamBuilder<List<AttendanceDay>>(
           stream: service.streamAttendanceDays(widget.employeeId),
           builder: (context, snapshot) {
+            if (snapshot.hasError) {
+  debugPrint('ATTENDANCE STREAM ERROR: ${snapshot.error}');
+  return Center(
+    child: Text(
+      'Attendance stream error',
+      style: TextStyle(color: Colors.red),
+    ),
+  );
+}
+
             final allDays = (snapshot.data ?? []);              
 
             // ===== SORT TERBARU =====
@@ -270,7 +280,7 @@ void _openAttendanceSummary() {
                             title: Text(
                               '${d.date.day}/${d.date.month}/${d.date.year}',
                             ),
-                            subtitle: Text(d.status.name),
+                            subtitle: Text(d.status.label),
                             trailing: const Icon(
                               Icons.chevron_right,
                               size: 18,

@@ -225,7 +225,26 @@ class _AttendanceSummaryPageState
           const SizedBox(height: 16),
           Row(
             children: [
-              SizedBox(width: 180, height: 180, child: chart),
+              Container(
+  width: 180,
+  height: 180,
+  decoration: BoxDecoration(
+    color: Colors.white.withOpacity(0.9),
+    shape: BoxShape.circle,
+    boxShadow: [
+      BoxShadow(
+        color: Colors.black.withOpacity(0.25),
+        blurRadius: 20,
+        offset: const Offset(0, 10),
+      ),
+    ],
+  ),
+  child: Padding(
+    padding: const EdgeInsets.all(8),
+    child: chart,
+  ),
+),
+
               const SizedBox(width: 16),
               Expanded(child: _legend(data)),
             ],

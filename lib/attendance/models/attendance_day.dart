@@ -14,6 +14,100 @@ enum AttendanceLocation {
   outstation,
 }
 
+AttendanceStatus parseAttendanceStatus(String raw) {
+  switch (raw) {
+    case 'present':
+      return AttendanceStatus.present;
+    case 'off':
+      return AttendanceStatus.off;
+    case 'sickLeave':
+    case 'sick_leave':
+      return AttendanceStatus.sickLeave;
+    case 'annualLeave':        // ⬅ DATA KAMU SAAT INI
+    case 'annual_leave':
+      return AttendanceStatus.annualLeave;
+    case 'traveling':
+      return AttendanceStatus.traveling;
+    case 'joinHoliday':
+    case 'join_holiday':
+      return AttendanceStatus.joinHoliday;
+    default:
+      throw Exception('Unknown attendance status: $raw');
+  }
+}
+
+String serializeAttendanceStatus(AttendanceStatus status) {
+  switch (status) {
+    case AttendanceStatus.present:
+      return 'present';
+    case AttendanceStatus.off:
+      return 'off';
+    case AttendanceStatus.sickLeave:
+      return 'sick_leave';
+    case AttendanceStatus.annualLeave:
+      return 'annual_leave';
+    case AttendanceStatus.traveling:
+      return 'traveling';
+    case AttendanceStatus.joinHoliday:
+      return 'join_holiday';
+  }
+}
+
+extension AttendanceStatusLabel on AttendanceStatus {
+  String get label {
+    switch (this) {
+      case AttendanceStatus.present:
+        return 'Present';
+      case AttendanceStatus.off:
+        return 'Off';
+      case AttendanceStatus.sickLeave:
+        return 'Sick Leave';
+      case AttendanceStatus.annualLeave:
+        return 'Annual Leave';
+      case AttendanceStatus.traveling:
+        return 'Travel';
+      case AttendanceStatus.joinHoliday:
+        return 'Join Holiday';
+    }
+  }
+}
+
+
+String serializeAttendanceLocation(AttendanceLocation location) {
+  switch (location) {
+    case AttendanceLocation.office:
+      return 'office';
+    case AttendanceLocation.outstation:
+      return 'outstation';
+  }
+}
+
+AttendanceLocation parseAttendanceLocation(String? raw) {
+  if (raw == null) {
+    // default aman
+    return AttendanceLocation.office;
+  }
+
+  switch (raw) {
+    case 'office':
+    case 'Office':
+      return AttendanceLocation.office;
+    case 'outstation':
+    case 'Outstation':
+      return AttendanceLocation.outstation;
+    default:
+      throw Exception('Unknown attendance location: $raw');
+  }
+}
+
+AttendanceStatus parseAttendanceStatusSafe(String raw) {
+  return AttendanceStatus.values.firstWhere(
+    (e) => e.name == raw,
+    orElse: () => AttendanceStatus.off,
+  );
+}
+
+
 class AttendanceDay {
   final String id;
   final String employeeId;
@@ -74,12 +168,8 @@ this.checkOutMinute,
       employeeId: data['employeeId'],
       date: (data['date'] as Timestamp).toDate(),
       period: data['period'],
-      status: AttendanceStatus.values.firstWhere(
-        (e) => e.name == data['status'],
-      ),
-      location: AttendanceLocation.values.firstWhere(
-        (e) => e.name == data['location'],
-      ),
+      status: parseAttendanceStatus(data['status']),
+      location: parseAttendanceLocation(data['location']),
       customerId: data['customerId'],
       customerName: data['customerName'],
       note: data['note'],
@@ -108,8 +198,8 @@ checkOutMinute: data['checkOutMinute'],
       'employeeId': employeeId,
       'date': Timestamp.fromDate(date),
       'period': period,
-      'status': status.name,
-      'location': location.name,
+      'status': serializeAttendanceStatus(status),
+      'location': serializeAttendanceLocation(location),
       'customerId': customerId,
       'note': note,
       'overnight': {
