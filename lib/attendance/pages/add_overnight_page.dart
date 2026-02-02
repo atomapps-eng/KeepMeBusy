@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../services/overnight_helper.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../pages/common/app_background_wrapper.dart';
 import '../services/overnight_service.dart';
 import '../models/overnight_entry.dart';

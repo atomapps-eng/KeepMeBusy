@@ -265,11 +265,11 @@ Widget _kpiMini(
   width: 180,
   height: 180,
   decoration: BoxDecoration(
-    color: Colors.white.withOpacity(0.9),
+    color: Colors.white.withValues(alpha:0.9),
     shape: BoxShape.circle,
     boxShadow: [
       BoxShadow(
-        color: Colors.black.withOpacity(0.25),
+        color: Colors.black.withValues(alpha:0.25),
         blurRadius: 20,
         offset: const Offset(0, 10),
       ),
@@ -379,9 +379,9 @@ Widget _glass(Widget child) {
     child: Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.3),
+        color: Colors.white.withValues(alpha:0.3),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withOpacity(0.4)),
+        border: Border.all(color: Colors.white.withValues(alpha:0.4)),
       ),
       child: child,
     ),

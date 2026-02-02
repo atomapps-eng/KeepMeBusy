@@ -274,7 +274,7 @@ Future<void> _loadExistingActivities() async {
               const SizedBox(height: 16),
 
               DropdownButtonFormField<AttendanceStatus>(
-                value: status,
+                initialValue: status,
                 decoration: const InputDecoration(labelText: 'Status'),
                 items: AttendanceStatus.values
                     .map((s) => DropdownMenuItem(
@@ -334,7 +334,7 @@ Future<void> _loadExistingActivities() async {
 
                     final partners = snapshot.data!;
                     return DropdownButtonFormField<String>(
-                      value: selectedCustomerId,
+                      initialValue: selectedCustomerId,
                       decoration:
                           const InputDecoration(labelText: 'Customer / Client'),
                       items: partners

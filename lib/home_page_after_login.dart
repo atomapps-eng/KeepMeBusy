@@ -299,7 +299,6 @@ class _HomePageAfterLoginState extends State<HomePageAfterLogin> {
   ],
 ),
 
-
                   // ===== SYSTEMS =====
                   _CategorySection(
                     title: 'Systems',

@@ -757,36 +757,6 @@ Widget build(BuildContext context) {
   );
 }  
 
-  Widget _buildHeader(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Row(
-        children: [
-          IconButton(
-            icon: const Icon(Icons.arrow_back),
-            onPressed: () {
-  setState(() {
-    isCreateMode = false;
-    isEditMode = false;
-    editingOrderId = null;
-    items.clear();
-    orderDate = null;
-    selectedClient = null;
-    poController.clear();
-  });
-},
-
-          ),
-          const Text(
-            'Order In',
-            style:
-                TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildCreateForm() {
     return Column(
       children: [

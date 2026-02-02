@@ -54,18 +54,17 @@ class _EditSparePartPageState extends State<EditSparePartPage>
       .replaceAll('.', '-');
 }
 
-
 Future<bool> isLocationAvailable(String location) async {
-  final locationKey = normalizeLocation(location);
+  final normalized = normalizeLocation(location);
 
-  final doc = await FirebaseFirestore.instance
-      .collection('locations')
-      .doc(locationKey)
+  final snapshot = await FirebaseFirestore.instance
+      .collection('spare_parts')
+      .where('locationKey', isEqualTo: normalized)
+      .limit(1)
       .get();
 
-  return !doc.exists;
+  return snapshot.docs.isEmpty;
 }
-
 
   String weightUnit = 'Kg';
 

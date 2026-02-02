@@ -240,55 +240,6 @@ Future<void> _commitEditOrderOut() async {
   );
 }
 
-Future<void> _deleteOrder(
-  BuildContext context,
-  String orderId,
-  Map<String, dynamic> data,
-) async {
-  final confirmed = await _confirmDeleteOrderOut(context);
-  if (!confirmed) return;
-
-  final firestore = FirebaseFirestore.instance;
-  final orderRef = firestore.collection('order_out').doc(orderId);
-
-  try {
-    await firestore.runTransaction((tx) async {
-      final snap = await tx.get(orderRef);
-      if (!snap.exists) return;
-
-      final items = snap['items'] as List<dynamic>;
-
-      for (final item in items) {
-        final partRef = firestore
-            .collection('spare_parts')
-            .doc(item['partId']);
-
-        final partSnap = await tx.get(partRef);
-        final currentStock =
-            (partSnap['currentStock'] as num).toInt();
-
-        tx.update(partRef, {
-          'currentStock': currentStock + (item['qty'] as int),
-        });
-      }
-
-      tx.delete(orderRef);
-    });
-
-    if (!mounted) return;
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Order Out berhasil dihapus'),
-        backgroundColor: Colors.redAccent,
-        duration: Duration(seconds: 2),
-      ),
-    );
-  } catch (e) {
-    _showError(e.toString());
-  }
-}
-
   // ================= FULLSCREEN SEARCH & FILTER =================
   final TextEditingController fullscreenSearchController =
       TextEditingController();
@@ -536,97 +487,7 @@ Future<void> _editItemAtIndex(int index) async {
   }
 
   // ================= ORDER DETAIL =================//
-  void _showOrderDetail(
-      BuildContext context, Map<String, dynamic> data) {
-    final items = data['items'] as List<dynamic>;
 
-    final DateTime? orderDate =
-    (data['orderDate'] as Timestamp?)?.toDate();
-
-
-    showDialog(
-      context: context,
-      builder: (_) => Dialog(
-        insetPadding: const EdgeInsets.all(16),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'PO: ${data['poNumber']}',
-                style: const TextStyle(
-                    fontSize: 16, fontWeight: FontWeight.bold),
-              ),
-              Text('Client: ${data['client']}'),
-
-const SizedBox(height: 4),
-
-Text(
-  orderDate == null
-      ? 'Date: -'
-      : 'Date: '
-        '${orderDate.day.toString().padLeft(2, '0')}/'
-        '${orderDate.month.toString().padLeft(2, '0')}/'
-        '${orderDate.year}',
-  style: const TextStyle(fontSize: 13),
-),
-
-              
-              if (data['createdBy'] != null)
-  Text(
-    'Created By: ${data['createdBy']}',
-    style: const TextStyle(fontSize: 12),
-  ),
-
-              const Divider(height: 24),
-              SizedBox(
-                height: 250,
-                child: ListView.builder(
-  physics: const BouncingScrollPhysics(),
-  itemCount: items.length,
-  itemBuilder: (_, i) {
-                    final item = items[i];
-                    return ListTile(
-  dense: true,
-  title: Text(item['partCode']),
-  subtitle: Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Text(item['nameEn']),
-      const SizedBox(height: 2),
-      Text(
-        'Location: ${item['location'] ?? '-'}',
-        style: const TextStyle(
-          fontSize: 12,
-          color: Colors.black54,
-        ),
-      ),
-    ],
-  ),
-  trailing: Text('Qty: ${item['qty']}'),
-);
-
-                  },
-                ),
-              ),
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Close'),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 
   // ================= BUILD =================
   @override
@@ -714,7 +575,7 @@ Widget build(BuildContext context) {
 },
 
 
-          onDelete: (_, __) {},
+          onDelete: (_, _) {},
           onEdit: (_) {},
         ),
 ),
@@ -727,36 +588,6 @@ Widget build(BuildContext context) {
     ),
   );
 }  
-
-  Widget _buildHeader(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Row(
-        children: [
-          IconButton(
-            icon: const Icon(Icons.arrow_back),
-            onPressed: () {
-  setState(() {
-    isCreateMode = false;
-    isEditMode = false;
-    editingOrderId = null;
-    items.clear();
-    orderDate = null;
-    selectedClient = null;
-    poController.clear();
-  });
-},
-
-          ),
-          const Text(
-            'Order Out',
-            style:
-                TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-          ),
-        ],
-      ),
-    );
-  }
 
   Widget _buildCreateForm() {
     return Column(
@@ -1338,50 +1169,4 @@ class _Box extends StatelessWidget {
     );
   }
 }
-Future<bool> _confirmEditOrderOut(BuildContext context) async {
-  final result = await showDialog<bool>(
-    context: context,
-    builder: (_) => AlertDialog(
-      title: const Text('Edit Order Out'),
-      content: const Text(
-        'Apakah Anda yakin ingin mengedit order ini?',
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context, false),
-          child: const Text('Batal'),
-        ),
-        ElevatedButton(
-          onPressed: () => Navigator.pop(context, true),
-          child: const Text('Edit'),
-        ),
-      ],
-    ),
-  );
 
-  return result == true;
-}
-Future<bool> _confirmDeleteOrderOut(BuildContext context) async {
-  final result = await showDialog<bool>(
-    context: context,
-    builder: (_) => AlertDialog(
-      title: const Text('Hapus Order'),
-      content: const Text(
-        'Order ini akan dihapus dan stock akan dikembalikan.\nLanjutkan?',
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context, false),
-          child: const Text('Batal'),
-        ),
-        ElevatedButton(
-          style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-          onPressed: () => Navigator.pop(context, true),
-          child: const Text('Hapus'),
-        ),
-      ],
-    ),
-  );
-
-  return result == true;
-}

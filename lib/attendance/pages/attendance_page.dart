@@ -86,7 +86,6 @@ Stream<List<Map<String, dynamic>>> _overnightPreviewStream() {
       .limit(3)
       .snapshots()
       .map((snap) {
-        print('OVERNIGHT DOC COUNT: ${snap.docs.length}');
         return snap.docs.map((d) => d.data()).toList();
       });
 }
@@ -121,37 +120,7 @@ Stream<Map<String, int>> _overnightSummaryStream() {
 }
 
 // ================= SUMMARY =================
-void _openAttendanceSummary() {
-  showModalBottomSheet(
-    context: context,
-    isScrollControlled: true,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-    ),
-    builder: (_) {
-      return Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: const [
-            Text(
-              'Attendance Summary',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            SizedBox(height: 12),
-            Text('• Total days'),
-            Text('• Present / Off / Leave'),
-            Text('• Overtime count'),
-          ],
-        ),
-      );
-    },
-  );
-}
+
 
   @override
   Widget build(BuildContext context) {

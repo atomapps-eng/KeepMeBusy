@@ -186,15 +186,17 @@ class OrderOutDetailPage extends StatelessWidget {
                                         backgroundColor: Colors.red,
                                       ),
                                       onPressed: () async {
-                                        final confirmed =
-                                            await _confirmDelete(context);
-                                        if (!confirmed) return;
+  final confirmed = await _confirmDelete(context);
+  if (!confirmed) return;
 
-                                        await _deleteOrderOut(
-                                          context,
-                                          data['id'],
-                                        );
-                                      },
+  await _deleteOrderOut(
+    context,
+    data['id'],
+  );
+
+  Navigator.pop(context);
+},
+
                                       child: const Text('Delete'),
                                     ),
                                   ),

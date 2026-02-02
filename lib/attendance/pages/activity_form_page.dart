@@ -117,7 +117,7 @@ _field(serialCtrl, 'Serial Number'),
 const SizedBox(height: 16),
 
 DropdownButtonFormField<String>(
-  value: activityType,
+  initialValue: activityType,
   decoration: const InputDecoration(labelText: 'Activity'),
   items: const [
     'service',
@@ -141,7 +141,7 @@ _field(descCtrl, 'Activity Description', lines: 2),
 const SizedBox(height: 16),
 
 DropdownButtonFormField<String>(
-  value: status,
+  initialValue: status,
   decoration: const InputDecoration(labelText: 'Status'),
   items: const [
     DropdownMenuItem(value: 'paid', child: Text('Paid')),
