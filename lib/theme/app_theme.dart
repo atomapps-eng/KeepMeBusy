@@ -5,6 +5,8 @@ class AppTheme {
   static ThemeData lightTheme = ThemeData(
     useMaterial3: true,
 
+    visualDensity: VisualDensity.compact, // ✅ DESKTOP FEEL
+
     colorScheme: ColorScheme.fromSeed(
       seedColor: Colors.green,
       brightness: Brightness.light,
@@ -26,18 +28,20 @@ class AppTheme {
     ),
 
     // ===== TEXT (GOOGLE FONT AKTIF) =====
-    textTheme: GoogleFonts.poppinsTextTheme(
-      const TextTheme(
-        titleLarge: TextStyle(
-          fontSize: 26,
-          fontWeight: FontWeight.bold,
-          color: Colors.blueGrey,
-        ),
-        bodyMedium: TextStyle(
-          color: Colors.blueGrey,
-        ),
-      ),
+    textTheme: GoogleFonts.interTextTheme(
+  const TextTheme(
+    titleLarge: TextStyle(
+      fontSize: 24, // lebih desktop-friendly
+      fontWeight: FontWeight.w600,
+      color: Colors.blueGrey,
     ),
+    bodyMedium: TextStyle(
+      fontSize: 14,
+      color: Colors.blueGrey,
+    ),
+  ),
+),
+
 
     inputDecorationTheme: InputDecorationTheme(
       filled: true,

@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import 'register_page.dart';
 import 'home_page_after_login.dart';
 
@@ -38,21 +39,12 @@ class _LoginPageState extends State<LoginPage> {
   // =====================================================
   Future<void> _loadSavedCredential() async {
     final prefs = await SharedPreferences.getInstance();
-
-    final savedEmail = prefs.getString('saved_email');
-    final savedPassword = prefs.getString('saved_password');
-
-    if (savedEmail != null) {
-      emailController.text = savedEmail;
-    }
-
-    if (savedPassword != null) {
-      passwordController.text = savedPassword;
-    }
+    emailController.text = prefs.getString('saved_email') ?? '';
+    passwordController.text = prefs.getString('saved_password') ?? '';
   }
 
   // =====================================================
-  // GLASS SNACKBAR (TIDAK DIUBAH)
+  // GLASS SNACKBAR
   // =====================================================
   void showGlassSnackBar(
     String message, {
@@ -67,21 +59,17 @@ class _LoginPageState extends State<LoginPage> {
         elevation: 0,
         behavior: SnackBarBehavior.floating,
         margin: const EdgeInsets.all(16),
-        duration: const Duration(seconds: 3),
         content: ClipRRect(
           borderRadius: BorderRadius.circular(16),
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
             child: Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 14,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               decoration: BoxDecoration(
-                color: backgroundColor.withValues(alpha:0.25),
+                color: backgroundColor.withValues(alpha: 0.25),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: Colors.white.withValues(alpha:0.35),
+                  color: Colors.white.withValues(alpha: 0.35),
                 ),
               ),
               child: Text(
@@ -100,7 +88,7 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   // =====================================================
-  // FORGOT PASSWORD (TIDAK DIUBAH)
+  // FORGOT PASSWORD
   // =====================================================
   Future<void> _forgotPassword() async {
     final email = emailController.text.trim();
@@ -142,6 +130,47 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
+  // =====================================================
+  // LOGIN HANDLER (LOGIC ASLI ANDA)
+  // =====================================================
+  Future<void> _handleLogin() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _isLoading = true);
+
+    try {
+      final navigator = Navigator.of(context);
+
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: emailController.text.trim(),
+        password: passwordController.text.trim(),
+      );
+
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('saved_email', emailController.text.trim());
+      await prefs.setString('saved_password', passwordController.text.trim());
+
+      if (!mounted) return;
+
+      setState(() => _isLoading = false);
+
+      navigator.pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => const HomePageAfterLogin(),
+        ),
+      );
+    } on FirebaseAuthException catch (e) {
+      if (!mounted) return;
+
+      setState(() => _isLoading = false);
+
+      showGlassSnackBar(
+        e.message ?? 'Login gagal',
+        backgroundColor: Colors.red,
+      );
+    }
+  }
+
   @override
   void dispose() {
     emailController.dispose();
@@ -150,10 +179,25 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   // =====================================================
-  // UI (LOGIN LOGIC DIMODIFIKASI MINIMAL)
+  // RESPONSIVE ROOT
   // =====================================================
   @override
   Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth >= 900) {
+          return _buildDesktopLogin(context);
+        } else {
+          return _buildMobileLogin(context);
+        }
+      },
+    );
+  }
+
+  // =====================================================
+  // MOBILE LOGIN (UI ASLI ANDA — TIDAK DIUBAH)
+  // =====================================================
+  Widget _buildMobileLogin(BuildContext context) {
     final height = MediaQuery.of(context).size.height;
 
     return Scaffold(
@@ -172,7 +216,6 @@ class _LoginPageState extends State<LoginPage> {
               ),
             ),
           ),
-
           Positioned(
             top: height * 0.18,
             left: 0,
@@ -184,177 +227,23 @@ class _LoginPageState extends State<LoginPage> {
               ),
             ),
           ),
-
           SafeArea(
             child: SingleChildScrollView(
               child: Padding(
-                padding: EdgeInsets.fromLTRB(
-                  24,
-                  height * 0.28,
-                  24,
-                  24,
-                ),
+                padding: EdgeInsets.fromLTRB(24, height * 0.28, 24, 24),
                 child: Column(
                   children: [
                     Text(
                       'Welcome Back',
-                      style: Theme.of(context)
-                          .textTheme
-                          .titleLarge
-                          ?.copyWith(fontFamily: 'Roboto'),
+                      style: Theme.of(context).textTheme.titleLarge,
                     ),
                     const SizedBox(height: 8),
                     Text(
                       'Login to your account',
-                      style: Theme.of(context)
-                          .textTheme
-                          .bodyMedium
-                          ?.copyWith(fontFamily: 'Roboto'),
+                      style: Theme.of(context).textTheme.bodyMedium,
                     ),
                     const SizedBox(height: 32),
-
-                    AnimatedOpacity(
-                      duration: const Duration(milliseconds: 400),
-                      opacity: _showCard ? 1 : 0,
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(20),
-                        child: BackdropFilter(
-                          filter:
-                              ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-                          child: Container(
-                            padding: const EdgeInsets.all(24),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Form(
-                              key: _formKey,
-                              child: Column(
-                                children: [
-                                  TextFormField(
-                                    controller: emailController,
-                                    decoration: const InputDecoration(
-                                      labelText: 'Email',
-                                      prefixIcon: Icon(Icons.email),
-                                    ),
-                                    validator: (value) {
-                                      if (value == null || value.isEmpty) {
-                                        return 'Email wajib diisi';
-                                      }
-                                      if (!value.contains('@')) {
-                                        return 'Format email tidak valid';
-                                      }
-                                      return null;
-                                    },
-                                  ),
-                                  const SizedBox(height: 16),
-                                  TextFormField(
-                                    controller: passwordController,
-                                    obscureText: true,
-                                    decoration: const InputDecoration(
-                                      labelText: 'Password',
-                                      prefixIcon: Icon(Icons.lock),
-                                    ),
-                                    validator: (value) {
-                                      if (value == null || value.isEmpty) {
-                                        return 'Password wajib diisi';
-                                      }
-                                      if (value.length < 6) {
-                                        return 'Minimal 6 karakter';
-                                      }
-                                      return null;
-                                    },
-                                  ),
-                                  const SizedBox(height: 24),
-
-                                  SizedBox(
-                                    width: double.infinity,
-                                    height: 48,
-                                    child: ElevatedButton(
-                                      onPressed: _isLoading
-                                          ? null
-                                          : () async {
-                                              if (!_formKey.currentState!
-                                                  .validate()) {
-                                                return;
-                                              }
-
-                                              setState(
-                                                  () => _isLoading = true);
-
-                                              try {
-  final navigator = Navigator.of(context); // ✅ SIMPAN SEBELUM await
-
-  await FirebaseAuth.instance
-      .signInWithEmailAndPassword(
-    email: emailController.text.trim(),
-    password: passwordController.text.trim(),
-  );
-
-  final prefs = await SharedPreferences.getInstance();
-  await prefs.setString(
-    'saved_email',
-    emailController.text.trim(),
-  );
-  await prefs.setString(
-    'saved_password',
-    passwordController.text.trim(),
-  );
-
-  if (!mounted) return;
-
-  setState(() => _isLoading = false);
-
-  navigator.pushReplacement(
-    MaterialPageRoute(
-      builder: (_) => const HomePageAfterLogin(),
-    ),
-  );
-}
-                                              
-                                              on FirebaseAuthException catch (e) {
-                                                if (!mounted) return;
-
-                                                setState(
-                                                    () => _isLoading = false);
-
-                                                showGlassSnackBar(
-                                                  e.message ?? 'Login gagal',
-                                                  backgroundColor: Colors.red,
-                                                );
-                                              }
-                                            },
-                                      child: _isLoading
-                                          ? const CircularProgressIndicator(
-                                              strokeWidth: 2,
-                                              color: Colors.white,
-                                            )
-                                          : const Text('Login'),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 12),
-                                  TextButton(
-                                    onPressed: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (_) => RegisterPage(),
-                                        ),
-                                      );
-                                    },
-                                    child: const Text('Register'),
-                                  ),
-                                  TextButton(
-                                    onPressed: _forgotPassword,
-                                    child:
-                                        const Text('Forgot Password?'),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
+                    _loginCard(context),
                   ],
                 ),
               ),
@@ -364,5 +253,148 @@ class _LoginPageState extends State<LoginPage> {
       ),
     );
   }
-}
 
+  // =====================================================
+  // DESKTOP LOGIN (WINDOWS STYLE)
+  // =====================================================
+  Widget _buildDesktopLogin(BuildContext context) {
+    return Scaffold(
+      body: Row(
+        children: [
+          Container(
+            width: 320,
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Color(0xFFFFE0B2),
+                  Color(0xFFFFFFFF),
+                ],
+              ),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Image.asset('assets/images/Atom.png', height: 120),
+                const SizedBox(height: 24),
+                const Text(
+                  'Welcome Back',
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Login to your account',
+                  style: TextStyle(color: Colors.black54),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 480),
+                child: _loginCard(context),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // =====================================================
+  // LOGIN CARD (DIPAKAI MOBILE & DESKTOP)
+  // =====================================================
+  Widget _loginCard(BuildContext context) {
+    return AnimatedOpacity(
+      duration: const Duration(milliseconds: 400),
+      opacity: _showCard ? 1 : 0,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Colors.black12),
+            ),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextFormField(
+                    controller: emailController,
+                    decoration: const InputDecoration(
+                      labelText: 'Email',
+                      prefixIcon: Icon(Icons.email),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Email wajib diisi';
+                      }
+                      if (!value.contains('@')) {
+                        return 'Format email tidak valid';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: passwordController,
+                    obscureText: true,
+                    decoration: const InputDecoration(
+                      labelText: 'Password',
+                      prefixIcon: Icon(Icons.lock),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Password wajib diisi';
+                      }
+                      if (value.length < 6) {
+                        return 'Minimal 6 karakter';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: ElevatedButton(
+                      onPressed: _isLoading ? null : _handleLogin,
+                      child: _isLoading
+                          ? const CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            )
+                          : const Text('Login'),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => RegisterPage(),
+                        ),
+                      );
+                    },
+                    child: const Text('Register'),
+                  ),
+                  TextButton(
+                    onPressed: _forgotPassword,
+                    child: const Text('Forgot Password?'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}

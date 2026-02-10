@@ -143,9 +143,6 @@ Widget build(BuildContext context) {
     );
   }
 },
-
-
-
                             child: _GlassCard(
                               child: widget.isCompact
                                   ? _CompactItem(part: part)
