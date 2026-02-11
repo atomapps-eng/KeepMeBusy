@@ -9,6 +9,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../attendance/pages/attendance_page.dart';
 import '../attendance/services/attendance_period_helper.dart';
 import '../pages/settings/settings_page.dart';
+import '../pages/spare_part/low_stock_page.dart';
+import '../pages/spare_part/spare_part_list_page.dart';
+
 
 
 enum DesktopSection {
@@ -29,6 +32,7 @@ class HomeDesktop extends StatefulWidget {
 class _HomeDesktopState extends State<HomeDesktop> {
 
   DesktopSection selectedSection = DesktopSection.dashboard;
+  bool showLowStockOnly = false;
 
   Stream<int> lowStockCountStream() {
     return FirebaseFirestore.instance
@@ -88,9 +92,13 @@ Widget _buildDesktopInventory() {
                     Colors.blueGrey,
                     () {
                       FloatingMenuLauncher.open(
-                        context,
-                        inventoryMenus.first,
-                      );
+  context,
+  inventoryMenus.first,
+);
+setState(() {
+  showLowStockOnly = true;
+});
+
                     },
                   ),
 
@@ -444,24 +452,33 @@ Widget _desktopMenuCard(
     onTap: onTap,
     child: Container(
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, size: 42, color: color),
-          const SizedBox(height: 16),
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-            ),
+      
+      child: Container(
+  padding: const EdgeInsets.all(20),
+  decoration: BoxDecoration(
+    color: color.withValues(alpha: 0.12),
+    borderRadius: BorderRadius.circular(16),
+  ),
+  child: Center(
+    child: Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Icon(icon, size: 42, color: color),
+        const SizedBox(height: 16),
+        Text(
+          label,
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
           ),
-        ],
-      ),
+        ),
+      ],
+    ),
+  ),
+),
+
     ),
   );
 }
@@ -522,23 +539,23 @@ Widget _desktopMenuCard(
     child: Column(
       children: [
 
-        const SizedBox(height: 32),
+        const SizedBox(height: 28),
 
-        // LOGO
         Image.asset(
           'assets/images/Atom.png',
           width: 60,
         ),
 
-        const SizedBox(height: 12),
+        const SizedBox(height: 14),
 
-        // USER INFO
         Text(
           displayName,
           style: const TextStyle(
-            fontWeight: FontWeight.bold,
+            fontWeight: FontWeight.w600,
           ),
         ),
+
+        const SizedBox(height: 2),
 
         Text(
           email,
@@ -548,25 +565,37 @@ Widget _desktopMenuCard(
           ),
         ),
 
-        const SizedBox(height: 32),
+        const SizedBox(height: 24),
 
-        // MENU ITEMS
-        _sidebarItem(Icons.dashboard, 'Dashboard', DesktopSection.dashboard),
-        _sidebarItem(Icons.inventory, 'Inventory', DesktopSection.inventory),
-        _sidebarItem(Icons.precision_manufacturing, 'Machinery', DesktopSection.machinery),
-        _sidebarItem(Icons.bar_chart, 'Reports', DesktopSection.reports),
-        _sidebarItem(Icons.settings, 'Systems', DesktopSection.systems),
+        const Divider(
+          thickness: 1,
+          height: 1,
+        ),
+
+        const SizedBox(height: 12),
+
+        Expanded(
+          child: ListView(
+            children: [
+              _sidebarItem(Icons.dashboard, 'Dashboard', DesktopSection.dashboard),
+              _sidebarItem(Icons.inventory, 'Inventory', DesktopSection.inventory),
+              _sidebarItem(Icons.precision_manufacturing, 'Machinery', DesktopSection.machinery),
+              _sidebarItem(Icons.bar_chart, 'Reports', DesktopSection.reports),
+              _sidebarItem(Icons.settings, 'Systems', DesktopSection.systems),
+            ],
+          ),
+        ),
       ],
     ),
   );
 }
+
 
 Widget _sidebarItem(
   IconData icon,
   String title,
   DesktopSection section,
 ) {
-
   final isSelected = selectedSection == section;
 
   return InkWell(
@@ -575,26 +604,42 @@ Widget _sidebarItem(
         selectedSection = section;
       });
     },
-    child: Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
-      color: isSelected
-          ? Colors.white.withValues(alpha: 0.35)
-          : null,
+    hoverColor: Colors.black.withValues(alpha: 0.05),
+    child: AnimatedContainer(
+      duration: const Duration(milliseconds: 180),
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 14),
+      decoration: BoxDecoration(
+        color: isSelected
+            ? Colors.white.withValues(alpha: 0.8)
+            : Colors.transparent,
+        borderRadius: BorderRadius.circular(10),
+        border: isSelected
+            ? const Border(
+                left: BorderSide(
+                  color: Colors.deepOrange,
+                  width: 4,
+                ),
+              )
+            : null,
+      ),
       child: Row(
         children: [
           Icon(
             icon,
             size: 20,
-            color: Colors.black87,
+            color: isSelected
+                ? Colors.deepOrange
+                : Colors.black87,
           ),
           const SizedBox(width: 12),
           Text(
             title,
             style: TextStyle(
-              fontSize: 15,
+              fontSize: 14,
               fontWeight:
-                  isSelected ? FontWeight.bold : FontWeight.normal,
+                  isSelected ? FontWeight.w600 : FontWeight.normal,
+              color: Colors.black,
             ),
           ),
         ],
@@ -602,87 +647,156 @@ Widget _sidebarItem(
     ),
   );
 }
-
 
 Widget _buildDesktopDashboard() {
-  return SingleChildScrollView(
-    child: Padding(
-      padding: const EdgeInsets.all(32),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Dashboard',
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 32),
+  return StreamBuilder<QuerySnapshot>(
+    stream: FirebaseFirestore.instance
+        .collection('spare_parts')
+        .snapshots(),
+    builder: (context, snapshot) {
 
-          Row(
+      if (snapshot.connectionState == ConnectionState.waiting) {
+        return const Center(child: CircularProgressIndicator());
+      }
+
+      if (snapshot.hasError) {
+        return const Center(
+          child: Text('Data error. Contact IT.'),
+        );
+      }
+
+      final docs = snapshot.data?.docs ?? [];
+
+      int totalItems = docs.length;
+      int lowStock = 0;
+      double totalValue = 0;
+
+      for (var doc in docs) {
+        final data = doc.data() as Map<String, dynamic>;
+
+        int stock = data['currentStock'] ?? 0;
+        int min = data['minimumStock'] ?? 0;
+        double price =
+            (data['price'] ?? 0).toDouble();
+
+        if (stock < min) {
+          lowStock++;
+        }
+
+        totalValue += stock * price;
+      }
+
+      return SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
 
-              // Spare Parts Count
-              Expanded(
-                child: StreamBuilder<QuerySnapshot>(
-                  stream: FirebaseFirestore.instance
-                      .collection('spare_parts')
-                      .snapshots(),
-                  builder: (context, snapshot) {
-
-                    final count =
-                        snapshot.data?.docs.length ?? 0;
-
-                    return _summaryCard(
-                      'Spare Parts',
-                      Icons.inventory_2,
-                      Colors.blueGrey,
-                      snapshot.connectionState ==
-                              ConnectionState.waiting
-                          ? '-'
-                          : count.toString(),
-                    );
-                  },
+              const Text(
+                'Dashboard',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
 
-              const SizedBox(width: 24),
+              const SizedBox(height: 32),
 
-              // Low Stock Count
-              Expanded(
-                child: StreamBuilder<int>(
-                  stream: lowStockCountStream(),
-                  builder: (context, snapshot) {
+              Row(
+                children: [
 
-                    if (snapshot.connectionState ==
-                        ConnectionState.waiting) {
-                      return _summaryCard(
-                        'Low Stock',
-                        Icons.warning,
-                        Colors.redAccent,
-                        '-',
-                      );
-                    }
+Expanded(
+  child: InkWell(
+    borderRadius: BorderRadius.circular(16),
+    onTap: () {
+  showGeneralDialog(
+    context: context,
+    barrierDismissible: true,
+    barrierLabel: "SpareParts",
+    barrierColor: Colors.black.withValues(alpha: 0.35),
+    transitionDuration: const Duration(milliseconds: 200),
+    pageBuilder: (context, anim1, anim2) {
+      return _DraggableResizableWindow(
+        title: "Spare Parts",
+        child: const SparePartListPage(),
+      );
+    },
+  );
+},
 
-                    final count = snapshot.data ?? 0;
+    child: _summaryCard(
+      'Spare Parts',
+      Icons.inventory_2,
+      Colors.blueGrey,
+      totalItems.toString(),
+    ),
+  ),
+),
 
-                    return _summaryCard(
-                      'Low Stock',
-                      Icons.warning,
-                      Colors.redAccent,
-                      count.toString(),
-                    );
-                  },
-                ),
+
+                  const SizedBox(width: 24),
+
+                  Expanded(
+  child: InkWell(
+    borderRadius: BorderRadius.circular(16),
+    onTap: () {
+  showGeneralDialog(
+    context: context,
+    barrierDismissible: true,
+    barrierLabel: "LowStock",
+    barrierColor: Colors.black.withValues(alpha: 0.35),
+    transitionDuration: const Duration(milliseconds: 200),
+    pageBuilder: (context, anim1, anim2) {
+      return _DraggableResizableWindow(
+        title: "Low Stock",
+        child: const LowStockPage(),
+      );
+    },
+  );
+},
+
+    child: _summaryCard(
+      'Low Stock',
+      Icons.warning,
+      Colors.redAccent,
+      lowStock.toString(),
+    ),
+  ),
+),
+
+                  const SizedBox(width: 24),
+
+                  Expanded(
+                    child: _summaryCard(
+                      'Inventory Value',
+                      Icons.attach_money,
+                      Colors.green,
+                      totalValue.toStringAsFixed(0),
+                    ),
+                  ),
+                ],
               ),
+              const SizedBox(height: 40),
+
+Container(
+  height: 220,
+  padding: const EdgeInsets.all(24),
+  decoration: BoxDecoration(
+    color: Colors.grey.withValues(alpha: 0.05),
+    borderRadius: BorderRadius.circular(16),
+  ),
+  child: _buildMiniChart(totalItems, lowStock),
+),
+
             ],
           ),
-        ],
-      ),
-    ),
+        ),
+      );
+    },
   );
 }
+
 
   Widget _summaryCard(
   String title,
@@ -717,4 +831,190 @@ Widget _buildDesktopDashboard() {
     ),
   );
 }
+Widget _buildMiniChart(int total, int low) {
+  final safeTotal = total == 0 ? 1 : total;
+  final normal = safeTotal - low;
+
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      const Text(
+        'Stock Distribution',
+        style: TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+      const SizedBox(height: 24),
+      Expanded(
+        child: Row(
+          children: [
+            Expanded(
+              flex: normal <= 0 ? 1 : normal,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.green,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              flex: low <= 0 ? 1 : low,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.redAccent,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+      const SizedBox(height: 12),
+      Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text("Normal: $normal"),
+          Text("Low: $low"),
+        ],
+      ),
+    ],
+  );
 }
+}
+
+class _DraggableResizableWindow extends StatefulWidget {
+  final String title;
+  final Widget child;
+
+  const _DraggableResizableWindow({
+    required this.title,
+    required this.child,
+  });
+
+  @override
+  State<_DraggableResizableWindow> createState() =>
+      _DraggableResizableWindowState();
+}
+
+class _DraggableResizableWindowState
+    extends State<_DraggableResizableWindow> {
+
+      bool _initialized = false;
+
+  double width = 900;
+  double height = 550;
+  double top = 120;
+  double left = 200;
+
+  @override
+Widget build(BuildContext context) {
+
+  final screenSize = MediaQuery.of(context).size;
+
+  // Hitung posisi tengah saat pertama kali render
+  if (!_initialized) {
+    left = (screenSize.width - width) / 2;
+    top = (screenSize.height - height) / 2;
+    _initialized = true;
+  }
+
+  return Stack(
+    children: [
+      Positioned(
+        top: top,
+        left: left,
+        child: Material(
+          color: Colors.transparent,
+          child: Container(
+            width: width,
+            height: height,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(18),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.15),
+                  blurRadius: 40,
+                  offset: const Offset(0, 20),
+                ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(18),
+              child: Column(
+                children: [
+                  GestureDetector(
+                    onPanUpdate: (details) {
+                      setState(() {
+                        left += details.delta.dx;
+                        top += details.delta.dy;
+                      });
+                    },
+                    child: Container(
+                      height: 50,
+                      color: Colors.blueGrey,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Row(
+                        mainAxisAlignment:
+                            MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            widget.title,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.close,
+                                color: Colors.white),
+                            onPressed: () =>
+                                Navigator.pop(context),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  Expanded(
+                    child: widget.child,
+                  ),
+
+                  Align(
+                    alignment: Alignment.bottomRight,
+                    child: GestureDetector(
+                      onPanUpdate: (details) {
+                        setState(() {
+                          width += details.delta.dx;
+                          height += details.delta.dy;
+
+                          if (width < 600) width = 600;
+                          if (height < 400) height = 400;
+                        });
+                      },
+                      child: Container(
+                        width: 20,
+                        height: 20,
+                        alignment: Alignment.center,
+                        child: const Icon(
+                          Icons.drag_handle,
+                          size: 14,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    ],
+  );
+}
+
+}
+
