@@ -58,8 +58,6 @@ class FloatingMenuLauncher {
             },
             onSearchChanged: (value) {
               searchNotifier.value = value;
-              debugPrint(
-                  'DEBUG ▶ floating search changed: "$value"');
             },
             child: ValueListenableBuilder<String>(
               valueListenable: searchNotifier,

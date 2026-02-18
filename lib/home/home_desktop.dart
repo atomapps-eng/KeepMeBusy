@@ -11,7 +11,7 @@ import '../attendance/services/attendance_period_helper.dart';
 import '../pages/settings/settings_page.dart';
 import '../pages/spare_part/low_stock_page.dart';
 import '../pages/spare_part/spare_part_list_page.dart';
-
+import '../order_in/order_in_desktop.dart';
 
 
 enum DesktopSection {
@@ -20,6 +20,11 @@ enum DesktopSection {
   machinery,
   reports,
   systems,
+}
+
+enum InventoryView {
+  menu,
+  orderIn,
 }
 
 class HomeDesktop extends StatefulWidget {
@@ -33,6 +38,8 @@ class _HomeDesktopState extends State<HomeDesktop> {
 
   DesktopSection selectedSection = DesktopSection.dashboard;
   bool showLowStockOnly = false;
+
+  InventoryView inventoryView = InventoryView.menu;
 
   Stream<int> lowStockCountStream() {
     return FirebaseFirestore.instance
@@ -102,19 +109,18 @@ setState(() {
                     },
                   ),
 
-                  _desktopMenuCard(
-                    Icons.input,
-                    'Orders In',
-                    Colors.green,
-                    () {
-                      FloatingMenuLauncher.open(
-                        context,
-                        inventoryMenus.firstWhere(
-                          (m) => m.label == 'Orders In',
-                        ),
-                      );
-                    },
-                  ),
+ _desktopMenuCard(
+  Icons.input,
+  'Orders In',
+  Colors.green,
+  () {
+    setState(() {
+      inventoryView = InventoryView.orderIn;
+    });
+  },
+),
+
+
 
                   _desktopMenuCard(
                     Icons.output_outlined,
@@ -152,6 +158,17 @@ setState(() {
     },
   );
 }
+
+Widget _buildInventoryContent() {
+  switch (inventoryView) {
+    case InventoryView.menu:
+      return _buildDesktopInventory();
+
+    case InventoryView.orderIn:
+      return const OrderInDesktop();
+  }
+}
+
 
 Widget _buildDesktopMachinery() {
   return LayoutBuilder(
@@ -502,7 +519,8 @@ Widget _desktopMenuCard(
       return _buildDesktopDashboard();
 
     case DesktopSection.inventory:
-      return _buildDesktopInventory();
+  return _buildInventoryContent();
+
 
     case DesktopSection.machinery:
       return _buildDesktopMachinery();
@@ -600,10 +618,15 @@ Widget _sidebarItem(
 
   return InkWell(
     onTap: () {
-      setState(() {
-        selectedSection = section;
-      });
-    },
+  setState(() {
+    selectedSection = section;
+
+    if (section == DesktopSection.inventory) {
+      inventoryView = InventoryView.menu;
+    }
+  });
+},
+
     hoverColor: Colors.black.withValues(alpha: 0.05),
     child: AnimatedContainer(
       duration: const Duration(milliseconds: 180),

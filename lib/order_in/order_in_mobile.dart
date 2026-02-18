@@ -2,7 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-import '../spare_part/spare_part_list_page.dart';
+import '../pages/spare_part/spare_part_list_page.dart';
 import '../../models/spare_part.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -11,18 +11,18 @@ enum QtyDialogMode {
   orderOut,
 }
 
-class OrderInPage extends StatefulWidget {
+class OrderInMobile extends StatefulWidget {
   final bool isCompact;
   final String? searchKeyword;
 
-  const OrderInPage({
+  const OrderInMobile({
     super.key,
     this.isCompact = false,
     this.searchKeyword,
   });
 
   @override
-  State<OrderInPage> createState() => _OrderInPageState();
+  State<OrderInMobile> createState() => _OrderInPageState();
 }
 
 /// =====================================================
@@ -38,7 +38,7 @@ class OrderInItem {
   });
 }
 
-class _OrderInPageState extends State<OrderInPage> {
+class _OrderInPageState extends State<OrderInMobile> {
   // ================= USER LOGIN HELPER =================
   String _getCurrentUsername() {
     final user = FirebaseAuth.instance.currentUser;
@@ -194,6 +194,11 @@ for (final item in items) {
       stockMap[item.part.id]! + item.qty;
 }
 
+for (final entry in stockMap.entries) {
+  if (entry.value < 0) {
+    throw Exception('NEGATIVE_STOCK');
+  }
+}
 
       // ===============================
       // 3. WRITE (SETELAH SEMUA READ)
@@ -210,7 +215,7 @@ for (final item in items) {
       tx.update(orderRef, {
         'orderDate': Timestamp.fromDate(orderDate!),
         'client': selectedClient,
-        'poNumber': poController.text.trim(),
+        'poNumber': poController.text.trim().toUpperCase(),
         'items': items.map((e) => {
               'partId': e.part.id,
               'partCode': e.part.partCode,
@@ -240,8 +245,8 @@ for (final item in items) {
       ),
     );
   } catch (e) {
-    _showError(e.toString());
-  }
+  _handleError(e);
+}
 }
 
 
@@ -302,9 +307,16 @@ for (final entry in qtyMap.entries) {
   final currentStock =
       (partSnap['currentStock'] as num).toInt();
 
-  tx.update(partRef, {
-    'currentStock': currentStock - entry.value,
-  });
+  final newStock = currentStock - entry.value;
+
+if (newStock < 0) {
+  throw Exception('NEGATIVE_STOCK');
+}
+
+tx.update(partRef, {
+  'currentStock': newStock,
+});
+
 }
 
 
@@ -319,8 +331,9 @@ for (final entry in qtyMap.entries) {
       ),
     );
   } catch (e) {
-    _showError(e.toString());
-  }
+  _handleError(e);
+}
+
 }
 
   // ================= FULLSCREEN SEARCH & FILTER =================
@@ -329,6 +342,7 @@ for (final entry in qtyMap.entries) {
   DateTime? fullscreenFilterDate;
 
   bool isCreateMode = false;
+  bool _isSaving = false;
   bool isEditMode = false;
   String? editingOrderId;
 
@@ -385,9 +399,23 @@ final int? qty = await _showQtyDialog(
 
     if (qty == null) return;
 
-    setState(() {
-      items.add(OrderInItem(part: selected, qty: qty));
-    });
+    final existingIndex =
+    items.indexWhere((e) => e.part.id == selected.id);
+
+if (existingIndex != -1) {
+  setState(() {
+    final current = items[existingIndex];
+    items[existingIndex] = OrderInItem(
+      part: current.part,
+      qty: current.qty + qty,
+    );
+  });
+} else {
+  setState(() {
+    items.add(OrderInItem(part: selected, qty: qty));
+  });
+}
+
   }
   
 Future<void> _editItemAtIndex(int index) async {
@@ -519,24 +547,50 @@ final partForEdit = SparePart(
 
   // ================= COMMIT FIRESTORE =================
   Future<void> _commitOrderIn() async {
-  if (isEditMode) {
-    await _commitEditOrderIn();
-    return;
-  }
 
-  if (orderDate == null ||
-      selectedClient == null ||
-      poController.text.trim().isEmpty ||
-      items.isEmpty) {
-    _showError('Lengkapi Order Date, Client, PO, dan Item');
-    return;
+    if (_isSaving) return;
+
+setState(() {
+  _isSaving = true;
+});
+
+  if (isEditMode) {
+  try {
+    await _commitEditOrderIn();
+  } finally {
+    if (mounted) {
+      setState(() => _isSaving = false);
+    }
   }
+  return;
+}
+
+
+ if (orderDate == null ||
+    selectedClient == null ||
+    poController.text.trim().isEmpty ||
+    items.isEmpty) {
+
+  setState(() => _isSaving = false);
+
+  _showError('Lengkapi Order Date, Client, PO, dan Item');
+  return;
+}
+
 
   final firestore = FirebaseFirestore.instance;
-  final orderRef = firestore.collection('order_in').doc();
+  final poNormalized = poController.text.trim().toUpperCase();
+
+final orderRef =
+    firestore.collection('order_in').doc(poNormalized);
 
   try {
     await firestore.runTransaction((tx) async {
+
+       final existing = await tx.get(orderRef);
+  if (existing.exists) {
+    throw Exception('PO_DUPLICATE');
+  }
       // 1. VALIDASI & POTONG STOCK
       // ===============================
 // GROUP BY PART ID
@@ -547,6 +601,7 @@ for (final item in items) {
   qtyMap[item.part.id] =
       (qtyMap[item.part.id] ?? 0) + item.qty;
 }
+
 
 // ===============================
 // UPDATE STOCK SEKALI PER PART
@@ -568,7 +623,7 @@ for (final entry in qtyMap.entries) {
       tx.set(orderRef, {
         'orderDate': Timestamp.fromDate(orderDate!),
         'client': selectedClient,
-        'poNumber': poController.text.trim(),
+        'poNumber': poNormalized,
         'createdAt': FieldValue.serverTimestamp(),
         'createdBy': _getCurrentUsername(),
         'items': items.map((e) => {
@@ -596,8 +651,20 @@ for (final entry in qtyMap.entries) {
   ),
 );
   } catch (e) {
-    _showError(e.toString());
+  if (e.toString().contains('PO_DUPLICATE')) {
+    _showError('PO Number sudah pernah digunakan');
+  } else {
+    _handleError(e);
   }
+}
+finally {
+  if (mounted) {
+    setState(() {
+      _isSaving = false;
+    });
+  }
+}
+
 }
 
   void _showError(String message) {
@@ -796,12 +863,17 @@ Widget build(BuildContext context) {
   );
 },
 ),
-
-
                       ),
                     ],
                   ),
           ),
+          if (_isSaving)
+  Container(
+    color: Colors.black.withOpacity(0.3),
+    child: const Center(
+      child: CircularProgressIndicator(),
+    ),
+  ),
         ],
       ),
     ),
@@ -809,51 +881,335 @@ Widget build(BuildContext context) {
 }  
 
   Widget _buildCreateForm() {
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(16),
-          child: _OrderHeader(
-            orderDate: orderDate,
-            onPickDate: _selectOrderDate,
-            selectedClient: selectedClient,
-            onClientChanged: (v) =>
-                setState(() => selectedClient = v),
-            poController: poController,
-            onSave: _commitOrderIn,
-            onBack: () => setState(() => isCreateMode = false),
+  return LayoutBuilder(
+    builder: (context, constraints) {
+
+      final isDesktop = constraints.maxWidth > 800;
+      final isFormValid =
+    orderDate != null &&
+    selectedClient != null &&
+    poController.text.trim().isNotEmpty &&
+    items.isNotEmpty;
+
+      if (!isDesktop) {
+        // ===== MOBILE LAYOUT (UNCHANGED) =====
+        return Column(
+          children: [
+            if (isEditMode)
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(8),
+          color: Colors.orange.shade100,
+          child: const Text(
+            'EDIT MODE',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Colors.orange,
+            ),
           ),
         ),
-        Expanded(
-          child: items.isEmpty
-              ? const Center(child: Text('Belum ada item'))
-              : ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: items.length,
-                  itemBuilder: (_, i) =>
-                      _ItemCard(
-  item: items[i],
-  onEdit: () {
-    _editItemAtIndex(i);
-  },
-  onDelete: () {
-    _removeItemAtIndex(i);
-  },
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: _OrderHeader(
+  orderDate: orderDate,
+  onPickDate: _selectOrderDate,
+  selectedClient: selectedClient,
+  onClientChanged: (v) =>
+      setState(() => selectedClient = v),
+  poController: poController,
+  onSave: _commitOrderIn,
+  onBack: () => setState(() {
+  isCreateMode = false;
+  isEditMode = false;
+  editingOrderId = null;
+}),
+  isSaving: _isSaving,
+  isFormValid: isFormValid,
+  isEditMode: isEditMode,
 ),
 
-                ),
+
+            ),
+            Expanded(
+              child: items.isEmpty
+                  ? const Center(child: Text('Belum ada item'))
+                  : ListView.builder(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: items.length,
+                      itemBuilder: (_, i) => _ItemCard(
+                        item: items[i],
+                        onEdit: () => _editItemAtIndex(i),
+                        onDelete: () => _removeItemAtIndex(i),
+                      ),
+                    ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: OutlinedButton.icon(
+                onPressed: _addPart,
+                icon: const Icon(Icons.add),
+                label: const Text('Tambah Item'),
+              ),
+            ),
+          ],
+        );
+      }
+
+      // ===== DESKTOP LAYOUT =====
+
+final desktopTotalItem = items.length;
+final desktopTotalQty = items.fold<int>(
+  0,
+  (sum, e) => sum + e.qty,
+);
+
+return Column(
+  children: [
+
+    // ===== MAIN CONTENT =====
+    Expanded(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+
+            // ===== LEFT PANEL =====
+            SizedBox(
+              width: constraints.maxWidth * 0.35,
+              child: _buildDesktopFormPanel(),
+            ),
+
+            const SizedBox(width: 32),
+
+            // ===== RIGHT PANEL =====
+            Expanded(
+              child: Column(
+                children: [
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: ElevatedButton.icon(
+                      onPressed: _addPart,
+                      icon: const Icon(Icons.add),
+                      label: const Text('Tambah Item'),
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  Expanded(
+                    child: items.isEmpty
+                        ? const Center(
+                            child: Text('Belum ada item'),
+                          )
+                        : ListView.builder(
+                            itemCount: items.length,
+                            itemBuilder: (_, i) => Card(
+                              child: ListTile(
+                                title: Text(items[i].part.partCode),
+                                subtitle: Text(items[i].part.nameEn),
+                                trailing: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text('Qty: ${items[i].qty}'),
+                                    IconButton(
+                                      icon: const Icon(Icons.edit),
+                                      onPressed: () =>
+                                          _editItemAtIndex(i),
+                                    ),
+                                    IconButton(
+                                      icon: const Icon(
+                                        Icons.delete,
+                                        color: Colors.redAccent,
+                                      ),
+                                      onPressed: () =>
+                                          _removeItemAtIndex(i),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
-        Padding(
-          padding: const EdgeInsets.all(16),
-          child: OutlinedButton.icon(
-            onPressed: _addPart,
-            icon: const Icon(Icons.add),
-            label: const Text('Tambah Item'),
+      ),
+    ),
+
+    // ===== STICKY SUMMARY BAR =====
+    Container(
+      padding: const EdgeInsets.symmetric(
+          horizontal: 32, vertical: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.08),
+            blurRadius: 12,
+            offset: const Offset(0, -4),
           ),
+        ],
+      ),
+      child: Row(
+        children: [
+
+          Text(
+            'Total Item: $desktopTotalItem',
+            style: const TextStyle(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+
+          const SizedBox(width: 24),
+
+          Text(
+            'Total Qty: $desktopTotalQty',
+            style: const TextStyle(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+
+          const Spacer(),
+
+          SizedBox(
+            width: 220,
+            child: ElevatedButton.icon(
+              onPressed: (isFormValid && !_isSaving)
+    ? _commitOrderIn
+    : null,
+              icon: const Icon(Icons.save),
+              label: const Text('Save Order In'),
+            ),
+          ),
+        ],
+      ),
+    ),
+  ],
+);
+
+    },
+  );
+}
+
+Widget _buildDesktopFormPanel() {
+  return SingleChildScrollView(
+  child: Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      const Text(
+        'Order In',
+        style: TextStyle(
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
         ),
-      ],
-    );
+      ),
+      const SizedBox(height: 24),
+
+      const Text(
+  'Order Date *',
+  style: TextStyle(fontWeight: FontWeight.w600),
+),
+      const SizedBox(height: 6),
+      InkWell(
+        onTap: _selectOrderDate,
+        child: _Box(
+          text: orderDate == null
+              ? 'Select date'
+              : '${orderDate!.day}/${orderDate!.month}/${orderDate!.year}',
+        ),
+      ),
+
+      const SizedBox(height: 16),
+
+      const Text(
+  'Client *',
+  style: TextStyle(fontWeight: FontWeight.w600),
+),
+
+      const SizedBox(height: 6),
+
+      StreamBuilder<QuerySnapshot>(
+        stream: FirebaseFirestore.instance
+            .collection('partners')
+            .orderBy('name')
+            .snapshots(),
+        builder: (context, snapshot) {
+          if (!snapshot.hasData) {
+            return const CircularProgressIndicator();
+          }
+
+          final docs = snapshot.data!.docs;
+
+          final partnerNames = docs
+              .map((doc) =>
+                  (doc.data() as Map<String, dynamic>)['name']
+                      as String)
+              .toList();
+
+          final safeValue =
+              partnerNames.contains(selectedClient)
+                  ? selectedClient
+                  : null;
+
+          return DropdownButtonFormField<String>(
+            value: safeValue,
+            isExpanded: true,
+            items: partnerNames.map((name) {
+              return DropdownMenuItem<String>(
+                value: name,
+                child: Text(name),
+              );
+            }).toList(),
+            onChanged: (v) =>
+                setState(() => selectedClient = v),
+            decoration: const InputDecoration(
+              border: OutlineInputBorder(),
+              isDense: true,
+            ),
+          );
+        },
+      ),
+
+      const SizedBox(height: 16),
+
+      const Text(
+  'PO Number *',
+  style: TextStyle(fontWeight: FontWeight.w600),
+),
+
+      const SizedBox(height: 6),
+      TextField(
+  controller: poController,
+  readOnly: isEditMode,
+  decoration: InputDecoration(
+    border: const OutlineInputBorder(),
+    errorText: poController.text.isEmpty && isCreateMode
+        ? 'Required'
+        : null,
+  ),
+  onChanged: (_) => setState(() {}),
+),
+
+    ],
+  )
+  );
+}
+void _handleError(Object e) {
+  final message = e.toString();
+
+  if (message.contains('PO_DUPLICATE')) {
+    _showError('PO Number sudah pernah digunakan');
+  } else if (message.contains('NEGATIVE_STOCK')) {
+    _showError('Stock menjadi negatif. Operasi dibatalkan.');
+  } else {
+    _showError('Terjadi kesalahan. Silakan coba lagi.');
   }
+}
+
 }
 
 /// =====================================================
@@ -877,11 +1233,29 @@ class _OrderInListView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('order_in')
-          .orderBy('createdAt', descending: true)
-          .snapshots(),
+      Query query = FirebaseFirestore.instance
+    .collection('order_in')
+    .orderBy('createdAt', descending: true);
+
+if (filterDate != null) {
+  final start = DateTime(
+    filterDate!.year,
+    filterDate!.month,
+    filterDate!.day,
+  );
+
+  final end = start.add(const Duration(days: 1));
+
+  query = query
+      .where('orderDate',
+          isGreaterThanOrEqualTo: Timestamp.fromDate(start))
+      .where('orderDate',
+          isLessThan: Timestamp.fromDate(end));
+}
+
+return StreamBuilder<QuerySnapshot>(
+  stream: query.snapshots(),
+
       builder: (_, snapshot) {
         if (!snapshot.hasData) {
           return const Center(child: CircularProgressIndicator());
@@ -900,16 +1274,6 @@ class _OrderInListView extends StatelessWidget {
                   .toLowerCase()
                   .contains(keyword)) {
             return false;
-          }
-
-          if (filterDate != null) {
-            final date =
-                (data['orderDate'] as Timestamp).toDate();
-            if (date.year != filterDate!.year ||
-                date.month != filterDate!.month ||
-                date.day != filterDate!.day) {
-              return false;
-            }
           }
           return true;
         }).toList();
@@ -1092,16 +1456,24 @@ class _OrderHeader extends StatelessWidget {
   final TextEditingController poController;
   final VoidCallback onSave;
   final VoidCallback onBack;
+  final bool isSaving;
+  final bool isFormValid;
+  final bool isEditMode;
+
+
 
   const _OrderHeader({
-    required this.orderDate,
-    required this.onPickDate,
-    required this.selectedClient,
-    required this.onClientChanged,
-    required this.poController,
-    required this.onSave,
-    required this.onBack,
-  });
+  required this.orderDate,
+  required this.onPickDate,
+  required this.selectedClient,
+  required this.onClientChanged,
+  required this.poController,
+  required this.onSave,
+  required this.onBack,
+  required this.isSaving,
+  required this.isFormValid,
+  required this.isEditMode,
+});
 
   @override
   Widget build(BuildContext context) {
@@ -1205,23 +1577,49 @@ return DropdownButtonFormField<String>(
               _HeaderRow(
                 label: 'PO Number',
                 child: TextField(
-                  controller: poController,
-                  decoration:
-                      const InputDecoration(border: OutlineInputBorder()),
-                ),
+  controller: poController,
+  readOnly: isEditMode,
+  decoration: InputDecoration(
+    border: const OutlineInputBorder(),
+    suffixIcon: isEditMode
+        ? const Icon(Icons.lock, size: 18)
+        : null,
+  ),
+),
+
               ),
 
               const SizedBox(height: 16),
 
               // ===== SAVE BUTTON =====
               SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: onSave,
-                  icon: const Icon(Icons.save),
-                  label: const Text('Save Order In'),
-                ),
-              ),
+  width: 220,
+  child: ElevatedButton(
+    onPressed: (isFormValid && !isSaving)
+        ? onSave
+        : null,
+    child: isSaving
+        ? const SizedBox(
+            height: 18,
+            width: 18,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: Colors.white,
+            ),
+          )
+        : const Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.save),
+              SizedBox(width: 8),
+              Text('Save Order In'),
+            ],
+          ),
+  ),
+),
+
+
+
             ],
           ),
         ),
