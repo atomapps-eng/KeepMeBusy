@@ -500,6 +500,7 @@ Widget _desktopMenuCard(
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF8F9FA),
       body: Row(
         children: [
           _buildSidebar(),

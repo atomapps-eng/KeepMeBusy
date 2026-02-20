@@ -58,6 +58,7 @@ class OrderOutDesktop extends StatelessWidget {
                               headerColor: Colors.red.shade700,
                               child: const OrderOutMobile(
                                 isCompact: false,
+                                autoCreate: true,
                               ),
                             );
                           },
@@ -66,44 +67,70 @@ class OrderOutDesktop extends StatelessWidget {
                     ),
 
                     _buildMenu(
-                      icon: Icons.list_alt_rounded,
-                      title: "Order History",
-                      onTap: () {
-                        showGeneralDialog(
-                          context: context,
-                          barrierDismissible: true,
-                          barrierLabel: "OrderHistory",
-                          barrierColor: Colors.black.withValues(alpha: 0.35),
-                          transitionDuration: const Duration(milliseconds: 200),
-                          pageBuilder: (context, anim1, anim2) {
-                            return DraggableResizableWindow(
-                              title: "Order History",
-                              headerColor: Colors.red.shade700,
-                              child: OrderOutDesktopHistory(
-                                onTap: (context, data) {
+  icon: Icons.list_alt_rounded,
+  title: "Order History",
+  onTap: () {
+    showGeneralDialog(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: "OrderHistory",
+      barrierColor: Colors.black.withValues(alpha: 0.35),
+      transitionDuration: const Duration(milliseconds: 200),
+      pageBuilder: (context, anim1, anim2) {
+        return DraggableResizableWindow(
+          title: "Order History",
+          headerColor: Colors.red.shade700,
+          child: OrderOutDesktopHistory(
+            onTap: (context, data) async {
+
+              final result = await Navigator.push<Map<String, dynamic>>(
+                context,
+                PageRouteBuilder(
+                  opaque: false,
+                  barrierDismissible: true,
+                  barrierColor: Colors.black.withValues(alpha: 0.35),
+                  pageBuilder: (_, __, ___) {
+                    return DraggableResizableWindow(
+                      title: "Order Out Detail",
+                      headerColor: Colors.red.shade700,
+                      child: OrderOutDetailPage(
+                        data: data,
+                      ),
+                    );
+                  },
+                ),
+              );
+
+              if (result != null) {
+
+  Navigator.pop(context); // tutup history window
+
   showGeneralDialog(
     context: context,
-    barrierDismissible: true,
-    barrierLabel: "OrderOutDetail",
+    barrierDismissible: false,
+    barrierLabel: "EditOrderOut",
     barrierColor: Colors.black.withValues(alpha: 0.35),
     transitionDuration: const Duration(milliseconds: 200),
     pageBuilder: (context, anim1, anim2) {
       return DraggableResizableWindow(
-        title: "Order Out Detail",
+        title: "Edit Order Out",
         headerColor: Colors.red.shade700,
-        child: OrderOutDetailPage(
-          data: data,
+        child: OrderOutMobile(
+          isCompact: false,
+          autoCreate: true,
+          initialEditData: result,   // 🔥 INI KUNCINYA
         ),
       );
     },
   );
-},
-                              ),
-                            );
-                          },
-                        );
-                      },
-                    ),
+}
+            },
+          ),
+        );
+      },
+    );
+  },
+),
 
                   ],
                 ),

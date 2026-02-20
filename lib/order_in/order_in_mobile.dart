@@ -14,11 +14,15 @@ enum QtyDialogMode {
 class OrderInMobile extends StatefulWidget {
   final bool isCompact;
   final String? searchKeyword;
+  final bool autoCreate;
+ final Map<String, dynamic>? initialEditData;
 
   const OrderInMobile({
     super.key,
     this.isCompact = false,
     this.searchKeyword,
+    this.autoCreate = false,
+    this.initialEditData,
   });
 
   @override
@@ -39,6 +43,24 @@ class OrderInItem {
 }
 
 class _OrderInPageState extends State<OrderInMobile> {
+  bool isCreateMode = false;
+  bool isEditMode = false;
+  String? editingOrderId;
+
+  @override
+  void initState() {
+    super.initState();
+
+    if (widget.autoCreate) {
+      isCreateMode = true;
+    }
+
+    if (widget.initialEditData != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _openEditOrder(widget.initialEditData!);
+      });
+    }
+  }
   // ================= USER LOGIN HELPER =================
   String _getCurrentUsername() {
     final user = FirebaseAuth.instance.currentUser;
@@ -344,12 +366,8 @@ tx.update(partRef, {
   final TextEditingController fullscreenSearchController =
       TextEditingController();
   DateTime? fullscreenFilterDate;
-
-  bool isCreateMode = false;
+  
   bool _isSaving = false;
-  bool isEditMode = false;
-  String? editingOrderId;
-
 
   @override
   void dispose() {

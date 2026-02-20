@@ -1,146 +1,285 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../core/widgets/draggable_window.dart';
+import '../pages/order_in/order_in_detail_page.dart';
 
+class OrderInDesktopHistory extends StatefulWidget {
 
-class OrderInDesktopHistory extends StatelessWidget {
-  const OrderInDesktopHistory({super.key});
+  final void Function(BuildContext, Map<String, dynamic>) onEdit;
+
+  const OrderInDesktopHistory({
+    super.key,
+    required this.onEdit,
+  });
+  @override
+  State<OrderInDesktopHistory> createState() =>
+      _OrderInDesktopHistoryState();
+}
+
+class _OrderInDesktopHistoryState
+    extends State<OrderInDesktopHistory> {
+
+  final TextEditingController _searchController =
+      TextEditingController();
+
+  DateTime? _filterDate;
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: Padding(
-  padding: const EdgeInsets.all(32),
-  child: Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      const Text(
-        'Order In History',
-        style: TextStyle(
-          fontSize: 24,
-          fontWeight: FontWeight.bold,
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Color(0xFFFFE0B2),
+            Color(0xFFFFFFFF),
+          ],
         ),
       ),
-      const SizedBox(height: 32),
-      Expanded(
-  child: StreamBuilder<QuerySnapshot>(
-    stream: FirebaseFirestore.instance
-        .collection('order_in')
-        .orderBy('createdAt', descending: true)
-        .snapshots(),
-    builder: (context, snapshot) {
-      if (!snapshot.hasData) {
-        return const Center(child: CircularProgressIndicator());
-      }
+      child: Column(
+        children: [
 
-      final docs = snapshot.data!.docs;
-
-      return SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: DataTable(
-          columns: const [
-  DataColumn(label: Text('Date')),
-  DataColumn(label: Text('PO Number')),
-  DataColumn(label: Text('Client')),
-  DataColumn(label: Text('Created By')),
-  DataColumn(label: Text('Total Qty')),
-  DataColumn(label: Text('Action')),
-],
-
-          rows: docs.map((doc) {
-            final data = doc.data() as Map<String, dynamic>;
-
-            final date =
-                (data['orderDate'] as Timestamp?)?.toDate();
-
-            final items = data['items'] as List<dynamic>? ?? [];
-
-            int totalQty = 0;
-            for (var item in items) {
-              totalQty += (item['qty'] as num).toInt();
-            }
-
-            return DataRow(
-              cells: [
-                DataCell(Text(
-                  date == null
-                      ? '-'
-                      : '${date.day}/${date.month}/${date.year}',
-                )),
-                DataCell(Text(data['poNumber'] ?? '-')),
-                DataCell(Text(data['client'] ?? '-')),
-                DataCell(Text(data['createdBy'] ?? '-')),
-                DataCell(Text(totalQty.toString())),
-
-                DataCell(
-  IconButton(
-    icon: const Icon(Icons.visibility),
-    onPressed: () {
-      showDialog(
-  context: context,
-  builder: (_) {
-    final items = data['items'] as List<dynamic>? ?? [];
-
-    return AlertDialog(
-      title: Text('PO: ${data['poNumber']}'),
-      content: SizedBox(
-  width: 500,
-  height: 400, // batasi tinggi
-  child: Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Text('Client: ${data['client'] ?? '-'}'),
-      const SizedBox(height: 16),
-      const Text(
-        'Items',
-        style: TextStyle(fontWeight: FontWeight.bold),
-      ),
-      const SizedBox(height: 8),
-      Expanded(
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: items.map((item) {
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4),
-                child: Text(
-                  '${item['partCode']}  |  Qty: ${item['qty']}',
+          // ================= SEARCH =================
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _searchController,
+                    onChanged: (_) => setState(() {}),
+                    decoration: const InputDecoration(
+                      prefixIcon: Icon(Icons.search),
+                      hintText: 'Search PO / Client',
+                    ),
+                  ),
                 ),
-              );
-            }).toList(),
-          ),
-        ),
-      ),
-    ],
-  ),
-),
+                const SizedBox(width: 8),
 
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Close'),
-        ),
-      ],
+                IconButton(
+                  icon: const Icon(Icons.date_range),
+                  onPressed: () async {
+                    final picked = await showDatePicker(
+                      context: context,
+                      initialDate:
+                          _filterDate ?? DateTime.now(),
+                      firstDate: DateTime(2020),
+                      lastDate: DateTime(2030),
+                    );
+
+                    if (picked != null) {
+                      setState(() => _filterDate = picked);
+                    }
+                  },
+                ),
+
+                if (_filterDate != null)
+                  IconButton(
+                    icon: const Icon(Icons.clear),
+                    onPressed: () =>
+                        setState(() => _filterDate = null),
+                  ),
+              ],
+            ),
+          ),
+
+          // ================= LIST =================
+          Expanded(
+            child: _buildHistoryList(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHistoryList() {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('order_in')
+          .orderBy('createdAt', descending: true)
+          .snapshots(),
+      builder: (_, snapshot) {
+
+        if (!snapshot.hasData) {
+          return const Center(
+              child: CircularProgressIndicator());
+        }
+
+        final keyword =
+            _searchController.text.toLowerCase();
+
+        final docs = snapshot.data!.docs.where((doc) {
+
+          final data =
+              doc.data() as Map<String, dynamic>;
+
+          if (keyword.isNotEmpty &&
+              !data['poNumber']
+                  .toString()
+                  .toLowerCase()
+                  .contains(keyword) &&
+              !data['client']
+                  .toString()
+                  .toLowerCase()
+                  .contains(keyword)) {
+            return false;
+          }
+
+          if (_filterDate != null) {
+            final date =
+                (data['orderDate'] as Timestamp?)
+                    ?.toDate();
+
+            if (date == null ||
+                date.year != _filterDate!.year ||
+                date.month != _filterDate!.month ||
+                date.day != _filterDate!.day) {
+              return false;
+            }
+          }
+
+          return true;
+
+        }).toList();
+
+        if (docs.isEmpty) {
+          return const Center(
+              child: Text('Belum ada Order'));
+        }
+
+        return ListView.builder(
+          padding: const EdgeInsets.all(16),
+          itemCount: docs.length,
+          itemBuilder: (_, i) {
+
+            final data =
+                docs[i].data() as Map<String, dynamic>;
+
+            final orderId = docs[i].id;
+
+            return InkWell(
+  onTap: () async {
+ final result = await showGeneralDialog<Map<String, dynamic>>(
+  context: context,
+  barrierDismissible: true,
+  barrierLabel: "OrderInDetail",
+  barrierColor: Colors.black.withValues(alpha: 0.35),
+  transitionDuration: const Duration(milliseconds: 200),
+  pageBuilder: (_, __, ___) {
+    return DraggableResizableWindow(
+      title: "Order In Detail",
+      child: OrderInDetailPage(
+        data: {
+          ...data,
+          'id': orderId,
+        },
+      ),
     );
   },
 );
 
-    },
-  ),
-),
+if (result != null && context.mounted) {
+  widget.onEdit(context, result);
+}
 
-              ],
-            );
-          }).toList(),
+  // 🔥 INI YANG PENTING
+  if (result != null && context.mounted) {
+    widget.onEdit(context, result);
+  }
+},
+  child: _OrderInHistoryCard(
+    data: {
+      ...data,
+      'id': orderId,
+    },
+    onEdit: () => widget.onEdit(
+      context,
+      {
+        ...data,
+        'id': orderId,
+      },
+    ),
+  ),
+);
+          },
+        );
+      },
+    );
+  }
+}
+
+class _OrderInHistoryCard extends StatelessWidget {
+  final Map<String, dynamic> data;
+  final VoidCallback? onEdit;
+
+  const _OrderInHistoryCard({
+    required this.data,
+    this.onEdit,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+
+    final date =
+        (data['orderDate'] as Timestamp?)
+            ?.toDate();
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.25),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.35),
         ),
-      );
-    },
-  ),
-),
-    ],
-  ),
-),
+      ),
+      child: Row(
+        children: [
 
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'PO: ${data['poNumber']}',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text('Client: ${data['client']}'),
+
+                if (data['createdBy'] != null)
+                  Text(
+                    'Created By: ${data['createdBy']}',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Colors.black54,
+                    ),
+                  ),
+
+                if (date != null)
+                  Text(
+                    '${date.day}/${date.month}/${date.year}',
+                    style: const TextStyle(fontSize: 12),
+                  ),
+              ],
+            ),
+          ),
+
+          IconButton(
+            icon: const Icon(Icons.edit, color: Colors.blueGrey),
+            onPressed: onEdit,
+          ),
+        ],
+      ),
     );
   }
 }

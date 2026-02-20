@@ -8,7 +8,7 @@ import 'package:open_filex/open_filex.dart';
 
 
 
-class OrderOutDetailPage extends StatelessWidget {
+class OrderOutDetailPage extends StatefulWidget {
   final Map<String, dynamic> data;
 
   const OrderOutDetailPage({
@@ -17,7 +17,14 @@ class OrderOutDetailPage extends StatelessWidget {
   });
 
   @override
+  State<OrderOutDetailPage> createState() => _OrderOutDetailPageState();
+}
+
+class _OrderOutDetailPageState extends State<OrderOutDetailPage> {
+  
+  @override
   Widget build(BuildContext context) {
+    final data = widget.data;
     final items = data['items'] as List<dynamic>? ?? [];
 
     final totalItem = items.length;
@@ -166,74 +173,73 @@ class OrderOutDetailPage extends StatelessWidget {
                         final isAdmin = snapshot.data == true;
 
                         return Column(
-                          children: [
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: ElevatedButton(
-                                    onPressed: () {
-                                      Navigator.pop(context, data);
-                                    },
-                                    child: const Text('Edit'),
-                                  ),
-                                ),
+  children: [
 
-                                if (isAdmin) ...[
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: ElevatedButton(
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.red,
-                                      ),
-                                      onPressed: () async {
-  final confirmed = await _confirmDelete(context);
-  if (!confirmed) return;
+    // ================= EDIT + DELETE (ROW) =================
+    Row(
+      children: [
+        // ===== EDIT BUTTON =====
+        Expanded(
+          child: ElevatedButton.icon(
+            icon: const Icon(Icons.edit),
+            onPressed: () {
+              Navigator.pop(context, data);
+            },
+            label: const Text('Edit'),
+          ),
+        ),
 
-  if (!context.mounted) return;
+        // Spacing hanya jika admin
+        if (isAdmin) const SizedBox(width: 12),
 
-  await _deleteOrderOut(
-    context,
-    data['id'],
-  );
-},
+        // ===== DELETE BUTTON (ADMIN ONLY) =====
+        if (isAdmin)
+          Expanded(
+            child: ElevatedButton.icon(
+              icon: const Icon(Icons.delete),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+              ),
+              label: const Text('Delete'),
+              onPressed: () async {
+                final confirm = await _confirmDelete(context);
+                if (!confirm) return;
 
-                                      child: const Text('Delete'),
-                                    ),
-                                  ),
-                                ],
-                              ],
-                            ),
+                await _deleteOrderOut(
+                  context,
+                  data['id'], // pastikan id ada
+                );
+              },
+            ),
+          ),
+      ],
+    ),
 
-                            const SizedBox(height: 10),
+    const SizedBox(height: 16),
 
-                            SizedBox(
-                              width: double.infinity,
-                              child: OutlinedButton.icon(
-                                icon: const Icon(Icons.picture_as_pdf),
-                                label: const Text('Download PDF'),
-                                onPressed: () async {
-  final pdfData = await OrderOutPdfGenerator.generate(
-    data: data,
-  );
+    // ================= PDF BUTTON =================
+    SizedBox(
+      width: double.infinity,
+      child: OutlinedButton.icon(
+        icon: const Icon(Icons.picture_as_pdf),
+        label: const Text('Download PDF'),
+        onPressed: () async {
+          final pdfData = await OrderOutPdfGenerator.generate(
+            data: data,
+          );
 
-  final bytes = pdfData; // Uint8List hasil generate PDF
+          final dir = await getApplicationDocumentsDirectory();
+          final file = File(
+            '${dir.path}/OrderOut-${data['poNumber']}.pdf',
+          );
 
-final dir = await getApplicationDocumentsDirectory();
-final file = File(
-  '${dir.path}/OrderOut-${data['poNumber']}.pdf',
+          await file.writeAsBytes(pdfData, flush: true);
+          await OpenFilex.open(file.path);
+        },
+      ),
+    ),
+  ],
 );
-
-await file.writeAsBytes(bytes, flush: true);
-
-// Buka PDF dengan aplikasi default (PDF viewer / print dari sana)
-await OpenFilex.open(file.path);
-
-},
-
-                              ),
-                            ),
-                          ],
-                        );
                       },
                     ),
                   ],
@@ -245,6 +251,87 @@ await OpenFilex.open(file.path);
       ),
     );
   }
+  Future<bool> _confirmDeleteItem(BuildContext context) async {
+  final result = await showDialog<bool>(
+    context: context,
+    builder: (_) => AlertDialog(
+      title: const Text('Hapus Item'),
+      content: const Text(
+        'Item ini akan dihapus dan stock akan dikembalikan.\nLanjutkan?',
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, false),
+          child: const Text('Batal'),
+        ),
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.red,
+          ),
+          onPressed: () => Navigator.pop(context, true),
+          child: const Text('Hapus'),
+        ),
+      ],
+    ),
+  );
+
+  return result == true;
+}
+Future<void> _deleteSingleItem(
+  BuildContext context,
+  String orderId,
+  Map<String, dynamic> item,
+) async {
+  final firestore = FirebaseFirestore.instance;
+
+  await firestore.runTransaction((tx) async {
+    final orderRef =
+        firestore.collection('order_out').doc(orderId);
+
+    final orderSnap = await tx.get(orderRef);
+    if (!orderSnap.exists) return;
+
+    final items =
+        List<Map<String, dynamic>>.from(orderSnap['items']);
+
+    // ===== 1️⃣ Rollback stock =====
+    final partRef =
+        firestore.collection('spare_parts').doc(item['partId']);
+
+    final partSnap = await tx.get(partRef);
+    final currentStock =
+        (partSnap['currentStock'] as num).toInt();
+
+    tx.update(
+      partRef,
+      {
+        'currentStock':
+            currentStock + (item['qty'] as int),
+      },
+    );
+
+    // ===== 2️⃣ Remove item dari array =====
+    items.removeWhere((e) =>
+        e['partId'] == item['partId'] &&
+        e['qty'] == item['qty']);
+
+    // ===== 3️⃣ Update order_out doc =====
+    tx.update(orderRef, {
+      'items': items,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  });
+
+  if (!context.mounted) return;
+
+  Navigator.pop(context); // tutup detail supaya reload
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(
+      content: Text('Item berhasil dihapus'),
+      backgroundColor: Colors.redAccent,
+    ),
+  );
+}
 }
 
 /// ================= DELETE ORDER (SAFE TRANSACTION) =================
@@ -255,30 +342,49 @@ Future<void> _deleteOrderOut(
   final firestore = FirebaseFirestore.instance;
 
   await firestore.runTransaction((tx) async {
-    final orderRef = firestore.collection('order_out').doc(orderId);
+    final orderRef =
+        firestore.collection('order_out').doc(orderId);
+
     final orderSnap = await tx.get(orderRef);
     if (!orderSnap.exists) return;
 
-    final items = orderSnap['items'] as List<dynamic>;
+    final items =
+        List<Map<String, dynamic>>.from(orderSnap['items']);
 
-    final Map<String, DocumentSnapshot> partSnaps = {};
+    // ===============================
+    // 1️⃣ AGGREGATE QTY PER PART
+    // ===============================
+    final Map<String, int> aggregatedQty = {};
+
     for (final item in items) {
-      final partRef =
-          firestore.collection('spare_parts').doc(item['partId']);
-      partSnaps[item['partId']] = await tx.get(partRef);
+      aggregatedQty.update(
+        item['partId'],
+        (value) => value + (item['qty'] as int),
+        ifAbsent: () => item['qty'] as int,
+      );
     }
 
-    for (final item in items) {
-      final partSnap = partSnaps[item['partId']]!;
+    // ===============================
+    // 2️⃣ READ + UPDATE STOCK
+    // ===============================
+    for (final entry in aggregatedQty.entries) {
+      final partRef =
+          firestore.collection('spare_parts').doc(entry.key);
+
+      final partSnap = await tx.get(partRef);
+
       final currentStock =
           (partSnap['currentStock'] as num).toInt();
 
       tx.update(
-        partSnap.reference,
-        {'currentStock': currentStock + (item['qty'] as int)},
+        partRef,
+        {'currentStock': currentStock + entry.value},
       );
     }
 
+    // ===============================
+    // 3️⃣ DELETE ORDER
+    // ===============================
     tx.delete(orderRef);
   });
 
