@@ -634,166 +634,185 @@ navigator.pop();
   );
 }
 
-
-
-  @override
+@override
 Widget build(BuildContext context) {
-  return GestureDetector(
+  final isDesktop = MediaQuery.of(context).size.width >= 900;
+
+  final content = GestureDetector(
     behavior: HitTestBehavior.translucent,
-    onTap: () {
-      FocusScope.of(context).unfocus();
-    },
-    child: Scaffold(
-      body: Stack(
-        children: [
-          Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Color(0xFFFFE0B2),
-                  Color(0xFFFFFFFF),
-                ],
-              ),
+    onTap: () => FocusScope.of(context).unfocus(),
+    child: Stack(
+      children: [
+        Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Color(0xFFFFE0B2),
+                Color(0xFFFFFFFF),
+              ],
             ),
           ),
-          SafeArea(
-            child: CustomScrollView(
-              slivers: [
-                SliverAppBar(
-                  expandedHeight: 280,
-                  pinned: true,
-                  backgroundColor: Colors.transparent,
-                  elevation: 0,
-                  leading: IconButton(
-                    icon:
-                        const Icon(Icons.arrow_back, color: Colors.blueGrey),
-                    onPressed: () => Navigator.pop(context),
+        ),
+        SafeArea(
+  child: isDesktop
+      ? SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+
+              // IMAGE TOP (Desktop)
+              Center(
+                child: SizedBox(
+                  width: 180,
+                  height: 180,
+                  child: _buildImage(showCameraButton: true),
+                ),
+              ),
+
+              const SizedBox(height: 24),
+
+              _buildFormFields(),
+
+            ],
+          ),
+        )
+      : CustomScrollView(
+          slivers: [
+            SliverAppBar(
+              expandedHeight: 280,
+              pinned: true,
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back,
+                    color: Colors.blueGrey),
+                onPressed: () => Navigator.pop(context),
+              ),
+              flexibleSpace: FlexibleSpaceBar(
+                background: Padding(
+                  padding: const EdgeInsets.only(
+                    top: 50,
+                    left: 16,
+                    right: 16,
+                    bottom: 16,
                   ),
-                  flexibleSpace: FlexibleSpaceBar(
-                    background: Padding(
-                      padding: const EdgeInsets.only(
-                        top: 50,
-                        left: 16,
-                        right: 16,
-                        bottom: 16,
-                      ),
-                      child: Center(
-  child: Column(
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      SizedBox(
-        width: 160,
-        height: 160,
-        child: _buildImage(showCameraButton: false),
-      ),
-      const SizedBox(height: 6),
-      IconButton(
-  onPressed: isUploadingImage ? null : showImageSourceDialog,
-  icon: const Icon(Icons.camera_alt),
-  tooltip: 'Ganti Foto',
-),
-    ],
-  ),
-),
-
-
+                  child: Center(
+                    child: SizedBox(
+                      width: 160,
+                      height: 160,
+                      child:
+                          _buildImage(showCameraButton: false),
                     ),
                   ),
                 ),
-                SliverPadding(
-                  padding: const EdgeInsets.all(16),
-                  sliver: SliverList(
-                    delegate: SliverChildListDelegate([
-                      TextField(
-                        controller: partCodeController,
-                        decoration:
-                            const InputDecoration(labelText: 'Part Code'),
-                        enabled: false,
-                      ),
-                      const SizedBox(height: 12),
-                      TextField(
-                        controller: nameController,
-                        decoration:
-                            const InputDecoration(labelText: 'Name'),
-                      ),
-                      const SizedBox(height: 12),
-                      TextField(
-                        controller: nameEnController,
-                        decoration:
-                            const InputDecoration(labelText: 'Name (English)'),
-                      ),
-                      const SizedBox(height: 12),
-                      TextField(
-                        controller: locationController,
-                        decoration:
-                            const InputDecoration(labelText: 'Location'),
-                      ),
-                      const SizedBox(height: 12),
-                      TextField(
-  controller: stockController,
-  enabled: false,
-  decoration: const InputDecoration(
-    labelText: 'Initial Stock (Auto)',
-  ),
+              ),
+            ),
+            SliverPadding(
+              padding: const EdgeInsets.all(16),
+              sliver: SliverList(
+                delegate: SliverChildListDelegate([
+                  _buildFormFields(),
+                ]),
+              ),
+            ),
+          ],
+        ),
 ),
+      ],
+    ),
+  );
 
-const SizedBox(height: 12),
+  if (isDesktop) {
+    return content; // TANPA Scaffold
+  } else {
+    return Scaffold(body: content); // Mobile tetap full
+  }
+}
+Widget _buildFormFields() {
+  return Column(
+    children: [
 
-TextField(
-  controller: currentStockController,
-  enabled: false,
-  decoration: const InputDecoration(
-    labelText: 'Current Stock',
-  ),
-),
+      TextField(
+        controller: partCodeController,
+        decoration:
+            const InputDecoration(labelText: 'Part Code'),
+        enabled: false,
+      ),
 
+      const SizedBox(height: 12),
 
-                      const SizedBox(height: 12),
-                      TextField(
-                        controller: weightController,
-                        keyboardType: TextInputType.number,
-                        decoration:
-                            const InputDecoration(labelText: 'Weight'),
-                      ),
-                      const SizedBox(height: 12),
-                      DropdownButtonFormField<String>(
-                        initialValue: weightUnit,
-                        items: ['Kg', 'g', 'Ton']
-                            .map((e) => DropdownMenuItem(
-                                value: e, child: Text(e)))
-                            .toList(),
-                        onChanged: (v) =>
-                            setState(() => weightUnit = v!),
-                        decoration: const InputDecoration(
-                            labelText: 'Weight Unit'),
-                      ),
-                      const SizedBox(height: 20),
+      TextField(
+        controller: nameController,
+        decoration:
+            const InputDecoration(labelText: 'Name'),
+      ),
 
-DropdownButtonFormField<SparePartCategory>(
+      const SizedBox(height: 12),
+
+      TextField(
+        controller: nameEnController,
+        decoration:
+            const InputDecoration(labelText: 'Name (English)'),
+      ),
+
+      const SizedBox(height: 12),
+
+      TextField(
+        controller: locationController,
+        decoration:
+            const InputDecoration(labelText: 'Location'),
+      ),
+
+      const SizedBox(height: 12),
+
+      TextField(
+        controller: stockController,
+        enabled: false,
+        decoration: const InputDecoration(
+          labelText: 'Initial Stock (Auto)',
+        ),
+      ),
+
+      const SizedBox(height: 12),
+
+      TextField(
+        controller: currentStockController,
+        enabled: false,
+        decoration: const InputDecoration(
+          labelText: 'Current Stock',
+        ),
+      ),
+
+      const SizedBox(height: 12),
+
+      TextField(
+        controller: weightController,
+        keyboardType: TextInputType.number,
+        decoration:
+            const InputDecoration(labelText: 'Weight'),
+      ),
+
+      const SizedBox(height: 24),
+
+      DropdownButtonFormField<SparePartCategory>(
   initialValue: _selectedCategory,
   decoration: const InputDecoration(labelText: 'Category'),
   items: SparePartCategory.values.map((e) {
     return DropdownMenuItem(
       value: e,
-      child: Text(e.toString()), // 🔑 PAKAI LABEL
+      child: Text(e.name), // lebih bersih dari toString()
     );
   }).toList(),
-  selectedItemBuilder: (context) {
-    return SparePartCategory.values.map((e) {
-      return Text(e.toString()); // 🔑 INI YANG MENGATASI autoCutting
-    }).toList();
-  },
   onChanged: (value) {
     if (value != null) {
       setState(() => _selectedCategory = value);
     }
   },
 ),
-
-
-const SizedBox(height: 12),
+const SizedBox(height: 16),
 
 DropdownButtonFormField<SparePartOrigin>(
   initialValue: _selectedOrigin,
@@ -801,14 +820,9 @@ DropdownButtonFormField<SparePartOrigin>(
   items: SparePartOrigin.values.map((e) {
     return DropdownMenuItem(
       value: e,
-      child: Text(e.toString()),
+      child: Text(e.name),
     );
   }).toList(),
-  selectedItemBuilder: (context) {
-    return SparePartOrigin.values.map((e) {
-      return Text(e.toString());
-    }).toList();
-  },
   onChanged: (value) {
     if (value != null) {
       setState(() => _selectedOrigin = value);
@@ -816,40 +830,24 @@ DropdownButtonFormField<SparePartOrigin>(
   },
 ),
 
-
-const SizedBox(height: 12),
-
-
-                      SizedBox(
-  width: double.infinity,
-  child: ElevatedButton(
-    onPressed: updateData,
-    style: ElevatedButton.styleFrom(
-      backgroundColor: Colors.blueGrey,
-      padding: const EdgeInsets.symmetric(vertical: 16),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-    ),
-    child: const Text(
-      'Update',
-      style: TextStyle(
-        fontSize: 16,
-        fontWeight: FontWeight.w600,
-      ),
-    ),
-  ),
-),
-
-                    ]),
-                  ),
-                ),
-              ],
-            ),
+      SizedBox(
+        width: double.infinity,
+        child: ElevatedButton(
+          onPressed: updateData,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.blueGrey,
+            padding:
+                const EdgeInsets.symmetric(vertical: 16),
           ),
-        ],
+          
+          child: const Text('Update'),
+        ),
       ),
-    ),
-   );
-  }
+      const SizedBox(height: 16),
+
+
+    ],
+  );
 }
+}
+

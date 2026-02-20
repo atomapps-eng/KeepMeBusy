@@ -52,7 +52,7 @@ class OrderInDesktop extends StatelessWidget {
                               Colors.black.withValues(alpha: 0.35),
                           transitionDuration:
                               const Duration(milliseconds: 200),
-                          pageBuilder: (_, __, ___) {
+                          pageBuilder: (_, _, _) {
                             return DraggableResizableWindow(
                               title: "Create Order In",
                               child: const OrderInMobile(
@@ -77,7 +77,7 @@ class OrderInDesktop extends StatelessWidget {
                               Colors.black.withValues(alpha: 0.35),
                           transitionDuration:
                               const Duration(milliseconds: 200),
-                          pageBuilder: (_, __, ___) {
+                          pageBuilder: (_, _, _) {
                             return DraggableResizableWindow(
                               title: "Order History",
                               child: OrderInDesktopHistory(
@@ -93,7 +93,7 @@ class OrderInDesktop extends StatelessWidget {
                                         Colors.black.withValues(alpha: 0.35),
                                     transitionDuration:
                                         const Duration(milliseconds: 200),
-                                    pageBuilder: (_, __, ___) {
+                                    pageBuilder: (_, _, _) {
                                       return DraggableResizableWindow(
                                         title: "Edit Order In",
                                         child: OrderInMobile(

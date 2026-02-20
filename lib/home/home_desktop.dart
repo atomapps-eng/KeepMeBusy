@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../core/menu/floating_menu_launcher.dart';
-import '../core/menu/menu_registry.dart';
 import '../pages/partners/partner_list_page.dart';
 import '../pages/common/placeholder_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -12,6 +10,7 @@ import '../pages/spare_part/low_stock_page.dart';
 import '../pages/spare_part/spare_part_list_page.dart';
 import '../order_in/order_in_desktop.dart';
 import '../order_out/order_out_desktop.dart';
+import '../core/widgets/draggable_window.dart';
 
 enum DesktopSection {
   dashboard,
@@ -98,9 +97,19 @@ Widget _buildDesktopInventory() {
                     'Database',
                     Colors.blueGrey,
                     () {
-                      FloatingMenuLauncher.open(
-  context,
-  inventoryMenus.first,
+                      showGeneralDialog(
+  context: context,
+  barrierDismissible: true,
+  barrierLabel: "Database",
+  barrierColor: Colors.black.withValues(alpha: 0.35),
+  transitionDuration: const Duration(milliseconds: 200),
+  pageBuilder: (_, _, _) {
+    return const DraggableResizableWindow(
+      title: "Database",
+      headerColor: Colors.blueGrey,
+      child: SparePartListPage(),
+    );
+  },
 );
 setState(() {
   showLowStockOnly = true;
@@ -500,7 +509,6 @@ Widget _desktopMenuCard(
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
       body: Row(
         children: [
           _buildSidebar(),
@@ -739,10 +747,11 @@ Expanded(
     barrierColor: Colors.black.withValues(alpha: 0.35),
     transitionDuration: const Duration(milliseconds: 200),
     pageBuilder: (context, anim1, anim2) {
-      return _DraggableResizableWindow(
-        title: "Spare Parts",
-        child: const SparePartListPage(),
-      );
+      return const DraggableResizableWindow(
+  title: "Spare Parts",
+  headerColor: Colors.blueGrey,
+  child: SparePartListPage(),
+);
     },
   );
 },
@@ -770,10 +779,11 @@ Expanded(
     barrierColor: Colors.black.withValues(alpha: 0.35),
     transitionDuration: const Duration(milliseconds: 200),
     pageBuilder: (context, anim1, anim2) {
-      return _DraggableResizableWindow(
-        title: "Low Stock",
-        child: const LowStockPage(),
-      );
+      return const DraggableResizableWindow(
+  title: "Low Stock",
+  headerColor: Colors.redAccent,
+  child: LowStockPage(),
+);
     },
   );
 },
@@ -906,137 +916,4 @@ Widget _buildMiniChart(int total, int low) {
 }
 }
 
-class _DraggableResizableWindow extends StatefulWidget {
-  final String title;
-  final Widget child;
-
-  const _DraggableResizableWindow({
-    required this.title,
-    required this.child,
-  });
-
-  @override
-  State<_DraggableResizableWindow> createState() =>
-      _DraggableResizableWindowState();
-}
-
-class _DraggableResizableWindowState
-    extends State<_DraggableResizableWindow> {
-
-      bool _initialized = false;
-
-  double width = 900;
-  double height = 550;
-  double top = 120;
-  double left = 200;
-
-  @override
-Widget build(BuildContext context) {
-
-  final screenSize = MediaQuery.of(context).size;
-
-  // Hitung posisi tengah saat pertama kali render
-  if (!_initialized) {
-    left = (screenSize.width - width) / 2;
-    top = (screenSize.height - height) / 2;
-    _initialized = true;
-  }
-
-  return Stack(
-    children: [
-      Positioned(
-        top: top,
-        left: left,
-        child: Material(
-          color: Colors.transparent,
-          child: Container(
-            width: width,
-            height: height,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(18),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.15),
-                  blurRadius: 40,
-                  offset: const Offset(0, 20),
-                ),
-              ],
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(18),
-              child: Column(
-                children: [
-                  GestureDetector(
-                    onPanUpdate: (details) {
-                      setState(() {
-                        left += details.delta.dx;
-                        top += details.delta.dy;
-                      });
-                    },
-                    child: Container(
-                      height: 50,
-                      color: Colors.blueGrey,
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Row(
-                        mainAxisAlignment:
-                            MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            widget.title,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.close,
-                                color: Colors.white),
-                            onPressed: () =>
-                                Navigator.pop(context),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  Expanded(
-                    child: widget.child,
-                  ),
-
-                  Align(
-                    alignment: Alignment.bottomRight,
-                    child: GestureDetector(
-                      onPanUpdate: (details) {
-                        setState(() {
-                          width += details.delta.dx;
-                          height += details.delta.dy;
-
-                          if (width < 600) width = 600;
-                          if (height < 400) height = 400;
-                        });
-                      },
-                      child: Container(
-                        width: 20,
-                        height: 20,
-                        alignment: Alignment.center,
-                        child: const Icon(
-                          Icons.drag_handle,
-                          size: 14,
-                          color: Colors.grey,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    ],
-  );
-}
-
-}
 

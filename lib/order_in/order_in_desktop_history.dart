@@ -172,7 +172,7 @@ class _OrderInDesktopHistoryState
   barrierLabel: "OrderInDetail",
   barrierColor: Colors.black.withValues(alpha: 0.35),
   transitionDuration: const Duration(milliseconds: 200),
-  pageBuilder: (_, __, ___) {
+  pageBuilder: (_, _, _) {
     return DraggableResizableWindow(
       title: "Order In Detail",
       child: OrderInDetailPage(
@@ -185,14 +185,10 @@ class _OrderInDesktopHistoryState
   },
 );
 
-if (result != null && context.mounted) {
-  widget.onEdit(context, result);
-}
-
   // 🔥 INI YANG PENTING
-  if (result != null && context.mounted) {
-    widget.onEdit(context, result);
-  }
+  if (!mounted || result == null) return;
+
+widget.onEdit(context, result);
 },
   child: _OrderInHistoryCard(
     data: {

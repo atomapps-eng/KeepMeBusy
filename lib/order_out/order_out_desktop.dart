@@ -89,7 +89,7 @@ class OrderOutDesktop extends StatelessWidget {
                   opaque: false,
                   barrierDismissible: true,
                   barrierColor: Colors.black.withValues(alpha: 0.35),
-                  pageBuilder: (_, __, ___) {
+                  pageBuilder: (_, _, _) {
                     return DraggableResizableWindow(
                       title: "Order Out Detail",
                       headerColor: Colors.red.shade700,
@@ -102,8 +102,13 @@ class OrderOutDesktop extends StatelessWidget {
               );
 
               if (result != null) {
+                
+                if (!context.mounted) return;
+
 
   Navigator.pop(context); // tutup history window
+
+  
 
   showGeneralDialog(
     context: context,

@@ -6,6 +6,7 @@ import 'add_spare_part_page.dart';
 import 'barcode_scanner_page.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'spare_part_detail_page.dart';
+import '../../core/widgets/draggable_window.dart';
 
 
 class SparePartListPage extends StatefulWidget {
@@ -124,25 +125,46 @@ Widget build(BuildContext context) {
                         itemCount: filteredParts.length,
                         itemBuilder: (context, index) {
                           final part = filteredParts[index];
+return GestureDetector(
+  onTap: () {
+    // ===== SELECTION MODE =====
+    if (widget.selectionMode) {
+      Navigator.pop(context, part);
+      return;
+    }
 
-                          return GestureDetector(
-                            onTap: () {
-  // ===== SELECTION MODE =====
-  if (widget.selectionMode) {
-    Navigator.pop(context, part);
-    return;
-  }
+    if (widget.isCompact) return;
 
-  // ===== NORMAL MODE → DETAIL =====
-  if (!widget.isCompact) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => SparePartDetailPage(part: part),
-      ),
-    );
-  }
-},
+    final isDesktop =
+        MediaQuery.of(context).size.width >= 900;
+
+    if (isDesktop) {
+      showGeneralDialog(
+        context: context,
+        barrierDismissible: true,
+        barrierLabel: "SparePartDetail",
+        barrierColor:
+            Colors.black.withValues(alpha: 0.35),
+        transitionDuration:
+            const Duration(milliseconds: 200),
+        pageBuilder: (_, _, _) {
+          return DraggableResizableWindow(
+            title: "Spare Part Detail",
+            headerColor: Colors.blueGrey,
+            child: SparePartDetailPage(part: part),
+          );
+        },
+      );
+    } else {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) =>
+              SparePartDetailPage(part: part),
+        ),
+      );
+    }
+  },
                             child: _GlassCard(
                               child: widget.isCompact
                                   ? _CompactItem(part: part)

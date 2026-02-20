@@ -204,6 +204,7 @@ class _OrderOutDetailPageState extends State<OrderOutDetailPage> {
               onPressed: () async {
                 final confirm = await _confirmDelete(context);
                 if (!confirm) return;
+                  if (!context.mounted) return;
 
                 await _deleteOrderOut(
                   context,
@@ -251,87 +252,6 @@ class _OrderOutDetailPageState extends State<OrderOutDetailPage> {
       ),
     );
   }
-  Future<bool> _confirmDeleteItem(BuildContext context) async {
-  final result = await showDialog<bool>(
-    context: context,
-    builder: (_) => AlertDialog(
-      title: const Text('Hapus Item'),
-      content: const Text(
-        'Item ini akan dihapus dan stock akan dikembalikan.\nLanjutkan?',
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context, false),
-          child: const Text('Batal'),
-        ),
-        ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.red,
-          ),
-          onPressed: () => Navigator.pop(context, true),
-          child: const Text('Hapus'),
-        ),
-      ],
-    ),
-  );
-
-  return result == true;
-}
-Future<void> _deleteSingleItem(
-  BuildContext context,
-  String orderId,
-  Map<String, dynamic> item,
-) async {
-  final firestore = FirebaseFirestore.instance;
-
-  await firestore.runTransaction((tx) async {
-    final orderRef =
-        firestore.collection('order_out').doc(orderId);
-
-    final orderSnap = await tx.get(orderRef);
-    if (!orderSnap.exists) return;
-
-    final items =
-        List<Map<String, dynamic>>.from(orderSnap['items']);
-
-    // ===== 1️⃣ Rollback stock =====
-    final partRef =
-        firestore.collection('spare_parts').doc(item['partId']);
-
-    final partSnap = await tx.get(partRef);
-    final currentStock =
-        (partSnap['currentStock'] as num).toInt();
-
-    tx.update(
-      partRef,
-      {
-        'currentStock':
-            currentStock + (item['qty'] as int),
-      },
-    );
-
-    // ===== 2️⃣ Remove item dari array =====
-    items.removeWhere((e) =>
-        e['partId'] == item['partId'] &&
-        e['qty'] == item['qty']);
-
-    // ===== 3️⃣ Update order_out doc =====
-    tx.update(orderRef, {
-      'items': items,
-      'updatedAt': FieldValue.serverTimestamp(),
-    });
-  });
-
-  if (!context.mounted) return;
-
-  Navigator.pop(context); // tutup detail supaya reload
-  ScaffoldMessenger.of(context).showSnackBar(
-    const SnackBar(
-      content: Text('Item berhasil dihapus'),
-      backgroundColor: Colors.redAccent,
-    ),
-  );
-}
 }
 
 /// ================= DELETE ORDER (SAFE TRANSACTION) =================

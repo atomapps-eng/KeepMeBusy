@@ -5,7 +5,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../pages/spare_part/spare_part_list_page.dart';
 import '../../models/spare_part.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../pages/order_out/order_out_detail_page.dart';
 
 
 
@@ -110,42 +109,6 @@ void initState() {
         ),
       );
     }
-  });
-}
-
-Future<void> _deleteOrderSafe(String orderId) async {
-  final firestore = FirebaseFirestore.instance;
-  final orderRef =
-      firestore.collection('order_out').doc(orderId);
-
-  await firestore.runTransaction((tx) async {
-
-    final snap = await tx.get(orderRef);
-
-    if (!snap.exists) {
-      throw Exception('Order tidak ditemukan');
-    }
-
-    final items =
-        List<Map<String, dynamic>>.from(snap['items']);
-
-    for (final item in items) {
-      final partRef = firestore
-          .collection('spare_parts')
-          .doc(item['partId']);
-
-      final partSnap = await tx.get(partRef);
-
-      final currentStock =
-          (partSnap['currentStock'] as num).toInt();
-
-      tx.update(partRef, {
-        'currentStock':
-            currentStock + (item['qty'] as num).toInt(),
-      });
-    }
-
-    tx.delete(orderRef);
   });
 }
 
