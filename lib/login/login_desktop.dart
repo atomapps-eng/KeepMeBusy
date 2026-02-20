@@ -18,7 +18,7 @@ class _LoginDesktopState extends State<LoginDesktop> {
   final passwordController = TextEditingController();
 
   bool _isLoading = false;
-  bool _showCard = true;
+  final bool _showCard = true;
 
   Future<void> _handleLogin() async {
     if (!_formKey.currentState!.validate()) return;
@@ -147,5 +147,10 @@ class _LoginDesktopState extends State<LoginDesktop> {
     );
   }
 }
-
+@override
+  void dispose() {
+    emailController.dispose();
+    passwordController.dispose();
+    super.dispose();
+  }
 }

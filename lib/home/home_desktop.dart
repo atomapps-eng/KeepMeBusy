@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../core/menu/floating_menu_launcher.dart';
@@ -12,7 +11,7 @@ import '../pages/settings/settings_page.dart';
 import '../pages/spare_part/low_stock_page.dart';
 import '../pages/spare_part/spare_part_list_page.dart';
 import '../order_in/order_in_desktop.dart';
-
+import '../order_out/order_out_desktop.dart';
 
 enum DesktopSection {
   dashboard,
@@ -25,6 +24,7 @@ enum DesktopSection {
 enum InventoryView {
   menu,
   orderIn,
+  orderOut,
 }
 
 class HomeDesktop extends StatefulWidget {
@@ -120,21 +120,16 @@ setState(() {
   },
 ),
 
-
-
-                  _desktopMenuCard(
-                    Icons.output_outlined,
-                    'Orders Out',
-                    Colors.redAccent,
-                    () {
-                      FloatingMenuLauncher.open(
-                        context,
-                        inventoryMenus.firstWhere(
-                          (m) => m.label == 'Orders Out',
-                        ),
-                      );
-                    },
-                  ),
+_desktopMenuCard(
+  Icons.output_outlined,
+  'Orders Out',
+  Colors.redAccent,
+  () {
+    setState(() {
+      inventoryView = InventoryView.orderOut;
+    });
+  },
+),
 
                   _desktopMenuCard(
                     Icons.groups,
@@ -166,6 +161,9 @@ Widget _buildInventoryContent() {
 
     case InventoryView.orderIn:
       return const OrderInDesktop();
+
+    case InventoryView.orderOut:
+  return const OrderOutDesktop();
   }
 }
 

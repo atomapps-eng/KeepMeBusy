@@ -2,26 +2,27 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-import '../spare_part/spare_part_list_page.dart';
+import '../pages/spare_part/spare_part_list_page.dart';
 import '../../models/spare_part.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../order_out/order_out_detail_page.dart';
+import '../pages/order_out/order_out_detail_page.dart';
 
 
 
-class OrderOutPage extends StatefulWidget {
+class OrderOutMobile extends StatefulWidget {
   final bool isCompact;
   final String? searchKeyword;
 
-  const OrderOutPage({
+  const OrderOutMobile({
     super.key,
     this.isCompact = false,
     this.searchKeyword,
   });
 
   @override
-  State<OrderOutPage> createState() => _OrderOutPageState();
+  State<OrderOutMobile> createState() => _OrderOutPageState();
 }
+
 
 /// =====================================================
 /// LOCAL MODEL
@@ -36,7 +37,7 @@ class OrderOutItem {
   });
 }
 
-class _OrderOutPageState extends State<OrderOutPage> {
+class _OrderOutPageState extends State<OrderOutMobile> {
   // ================= USER LOGIN HELPER =================
   String _getCurrentUsername() {
     final user = FirebaseAuth.instance.currentUser;
@@ -782,14 +783,10 @@ class _OrderOutQuickView extends StatelessWidget {
 class _OrderHistoryCard extends StatelessWidget {
   final Map<String, dynamic> data;
   final bool isFullscreen;
-  final VoidCallback? onDelete;
-  final VoidCallback? onEdit;
 
   const _OrderHistoryCard({
   required this.data,
   this.isFullscreen = false,
-  this.onEdit,
-  this.onDelete,
 });
 
 
@@ -843,29 +840,6 @@ Widget build(BuildContext context) {
                 ],
               ),
             ),
-
-            // ===== ACTIONS (FULLSCREEN ONLY) =====
-            if (isFullscreen) ...[
-  IconButton(
-    icon: const Icon(
-      Icons.edit,
-      size: 20,
-      color: Colors.blueGrey,
-    ),
-    tooltip: 'Edit Order',
-    onPressed: onEdit,
-  ),
-  IconButton(
-    icon: const Icon(
-      Icons.delete,
-      size: 20,
-      color: Colors.redAccent,
-    ),
-    tooltip: 'Delete Order',
-    onPressed: onDelete,
-  ),
-],
-
           ],
         ),
       ],

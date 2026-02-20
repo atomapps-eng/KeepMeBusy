@@ -19,18 +19,22 @@ class ActivityDetailPage extends StatelessWidget {
   });
 
   Future<void> _deleteActivity(BuildContext context) async {
-    await FirebaseFirestore.instance
-        .collection('attendance')
-        .doc(employeeId)
-        .collection('days')
-        .doc(dayDocId)
-        .collection('activities')
-        .doc(activityId)
-        .delete();
+  final navigator = Navigator.of(context);
 
-    if (!context.mounted) return;
-    Navigator.pop(context);
-  }
+  await FirebaseFirestore.instance
+      .collection('attendance')
+      .doc(employeeId)
+      .collection('days')
+      .doc(dayDocId)
+      .collection('activities')
+      .doc(activityId)
+      .delete();
+
+  if (!context.mounted) return;
+
+  navigator.pop();
+}
+
 
   @override
   Widget build(BuildContext context) {
@@ -80,32 +84,33 @@ class ActivityDetailPage extends StatelessWidget {
                 Expanded(
                   child: ElevatedButton(
                     onPressed: () async {
-                      final result =
-                          await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                         // EDIT ACTIVITY DISABLE SEMENTARA
-builder: (_) => ActivityFormPage(
-  attendanceDate: (activity['date'] as Timestamp).toDate(),
-  factoryClientName: activity['factoryClient'] ?? '',
-),
+  final navigator = Navigator.of(context);
 
-                        ),
-                      );
+  final result = await navigator.push(
+    MaterialPageRoute(
+      builder: (_) => ActivityFormPage(
+        attendanceDate: (activity['date'] as Timestamp).toDate(),
+        factoryClientName: activity['factoryClient'] ?? '',
+      ),
+    ),
+  );
 
-                      if (result != null && context.mounted) {
-                        await FirebaseFirestore.instance
-                            .collection('attendance')
-                            .doc(employeeId)
-                            .collection('days')
-                            .doc(dayDocId)
-                            .collection('activities')
-                            .doc(activityId)
-                            .set(result, SetOptions(merge: true));
+  if (result == null) return;
+  if (!context.mounted) return;
 
-                        Navigator.pop(context);
-                      }
-                    },
+  await FirebaseFirestore.instance
+      .collection('attendance')
+      .doc(employeeId)
+      .collection('days')
+      .doc(dayDocId)
+      .collection('activities')
+      .doc(activityId)
+      .set(result, SetOptions(merge: true));
+
+  if (!context.mounted) return;
+
+  navigator.pop();
+},
                     child: const Text('Edit'),
                   ),
                 ),

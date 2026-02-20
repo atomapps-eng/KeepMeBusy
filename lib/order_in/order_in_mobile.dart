@@ -227,6 +227,8 @@ for (final entry in stockMap.entries) {
       });
     });
 
+    if (!mounted) return;
+
     // reset UI
     setState(() {
       isEditMode = false;
@@ -322,6 +324,8 @@ tx.update(partRef, {
 
       tx.delete(orderRef);
     });
+
+    if (!context.mounted) return;
 
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
@@ -636,6 +640,8 @@ for (final entry in qtyMap.entries) {
       });
     });
 
+    if (!mounted) return;
+
     setState(() {
       isCreateMode = false;
       items.clear();
@@ -854,6 +860,7 @@ Widget build(BuildContext context) {
   if (!confirm) return;
 
   _openEditOrder(data);
+  if (!context.mounted) return;
 
   ScaffoldMessenger.of(context).showSnackBar(
     const SnackBar(
@@ -869,7 +876,7 @@ Widget build(BuildContext context) {
           ),
           if (_isSaving)
   Container(
-    color: Colors.black.withOpacity(0.3),
+    color: Colors.black.withValues(alpha:0.3),
     child: const Center(
       child: CircularProgressIndicator(),
     ),
@@ -961,7 +968,7 @@ Widget build(BuildContext context) {
 final desktopTotalItem = items.length;
 final desktopTotalQty = items.fold<int>(
   0,
-  (sum, e) => sum + e.qty,
+  (total, e) => total + e.qty,
 );
 
 return Column(
@@ -1156,7 +1163,7 @@ Widget _buildDesktopFormPanel() {
                   : null;
 
           return DropdownButtonFormField<String>(
-            value: safeValue,
+            initialValue: safeValue,
             isExpanded: true,
             items: partnerNames.map((name) {
               return DropdownMenuItem<String>(

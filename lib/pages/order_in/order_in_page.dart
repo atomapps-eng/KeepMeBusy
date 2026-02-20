@@ -222,6 +222,7 @@ for (final item in items) {
       });
     });
 
+if (!mounted) return;
     // reset UI
     setState(() {
       isEditMode = false;
@@ -311,6 +312,8 @@ for (final entry in qtyMap.entries) {
       tx.delete(orderRef);
     });
 
+    if (!context.mounted) return;
+
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Order berhasil dihapus'),
@@ -384,6 +387,7 @@ final int? qty = await _showQtyDialog(
 
 
     if (qty == null) return;
+    if (!mounted) return;
 
     setState(() {
       items.add(OrderInItem(part: selected, qty: qty));
@@ -436,6 +440,7 @@ final partForEdit = SparePart(
 
 
   if (newQty == null) return;
+  if (!mounted) return;
 
   setState(() {
     items[index] = OrderInItem(
@@ -580,6 +585,8 @@ for (final entry in qtyMap.entries) {
         }).toList(),
       });
     });
+
+    if (!mounted) return;
 
     setState(() {
       isCreateMode = false;
@@ -787,6 +794,7 @@ Widget build(BuildContext context) {
   if (!confirm) return;
 
   _openEditOrder(data);
+  if (!context.mounted) return;
 
   ScaffoldMessenger.of(context).showSnackBar(
     const SnackBar(

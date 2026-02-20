@@ -31,7 +31,6 @@ class AttendancePage extends StatefulWidget {
 class _AttendancePageState extends State<AttendancePage> {
 
 void _exportAttendanceToPdf() {
-  // TODO:
   // 1. Ambil data attendance by employeeId & period
   // 2. Generate PDF
   // 3. Share / save file
@@ -281,25 +280,28 @@ Stream<Map<String, int>> _overnightSummaryStream() {
         icon: const Icon(Icons.add),
         label: const Text('Add Attendance'),
         onPressed: () async {
-          final picked = await showDatePicker(
-            context: context,
-            initialDate: DateTime.now(),
-            firstDate: DateTime(2020),
-            lastDate: DateTime(2035),
-          );
+  final navigator = Navigator.of(context);
 
-          if (picked == null) return;
+  final picked = await showDatePicker(
+    context: context,
+    initialDate: DateTime.now(),
+    firstDate: DateTime(2020),
+    lastDate: DateTime(2035),
+  );
 
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => AttendanceInputPage(
-                employeeId: widget.employeeId,
-                date: picked,
-              ),
-            ),
-          );
-        },
+  if (picked == null) return;
+  if (!mounted) return;
+
+  navigator.push(
+    MaterialPageRoute(
+      builder: (_) => AttendanceInputPage(
+        employeeId: widget.employeeId,
+        date: picked,
+      ),
+    ),
+  );
+},
+
       ),
     ),
     const SizedBox(height: 8),

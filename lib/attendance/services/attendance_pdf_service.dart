@@ -6,7 +6,6 @@ class AttendancePdfService {
     required AttendancePeriod period,
     required List<AttendanceDay> days,
   }) async {
-    // TODO:
     // 1. Copy engine PDF dari Order Out
     // 2. Ganti header → Attendance Report
     // 3. Table harian

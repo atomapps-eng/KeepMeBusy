@@ -23,7 +23,7 @@ class OrderOutDetailPage extends StatelessWidget {
     final totalItem = items.length;
     final totalQty = items.fold<int>(
       0,
-      (sum, item) => sum + (item['qty'] as int),
+      (total, item) => total + (item['qty'] as int),
     );
 
     return Scaffold(
@@ -189,12 +189,12 @@ class OrderOutDetailPage extends StatelessWidget {
   final confirmed = await _confirmDelete(context);
   if (!confirmed) return;
 
+  if (!context.mounted) return;
+
   await _deleteOrderOut(
     context,
     data['id'],
   );
-
-  Navigator.pop(context);
 },
 
                                       child: const Text('Delete'),
