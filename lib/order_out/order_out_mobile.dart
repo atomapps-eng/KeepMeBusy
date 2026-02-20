@@ -597,48 +597,332 @@ Widget build(BuildContext context) {
 }  
 
   Widget _buildCreateForm() {
-    return Column(
+  return LayoutBuilder(
+    builder: (context, constraints) {
+
+      final isDesktop = constraints.maxWidth > 800;
+
+      final isFormValid =
+          orderDate != null &&
+          selectedClient != null &&
+          poController.text.trim().isNotEmpty &&
+          items.isNotEmpty;
+
+      if (!isDesktop) {
+        // Biarkan mobile layout lama (tidak kita sentuh)
+        return Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: _OrderHeader(
+                orderDate: orderDate,
+                onPickDate: _selectOrderDate,
+                selectedClient: selectedClient,
+                onClientChanged: (v) =>
+                    setState(() => selectedClient = v),
+                poController: poController,
+                onSave: _commitOrderOut,
+                onBack: () => setState(() => isCreateMode = false),
+              ),
+            ),
+            Expanded(
+              child: items.isEmpty
+                  ? const Center(child: Text('Belum ada item'))
+                  : ListView.builder(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: items.length,
+                      itemBuilder: (_, i) => _ItemCard(
+                        item: items[i],
+                        onEdit: () => _editItemAtIndex(i),
+                      ),
+                    ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: OutlinedButton.icon(
+                onPressed: _addPart,
+                icon: const Icon(Icons.add),
+                label: const Text('Tambah Item'),
+              ),
+            ),
+          ],
+        );
+      }
+
+      // ===============================
+      // DESKTOP STRUCTURE (IDENTIK ORDER IN)
+      // ===============================
+
+      final desktopTotalItem = items.length;
+      final desktopTotalQty =
+          items.fold<int>(0, (total, e) => total + e.qty);
+
+      return Column(
+        children: [
+
+          // ===== MAIN CONTENT =====
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+
+                  // ===== LEFT PANEL =====
+                  SizedBox(
+                    width: constraints.maxWidth * 0.35,
+                    child: _buildDesktopFormPanel(),
+                  ),
+
+                  const SizedBox(width: 32),
+
+                  // ===== RIGHT PANEL =====
+                  Expanded(
+                    child: Column(
+                      children: [
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: ElevatedButton.icon(
+                            onPressed: _addPart,
+                            icon: const Icon(Icons.add),
+                            label: const Text('Tambah Item'),
+                          ),
+                        ),
+
+                        const SizedBox(height: 16),
+
+                        Expanded(
+                          child: items.isEmpty
+                              ? const Center(
+                                  child: Text('Belum ada item'),
+                                )
+                              : ListView.builder(
+                                  itemCount: items.length,
+                                  itemBuilder: (_, i) => Card(
+                                    child: ListTile(
+                                      title: Text(items[i].part.partCode),
+                                      subtitle: Text(items[i].part.nameEn),
+                                      trailing: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text('Qty: ${items[i].qty}'),
+                                          IconButton(
+                                            icon: const Icon(Icons.edit),
+                                            onPressed: () =>
+                                                _editItemAtIndex(i),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // ===== STICKY SUMMARY BAR =====
+          Container(
+            padding: const EdgeInsets.symmetric(
+                horizontal: 32, vertical: 16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.08),
+                  blurRadius: 12,
+                  offset: const Offset(0, -4),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+
+                Text(
+                  'Total Item: $desktopTotalItem',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+
+                const SizedBox(width: 24),
+
+                Text(
+                  'Total Qty: $desktopTotalQty',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+
+                const Spacer(),
+
+                SizedBox(
+                  width: 220,
+                  child: ElevatedButton.icon(
+                    onPressed: isFormValid
+                        ? _commitOrderOut
+                        : null,
+                    icon: const Icon(Icons.save),
+                    label: const Text('Save Order Out'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
+    },
+  );
+}
+
+Widget _buildDesktopFormPanel() {
+
+  final isDateInvalid = orderDate == null;
+  final isClientInvalid = selectedClient == null;
+  final isPoInvalid = poController.text.trim().isEmpty;
+
+  return SingleChildScrollView(
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.all(16),
-          child: _OrderHeader(
-            orderDate: orderDate,
-            onPickDate: _selectOrderDate,
-            selectedClient: selectedClient,
-            onClientChanged: (v) =>
-                setState(() => selectedClient = v),
-            poController: poController,
-            onSave: _commitOrderOut,
-            onBack: () => setState(() => isCreateMode = false),
+
+        const Text(
+          'Order Out',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
           ),
         ),
-        Expanded(
-          child: items.isEmpty
-              ? const Center(child: Text('Belum ada item'))
-              : ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: items.length,
-                  itemBuilder: (_, i) =>
-                      _ItemCard(
-  item: items[i],
-  onEdit: () {
-    _editItemAtIndex(i);
-  },
-),
 
-                ),
+        const SizedBox(height: 24),
+
+        // ================= DATE =================
+        const Text(
+          'Order Date *',
+          style: TextStyle(fontWeight: FontWeight.w600),
         ),
-        Padding(
-          padding: const EdgeInsets.all(16),
-          child: OutlinedButton.icon(
-            onPressed: _addPart,
-            icon: const Icon(Icons.add),
-            label: const Text('Tambah Item'),
+        const SizedBox(height: 6),
+
+        InkWell(
+          onTap: _selectOrderDate,
+          child: Container(
+            padding: const EdgeInsets.symmetric(
+                horizontal: 12, vertical: 12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: isDateInvalid
+                    ? Colors.red
+                    : Colors.grey.shade400,
+              ),
+            ),
+            child: Text(
+              orderDate == null
+                  ? 'Select date'
+                  : '${orderDate!.day}/${orderDate!.month}/${orderDate!.year}',
+              style: TextStyle(
+                color: orderDate == null
+                    ? Colors.grey
+                    : Colors.black,
+              ),
+            ),
+          ),
+        ),
+
+        if (isDateInvalid)
+          const Padding(
+            padding: EdgeInsets.only(top: 4),
+            child: Text(
+              'Required',
+              style: TextStyle(
+                color: Colors.red,
+                fontSize: 12,
+              ),
+            ),
+          ),
+
+        const SizedBox(height: 16),
+
+        // ================= CLIENT =================
+        const Text(
+          'Client *',
+          style: TextStyle(fontWeight: FontWeight.w600),
+        ),
+        const SizedBox(height: 6),
+
+        StreamBuilder<QuerySnapshot>(
+          stream: FirebaseFirestore.instance
+              .collection('partners')
+              .orderBy('name')
+              .snapshots(),
+          builder: (context, snapshot) {
+
+            if (!snapshot.hasData) {
+              return const CircularProgressIndicator();
+            }
+
+            final partnerNames = snapshot.data!.docs
+                .map((doc) =>
+                    (doc.data() as Map<String, dynamic>)['name'] as String)
+                .toList();
+
+            final safeValue =
+                partnerNames.contains(selectedClient)
+                    ? selectedClient
+                    : null;
+
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                DropdownButtonFormField<String>(
+                  initialValue: safeValue,
+                  isExpanded: true,
+                  items: partnerNames.map((name) {
+                    return DropdownMenuItem<String>(
+                      value: name,
+                      child: Text(name),
+                    );
+                  }).toList(),
+                  onChanged: (v) =>
+                      setState(() => selectedClient = v),
+                  decoration: InputDecoration(
+                    border: const OutlineInputBorder(),
+                    errorText:
+                        isClientInvalid ? 'Required' : null,
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+
+        const SizedBox(height: 16),
+
+        // ================= PO NUMBER =================
+        const Text(
+          'PO Number *',
+          style: TextStyle(fontWeight: FontWeight.w600),
+        ),
+        const SizedBox(height: 6),
+
+        TextField(
+          controller: poController,
+          onChanged: (_) => setState(() {}),
+          decoration: InputDecoration(
+            border: const OutlineInputBorder(),
+            errorText:
+                isPoInvalid ? 'Required' : null,
           ),
         ),
       ],
-    );
-  }
+    ),
+  );
+}
 }
 
 /// =====================================================

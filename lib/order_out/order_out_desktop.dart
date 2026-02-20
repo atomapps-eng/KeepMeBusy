@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../core/widgets/draggable_window.dart';
 import 'order_out_mobile.dart';
 import 'order_out_desktop_history.dart';
+import '../pages/order_out/order_out_detail_page.dart';
 
 class OrderOutDesktop extends StatelessWidget {
   const OrderOutDesktop({super.key});
@@ -54,6 +55,7 @@ class OrderOutDesktop extends StatelessWidget {
                           pageBuilder: (context, anim1, anim2) {
                             return DraggableResizableWindow(
                               title: "Create Order Out",
+                              headerColor: Colors.red.shade700,
                               child: const OrderOutMobile(
                                 isCompact: false,
                               ),
@@ -76,10 +78,26 @@ class OrderOutDesktop extends StatelessWidget {
                           pageBuilder: (context, anim1, anim2) {
                             return DraggableResizableWindow(
                               title: "Order History",
+                              headerColor: Colors.red.shade700,
                               child: OrderOutDesktopHistory(
-                                searchKeyword: '',
-                                filterDate: null,
-                                onTap: (context, data) {},
+                                onTap: (context, data) {
+  showGeneralDialog(
+    context: context,
+    barrierDismissible: true,
+    barrierLabel: "OrderOutDetail",
+    barrierColor: Colors.black.withValues(alpha: 0.35),
+    transitionDuration: const Duration(milliseconds: 200),
+    pageBuilder: (context, anim1, anim2) {
+      return DraggableResizableWindow(
+        title: "Order Out Detail",
+        headerColor: Colors.red.shade700,
+        child: OrderOutDetailPage(
+          data: data,
+        ),
+      );
+    },
+  );
+},
                               ),
                             );
                           },

@@ -94,133 +94,6 @@ class _OrderOutPageState extends State<OrderOutPage> {
   });
 }
 
-Future<void> _commitEditOrderOut() async {
-  if (editingOrderId == null) {
-    _showError('Order ID tidak valid');
-    return;
-  }
-
-  if (orderDate == null ||
-      selectedClient == null ||
-      poController.text.trim().isEmpty ||
-      items.isEmpty) {
-    _showError('Data order belum lengkap');
-    return;
-  }
-
-  final firestore = FirebaseFirestore.instance;
-  final orderRef =
-      firestore.collection('order_out').doc(editingOrderId);
-
-  try {
-    await firestore.runTransaction((tx) async {
-      // ===============================
-      // 1. READ SEMUA DATA (WAJIB DI AWAL)
-      // ===============================
-      final oldSnap = await tx.get(orderRef);
-      if (!oldSnap.exists) {
-        throw Exception('Order tidak ditemukan');
-      }
-
-      final oldItems = oldSnap['items'] as List<dynamic>;
-
-      final Map<String, int> stockMap = {};
-
-      // baca stock part lama
-      for (final old in oldItems) {
-        final ref =
-            firestore.collection('spare_parts').doc(old['partId']);
-        final snap = await tx.get(ref);
-        stockMap[old['partId']] =
-            (snap['currentStock'] as num).toInt();
-      }
-
-      // baca stock part baru (jika belum kebaca)
-      for (final item in items) {
-        if (!stockMap.containsKey(item.part.id)) {
-          final ref = firestore
-              .collection('spare_parts')
-              .doc(item.part.id);
-          final snap = await tx.get(ref);
-          stockMap[item.part.id] =
-              (snap['currentStock'] as num).toInt();
-        }
-      }
-
-      // ===============================
-      // 2. HITUNG (TANPA FIRESTORE)
-      // ===============================
-      // kembalikan stock lama
-      for (final old in oldItems) {
-        stockMap[old['partId']] =
-            stockMap[old['partId']]! +
-            (old['qty'] as num).toInt();
-      }
-
-      // validasi & potong stock baru
-      for (final item in items) {
-        if (stockMap[item.part.id]! < item.qty) {
-          throw Exception(
-            'Stock ${item.part.partCode} tidak mencukupi',
-          );
-        }
-        stockMap[item.part.id] =
-            stockMap[item.part.id]! - item.qty;
-      }
-
-      // ===============================
-      // 3. WRITE (SETELAH SEMUA READ)
-      // ===============================
-      for (final entry in stockMap.entries) {
-        tx.update(
-          firestore
-              .collection('spare_parts')
-              .doc(entry.key),
-          {'currentStock': entry.value},
-        );
-      }
-
-      tx.update(orderRef, {
-        'orderDate': Timestamp.fromDate(orderDate!),
-        'client': selectedClient,
-        'poNumber': poController.text.trim(),
-        'items': items.map((e) => {
-              'partId': e.part.id,
-              'partCode': e.part.partCode,
-              'nameEn': e.part.nameEn,
-              'qty': e.qty,
-              'location': e.part.location,
-            }).toList(),
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
-    });
-
-    // reset UI
-    setState(() {
-      isEditMode = false;
-      isCreateMode = false;
-      editingOrderId = null;
-      items.clear();
-      orderDate = null;
-      selectedClient = null;
-      poController.clear();
-    });
-
-    if (!mounted) return;
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Order Out berhasil diperbarui'),
-        backgroundColor: Colors.green,
-        duration: Duration(seconds: 2),
-      ),
-    );
-  } catch (e) {
-    _showError(e.toString());
-  }
-}
-
-
   Widget _buildFullscreenHeader() {
   return Padding(
     padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
@@ -399,51 +272,96 @@ Future<void> _editItemAtIndex(int index) async {
   }
 
   // ================= COMMIT FIRESTORE =================
-  Future<void> _commitOrderOut() async {
-  if (isEditMode) {
-    await _commitEditOrderOut();
-    return;
-  }
-
+Future<void> _commitOrderOut() async {
   if (orderDate == null ||
       selectedClient == null ||
       poController.text.trim().isEmpty ||
       items.isEmpty) {
-    _showError('Lengkapi Order Date, Client, PO, dan Item');
+    _showError('Data belum lengkap');
     return;
   }
 
   final firestore = FirebaseFirestore.instance;
-  final orderRef = firestore.collection('order_out').doc();
+
+  final aggregatedNew = _aggregateItems(items);
 
   try {
     await firestore.runTransaction((tx) async {
-      // 1. VALIDASI & POTONG STOCK
-      for (final item in items) {
-        final partRef =
-            firestore.collection('spare_parts').doc(item.part.id);
 
-        final snap = await tx.get(partRef);
-        final stock = (snap['currentStock'] as num).toInt();
+      DocumentReference orderRef;
 
-        if (stock < item.qty) {
-          throw Exception(
-            'Stock ${item.part.partCode} tidak mencukupi',
-          );
+      Map<String, int> aggregatedOld = {};
+
+      if (isEditMode) {
+        if (editingOrderId == null) {
+          throw Exception('Order ID tidak valid');
         }
 
-        tx.update(partRef, {
-          'currentStock': stock - item.qty,
-        });
+        orderRef =
+            firestore.collection('order_out').doc(editingOrderId);
+
+        final oldSnap = await tx.get(orderRef);
+        if (!oldSnap.exists) {
+          throw Exception('Order tidak ditemukan');
+        }
+
+        final oldItemsRaw =
+            oldSnap['items'] as List<dynamic>;
+
+        for (final old in oldItemsRaw) {
+          final partId = old['partId'];
+          final qty = (old['qty'] as num).toInt();
+
+          aggregatedOld.update(
+            partId,
+            (value) => value + qty,
+            ifAbsent: () => qty,
+          );
+        }
+      } else {
+        orderRef =
+            firestore.collection('order_out').doc();
       }
 
-      // 2. SIMPAN ORDER BARU
-      tx.set(orderRef, {
+      final allPartIds = {
+        ...aggregatedOld.keys,
+        ...aggregatedNew.keys,
+      };
+
+      for (final partId in allPartIds) {
+        final partRef =
+            firestore.collection('spare_parts').doc(partId);
+
+        final snap = await tx.get(partRef);
+        if (!snap.exists) {
+          throw Exception('Spare part tidak ditemukan');
+        }
+
+        final currentStock =
+            (snap['currentStock'] as num).toInt();
+
+        final oldQty = aggregatedOld[partId] ?? 0;
+        final newQty = aggregatedNew[partId] ?? 0;
+
+        final newStock =
+            currentStock + oldQty - newQty;
+
+        if (newStock < 0) {
+          throw Exception(
+              'Stock tidak mencukupi untuk part $partId');
+        }
+
+        if (newStock != currentStock) {
+          tx.update(partRef, {
+            'currentStock': newStock,
+          });
+        }
+      }
+
+      final orderData = {
         'orderDate': Timestamp.fromDate(orderDate!),
         'client': selectedClient,
         'poNumber': poController.text.trim(),
-        'createdAt': FieldValue.serverTimestamp(),
-        'createdBy': _getCurrentUsername(),
         'items': items.map((e) => {
           'partId': e.part.id,
           'partCode': e.part.partCode,
@@ -451,11 +369,25 @@ Future<void> _editItemAtIndex(int index) async {
           'qty': e.qty,
           'location': e.part.location,
         }).toList(),
-      });
+        if (!isEditMode)
+          'createdAt': FieldValue.serverTimestamp(),
+        if (!isEditMode)
+          'createdBy': _getCurrentUsername(),
+        if (isEditMode)
+          'updatedAt': FieldValue.serverTimestamp(),
+      };
+
+      if (isEditMode) {
+        tx.update(orderRef, orderData);
+      } else {
+        tx.set(orderRef, orderData);
+      }
     });
 
     setState(() {
+      isEditMode = false;
       isCreateMode = false;
+      editingOrderId = null;
       items.clear();
       orderDate = null;
       selectedClient = null;
@@ -464,13 +396,31 @@ Future<void> _editItemAtIndex(int index) async {
 
     if (!mounted) return;
 
+    final wasEdit = isEditMode;
+
+setState(() {
+  isEditMode = false;
+  isCreateMode = false;
+  editingOrderId = null;
+  items.clear();
+  orderDate = null;
+  selectedClient = null;
+  poController.clear();
+});
+
+if (!mounted) return;
+
     ScaffoldMessenger.of(context).showSnackBar(
-  const SnackBar(
-    content: Text('Order Out berhasil dibuat'),
-    backgroundColor: Colors.green,
-    duration: Duration(seconds: 2),
-  ),
-);
+      SnackBar(
+        content: Text(
+          wasEdit
+              ? 'Order Out berhasil diperbarui'
+              : 'Order Out berhasil dibuat',
+        ),
+        backgroundColor: Colors.green,
+      ),
+    );
+
   } catch (e) {
     _showError(e.toString());
   }
@@ -638,6 +588,21 @@ Widget build(BuildContext context) {
       ],
     );
   }
+  Map<String, int> _aggregateItems(List<OrderOutItem> list) {
+  final Map<String, int> result = {};
+
+  for (final item in list) {
+    if (item.qty <= 0) continue;
+
+    result.update(
+      item.part.id,
+      (value) => value + item.qty,
+      ifAbsent: () => item.qty,
+    );
+  }
+
+  return result;
+}
 }
 
 /// =====================================================

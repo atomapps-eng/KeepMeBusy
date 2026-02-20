@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 class DraggableResizableWindow extends StatefulWidget {
   final String title;
   final Widget child;
+  final Color headerColor; // ← TAMBAH INI
 
   const DraggableResizableWindow({
     super.key,
     required this.title,
     required this.child,
+    this.headerColor = Colors.green, // default tetap hijau
   });
 
   @override
@@ -19,11 +21,18 @@ class _DraggableResizableWindowState
     extends State<DraggableResizableWindow> {
 
   bool _initialized = false;
+  bool _isMinimized = false;
+bool _isMaximized = false;
 
-  double width = 900;
-  double height = 550;
-  double top = 120;
-  double left = 200;
+double? _previousWidth;
+double? _previousHeight;
+double? _previousTop;
+double? _previousLeft;
+
+  double width = 1000;
+double height = 650;
+double top = 120;
+double left = 200;
 
   @override
   Widget build(BuildContext context) {
@@ -70,33 +79,59 @@ class _DraggableResizableWindowState
                       },
                       child: Container(
                         height: 50,
-                        color: Colors.green,
+                        color: widget.headerColor,
                         padding:
                             const EdgeInsets.symmetric(horizontal: 16),
                         child: Row(
-                          mainAxisAlignment:
-                              MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              widget.title,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.close,
-                                  color: Colors.white),
-                              onPressed: () =>
-                                  Navigator.pop(context),
-                            ),
-                          ],
-                        ),
+  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  children: [
+    Text(
+      widget.title,
+      style: const TextStyle(
+        color: Colors.white,
+        fontWeight: FontWeight.w600,
+      ),
+    ),
+
+    Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+
+        // MINIMIZE
+        IconButton(
+          icon: const Icon(Icons.remove, color: Colors.white, size: 18),
+          onPressed: _toggleMinimize,
+        ),
+
+        // MAXIMIZE / RESTORE
+        IconButton(
+          icon: Icon(
+            _isMaximized
+                ? Icons.crop_square
+                : Icons.check_box_outline_blank,
+            color: Colors.white,
+            size: 18,
+          ),
+          onPressed: () => _toggleMaximize(screenSize),
+        ),
+
+        // CLOSE
+        IconButton(
+          icon: const Icon(Icons.close,
+              color: Colors.white),
+          onPressed: () =>
+              Navigator.pop(context),
+        ),
+      ],
+    ),
+  ],
+),
                       ),
                     ),
 
-                    Expanded(child: widget.child),
-
+                    if (!_isMinimized)
+  Expanded(child: widget.child),
+if (!_isMinimized)
                     Align(
                       alignment: Alignment.bottomRight,
                       child: GestureDetector(
@@ -130,4 +165,32 @@ class _DraggableResizableWindowState
       ],
     );
   }
+  void _toggleMinimize() {
+  setState(() {
+    _isMinimized = !_isMinimized;
+  });
+}
+
+void _toggleMaximize(Size screenSize) {
+  setState(() {
+    if (!_isMaximized) {
+      _previousWidth = width;
+      _previousHeight = height;
+      _previousTop = top;
+      _previousLeft = left;
+
+      width = screenSize.width * 0.95;
+      height = screenSize.height * 0.95;
+      left = (screenSize.width - width) / 2;
+      top = (screenSize.height - height) / 2;
+    } else {
+      width = _previousWidth ?? 900;
+      height = _previousHeight ?? 550;
+      top = _previousTop ?? 120;
+      left = _previousLeft ?? 200;
+    }
+
+    _isMaximized = !_isMaximized;
+  });
+}
 }
