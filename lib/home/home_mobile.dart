@@ -42,34 +42,29 @@ class _HomeMobileState extends State<HomeMobile> {
   }
   // ================= LOGOUT =================
   Future<void> _confirmLogout(BuildContext context) async {
-    final bool? result = await showDialog<bool>(
-      context: context,
-      barrierColor: Colors.black.withValues(alpha:0.4),
-      builder: (context) => AlertDialog(
-        title: const Text('Logout'),
-        content: const Text('Are you sure you want to log out?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Logout'),
-          ),
-        ],
-      ),
-    );
+  final bool? result = await showDialog<bool>(
+    context: context,
+    barrierColor: Colors.black.withValues(alpha: 0.4),
+    builder: (context) => AlertDialog(
+      title: const Text('Logout'),
+      content: const Text('Are you sure you want to log out?'),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, false),
+          child: const Text('Cancel'),
+        ),
+        ElevatedButton(
+          onPressed: () => Navigator.pop(context, true),
+          child: const Text('Logout'),
+        ),
+      ],
+    ),
+  );
 
-    if (result == true) {
-      await FirebaseAuth.instance.signOut();
-      if (!context.mounted) return;
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const LoginPage()),
-        (route) => false,
-      );
-    }
+  if (result == true) {
+    await FirebaseAuth.instance.signOut();
   }
+}
 
   @override
   Widget build(BuildContext context) {

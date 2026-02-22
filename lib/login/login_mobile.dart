@@ -54,9 +54,6 @@ class _LoginMobileState extends State<LoginMobile> {
       if (!mounted) return;
       setState(() => _isLoading = false);
 
-      navigator.pushReplacement(
-        MaterialPageRoute(builder: (_) => const HomePageAfterLogin()),
-      );
     } on FirebaseAuthException catch (_) {
       if (!mounted) return;
       setState(() => _isLoading = false);

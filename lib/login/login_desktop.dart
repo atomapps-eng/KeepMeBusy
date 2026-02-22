@@ -41,11 +41,6 @@ class _LoginDesktopState extends State<LoginDesktop> {
 
       setState(() => _isLoading = false);
 
-      navigator.pushReplacement(
-        MaterialPageRoute(
-          builder: (_) => const HomePageAfterLogin(),
-        ),
-      );
     } on FirebaseAuthException catch (_) {
       if (!mounted) return;
       setState(() => _isLoading = false);
