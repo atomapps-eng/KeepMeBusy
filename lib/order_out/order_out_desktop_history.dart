@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../core/services/company_firestore.dart';
 
 class OrderOutDesktopHistory extends StatefulWidget {
   final void Function(BuildContext, Map<String, dynamic>) onTap;
@@ -101,7 +102,7 @@ Widget build(BuildContext context) {
 
   Widget _buildHistoryList() {
     return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
+      stream: CompanyFirestore
           .collection('order_out')
           .orderBy('createdAt', descending: true)
           .snapshots(),

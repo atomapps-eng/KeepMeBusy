@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../../pages/common/app_background_wrapper.dart';
 import 'overnight_item_detail_page.dart';
+import '../../core/services/company_firestore.dart';
 
 class OvernightDetailPage extends StatelessWidget {
   final String employeeId;
@@ -16,7 +17,7 @@ class OvernightDetailPage extends StatelessWidget {
   });
 
   Stream<List<QueryDocumentSnapshot<Map<String, dynamic>>>> _stream() {
-    return FirebaseFirestore.instance
+    return CompanyFirestore
         .collection('attendance')
         .doc(employeeId)
         .collection('overnight')

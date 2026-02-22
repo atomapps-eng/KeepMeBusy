@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../../models/spare_part.dart';
+import '../../core/services/company_firestore.dart';
 
 
 class AddSparePartPage extends StatefulWidget {
@@ -40,7 +41,7 @@ class _AddSparePartPageState extends State<AddSparePartPage> {
 Future<bool> isLocationAvailable(String location) async {
   final normalized = normalizeLocation(location);
 
-  final snapshot = await FirebaseFirestore.instance
+  final snapshot = await CompanyFirestore
       .collection('spare_parts')
       .where('locationKey', isEqualTo: normalized)
       .limit(1)
@@ -197,7 +198,7 @@ request.fields['public_id'] = uniqueId;
   int stock = int.tryParse(stockController.text) ?? 0;
   double weight = double.tryParse(inputWeight) ?? 0.0;
 
-  final doc = await FirebaseFirestore.instance
+  final doc = await CompanyFirestore
       .collection('spare_parts')
       .doc(partCode)
       .get();
@@ -221,7 +222,7 @@ request.fields['public_id'] = uniqueId;
 
   String imageUrl = await uploadImageToCloudinary(partCode);
 
-  await FirebaseFirestore.instance
+  await CompanyFirestore
       .collection('spare_parts')
       .doc(partCode)
       .set({

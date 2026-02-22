@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../home/home_page.dart';
 import 'login_card.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../auth_gate.dart';
+import '../core/session/company_session.dart';
+import '../features/auth/select_company_page.dart';
 
 class LoginMobile extends StatefulWidget {
   const LoginMobile({super.key});
@@ -35,30 +38,56 @@ class _LoginMobileState extends State<LoginMobile> {
     passwordController.text = prefs.getString('saved_password') ?? '';
   }
 
-  Future<void> _handleLogin() async {
-    if (!_formKey.currentState!.validate()) return;
-    setState(() => _isLoading = true);
+ Future<void> _handleLogin() async {
+  if (!_formKey.currentState!.validate()) return;
 
-    try {
-      final navigator = Navigator.of(context);
+  setState(() => _isLoading = true);
 
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: emailController.text.trim(),
-        password: passwordController.text.trim(),
+  try {
+    await FirebaseAuth.instance.signInWithEmailAndPassword(
+      email: emailController.text.trim(),
+      password: passwordController.text.trim(),
+    );
+
+    if (!mounted) return;
+
+    final uid = FirebaseAuth.instance.currentUser!.uid;
+
+    final userDoc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .get();
+
+    final companyIds =
+        List<String>.from(userDoc['companyIds'] ?? []);
+
+    // 🔥 LOGIC COMPANY ROUTING
+    if (CompanySession.selectedCompanyId == null) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => SelectCompanyPage(
+            companyIds: companyIds,
+          ),
+        ),
       );
+    } else {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const AuthGate(),
+        ),
+      );
+    }
 
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('saved_email', emailController.text.trim());
-      await prefs.setString('saved_password', passwordController.text.trim());
-
-      if (!mounted) return;
-      setState(() => _isLoading = false);
-
-    } on FirebaseAuthException catch (_) {
-      if (!mounted) return;
+  } catch (e) {
+    print("ERROR: $e");
+  } finally {
+    if (mounted) {
       setState(() => _isLoading = false);
     }
   }
+}
 
   @override
   Widget build(BuildContext context) {

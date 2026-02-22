@@ -2,8 +2,6 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-import '../login/login_page.dart';
-
 import '../pages/common/placeholder_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -15,8 +13,9 @@ import '../pages/spare_part/low_stock_page.dart';
 
 import '../attendance/pages/attendance_page.dart';
 import '../attendance/services/attendance_period_helper.dart';
-
-
+import '../login/login_page.dart'; 
+import '../core/session/company_session.dart';
+import '../core/services/company_firestore.dart';
 
 class HomeMobile extends StatefulWidget {
   const HomeMobile({super.key});
@@ -28,7 +27,7 @@ class HomeMobile extends StatefulWidget {
 class _HomeMobileState extends State<HomeMobile> {
   // ================= LOW STOCK STREAM =================
   Stream<int> lowStockCountStream() {
-    return FirebaseFirestore.instance
+    return CompanyFirestore
         .collection('spare_parts')
         .snapshots()
         .map((snapshot) {
@@ -62,8 +61,21 @@ class _HomeMobileState extends State<HomeMobile> {
   );
 
   if (result == true) {
-    await FirebaseAuth.instance.signOut();
-  }
+  CompanySession.selectedCompanyId = null;
+  await FirebaseAuth.instance.signOut();
+
+  if (!mounted) return;
+
+  Navigator.pushAndRemoveUntil(
+    context,
+    MaterialPageRoute(builder: (_) => const LoginPage()),
+    (route) => false,
+  );
+}
+  if (result == true) {
+  print("LOGOUT PRESSED");
+  await FirebaseAuth.instance.signOut();
+}
 }
 
   @override
@@ -391,7 +403,7 @@ Widget _buildDashboardCards() {
     children: [
       Expanded(
         child: StreamBuilder<QuerySnapshot>(
-          stream: FirebaseFirestore.instance
+          stream: CompanyFirestore
               .collection('spare_parts')
               .snapshots(),
           builder: (context, snapshot) {
@@ -471,6 +483,9 @@ class _CategorySection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+      if (FirebaseAuth.instance.currentUser == null) {
+    return const SizedBox.shrink();
+  }
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
       child: Column(

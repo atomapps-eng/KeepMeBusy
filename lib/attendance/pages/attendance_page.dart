@@ -11,7 +11,7 @@ import 'attendance_list_page.dart';
 import 'add_overnight_page.dart';
 import 'overnight_detail_page.dart';
 import '../attendance_summary/attendance_summary_page.dart';
-
+import '../../core/services/company_firestore.dart';
 
 
 class AttendancePage extends StatefulWidget {
@@ -46,7 +46,7 @@ void _exportAttendanceToPdf() {
   AttendanceStatus? _activeStatus;
 
   Stream<List<Map<String, dynamic>>> _activityPreviewStream() {
-  return FirebaseFirestore.instance
+  return CompanyFirestore
       .collection('attendance')
       .doc(widget.employeeId)
       .collection('days')
@@ -77,7 +77,7 @@ void _exportAttendanceToPdf() {
 }
 
 Stream<List<Map<String, dynamic>>> _overnightPreviewStream() {
-  return FirebaseFirestore.instance
+  return CompanyFirestore
       .collection('attendance')
       .doc(widget.employeeId) // <-- Basuki Rahmat
       .collection('overnight')
@@ -90,7 +90,7 @@ Stream<List<Map<String, dynamic>>> _overnightPreviewStream() {
 }
 
 Stream<Map<String, int>> _overnightSummaryStream() {
-  return FirebaseFirestore.instance
+  return CompanyFirestore
       .collection('attendance')
       .doc(widget.employeeId)
       .collection('overnight')

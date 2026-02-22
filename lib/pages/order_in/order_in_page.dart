@@ -1,10 +1,11 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-
+import '../../core/services/company_firestore.dart';
 import '../spare_part/spare_part_list_page.dart';
 import '../../models/spare_part.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+
 
 enum QtyDialogMode {
   orderIn,
@@ -140,7 +141,7 @@ Future<void> _commitEditOrderIn() async {
 
   final firestore = FirebaseFirestore.instance;
   final orderRef =
-      firestore.collection('order_in').doc(editingOrderId);
+      CompanyFirestore.collection('order_in').doc(editingOrderId);
 
   try {
     await firestore.runTransaction((tx) async {
@@ -159,7 +160,7 @@ Future<void> _commitEditOrderIn() async {
       // baca stock part lama
       for (final old in oldItems) {
         final ref =
-            firestore.collection('spare_parts').doc(old['partId']);
+            CompanyFirestore.collection('spare_parts').doc(old['partId']);
         final snap = await tx.get(ref);
         stockMap[old['partId']] =
             (snap['currentStock'] as num).toInt();
@@ -168,7 +169,7 @@ Future<void> _commitEditOrderIn() async {
       // baca stock part baru (jika belum kebaca)
       for (final item in items) {
         if (!stockMap.containsKey(item.part.id)) {
-          final ref = firestore
+          final ref = CompanyFirestore
               .collection('spare_parts')
               .doc(item.part.id);
           final snap = await tx.get(ref);
@@ -200,7 +201,7 @@ for (final item in items) {
       // ===============================
       for (final entry in stockMap.entries) {
         tx.update(
-          firestore
+          CompanyFirestore
               .collection('spare_parts')
               .doc(entry.key),
           {'currentStock': entry.value},
@@ -277,7 +278,7 @@ Future<void> _deleteOrder(
   if (!confirmed) return;
 
   final firestore = FirebaseFirestore.instance;
-  final orderRef = firestore.collection('order_in').doc(orderId);
+  final orderRef = CompanyFirestore.collection('order_in').doc(orderId);
 
   try {
     await firestore.runTransaction((tx) async {
@@ -297,7 +298,7 @@ for (final item in items) {
 
 for (final entry in qtyMap.entries) {
   final partRef =
-      firestore.collection('spare_parts').doc(entry.key);
+      CompanyFirestore.doc('spare_parts', entry.key);
 
   final partSnap = await tx.get(partRef);
   final currentStock =
@@ -371,7 +372,7 @@ for (final entry in qtyMap.entries) {
 
     if (selected == null) return;
 
-    final snap = await FirebaseFirestore.instance
+    final snap = await CompanyFirestore
     .collection('spare_parts')
     .doc(selected.id)
     .get();
@@ -397,7 +398,7 @@ final int? qty = await _showQtyDialog(
 Future<void> _editItemAtIndex(int index) async {
   final current = items[index];
 
-  final snap = await FirebaseFirestore.instance
+  final snap = await CompanyFirestore
       .collection('spare_parts')
       .doc(current.part.id)
       .get();
@@ -538,7 +539,7 @@ final partForEdit = SparePart(
   }
 
   final firestore = FirebaseFirestore.instance;
-  final orderRef = firestore.collection('order_in').doc();
+  final orderRef = CompanyFirestore.collection('order_in').doc();
 
   try {
     await firestore.runTransaction((tx) async {
@@ -558,7 +559,7 @@ for (final item in items) {
 // ===============================
 for (final entry in qtyMap.entries) {
   final partRef =
-      firestore.collection('spare_parts').doc(entry.key);
+      CompanyFirestore.collection('spare_parts').doc(entry.key);
 
   final snap = await tx.get(partRef);
   final stock = (snap['currentStock'] as num).toInt();
@@ -886,7 +887,7 @@ class _OrderInListView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
+      stream: CompanyFirestore
           .collection('order_in')
           .orderBy('createdAt', descending: true)
           .snapshots(),
@@ -966,7 +967,7 @@ class _OrderInQuickView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
+      stream: CompanyFirestore
           .collection('order_in')
           .orderBy('createdAt', descending: true)
           .limit(10)
@@ -1166,7 +1167,7 @@ class _OrderHeader extends StatelessWidget {
               _HeaderRow(
   label: 'Client',
   child: StreamBuilder<QuerySnapshot>(
-    stream: FirebaseFirestore.instance
+    stream: CompanyFirestore
         .collection('partners')
         .orderBy('name')
         .snapshots(),

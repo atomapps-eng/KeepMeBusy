@@ -5,6 +5,7 @@ import '../../utils/order_out_pdf.dart';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:open_filex/open_filex.dart';
+import '../../core/services/company_firestore.dart';
 
 
 
@@ -263,7 +264,7 @@ Future<void> _deleteOrderOut(
 
   await firestore.runTransaction((tx) async {
     final orderRef =
-        firestore.collection('order_out').doc(orderId);
+       CompanyFirestore.collection('order_out').doc(orderId);
 
     final orderSnap = await tx.get(orderRef);
     if (!orderSnap.exists) return;
@@ -289,7 +290,7 @@ Future<void> _deleteOrderOut(
     // ===============================
     for (final entry in aggregatedQty.entries) {
       final partRef =
-          firestore.collection('spare_parts').doc(entry.key);
+          CompanyFirestore.collection('spare_parts').doc(entry.key);
 
       final partSnap = await tx.get(partRef);
 

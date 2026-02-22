@@ -1,7 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-
+import '../../core/services/company_firestore.dart';
 import '../models/attendance_day.dart';
 import '../../pages/common/app_background_wrapper.dart';
 import '../pages/attendance_input_page.dart';
@@ -25,7 +24,7 @@ class _AttendanceListPageState extends State<AttendanceListPage> {
   DateTime? toDate;
 
   Stream<List<AttendanceDay>> _attendanceStream() {
-    return FirebaseFirestore.instance
+    return CompanyFirestore
         .collection('attendance')
         .doc(widget.employeeId)
         .collection('days')

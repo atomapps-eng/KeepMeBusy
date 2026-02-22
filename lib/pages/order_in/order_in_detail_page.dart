@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../../core/services/company_firestore.dart';
 
 class OrderInDetailPage extends StatelessWidget {
   final Map<String, dynamic> data;
@@ -269,7 +270,7 @@ Future<void> _deleteOrderIn(
 
   await firestore.runTransaction(
       (tx) async {
-    final orderRef = firestore
+    final orderRef = CompanyFirestore
         .collection('order_in')
         .doc(orderId);
 
@@ -287,7 +288,7 @@ Future<void> _deleteOrderIn(
         partSnaps = {};
 
     for (final item in items) {
-      final partRef = firestore
+      final partRef = CompanyFirestore
           .collection('spare_parts')
           .doc(item['partId']);
 

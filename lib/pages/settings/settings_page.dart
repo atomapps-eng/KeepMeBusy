@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../../core/services/company_firestore.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -122,50 +123,50 @@ class _SettingsPageState extends State<SettingsPage> {
       importTotal = data.length;
     });
 
-    final firestore = FirebaseFirestore.instance;
-
     for (final item in data) {
-      final String partCode = item['partCode'];
+  final String partCode = item['partCode'];
 
-      final docRef = firestore.collection('spare_parts').doc(partCode);
-      final docSnap = await docRef.get();
+  final docRef =
+      CompanyFirestore.doc('spare_parts', partCode);
 
-      if (!docSnap.exists) {
-        await docRef.set({
-          'partCode': partCode,
-          'name': item['name'],
-          'nameEn': item['nameEn'],
-          'location': item['location'],
-          'category': item['category'],
-          'origin': item['origin'],
-          'initialStock': item['initialStock'],
-          'currentStock': item['initialStock'],
-          'minimumStock': item['minimumStock'],
-          'weight': item['weight'],
-          'weightUnit': item['weightUnit'],
-          'imageUrl': item['imageUrl'],
-          'active': item['active'],
-          'createdAt': FieldValue.serverTimestamp(),
-          'updatedAt': FieldValue.serverTimestamp(),
-        });
-      } else {
-        await docRef.update({
-          'name': item['name'],
-          'nameEn': item['nameEn'],
-          'location': item['location'],
-          'category': item['category'],
-          'origin': item['origin'],
-          'minimumStock': item['minimumStock'],
-          'weight': item['weight'],
-          'weightUnit': item['weightUnit'],
-          'imageUrl': item['imageUrl'],
-          'active': item['active'],
-          'updatedAt': FieldValue.serverTimestamp(),
-        });
-      }
+  final docSnap = await docRef.get();
 
-      setState(() => importCurrent++);
-    }
+  if (!docSnap.exists) {
+    await docRef.set({
+      'partCode': partCode,
+      'name': item['name'],
+      'nameEn': item['nameEn'],
+      'location': item['location'],
+      'category': item['category'],
+      'origin': item['origin'],
+      'initialStock': item['initialStock'],
+      'currentStock': item['initialStock'],
+      'minimumStock': item['minimumStock'],
+      'weight': item['weight'],
+      'weightUnit': item['weightUnit'],
+      'imageUrl': item['imageUrl'],
+      'active': item['active'],
+      'createdAt': FieldValue.serverTimestamp(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  } else {
+    await docRef.update({
+      'name': item['name'],
+      'nameEn': item['nameEn'],
+      'location': item['location'],
+      'category': item['category'],
+      'origin': item['origin'],
+      'minimumStock': item['minimumStock'],
+      'weight': item['weight'],
+      'weightUnit': item['weightUnit'],
+      'imageUrl': item['imageUrl'],
+      'active': item['active'],
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  setState(() => importCurrent++);
+}
 
     setState(() => isImporting = false);
     _showSuccess('Import selesai: $importTotal spare part');
@@ -232,33 +233,40 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Future<int> _countCollection(String name) async {
-    final snap =
-        await FirebaseFirestore.instance.collection(name).get();
-    return snap.size;
-  }
+  final collection = name == 'spare_parts'
+      ? CompanyFirestore.collection('spare_parts')
+      : FirebaseFirestore.instance.collection(name);
+
+  final snap = await collection.get();
+  return snap.size;
+}
 
   Future<void> _deleteCollectionWithProgress(String name) async {
-    final firestore = FirebaseFirestore.instance;
-    const batchSize = 200;
+  final firestore = FirebaseFirestore.instance;
+  const batchSize = 200;
 
-    while (true) {
-      final snapshot =
-          await firestore.collection(name).limit(batchSize).get();
+  while (true) {
+    final collection = name == 'spare_parts'
+        ? CompanyFirestore.collection('spare_parts')
+        : firestore.collection(name);
 
-      if (snapshot.docs.isEmpty) break;
+    final snapshot =
+        await collection.limit(batchSize).get();
 
-      final batch = firestore.batch();
-      for (final doc in snapshot.docs) {
-        batch.delete(doc.reference);
-      }
+    if (snapshot.docs.isEmpty) break;
 
-      await batch.commit();
-
-      setState(() {
-        resetCurrent += snapshot.docs.length;
-      });
+    final batch = firestore.batch();
+    for (final doc in snapshot.docs) {
+      batch.delete(doc.reference);
     }
+
+    await batch.commit();
+
+    setState(() {
+      resetCurrent += snapshot.docs.length;
+    });
   }
+}
 
   @override
   Widget build(BuildContext context) {

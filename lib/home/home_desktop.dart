@@ -11,6 +11,10 @@ import '../pages/spare_part/spare_part_list_page.dart';
 import '../order_in/order_in_desktop.dart';
 import '../order_out/order_out_desktop.dart';
 import '../core/widgets/draggable_window.dart';
+import '../login/login_page.dart'; 
+import '../core/session/company_session.dart';
+import '../core/services/company_firestore.dart';
+import '../features/auth/select_company_page.dart';
 
 enum DesktopSection {
   dashboard,
@@ -41,7 +45,7 @@ class _HomeDesktopState extends State<HomeDesktop> {
   InventoryView inventoryView = InventoryView.menu;
 
   Stream<int> lowStockCountStream() {
-    return FirebaseFirestore.instance
+    return CompanyFirestore
         .collection('spare_parts')
         .snapshots()
         .map((snapshot) {
@@ -399,8 +403,21 @@ Future<void> _confirmLogout(BuildContext context) async {
   );
 
   if (result == true) {
-    await FirebaseAuth.instance.signOut();
-  }
+  CompanySession.selectedCompanyId = null;
+  await FirebaseAuth.instance.signOut();
+
+  if (!mounted) return;
+
+  Navigator.pushAndRemoveUntil(
+    context,
+    MaterialPageRoute(builder: (_) => const LoginPage()),
+    (route) => false,
+  );
+}
+  if (result == true) {
+  print("LOGOUT PRESSED");
+  await FirebaseAuth.instance.signOut();
+}
 }
 
 Widget _buildDesktopSystems() {
@@ -508,6 +525,10 @@ Widget _desktopMenuCard(
 }
   @override
   Widget build(BuildContext context) {
+    if (FirebaseAuth.instance.currentUser == null) {
+    return const SizedBox.shrink();
+  }
+
     return Scaffold(
       body: Row(
         children: [
@@ -589,6 +610,49 @@ Widget _desktopMenuCard(
             color: Colors.black54,
           ),
         ),
+
+        const SizedBox(height: 8),
+
+Row(
+  mainAxisAlignment: MainAxisAlignment.center,
+  children: [
+
+    // SWITCH COMPANY
+    IconButton(
+      tooltip: "Switch Company",
+      icon: const Icon(Icons.business, size: 20),
+      onPressed: () async {
+        final uid = FirebaseAuth.instance.currentUser!.uid;
+
+        final userDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(uid)
+            .get();
+
+        final companyIds =
+            List<String>.from(userDoc['companyIds'] ?? []);
+
+        if (!mounted) return;
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => SelectCompanyPage(
+              companyIds: companyIds,
+            ),
+          ),
+        );
+      },
+    ),
+
+    // LOGOUT
+    IconButton(
+      tooltip: "Logout",
+      icon: const Icon(Icons.logout, size: 20),
+      onPressed: () => _confirmLogout(context),
+    ),
+  ],
+),
 
         const SizedBox(height: 24),
 
@@ -680,7 +744,7 @@ Widget _sidebarItem(
 
 Widget _buildDesktopDashboard() {
   return StreamBuilder<QuerySnapshot>(
-    stream: FirebaseFirestore.instance
+    stream: CompanyFirestore
         .collection('spare_parts')
         .snapshots(),
     builder: (context, snapshot) {

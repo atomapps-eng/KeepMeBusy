@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../core/widgets/draggable_window.dart';
 import '../pages/order_in/order_in_detail_page.dart';
+import '../core/services/company_firestore.dart';
 
 class OrderInDesktopHistory extends StatefulWidget {
 
@@ -101,7 +102,7 @@ class _OrderInDesktopHistoryState
 
   Widget _buildHistoryList() {
     return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
+      stream: CompanyFirestore
           .collection('order_in')
           .orderBy('createdAt', descending: true)
           .snapshots(),

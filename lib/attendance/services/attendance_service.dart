@@ -1,16 +1,16 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/attendance_day.dart';
 import '../models/attendance_period.dart';
+import '../../core/services/company_firestore.dart';
 
 class AttendanceService {
-  final FirebaseFirestore _db = FirebaseFirestore.instance;
 
   // =========================
   // PATH HELPER (OPSI B)
   // attendance/{employeeId}/days/{YYYY-MM-DD}
   // =========================
   CollectionReference<Map<String, dynamic>> _daysRef(String employeeId) {
-    return _db
+    return CompanyFirestore
         .collection('attendance')
         .doc(employeeId)
         .collection('days');
@@ -40,7 +40,7 @@ class AttendanceService {
   // =========================
 
   Future<void> saveAttendancePeriod(AttendancePeriod period) async {
-    await _db
+    await CompanyFirestore
         .collection('attendance_periods')
         .doc(period.id)
         .set(period.toFirestore(), SetOptions(merge: true));
@@ -49,7 +49,7 @@ class AttendanceService {
   Future<AttendancePeriod?> getAttendancePeriodById(
     String periodId,
   ) async {
-    final doc = await _db
+    final doc = await CompanyFirestore
         .collection('attendance_periods')
         .doc(periodId)
         .get();

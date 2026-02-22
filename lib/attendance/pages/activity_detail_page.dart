@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../pages/common/app_background_wrapper.dart';
 import 'activity_form_page.dart';
+import '../../core/services/company_firestore.dart';
 
 
 class ActivityDetailPage extends StatelessWidget {
@@ -21,7 +22,7 @@ class ActivityDetailPage extends StatelessWidget {
   Future<void> _deleteActivity(BuildContext context) async {
   final navigator = Navigator.of(context);
 
-  await FirebaseFirestore.instance
+  await CompanyFirestore
       .collection('attendance')
       .doc(employeeId)
       .collection('days')
@@ -98,7 +99,7 @@ class ActivityDetailPage extends StatelessWidget {
   if (result == null) return;
   if (!context.mounted) return;
 
-  await FirebaseFirestore.instance
+  await CompanyFirestore
       .collection('attendance')
       .doc(employeeId)
       .collection('days')

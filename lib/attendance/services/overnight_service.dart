@@ -1,14 +1,13 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/overnight_entry.dart';
+import '../../core/services/company_firestore.dart';
 
 class OvernightService {
-  final _db = FirebaseFirestore.instance;
 
   Future<void> addOvernight({
     required String employeeId,
     required OvernightEntry entry,
   }) async {
-    await _db
+    await CompanyFirestore
         .collection('attendance')
         .doc(employeeId)
         .collection('overnight')
@@ -19,7 +18,7 @@ class OvernightService {
   required String docId,
   required OvernightEntry entry,
 }) async {
-  await FirebaseFirestore.instance
+  await CompanyFirestore
       .collection('attendance')
       .doc(employeeId)
       .collection('overnight')
@@ -39,7 +38,7 @@ Future<void> updateOvernight({
   required String docId,
   required OvernightEntry entry,
 }) async {
-  await FirebaseFirestore.instance
+  await CompanyFirestore
       .collection('attendance')
       .doc(employeeId)
       .collection('overnight')

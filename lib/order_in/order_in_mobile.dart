@@ -1,7 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-
+import '../core/services/company_firestore.dart';
 import '../pages/spare_part/spare_part_list_page.dart';
 import '../../models/spare_part.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -162,7 +162,7 @@ Future<void> _commitEditOrderIn() async {
 
   final firestore = FirebaseFirestore.instance;
   final orderRef =
-      firestore.collection('order_in').doc(editingOrderId);
+      CompanyFirestore.collection('order_in').doc(editingOrderId);
 
   try {
     await firestore.runTransaction((tx) async {
@@ -181,7 +181,7 @@ Future<void> _commitEditOrderIn() async {
       // baca stock part lama
       for (final old in oldItems) {
         final ref =
-            firestore.collection('spare_parts').doc(old['partId']);
+            CompanyFirestore.collection('spare_parts').doc(old['partId']);
         final snap = await tx.get(ref);
         stockMap[old['partId']] =
             (snap['currentStock'] as num).toInt();
@@ -190,7 +190,7 @@ Future<void> _commitEditOrderIn() async {
       // baca stock part baru (jika belum kebaca)
       for (final item in items) {
         if (!stockMap.containsKey(item.part.id)) {
-          final ref = firestore
+          final ref = CompanyFirestore
               .collection('spare_parts')
               .doc(item.part.id);
           final snap = await tx.get(ref);
@@ -227,7 +227,7 @@ for (final entry in stockMap.entries) {
       // ===============================
       for (final entry in stockMap.entries) {
         tx.update(
-          firestore
+          CompanyFirestore
               .collection('spare_parts')
               .doc(entry.key),
           {'currentStock': entry.value},
@@ -305,7 +305,9 @@ Future<void> _deleteOrder(
   if (!confirmed) return;
 
   final firestore = FirebaseFirestore.instance;
-  final orderRef = firestore.collection('order_in').doc(orderId);
+
+  final orderRef =
+      CompanyFirestore.collection('order_in').doc(orderId);
 
   try {
     await firestore.runTransaction((tx) async {
@@ -316,33 +318,32 @@ Future<void> _deleteOrder(
 
       final Map<String, int> qtyMap = {};
 
-for (final item in items) {
-  final partId = item['partId'];
-  final qty = item['qty'] as int;
+      for (final item in items) {
+        final partId = item['partId'];
+        final qty = item['qty'] as int;
 
-  qtyMap[partId] = (qtyMap[partId] ?? 0) + qty;
-}
+        qtyMap[partId] = (qtyMap[partId] ?? 0) + qty;
+      }
 
-for (final entry in qtyMap.entries) {
-  final partRef =
-      firestore.collection('spare_parts').doc(entry.key);
+      for (final entry in qtyMap.entries) {
+        final partRef =
+            CompanyFirestore.collection('spare_parts')
+                .doc(entry.key);
 
-  final partSnap = await tx.get(partRef);
-  final currentStock =
-      (partSnap['currentStock'] as num).toInt();
+        final partSnap = await tx.get(partRef);
+        final currentStock =
+            (partSnap['currentStock'] as num).toInt();
 
-  final newStock = currentStock - entry.value;
+        final newStock = currentStock - entry.value;
 
-if (newStock < 0) {
-  throw Exception('NEGATIVE_STOCK');
-}
+        if (newStock < 0) {
+          throw Exception('NEGATIVE_STOCK');
+        }
 
-tx.update(partRef, {
-  'currentStock': newStock,
-});
-
-}
-
+        tx.update(partRef, {
+          'currentStock': newStock,
+        });
+      }
 
       tx.delete(orderRef);
     });
@@ -357,9 +358,8 @@ tx.update(partRef, {
       ),
     );
   } catch (e) {
-  _handleError(e);
-}
-
+    _handleError(e);
+  }
 }
 
   // ================= FULLSCREEN SEARCH & FILTER =================
@@ -404,7 +404,7 @@ tx.update(partRef, {
 
     if (selected == null) return;
 
-    final snap = await FirebaseFirestore.instance
+    final snap = await CompanyFirestore
     .collection('spare_parts')
     .doc(selected.id)
     .get();
@@ -443,7 +443,7 @@ if (existingIndex != -1) {
 Future<void> _editItemAtIndex(int index) async {
   final current = items[index];
 
-  final snap = await FirebaseFirestore.instance
+  final snap = await CompanyFirestore
       .collection('spare_parts')
       .doc(current.part.id)
       .get();
@@ -604,7 +604,7 @@ setState(() {
   final poNormalized = poController.text.trim().toUpperCase();
 
 final orderRef =
-    firestore.collection('order_in').doc(poNormalized);
+   CompanyFirestore.collection('order_in').doc(poNormalized);
 
   try {
     await firestore.runTransaction((tx) async {
@@ -630,7 +630,7 @@ for (final item in items) {
 // ===============================
 for (final entry in qtyMap.entries) {
   final partRef =
-      firestore.collection('spare_parts').doc(entry.key);
+      CompanyFirestore.collection('spare_parts').doc(entry.key);
 
   final snap = await tx.get(partRef);
   final stock = (snap['currentStock'] as num).toInt();
@@ -1158,7 +1158,7 @@ Widget _buildDesktopFormPanel() {
       const SizedBox(height: 6),
 
       StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance
+        stream: CompanyFirestore
             .collection('partners')
             .orderBy('name')
             .snapshots(),
@@ -1258,7 +1258,7 @@ class _OrderInListView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-      Query query = FirebaseFirestore.instance
+      Query query = CompanyFirestore
     .collection('order_in')
     .orderBy('createdAt', descending: true);
 
@@ -1347,7 +1347,7 @@ class _OrderInQuickView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
+      stream: CompanyFirestore
           .collection('order_in')
           .orderBy('createdAt', descending: true)
           .limit(10)
@@ -1555,7 +1555,7 @@ class _OrderHeader extends StatelessWidget {
               _HeaderRow(
   label: 'Client',
   child: StreamBuilder<QuerySnapshot>(
-    stream: FirebaseFirestore.instance
+    stream: CompanyFirestore
         .collection('partners')
         .orderBy('name')
         .snapshots(),

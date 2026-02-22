@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-
-import '../home/home_page.dart';
 import 'login_card.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../auth_gate.dart';
 
 class LoginDesktop extends StatefulWidget {
   const LoginDesktop({super.key});
@@ -21,31 +20,33 @@ class _LoginDesktopState extends State<LoginDesktop> {
   final bool _showCard = true;
 
   Future<void> _handleLogin() async {
-    if (!_formKey.currentState!.validate()) return;
+  if (!_formKey.currentState!.validate()) return;
 
-    setState(() => _isLoading = true);
+  setState(() => _isLoading = true);
 
-    try {
-      final navigator = Navigator.of(context);
+  try {
+    await FirebaseAuth.instance.signInWithEmailAndPassword(
+      email: emailController.text.trim(),
+      password: passwordController.text.trim(),
+    );
 
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: emailController.text.trim(),
-        password: passwordController.text.trim(),
-      );
+    if (!mounted) return;
 
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('saved_email', emailController.text.trim());
-      await prefs.setString('saved_password', passwordController.text.trim());
+ final uid = FirebaseAuth.instance.currentUser!.uid;
 
-      if (!mounted) return;
+    final userDoc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .get();
 
-      setState(() => _isLoading = false);
-
-    } on FirebaseAuthException catch (_) {
-      if (!mounted) return;
+  } catch (e) {
+    print("ERROR: $e");
+  } finally {
+    if (mounted) {
       setState(() => _isLoading = false);
     }
   }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -137,10 +138,14 @@ class _LoginDesktopState extends State<LoginDesktop> {
       const SnackBar(content: Text('Email reset terkirim')),
     );
   } on FirebaseAuthException catch (e) {
+     print("AUTH ERROR: ${e.code}");
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(e.message ?? 'Terjadi kesalahan')),
     );
   }
+  catch (e) {
+  print("UNKNOWN ERROR: $e");
+}
 }
 @override
   void dispose() {

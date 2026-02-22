@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 import '../../pages/common/app_background_wrapper.dart';
 import 'activity_detail_page.dart';
+import '../../core/services/company_firestore.dart';
 
 class ActivityListPage extends StatelessWidget {
   final String employeeId;
@@ -15,7 +14,7 @@ class ActivityListPage extends StatelessWidget {
   });
 
   Stream<List<Map<String, dynamic>>> _activityStream() async* {
-    final daysSnap = await FirebaseFirestore.instance
+    final daysSnap = await CompanyFirestore
         .collection('attendance')
         .doc(employeeId)
         .collection('days')

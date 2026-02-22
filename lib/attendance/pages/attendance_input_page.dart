@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-
+import '../../core/services/company_firestore.dart';
 import '../models/attendance_day.dart';
 import '../services/attendance_period_helper.dart';
 import 'activity_form_page.dart';
@@ -120,7 +120,7 @@ Future<void> _loadExistingActivities() async {
   final dateKey =
       '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
 
-  final snap = await FirebaseFirestore.instance
+  final snap = await CompanyFirestore
       .collection('attendance')
       .doc(widget.employeeId)
       .collection('days')
@@ -153,7 +153,7 @@ Future<void> _loadExistingActivities() async {
   final dateKey =
       '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
 
-  final dayRef = FirebaseFirestore.instance
+  final dayRef = CompanyFirestore
       .collection('attendance')
       .doc(widget.employeeId)
       .collection('days')
@@ -210,7 +210,7 @@ Future<void> _loadExistingActivities() async {
       });
     }
 
-    await FirebaseFirestore.instance
+    await CompanyFirestore
         .collection('attendance')
         .doc(widget.employeeId)
         .collection('days')
@@ -218,7 +218,7 @@ Future<void> _loadExistingActivities() async {
         .set(attendanceData, SetOptions(merge: true));
 
     for (final a in activities) {
-      await FirebaseFirestore.instance
+      await CompanyFirestore
           .collection('attendance')
           .doc(widget.employeeId)
           .collection('days')

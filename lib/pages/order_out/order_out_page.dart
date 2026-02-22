@@ -1,7 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-
+import '../../core/services/company_firestore.dart';
 import '../spare_part/spare_part_list_page.dart';
 import '../../models/spare_part.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -172,7 +172,7 @@ class _OrderOutPageState extends State<OrderOutPage> {
 Future<void> _editItemAtIndex(int index) async {
   final current = items[index];
 
-  final snap = await FirebaseFirestore.instance
+  final snap = await CompanyFirestore
       .collection('spare_parts')
       .doc(current.part.id)
       .get();
@@ -298,7 +298,7 @@ Future<void> _commitOrderOut() async {
         }
 
         orderRef =
-            firestore.collection('order_out').doc(editingOrderId);
+            CompanyFirestore.collection('order_out').doc(editingOrderId);
 
         final oldSnap = await tx.get(orderRef);
         if (!oldSnap.exists) {
@@ -320,7 +320,7 @@ Future<void> _commitOrderOut() async {
         }
       } else {
         orderRef =
-            firestore.collection('order_out').doc();
+            CompanyFirestore.collection('order_out').doc();
       }
 
       final allPartIds = {
@@ -330,7 +330,7 @@ Future<void> _commitOrderOut() async {
 
       for (final partId in allPartIds) {
         final partRef =
-            firestore.collection('spare_parts').doc(partId);
+           CompanyFirestore.collection('spare_parts').doc(partId);
 
         final snap = await tx.get(partRef);
         if (!snap.exists) {
@@ -628,7 +628,7 @@ class _OrderOutListView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
+      stream: CompanyFirestore
           .collection('order_out')
           .orderBy('createdAt', descending: true)
           .snapshots(),
@@ -713,7 +713,7 @@ class _OrderOutQuickView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
+      stream: CompanyFirestore
           .collection('order_out')
           .orderBy('createdAt', descending: true)
           .limit(10)
@@ -917,7 +917,7 @@ class _OrderHeader extends StatelessWidget {
               _HeaderRow(
   label: 'Client',
   child: StreamBuilder<QuerySnapshot>(
-    stream: FirebaseFirestore.instance
+    stream: CompanyFirestore
         .collection('partners')
         .orderBy('name')
         .snapshots(),

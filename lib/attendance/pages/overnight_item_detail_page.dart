@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../pages/common/app_background_wrapper.dart';
 import '../models/overnight_entry.dart';
 import 'add_overnight_page.dart';
+import '../../core/services/company_firestore.dart';
 
 class OvernightItemDetailPage extends StatelessWidget {
   final String employeeId;
@@ -43,7 +44,7 @@ Future<void> _deleteOvernight(BuildContext context) async {
   navigator.pop();
 
   // ✅ STEP 2: HAPUS DATA (SETELAH PAGE TERTUTUP)
-  await FirebaseFirestore.instance
+  await CompanyFirestore
       .collection('attendance')
       .doc(employeeId)
       .collection('overnight')
@@ -62,7 +63,7 @@ Future<void> _deleteOvernight(BuildContext context) async {
   });
 
   DocumentReference<Map<String, dynamic>> _ref() {
-    return FirebaseFirestore.instance
+    return CompanyFirestore
         .collection('attendance')
         .doc(employeeId)
         .collection('overnight')

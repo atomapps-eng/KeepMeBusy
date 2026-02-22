@@ -1,7 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-
+import '../core/services/company_firestore.dart';
 import '../pages/spare_part/spare_part_list_page.dart';
 import '../../models/spare_part.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -119,8 +119,8 @@ Future<void> _applyOrderOutTransaction({
 }) async {
   final firestore = FirebaseFirestore.instance;
   final orderRef = isEdit
-      ? firestore.collection('order_out').doc(orderId)
-      : firestore.collection('order_out').doc();
+      ? CompanyFirestore.collection('order_out').doc(orderId)
+      : CompanyFirestore.collection('order_out').doc();
 
   await firestore.runTransaction((tx) async {
 
@@ -169,7 +169,7 @@ Future<void> _applyOrderOutTransaction({
   // ===============================
   for (final entry in aggregatedOldQty.entries) {
     final partRef =
-        firestore.collection('spare_parts').doc(entry.key);
+        CompanyFirestore.collection('spare_parts').doc(entry.key);
 
     final snap = await tx.get(partRef);
 
@@ -189,7 +189,7 @@ Future<void> _applyOrderOutTransaction({
 
       if (!stockMap.containsKey(partId)) {
         final ref =
-            firestore.collection('spare_parts').doc(partId);
+            CompanyFirestore.collection('spare_parts').doc(partId);
 
         final snap = await tx.get(ref);
 
@@ -218,7 +218,7 @@ Future<void> _applyOrderOutTransaction({
     // ===============================
     for (final entry in stockMap.entries) {
       tx.update(
-        firestore.collection('spare_parts').doc(entry.key),
+       CompanyFirestore.collection('spare_parts').doc(entry.key),
         {'currentStock': entry.value},
       );
     }
@@ -323,7 +323,7 @@ Future<void> _applyOrderOutTransaction({
 Future<void> _editItemAtIndex(int index) async {
   final current = items[index];
 
-  final snap = await FirebaseFirestore.instance
+  final snap = await CompanyFirestore
       .collection('spare_parts')
       .doc(current.part.id)
       .get();
@@ -858,7 +858,7 @@ Widget _buildDesktopFormPanel() {
         const SizedBox(height: 6),
 
         StreamBuilder<QuerySnapshot>(
-          stream: FirebaseFirestore.instance
+          stream: CompanyFirestore
               .collection('partners')
               .orderBy('name')
               .snapshots(),
@@ -976,7 +976,7 @@ class _OrderOutListView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
+      stream: CompanyFirestore
           .collection('order_out')
           .orderBy('createdAt', descending: true)
           .snapshots(),
@@ -1051,7 +1051,7 @@ class _OrderOutQuickView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
+      stream: CompanyFirestore
           .collection('order_out')
           .orderBy('createdAt', descending: true)
           .limit(10)
@@ -1228,7 +1228,7 @@ class _OrderHeader extends StatelessWidget {
               _HeaderRow(
   label: 'Client',
   child: StreamBuilder<QuerySnapshot>(
-    stream: FirebaseFirestore.instance
+    stream: CompanyFirestore
         .collection('partners')
         .orderBy('name')
         .snapshots(),

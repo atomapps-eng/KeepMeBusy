@@ -6,7 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
-
+import '../../core/services/company_firestore.dart';
 
 class EditSparePartPage extends StatefulWidget {
   final SparePart part;
@@ -57,7 +57,7 @@ class _EditSparePartPageState extends State<EditSparePartPage>
 Future<bool> isLocationAvailable(String location) async {
   final normalized = normalizeLocation(location);
 
-  final snapshot = await FirebaseFirestore.instance
+  final snapshot = await CompanyFirestore
       .collection('spare_parts')
       .where('locationKey', isEqualTo: normalized)
       .limit(1)
@@ -431,7 +431,7 @@ Future<void> updateData() async {
 
   await safeDeleteCloudinaryImage(oldImageUrl, newImageUrl);
 
-  await FirebaseFirestore.instance
+  await CompanyFirestore
       .collection('spare_parts')
       .doc(widget.part.partCode)
       .update({
@@ -448,18 +448,18 @@ Future<void> updateData() async {
   });
 
   if (oldLocationKey != newLocationKey) {
-    await FirebaseFirestore.instance
-        .collection('locations')
-        .doc(oldLocationKey)
-        .delete();
+    await CompanyFirestore
+    .collection('locations')
+    .doc(oldLocationKey)
+    .delete();
 
-    await FirebaseFirestore.instance
-        .collection('locations')
-        .doc(newLocationKey)
-        .set({
-      'partCode': widget.part.partCode,
-      'createdAt': Timestamp.now(),
-    });
+await CompanyFirestore
+    .collection('locations')
+    .doc(newLocationKey)
+    .set({
+  'partCode': widget.part.partCode,
+  'createdAt': Timestamp.now(),
+});
   }
 
   if (!mounted) return;
@@ -485,12 +485,12 @@ Future<void> updateData() async {
 
   final locationKey = normalizeLocation(widget.part.location);
 
-  await FirebaseFirestore.instance
+  await CompanyFirestore
       .collection('spare_parts')
       .doc(widget.part.partCode)
       .delete();
 
-  await FirebaseFirestore.instance
+ await CompanyFirestore
       .collection('locations')
       .doc(locationKey)
       .delete();

@@ -1,7 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-
+import '../../core/services/company_firestore.dart';
 import '../../models/spare_part.dart';
 import '../spare_part/edit_spare_part_page.dart';
 
@@ -75,7 +75,7 @@ class LowStockPage extends StatelessWidget {
 
                 Expanded(
                   child: StreamBuilder<QuerySnapshot>(
-                    stream: FirebaseFirestore.instance
+                    stream: CompanyFirestore
                         .collection('spare_parts')
                         .snapshots(),
                     builder: (context, snapshot) {

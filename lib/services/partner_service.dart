@@ -1,9 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/partner.dart';
+import '../../core/services/company_firestore.dart';
 
 class PartnerService {
-  final CollectionReference _ref =
-      FirebaseFirestore.instance.collection('partners');
+
+  CollectionReference<Map<String, dynamic>> get _ref =>
+      CompanyFirestore.collection('partners');
 
   Stream<List<Partner>> getPartners() {
     return _ref

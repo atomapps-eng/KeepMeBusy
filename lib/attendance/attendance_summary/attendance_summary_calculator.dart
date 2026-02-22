@@ -1,5 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-
+import '../../core/services/company_firestore.dart';
 import '../models/attendance_day.dart';
 import 'attendance_summary_model.dart';
 
@@ -8,10 +8,9 @@ class AttendanceSummaryCalculator {
     required String employeeId,
     required String period,
   }) async {
-    final firestore = FirebaseFirestore.instance;
 
     // ================= ATTENDANCE =================
-    final daySnap = await firestore
+    final daySnap = await CompanyFirestore
         .collection('attendance')
         .doc(employeeId)
         .collection('days')
@@ -87,7 +86,7 @@ class AttendanceSummaryCalculator {
     }
 
     // ================= OVERNIGHT =================
-    final overnightSnap = await firestore
+    final overnightSnap = await CompanyFirestore
         .collection('attendance')
         .doc(employeeId)
         .collection('overnight')

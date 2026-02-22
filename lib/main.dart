@@ -4,6 +4,8 @@ import 'firebase_options.dart';
 import 'theme/app_theme.dart';
 import 'auth_gate.dart';
 import 'register_page.dart';
+import 'tools/migration_page.dart';
+import 'core/session/company_session.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -11,6 +13,8 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  await CompanySession.load();
 
   runApp(const KeepMeBusyApp());
 }
@@ -27,6 +31,7 @@ class KeepMeBusyApp extends StatelessWidget {
       home: const AuthGate(),
       routes: {
         '/register': (_) => const RegisterPage(),
+        '/migration': (_) => const MigrationPage(),
       },
     );
   }

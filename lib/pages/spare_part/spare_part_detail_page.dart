@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../../core/widgets/draggable_window.dart';
 import '../../models/spare_part.dart';
 import 'edit_spare_part_page.dart';
+import '../../core/services/company_firestore.dart';
 
 class SparePartDetailPage extends StatelessWidget {
   final SparePart part;
@@ -203,7 +204,7 @@ Widget build(BuildContext context) {
 
                       if (confirm != true) return;
 
-                      await FirebaseFirestore.instance
+                      await CompanyFirestore
                           .collection('spare_parts')
                           .doc(part.partCode)
                           .delete();
