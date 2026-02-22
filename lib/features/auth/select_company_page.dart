@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/session/company_session.dart';
 import '../../home/home_page.dart';
+import 'package:firebase_auth/firebase_auth.dart'; 
 
 class SelectCompanyPage extends StatelessWidget {
   final List<String> companyIds;
@@ -29,6 +30,16 @@ class SelectCompanyPage extends StatelessWidget {
       appBar: AppBar(
         title: const Text("Select Company"),
         centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: () async {
+              // Clear session dan logout
+              await CompanySession.clear();
+              await FirebaseAuth.instance.signOut();
+            },
+          ),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),
@@ -43,10 +54,14 @@ class SelectCompanyPage extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
-
-            ...companyIds.map((companyId) {
-              return _companyCard(context, companyId);
-            }),
+            Expanded(
+              child: ListView.builder(
+                itemCount: companyIds.length,
+                itemBuilder: (context, index) {
+                  return _companyCard(context, companyIds[index]);
+                },
+              ),
+            ),
           ],
         ),
       ),
@@ -56,47 +71,34 @@ class SelectCompanyPage extends StatelessWidget {
   Widget _companyCard(BuildContext context, String companyId) {
     final flag = _flagOf(companyId);
 
-    return InkWell(
-      borderRadius: BorderRadius.circular(18),
-      onTap: () async {
-        await CompanySession.setCompany(companyId);
-
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (_) => const HomePageAfterLogin(),
-          ),
-        );
-      },
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.2),
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(
-            color: Colors.white.withValues(alpha: 0.4),
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: ListTile(
+        leading: Text(
+          flag,
+          style: const TextStyle(fontSize: 26),
+        ),
+        title: Text(
+          companyId.toUpperCase(),
+          style: const TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
           ),
         ),
-        child: Row(
-          children: [
-            Text(
-              flag,
-              style: const TextStyle(fontSize: 26),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Text(
-                companyId.toUpperCase(),
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                ),
+        trailing: const Icon(Icons.chevron_right),
+        onTap: () async {
+          await CompanySession.setCompany(companyId);
+          
+          if (context.mounted) {
+            // Gunakan pushAndRemoveUntil untuk reset navigator
+            Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(
+                builder: (_) => const HomePageAfterLogin(),
               ),
-            ),
-            const Icon(Icons.chevron_right),
-          ],
-        ),
+              (route) => false, // Remove all previous routes
+            );
+          }
+        },
       ),
     );
   }

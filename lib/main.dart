@@ -6,6 +6,8 @@ import 'auth_gate.dart';
 import 'register_page.dart';
 import 'tools/migration_page.dart';
 import 'core/session/company_session.dart';
+import 'package:provider/provider.dart';
+import 'auth_controller.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -16,7 +18,16 @@ void main() async {
 
   await CompanySession.load();
 
-  runApp(const KeepMeBusyApp());
+  runApp(
+  MultiProvider(
+    providers: [
+      ChangeNotifierProvider(
+        create: (_) => AuthController(),
+      ),
+    ],
+    child: const KeepMeBusyApp(),
+  ),
+);
 }
 
 class KeepMeBusyApp extends StatelessWidget {

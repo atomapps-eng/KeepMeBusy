@@ -15,6 +15,7 @@ import '../login/login_page.dart';
 import '../core/session/company_session.dart';
 import '../core/services/company_firestore.dart';
 import '../features/auth/select_company_page.dart';
+import '../services/logout_helper.dart';
 
 enum DesktopSection {
   dashboard,
@@ -394,10 +395,11 @@ Future<void> _confirmLogout(BuildContext context) async {
           onPressed: () => Navigator.pop(context, false),
           child: const Text('Cancel'),
         ),
-        ElevatedButton(
-          onPressed: () => Navigator.pop(context, true),
-          child: const Text('Logout'),
-        ),
+        // Contoh di HomePage
+ElevatedButton(
+  onPressed: () => LogoutHelper.logout(context),
+  child: Text('Logout'),
+)
       ],
     ),
   );

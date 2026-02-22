@@ -19,7 +19,8 @@ class _LoginDesktopState extends State<LoginDesktop> {
   bool _isLoading = false;
   final bool _showCard = true;
 
-  Future<void> _handleLogin() async {
+  // Di login_desktop.dart, perbaiki _handleLogin:
+Future<void> _handleLogin() async {
   if (!_formKey.currentState!.validate()) return;
 
   setState(() => _isLoading = true);
@@ -29,18 +30,32 @@ class _LoginDesktopState extends State<LoginDesktop> {
       email: emailController.text.trim(),
       password: passwordController.text.trim(),
     );
-
-    if (!mounted) return;
-
- final uid = FirebaseAuth.instance.currentUser!.uid;
-
-    final userDoc = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(uid)
-        .get();
-
+    
+    // Login sukses, AuthGate akan otomatis menangani navigasi
+    // Tidak perlu navigasi manual
+    
+  } on FirebaseAuthException catch (e) {
+    String message = 'Login gagal';
+    if (e.code == 'user-not-found') {
+      message = 'Email tidak terdaftar';
+    } else if (e.code == 'wrong-password') {
+      message = 'Password salah';
+    } else if (e.code == 'invalid-email') {
+      message = 'Email tidak valid';
+    }
+    
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
+    }
   } catch (e) {
     print("ERROR: $e");
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Terjadi kesalahan: $e')),
+      );
+    }
   } finally {
     if (mounted) {
       setState(() => _isLoading = false);
