@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'firebase_options.dart';
 import 'theme/app_theme.dart';
 import 'auth_gate.dart';
@@ -8,6 +9,9 @@ import 'tools/migration_page.dart';
 import 'core/session/company_session.dart';
 import 'package:provider/provider.dart';
 import 'auth_controller.dart';
+
+// Global navigator key
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -19,15 +23,53 @@ void main() async {
   await CompanySession.load();
 
   runApp(
-  MultiProvider(
-    providers: [
-      ChangeNotifierProvider(
-        create: (_) => AuthController(),
-      ),
-    ],
-    child: const KeepMeBusyApp(),
-  ),
-);
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(
+          create: (_) => AuthController(),
+        ),
+      ],
+      child: const KeepMeBusyApp(),
+    ),
+  );
+}
+
+// Global logout function
+Future<void> globalLogout(BuildContext context) async {
+  try {
+    // Clear session dulu
+    await CompanySession.clear();
+    
+    // Sign out from Firebase
+    await FirebaseAuth.instance.signOut();
+    
+    if (context.mounted) {
+      // Push replacement with AuthGate
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const AuthGate()),
+        (route) => false,
+      );
+      
+      // Show success message
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Berhasil logout'),
+          duration: Duration(seconds: 2),
+          backgroundColor: AppTheme.successColor,
+        ),
+      );
+    }
+  } catch (e) {
+    print('Logout error: $e');
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error saat logout: $e'),
+          backgroundColor: AppTheme.errorColor,
+        ),
+      );
+    }
+  }
 }
 
 class KeepMeBusyApp extends StatelessWidget {
@@ -36,6 +78,7 @@ class KeepMeBusyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: navigatorKey,
       debugShowCheckedModeBanner: false,
       title: 'Keep Me Busy',
       theme: AppTheme.lightTheme,

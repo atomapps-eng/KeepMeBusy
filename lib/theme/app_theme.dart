@@ -1,91 +1,67 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart'; //
 
 class AppTheme {
+  static const Color primaryColor = Color(0xFFFF8C42); // Oranye hangat
+  static const Color secondaryColor = Color(0xFFFFB26B);
+  static const Color backgroundColor = Color(0xFFFFF5E8); // Krem muda
+  static const Color surfaceColor = Colors.white;
+  static const Color textPrimary = Color(0xFF2D2D2D);
+  static const Color textSecondary = Color(0xFF666666);
+  static const Color errorColor = Color(0xFFD32F2F);
+  static const Color successColor = Color(0xFF388E3C);
+  
   static ThemeData lightTheme = ThemeData(
-    useMaterial3: true,
-
-    visualDensity: VisualDensity.compact, // ✅ DESKTOP FEEL
-
-    colorScheme: ColorScheme.fromSeed(
-      seedColor: Colors.green,
-      brightness: Brightness.light,
+    primaryColor: primaryColor,
+    colorScheme: const ColorScheme.light(
+      primary: primaryColor,
+      secondary: secondaryColor,
+      surface: surfaceColor,
+      background: backgroundColor,
+      error: errorColor,
     ),
-
-    scaffoldBackgroundColor: Colors.white,
-
+    scaffoldBackgroundColor: backgroundColor,
     appBarTheme: const AppBarTheme(
-      backgroundColor: Colors.transparent,
+      backgroundColor: surfaceColor,
       elevation: 0,
-      scrolledUnderElevation: 0,
-      surfaceTintColor: Colors.transparent,
+      centerTitle: true,
+      iconTheme: IconThemeData(color: primaryColor),
       titleTextStyle: TextStyle(
-        color: Colors.blueGrey,
+        color: textPrimary,
         fontSize: 20,
-        fontWeight: FontWeight.bold,
-      ),
-      iconTheme: IconThemeData(color: Colors.blueGrey),
-    ),
-
-    // ===== TEXT (GOOGLE FONT AKTIF) =====
-    textTheme: GoogleFonts.interTextTheme(
-  const TextTheme(
-    titleLarge: TextStyle(
-      fontSize: 24, // lebih desktop-friendly
-      fontWeight: FontWeight.w600,
-      color: Colors.blueGrey,
-    ),
-    bodyMedium: TextStyle(
-      fontSize: 14,
-      color: Colors.blueGrey,
-    ),
-  ),
-),
-
-
-    inputDecorationTheme: InputDecorationTheme(
-      filled: true,
-      fillColor: Colors.white.withValues(alpha: 0.3),
-      labelStyle: const TextStyle(color: Colors.black87),
-      prefixIconColor: Colors.black54,
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
-        borderSide: BorderSide(
-          color: Colors.white.withValues(alpha: 0.4),
-        ),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
-        borderSide: const BorderSide(
-          color: Colors.blueGrey,
-          width: 1.5,
-        ),
-      ),
-      errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
-        borderSide: const BorderSide(color: Colors.redAccent),
-      ),
-      focusedErrorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
-        borderSide: const BorderSide(color: Colors.red),
+        fontWeight: FontWeight.w600,
       ),
     ),
-
+    // Perbaikan: Gunakan CardThemeData secara eksplisit
+    cardTheme: CardThemeData(
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(18),
+      ),
+      color: surfaceColor,
+    ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.blueGrey,
+        backgroundColor: primaryColor,
         foregroundColor: Colors.white,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(12),
         ),
-        textStyle: const TextStyle(fontWeight: FontWeight.bold),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
       ),
     ),
-
     textButtonTheme: TextButtonThemeData(
       style: TextButton.styleFrom(
-        foregroundColor: Colors.blueGrey,
+        foregroundColor: primaryColor,
       ),
+    ),
+    inputDecorationTheme: InputDecorationTheme(
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide.none,
+      ),
+      filled: true,
+      fillColor: Colors.grey.shade50,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
     ),
   );
 }

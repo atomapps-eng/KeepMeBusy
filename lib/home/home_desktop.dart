@@ -16,6 +16,7 @@ import '../core/session/company_session.dart';
 import '../core/services/company_firestore.dart';
 import '../features/auth/select_company_page.dart';
 import '../services/logout_helper.dart';
+import '../theme/app_theme.dart';
 
 enum DesktopSection {
   dashboard,
@@ -563,117 +564,379 @@ Widget _desktopMenuCard(
   }
 }
 
-  Widget _buildSidebar() {
-
+Widget _buildSidebar() {
   final user = FirebaseAuth.instance.currentUser;
-  final displayName =
-      user?.displayName?.isNotEmpty == true
-          ? user!.displayName!
-          : 'User';
+  final displayName = user?.displayName?.isNotEmpty == true
+      ? user!.displayName!
+      : 'User';
   final email = user?.email ?? '';
+  final companyId = CompanySession.selectedCompanyId;
 
   return Container(
-    width: 260,
-    decoration: const BoxDecoration(
+    width: 280, // Lebar sedikit ditambah
+    decoration: BoxDecoration(
       gradient: LinearGradient(
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
         colors: [
-          Color(0xFFFFE0B2),
-          Color(0xFFFFFFFF),
+          const Color(0xFFFFE0B2),
+          Colors.white,
         ],
       ),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.05),
+          blurRadius: 10,
+          offset: const Offset(2, 0),
+        ),
+      ],
     ),
     child: Column(
       children: [
-
-        const SizedBox(height: 28),
-
-        Image.asset(
-          'assets/images/Atom.png',
-          width: 60,
-        ),
-
-        const SizedBox(height: 14),
-
-        Text(
-          displayName,
-          style: const TextStyle(
-            fontWeight: FontWeight.w600,
+        // Logo Aplikasi
+        Container(
+          padding: const EdgeInsets.only(top: 28, bottom: 16),
+          child: Image.asset(
+            'assets/images/Atom.png',
+            width: 70,
+            fit: BoxFit.contain,
           ),
         ),
 
-        const SizedBox(height: 2),
+        // COMPANY INFO CARD - EYE CATCHING
+        if (companyId != null)
+          FutureBuilder<Map<String, dynamic>>(
+            future: _getSelectedCompanyInfo(),
+            builder: (context, snapshot) {
+              final companyColor = snapshot.data?['color'] ?? 
+                  _getColorForCompany(companyId);
+             String companyName;
 
-        Text(
-          email,
-          style: const TextStyle(
-            fontSize: 12,
-            color: Colors.black54,
-          ),
-        ),
+if (snapshot.data != null && snapshot.data!['displayName'] != null) {
+  // Gunakan displayName dari Firestore jika ada
+  companyName = snapshot.data!['displayName'];
+} else {
+  // FORMAT ULANG LANGSUNG DI SINI
+  final rawName = companyId.toUpperCase();
+  
+  // Logika khusus untuk menambahkan spasi
+  if (rawName.contains('ATOM')) {
+    // Pisahkan "ATOM" dari sisanya
+    if (rawName == 'ATOM') {
+      companyName = 'ATOM';
+    } else {
+      // Cari posisi "ATOM" dan ambil sisanya
+      final withoutAtom = rawName.replaceAll('ATOM', '').trim();
+      companyName = 'ATOM $withoutAtom';
+    }
+  } else {
+    companyName = 'ATOM $rawName';
+  }
+  
+  // Bersihkan dari spasi berlebih
+  companyName = companyName.replaceAll(RegExp(r'\s+'), ' ').trim();
+}
 
-        const SizedBox(height: 8),
 
-Row(
-  mainAxisAlignment: MainAxisAlignment.center,
-  children: [
+              final flag = snapshot.data?['flag'] ?? 
+                  _getFlagForCompany(companyId);
 
-    // SWITCH COMPANY
-    IconButton(
-      tooltip: "Switch Company",
-      icon: const Icon(Icons.business, size: 20),
-      onPressed: () async {
-        final uid = FirebaseAuth.instance.currentUser!.uid;
-
-        final userDoc = await FirebaseFirestore.instance
-            .collection('users')
-            .doc(uid)
-            .get();
-
-        final companyIds =
-            List<String>.from(userDoc['companyIds'] ?? []);
-
-        if (!mounted) return;
-
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (_) => SelectCompanyPage(
-              companyIds: companyIds,
-            ),
-          ),
-        );
-      },
+              return Container(
+                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      companyColor.withOpacity(0.15),
+                      companyColor.withOpacity(0.05),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: companyColor.withOpacity(0.3),
+                    width: 1.5,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: companyColor.withOpacity(0.2),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    // Flag/Logo besar
+                    // Flag/Logo besar - Gunakan flag dari snapshot atau emoji
+Container(
+  width: 48,
+  height: 48,
+  decoration: BoxDecoration(
+    color: companyColor.withOpacity(0.15),
+    borderRadius: BorderRadius.circular(16),
+    border: Border.all(
+      color: companyColor.withOpacity(0.3),
+      width: 1,
     ),
-
-    // LOGOUT
-    IconButton(
-      tooltip: "Logout",
-      icon: const Icon(Icons.logout, size: 20),
-      onPressed: () => _confirmLogout(context),
+  ),
+  child: Center(
+    child: Text(
+      snapshot.data?['flag'] ?? _getFlagEmoji(companyId),
+      style: const TextStyle(fontSize: 28),
     ),
-  ],
+  ),
 ),
+                    const SizedBox(width: 12),
+                    
+                    // Company details
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Active Company',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.black54.withOpacity(0.8),
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            companyName,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: AppTheme.textPrimary,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 2),
+                          Row(
+                            children: [
+                              Container(
+                                width: 6,
+                                height: 6,
+                                decoration: BoxDecoration(
+                                  color: Colors.green,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                'Active',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  color: Colors.green.shade700,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
 
-        const SizedBox(height: 24),
+        // User Info
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Column(
+            children: [
+              CircleAvatar(
+                radius: 24,
+                backgroundColor: AppTheme.primaryColor.withOpacity(0.2),
+                child: Text(
+                  displayName.isNotEmpty ? displayName[0].toUpperCase() : 'U',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.primaryColor,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                displayName,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                email,
+                style: const TextStyle(
+                  fontSize: 11,
+                  color: Colors.black54,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
+
+        // Action Buttons (Switch Company & Logout)
+        Container(
+          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Row(
+            children: [
+              Expanded(
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: () async {
+                      final uid = FirebaseAuth.instance.currentUser!.uid;
+                      final userDoc = await FirebaseFirestore.instance
+                          .collection('users')
+                          .doc(uid)
+                          .get();
+                      final companyIds =
+                          List<String>.from(userDoc['companyIds'] ?? []);
+
+                      if (!mounted) return;
+
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => SelectCompanyPage(
+                            companyIds: companyIds,
+                          ),
+                        ),
+                      );
+                    },
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.business,
+                            size: 16,
+                            color: AppTheme.primaryColor,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            'Switch',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              color: AppTheme.primaryColor,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: () => _confirmLogout(context),
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.red.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.logout,
+                            size: 16,
+                            color: Colors.red.shade400,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            'Logout',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.red.shade400,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
 
         const Divider(
           thickness: 1,
-          height: 1,
+          height: 24,
         ),
 
-        const SizedBox(height: 12),
-
+        // Menu Items
         Expanded(
           child: ListView(
+            padding: const EdgeInsets.symmetric(vertical: 8),
             children: [
-              _sidebarItem(Icons.dashboard, 'Dashboard', DesktopSection.dashboard),
-              _sidebarItem(Icons.inventory, 'Inventory', DesktopSection.inventory),
-              _sidebarItem(Icons.precision_manufacturing, 'Machinery', DesktopSection.machinery),
-              _sidebarItem(Icons.bar_chart, 'Reports', DesktopSection.reports),
-              _sidebarItem(Icons.settings, 'Systems', DesktopSection.systems),
+              _sidebarItem(
+                Icons.dashboard_outlined,
+                Icons.dashboard,
+                'Dashboard',
+                DesktopSection.dashboard,
+              ),
+              _sidebarItem(
+                Icons.inventory_outlined,
+                Icons.inventory,
+                'Inventory',
+                DesktopSection.inventory,
+              ),
+              _sidebarItem(
+                Icons.precision_manufacturing_outlined,
+                Icons.precision_manufacturing,
+                'Machinery',
+                DesktopSection.machinery,
+              ),
+              _sidebarItem(
+                Icons.bar_chart_outlined,
+                Icons.bar_chart,
+                'Reports',
+                DesktopSection.reports,
+              ),
+              _sidebarItem(
+                Icons.settings_outlined,
+                Icons.settings,
+                'Systems',
+                DesktopSection.systems,
+              ),
             ],
+          ),
+        ),
+        
+        // Version Info
+        Container(
+          padding: const EdgeInsets.all(16),
+          child: Text(
+            'v1.0.0',
+            style: TextStyle(
+              fontSize: 10,
+              color: Colors.grey.shade500,
+            ),
           ),
         ),
       ],
@@ -683,62 +946,74 @@ Row(
 
 
 Widget _sidebarItem(
-  IconData icon,
+  IconData outlinedIcon,
+  IconData filledIcon,
   String title,
   DesktopSection section,
 ) {
   final isSelected = selectedSection == section;
 
-  return InkWell(
-    onTap: () {
-  setState(() {
-    selectedSection = section;
-
-    if (section == DesktopSection.inventory) {
-      inventoryView = InventoryView.menu;
-    }
-  });
-},
-
-    hoverColor: Colors.black.withValues(alpha: 0.05),
-    child: AnimatedContainer(
-      duration: const Duration(milliseconds: 180),
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 14),
-      decoration: BoxDecoration(
-        color: isSelected
-            ? Colors.white.withValues(alpha: 0.8)
-            : Colors.transparent,
-        borderRadius: BorderRadius.circular(10),
-        border: isSelected
-            ? const Border(
-                left: BorderSide(
-                  color: Colors.deepOrange,
-                  width: 4,
-                ),
-              )
-            : null,
-      ),
-      child: Row(
-        children: [
-          Icon(
-            icon,
-            size: 20,
+  return Container(
+    margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+    child: Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () {
+          setState(() {
+            selectedSection = section;
+            if (section == DesktopSection.inventory) {
+              inventoryView = InventoryView.menu;
+            }
+          });
+        },
+        borderRadius: BorderRadius.circular(12),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
+          decoration: BoxDecoration(
             color: isSelected
-                ? Colors.deepOrange
-                : Colors.black87,
+                ? AppTheme.primaryColor.withOpacity(0.1)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(12),
+            border: isSelected
+                ? Border.all(
+                    color: AppTheme.primaryColor.withOpacity(0.3),
+                    width: 1,
+                  )
+                : null,
           ),
-          const SizedBox(width: 12),
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight:
-                  isSelected ? FontWeight.w600 : FontWeight.normal,
-              color: Colors.black,
-            ),
+          child: Row(
+            children: [
+              Icon(
+                isSelected ? filledIcon : outlinedIcon,
+                size: 20,
+                color: isSelected
+                    ? AppTheme.primaryColor
+                    : Colors.black54,
+              ),
+              const SizedBox(width: 12),
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                  color: isSelected ? AppTheme.textPrimary : Colors.black54,
+                ),
+              ),
+              if (isSelected) ...[
+                const Spacer(),
+                Container(
+                  width: 4,
+                  height: 20,
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryColor,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ],
+            ],
           ),
-        ],
+        ),
       ),
     ),
   );
@@ -979,6 +1254,99 @@ Widget _buildMiniChart(int total, int low) {
       ),
     ],
   );
+}
+Future<Map<String, dynamic>> _getSelectedCompanyInfo() async {
+  final companyId = CompanySession.selectedCompanyId;
+  if (companyId == null) return {};
+
+  try {
+    // Ambil data perusahaan dari Firestore
+    final doc = await FirebaseFirestore.instance
+        .collection('companies')
+        .doc(companyId)
+        .get();
+
+    if (doc.exists) {
+      return doc.data() as Map<String, dynamic>;
+    }
+  } catch (e) {
+    print('Error fetching company info: $e');
+  }
+
+  // Fallback ke data lokal jika tidak ada di Firestore
+  final rawName = companyId.toUpperCase();
+  
+  // PERBAIKAN: Format nama dengan spasi yang benar
+  String displayName;
+  
+  // Cek apakah companyId sudah mengandung "ATOM" di dalamnya
+  if (rawName.startsWith('ATOM')) {
+    // Jika sudah ada ATOM, pisahkan ATOM dan sisanya
+    if (rawName == 'ATOM') {
+      displayName = 'ATOM';
+    } else {
+      // Contoh: "ATOMINDONESIA" -> "ATOM INDONESIA"
+      final withoutAtom = rawName.substring(4); // Hapus "ATOM"
+      displayName = 'ATOM $withoutAtom';
+    }
+  } else {
+    // Jika belum ada ATOM, tambahkan ATOM dengan spasi
+    displayName = 'ATOM $rawName';
+  }
+  
+  return {
+    'name': companyId.toUpperCase(),
+    'displayName': displayName, // Sudah dengan spasi
+    'flag': _getFlagForCompany(companyId),
+    'color': _getColorForCompany(companyId),
+  };
+}
+
+String _getFlagForCompany(String companyId) {
+  switch (companyId.toLowerCase()) {
+    case 'indonesia': return '🇮🇩';
+    case 'india': return '🇮🇳';
+    case 'vietnam': return '🇻🇳';
+    default: return '🏢';
+  }
+}
+
+Color _getColorForCompany(String companyId) {
+  switch (companyId.toLowerCase()) {
+    case 'indonesia': return const Color(0xFFFF6B6B);
+    case 'india': return const Color(0xFFFFA06B);
+    case 'vietnam': return const Color(0xFF6BCBFF);
+    case 'singapore': return const Color(0xFFFFD93D);
+    case 'malaysia': return const Color(0xFF6B8CFF);
+    case 'thailand': return const Color(0xFFFF6B9D);
+    default: return AppTheme.primaryColor;
+  }
+}
+// Tambahkan fungsi ini di dalam _HomeDesktopState
+String _getFlagEmoji(String companyId) {
+  switch (companyId.toLowerCase()) {
+    case 'indonesia':
+    case 'atomindonesia':
+    case 'indonesia atom':
+      return '🇮🇩';
+      
+    case 'india':
+    case 'atomindia':
+    case 'india atom':
+      return '🇮🇳';
+      
+    case 'vietnam':
+    case 'atomvietnam':
+    case 'vietnam atom':
+      return '🇻🇳';
+      
+    default:
+      final lowerId = companyId.toLowerCase();
+      if (lowerId.contains('indonesia')) return '🇮🇩';
+      if (lowerId.contains('india')) return '🇮🇳';
+      if (lowerId.contains('vietnam')) return '🇻🇳';    
+      return '🏢';
+  }
 }
 }
 
