@@ -12,7 +12,7 @@ import 'add_overnight_page.dart';
 import 'overnight_detail_page.dart';
 import '../attendance_summary/attendance_summary_page.dart';
 import '../../core/services/company_firestore.dart';
-
+import '../../theme/app_theme.dart';
 
 class AttendancePage extends StatefulWidget {
   final String employeeId;
@@ -29,532 +29,1293 @@ class AttendancePage extends StatefulWidget {
 }
 
 class _AttendancePageState extends State<AttendancePage> {
-
-void _exportAttendanceToPdf() {
-  // 1. Ambil data attendance by employeeId & period
-  // 2. Generate PDF
-  // 3. Share / save file
-
-  ScaffoldMessenger.of(context).showSnackBar(
-    const SnackBar(
-      content: Text('Export PDF clicked'),
-    ),
-  );
-}
-
-
   AttendanceStatus? _activeStatus;
+  String _searchQuery = '';
+  final TextEditingController _searchController = TextEditingController();
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _exportAttendanceToPdf() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Export PDF clicked'),
+      ),
+    );
+  }
 
   Stream<List<Map<String, dynamic>>> _activityPreviewStream() {
-  return CompanyFirestore
-      .collection('attendance')
-      .doc(widget.employeeId)
-      .collection('days')
-      .snapshots()
-      .asyncMap((daySnap) async {
-    final List<Map<String, dynamic>> activities = [];
+    return CompanyFirestore
+        .collection('attendance')
+        .doc(widget.employeeId)
+        .collection('days')
+        .snapshots()
+        .asyncMap((daySnap) async {
+      final List<Map<String, dynamic>> activities = [];
 
-    for (final day in daySnap.docs) {
-      final actSnap = await day.reference
-          .collection('activities')
-          .orderBy('createdAt', descending: true)
-          .get();
+      for (final day in daySnap.docs) {
+        final actSnap = await day.reference
+            .collection('activities')
+            .orderBy('createdAt', descending: true)
+            .get();
 
-      for (final a in actSnap.docs) {
-        activities.add(a.data());
-      }
-    }
-
-    activities.sort((a, b) {
-      final aTime = a['createdAt'] as Timestamp?;
-      final bTime = b['createdAt'] as Timestamp?;
-      return (bTime?.millisecondsSinceEpoch ?? 0)
-          .compareTo(aTime?.millisecondsSinceEpoch ?? 0);
-    });
-
-    return activities.take(3).toList();
-  });
-}
-
-Stream<List<Map<String, dynamic>>> _overnightPreviewStream() {
-  return CompanyFirestore
-      .collection('attendance')
-      .doc(widget.employeeId) // <-- Basuki Rahmat
-      .collection('overnight')
-      .orderBy('startDate', descending: true)
-      .limit(3)
-      .snapshots()
-      .map((snap) {
-        return snap.docs.map((d) => d.data()).toList();
-      });
-}
-
-Stream<Map<String, int>> _overnightSummaryStream() {
-  return CompanyFirestore
-      .collection('attendance')
-      .doc(widget.employeeId)
-      .collection('overnight')
-      .snapshots()
-      .map((snap) {
-        int domestic = 0;
-        int overseas = 0;
-
-        for (final d in snap.docs) {
-          final data = d.data();
-          final nights = (data['totalNights'] ?? 0) as int;
-          final category = data['customerCategory'];
-
-          if (category == 'domestic') {
-            domestic += nights;
-          } else if (category == 'overseas') {
-            overseas += nights;
-          }
+        for (final a in actSnap.docs) {
+          activities.add(a.data());
         }
+      }
 
-        return {
-          'domestic': domestic,
-          'overseas': overseas,
-        };
+      activities.sort((a, b) {
+        final aTime = a['createdAt'] as Timestamp?;
+        final bTime = b['createdAt'] as Timestamp?;
+        return (bTime?.millisecondsSinceEpoch ?? 0)
+            .compareTo(aTime?.millisecondsSinceEpoch ?? 0);
       });
-}
 
-// ================= SUMMARY =================
+      return activities.take(3).toList();
+    });
+  }
 
+  Stream<List<Map<String, dynamic>>> _overnightPreviewStream() {
+    return CompanyFirestore
+        .collection('attendance')
+        .doc(widget.employeeId)
+        .collection('overnight')
+        .orderBy('startDate', descending: true)
+        .limit(3)
+        .snapshots()
+        .map((snap) => snap.docs.map((d) => d.data()).toList());
+  }
+
+  Stream<Map<String, int>> _overnightSummaryStream() {
+    return CompanyFirestore
+        .collection('attendance')
+        .doc(widget.employeeId)
+        .collection('overnight')
+        .snapshots()
+        .map((snap) {
+      int domestic = 0;
+      int overseas = 0;
+
+      for (final d in snap.docs) {
+        final data = d.data();
+        final nights = (data['totalNights'] ?? 0) as int;
+        final category = data['customerCategory'];
+
+        if (category == 'domestic') {
+          domestic += nights;
+        } else if (category == 'overseas') {
+          overseas += nights;
+        }
+      }
+
+      return {'domestic': domestic, 'overseas': overseas};
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     final service = AttendanceService();
+    final isDesktop = MediaQuery.of(context).size.width >= 900;
 
     return Scaffold(
-  extendBodyBehindAppBar: true,
- appBar: AppBar(
-  title: Text('Attendance • ${widget.period}'),
-  backgroundColor: Colors.transparent,
-  elevation: 0,
-  actions: [
-    // ===== EXPORT PDF =====
-    IconButton(
-      tooltip: 'Export to PDF',
-      icon: const Icon(Icons.picture_as_pdf),
-      onPressed: () {
-        _exportAttendanceToPdf();
-      },
-    ),
-
-    // ===== SUMMARY =====
-    IconButton(
-  tooltip: 'Summary',
-  icon: const Icon(Icons.bar_chart),
-  onPressed: () {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => AttendanceSummaryPage(
-          employeeId: widget.employeeId,
-          period: widget.period,
+      extendBodyBehindAppBar: true,
+      appBar: AppBar(
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppTheme.primaryColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(
+                Icons.calendar_month,
+                color: AppTheme.primaryColor,
+                size: 24,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Attendance',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  widget.period,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        actions: [
+          // SEARCH BAR (DESKTOP ONLY)
+          if (isDesktop)
+            Container(
+              width: 250,
+              margin: const EdgeInsets.symmetric(vertical: 12),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(30),
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.3),
+                ),
+              ),
+              child: TextField(
+                controller: _searchController,
+                onChanged: (value) => setState(() => _searchQuery = value),
+                decoration: InputDecoration(
+                  hintText: 'Search attendance...',
+                  hintStyle: TextStyle(color: Colors.grey.shade600),
+                  prefixIcon: Icon(Icons.search, color: Colors.grey.shade600),
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                ),
+              ),
+            ),
+          const SizedBox(width: 8),
+
+          // EXPORT BUTTON
+          Container(
+            margin: const EdgeInsets.only(right: 8),
+            decoration: BoxDecoration(
+              color: Colors.green.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: IconButton(
+              tooltip: 'Export to PDF',
+              icon: const Icon(Icons.picture_as_pdf, color: Colors.green),
+              onPressed: _exportAttendanceToPdf,
+            ),
+          ),
+
+          // SUMMARY BUTTON
+          Container(
+            margin: const EdgeInsets.only(right: 16),
+            decoration: BoxDecoration(
+              color: AppTheme.primaryColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: IconButton(
+              tooltip: 'Summary',
+              icon: Icon(
+                Icons.bar_chart,
+                color: AppTheme.primaryColor,
+              ),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => AttendanceSummaryPage(
+                      employeeId: widget.employeeId,
+                      period: widget.period,
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
       ),
-    );
-  },
-),
-
-  ],
-),
-
-  body: AppBackgroundWrapper(
-    padding: const EdgeInsets.fromLTRB(
-      16,
-      16,
-      16,
-      16,
-    ),
+      body: AppBackgroundWrapper(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
         child: StreamBuilder<List<AttendanceDay>>(
           stream: service.streamAttendanceDays(widget.employeeId),
           builder: (context, snapshot) {
             if (snapshot.hasError) {
-  debugPrint('ATTENDANCE STREAM ERROR: ${snapshot.error}');
-  return Center(
-    child: Text(
-      'Attendance stream error',
-      style: TextStyle(color: Colors.red),
-    ),
-  );
-}
-
-            final allDays = (snapshot.data ?? []);              
-
-            // ===== SORT TERBARU =====
-            allDays.sort((a, b) => b.date.compareTo(a.date));
-
-            // ===== SUMMARY =====
-            final summary =
-                AttendanceSummaryHelper.calculateStatusSummary(allDays);
-
-            // ===== FILTER =====
-            final filtered = _activeStatus == null
-                ? allDays
-                : allDays
-                    .where((d) => d.status == _activeStatus)
-                    .toList();
-
-            // ===== PREVIEW MAKS 3 =====
-            final previewDays = filtered.take(3).toList();
-
-            return SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // =================================================
-                  // SECTION 1: DAILY ATTENDANCE
-                  // =================================================
-                  _glass(
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Daily Attendance',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-
-                        // ===== SUMMARY CHIPS =====
-                        _StatusChips(
-                          summary: summary,
-                          active: _activeStatus,
-                          onTap: (s) {
-                            setState(() {
-                              _activeStatus =
-                                  _activeStatus == s ? null : s;
-                            });
-                          },
-                        ),
-
-                        const Divider(height: 24),
-
-                        // ===== PREVIEW LIST =====
-                        if (previewDays.isEmpty)
-                          const Text(
-                            'No attendance data',
-                            style:
-                                TextStyle(color: Colors.black54),
-                          ),
-
-                        for (final d in previewDays)
-                          ListTile(
-                            dense: true,
-                            title: Text(
-                              '${d.date.day}/${d.date.month}/${d.date.year}',
-                            ),
-                            subtitle: Text(d.status.label),
-                            trailing: const Icon(
-                              Icons.chevron_right,
-                              size: 18,
-                            ),
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) =>
-                                      AttendanceInputPage(
-                                    employeeId:
-                                        widget.employeeId,
-                                    date: d.date,
-                                    existingDay: d,
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-
-                        const SizedBox(height: 12),
-
-                        // ===== ACTION BUTTONS =====
-                        Column(
-  children: [
-    SizedBox(
-      width: double.infinity,
-      child: ElevatedButton.icon(
-        icon: const Icon(Icons.add),
-        label: const Text('Add Attendance'),
-        onPressed: () async {
-  final navigator = Navigator.of(context);
-
-  final picked = await showDatePicker(
-    context: context,
-    initialDate: DateTime.now(),
-    firstDate: DateTime(2020),
-    lastDate: DateTime(2035),
-  );
-
-  if (picked == null) return;
-  if (!mounted) return;
-
-  navigator.push(
-    MaterialPageRoute(
-      builder: (_) => AttendanceInputPage(
-        employeeId: widget.employeeId,
-        date: picked,
-      ),
-    ),
-  );
-},
-
-      ),
-    ),
-    const SizedBox(height: 8),
-    SizedBox(
-      width: double.infinity,
-      child: ElevatedButton(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.blueGrey.shade100,
-          foregroundColor: Colors.black87,
-        ),
-        onPressed: () {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => AttendanceListPage(
-          employeeId: widget.employeeId,
-          period: widget.period,
-        ),
-      ),
-    );
-  },
-        child: const Text('View Attendance'),
-      ),
-    ),
-  ],
-),
-
-                      ],
-                    ),
+              return Center(
+                child: Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(16),
                   ),
-
-                  const SizedBox(height: 16),
-
-                  // =================================================
-                  // SECTION 2: OVERNIGHT (RESTORED STRUCTURE)
-                  // =================================================
-                  _glass(
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Overnight',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-
-                        // ===== SUMMARY CHIPS PLACEHOLDER =====
-                        StreamBuilder<Map<String, int>>(
-  stream: _overnightSummaryStream(),
-  builder: (context, snapshot) {
-    final summary = snapshot.data ?? {
-      'domestic': 0,
-      'overseas': 0,
-    };
-
-    return Wrap(
-      spacing: 8,
-      children: [
-        _StaticChip(
-          label: 'Domestic ${summary['domestic']}',
-          color: Colors.blue,
-        ),
-        _StaticChip(
-          label: 'Overseas ${summary['overseas']}',
-          color: Colors.purple,
-        ),
-      ],
-    );
-  },
-),
-
-
-                        const Divider(height: 24),
-
-StreamBuilder<List<Map<String, dynamic>>>(
-  stream: _overnightPreviewStream(),
-  builder: (context, snapshot) {
-    final data = snapshot.data ?? [];
-
-    if (data.isEmpty) {
-      return const Text(
-        'No overnight data',
-        style: TextStyle(color: Colors.black54),
-      );
-    }
-
-    return Column(
-      children: data.map((o) {
-        final start = (o['startDate'] as Timestamp).toDate();
-        final end = (o['endDate'] as Timestamp).toDate();
-
-        return ListTile(
-          dense: true,
-          title: Text(
-            o['customerName'] ?? '-',
-            style: const TextStyle(fontWeight: FontWeight.w600),
-          ),
-          subtitle: Text(
-            '${o['customerCategory']} • '
-            '${start.day}/${start.month} → ${end.day}/${end.month} '
-            '(${o['totalNights']} nights)',
-          ),
-          trailing: const Icon(Icons.chevron_right, size: 18),
-        );
-      }).toList(),
-    );
-  },
-),
-
-
-
-                        const SizedBox(height: 12),
-
-                        Column(
-  children: [
-    SizedBox(
-      width: double.infinity,
-      child: ElevatedButton.icon(
-        icon: const Icon(Icons.add),
-        label: const Text('Add Overnight'),
-        onPressed: () {
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (_) => AddOvernightPage(
-        employeeId: widget.employeeId,
-        period: widget.period,
-      ),
-    ),
-  );
-},
-
-      ),
-    ),
-    const SizedBox(height: 8),
-    SizedBox(
-      width: double.infinity,
-      child: ElevatedButton(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.blueGrey.shade100,
-          foregroundColor: Colors.black87,
-        ),
-        onPressed: () {
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (_) => OvernightDetailPage(
-        employeeId: widget.employeeId,
-        period: widget.period,
-      ),
-    ),
-  );
-},
-
-        child: const Text('View Overnight'),
-      ),
-    ),
-  ],
-),
-
-                      ],
-                    ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.error_outline, size: 48, color: Colors.red),
+                      const SizedBox(height: 12),
+                      Text(
+                        'Error loading attendance',
+                        style: TextStyle(color: Colors.red.shade700),
+                      ),
+                    ],
                   ),
-
-                  const SizedBox(height: 16),
-// =================================================
-// SECTION 3: ACTIVITIES
-// =================================================
-_glass(
-  Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      const Text(
-        'Activities',
-        style: TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-      const SizedBox(height: 12),
-
-      StreamBuilder<List<Map<String, dynamic>>>(
-        stream: _activityPreviewStream(),
-        builder: (context, snapshot) {
-          final activities = snapshot.data ?? [];
-
-          if (activities.isEmpty) {
-            return const Text(
-              'No activity data',
-              style: TextStyle(color: Colors.black54),
-            );
-          }
-
-          return Column(
-            children: activities.map((a) {
-              return ListTile(
-                dense: true,
-                title: Text(a['activityType']),
-                subtitle: Text(
-                  '${a['factoryClient']} • ${a['machine']}',
-                ),
-                trailing: const Icon(
-                  Icons.chevron_right,
-                  size: 18,
                 ),
               );
-            }).toList(),
-          );
-        },
-      ),
+            }
 
-      const SizedBox(height: 12),
+            final allDays = (snapshot.data ?? []);
+            allDays.sort((a, b) => b.date.compareTo(a.date));
+            final summary = AttendanceSummaryHelper.calculateStatusSummary(allDays);
 
-      Align(
-        alignment: Alignment.centerRight,
-        child: TextButton(
-          onPressed: () {
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (_) => ActivityListPage(
-        employeeId: widget.employeeId,
-        period: widget.period,
-      ),
-    ),
-  );
-},
+            // Filter berdasarkan status dan search query
+            final filtered = allDays.where((day) {
+              if (_activeStatus != null && day.status != _activeStatus) {
+                return false;
+              }
+              if (_searchQuery.isNotEmpty) {
+                final dateStr = '${day.date.day}/${day.date.month}/${day.date.year}';
+                return dateStr.contains(_searchQuery);
+              }
+              return true;
+            }).toList();
 
-          child: const Text('View Activities'),
-        ),
-      ),
-    ],
-  ),
-),
-
-                 
-                ],
-              ),
-            );
+            // DESKTOP LAYOUT
+            if (isDesktop) {
+              return _buildDesktopLayout(filtered, summary);
+            } else {
+              return _buildMobileLayout(filtered, summary);
+            }
           },
         ),
       ),
     );
   }
+
+  // ================= DESKTOP LAYOUT =================
+  Widget _buildDesktopLayout(
+  List<AttendanceDay> filtered,
+  Map<String, int> summary,
+) {
+  return Row(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      // LEFT SIDEBAR - STATS & FILTERS
+      Container(
+        width: 300,
+        margin: const EdgeInsets.only(right: 16),
+        child: SingleChildScrollView( // TAMBAHKAN INI
+          child: Column(
+            children: [
+              _buildDesktopStatsCard(summary),
+              const SizedBox(height: 16),
+              _buildDesktopFilterCard(),
+              const SizedBox(height: 16),
+              _buildDesktopOvernightSummary(),
+            ],
+          ),
+        ),
+      ),
+
+      // RIGHT CONTENT - ATTENDANCE LIST
+      Expanded(
+        child: Column(
+          children: [
+            _buildDesktopActionButtons(),
+            const SizedBox(height: 16),
+            Expanded(
+              child: _buildDesktopAttendanceList(filtered),
+            ),
+          ],
+        ),
+      ),
+    ],
+  );
 }
 
-// =======================================================
-// UI HELPERS
-// =======================================================
+Widget _buildDesktopStatsCard(Map<String, int> summary) {
+  return _glass(
+    Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min, // TAMBAHKAN INI
+      children: [
+        Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppTheme.primaryColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(
+                Icons.analytics,
+                color: AppTheme.primaryColor,
+                size: 18,
+              ),
+            ),
+            const SizedBox(width: 10),
+            const Text(
+              'Statistics',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
 
+        // STATS GRID
+        GridView.count(
+          shrinkWrap: true, // PENTING!
+          physics: const NeverScrollableScrollPhysics(), // PENTING!
+          crossAxisCount: 2,
+          mainAxisSpacing: 8,
+          crossAxisSpacing: 8,
+          childAspectRatio: 2,
+          children: [
+            _buildStatItem('Present', summary['present'] ?? 0, Colors.green, Icons.check_circle),
+            _buildStatItem('Off', summary['off'] ?? 0, Colors.grey, Icons.block),
+            _buildStatItem('Sick', summary['sickLeave'] ?? 0, Colors.orange, Icons.sick),
+            _buildStatItem('Annual', summary['annualLeave'] ?? 0, Colors.blue, Icons.beach_access),
+            _buildStatItem('Travel', summary['traveling'] ?? 0, Colors.purple, Icons.flight),
+            _buildStatItem('Holiday', summary['joinHoliday'] ?? 0, Colors.pink, Icons.celebration),
+          ],
+        ),
+
+        const Divider(height: 24),
+
+        // STATUS FILTER CHIPS
+        const Text(
+          'Filter by Status',
+          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 6,
+          runSpacing: 6,
+          children: [
+            _buildFilterChip('All', null, Colors.grey),
+            _buildFilterChip('Present', AttendanceStatus.present, Colors.green),
+            _buildFilterChip('Off', AttendanceStatus.off, Colors.grey),
+            _buildFilterChip('Sick', AttendanceStatus.sickLeave, Colors.orange),
+            _buildFilterChip('Annual', AttendanceStatus.annualLeave, Colors.blue),
+            _buildFilterChip('Travel', AttendanceStatus.traveling, Colors.purple),
+            _buildFilterChip('Holiday', AttendanceStatus.joinHoliday, Colors.pink),
+          ],
+        ),
+      ],
+    ),
+  );
+}
+
+  Widget _buildStatItem(String label, int value, Color color, IconData icon) {
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withOpacity(0.2)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: color, size: 16),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  value.toString(),
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: color,
+                  ),
+                ),
+                Text(
+                  label,
+                  style: const TextStyle(fontSize: 10),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFilterChip(String label, AttendanceStatus? status, Color color) {
+    final isSelected = _activeStatus == status;
+    return InkWell(
+      onTap: () => setState(() => _activeStatus = status),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        decoration: BoxDecoration(
+          color: isSelected ? color.withOpacity(0.2) : Colors.transparent,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected ? color : Colors.grey.shade300,
+            width: 1,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 11,
+            color: isSelected ? color : Colors.grey.shade600,
+            fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDesktopFilterCard() {
+    return _glass(
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.blue.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.filter_list,
+                  color: Colors.blue,
+                  size: 18,
+                ),
+              ),
+              const SizedBox(width: 10),
+              const Text(
+                'Quick Filters',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          _buildQuickFilterTile(
+            'Today',
+            Icons.today,
+            () => _filterByDate(DateTime.now()),
+          ),
+          _buildQuickFilterTile(
+            'This Week',
+            Icons.date_range,
+            () => _filterByWeek(),
+          ),
+          _buildQuickFilterTile(
+            'This Month',
+            Icons.calendar_month,
+            () => _filterByMonth(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQuickFilterTile(String label, IconData icon, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+        child: Row(
+          children: [
+            Icon(icon, size: 16, color: Colors.grey.shade600),
+            const SizedBox(width: 8),
+            Text(label),
+          ],
+        ),
+      ),
+    );
+  }
+
+ Widget _buildDesktopOvernightSummary() {
+  return _glass(
+    Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min, // TAMBAHKAN INI
+      children: [
+        Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.purple.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(
+                Icons.hotel,
+                color: Colors.purple,
+                size: 18,
+              ),
+            ),
+            const SizedBox(width: 10),
+            const Text(
+              'Overnight',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+
+        StreamBuilder<Map<String, int>>(
+          stream: _overnightSummaryStream(),
+          builder: (context, snapshot) {
+            final summary = snapshot.data ?? {'domestic': 0, 'overseas': 0};
+
+            return Column(
+              mainAxisSize: MainAxisSize.min, // TAMBAHKAN INI
+              children: [
+                LinearProgressIndicator(
+                  value: summary['domestic']! + summary['overseas']! > 0
+                      ? summary['domestic']! / (summary['domestic']! + summary['overseas']!)
+                      : 0,
+                  backgroundColor: Colors.grey.shade200,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.teal),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    _buildOvernightStat('Domestic', summary['domestic']!, Colors.teal),
+                    _buildOvernightStat('Overseas', summary['overseas']!, Colors.purple),
+                  ],
+                ),
+              ],
+            );
+          },
+        ),
+        const SizedBox(height: 8),
+
+        ElevatedButton.icon(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.purple.shade50,
+            foregroundColor: Colors.purple,
+            minimumSize: const Size(double.infinity, 36),
+          ),
+          icon: const Icon(Icons.add),
+          label: const Text('Add Overnight'),
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => AddOvernightPage(
+                  employeeId: widget.employeeId,
+                  period: widget.period,
+                ),
+              ),
+            );
+          },
+        ),
+      ],
+    ),
+  );
+}
+
+  Widget _buildOvernightStat(String label, int value, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(
+              color: color,
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 4),
+          Text(
+            '$label: $value',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+              color: Colors.grey.shade700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDesktopActionButtons() {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withOpacity(0.3)),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primaryColor,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+              ),
+              icon: const Icon(Icons.add),
+              label: const Text('Add Attendance'),
+              onPressed: () async {
+                final picked = await showDatePicker(
+                  context: context,
+                  initialDate: DateTime.now(),
+                  firstDate: DateTime(2020),
+                  lastDate: DateTime(2035),
+                );
+
+                if (picked != null && mounted) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => AttendanceInputPage(
+                        employeeId: widget.employeeId,
+                        date: picked,
+                      ),
+                    ),
+                  );
+                }
+              },
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blueGrey.shade100,
+                foregroundColor: Colors.black87,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+              ),
+              icon: const Icon(Icons.list),
+              label: const Text('View All'),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => AttendanceListPage(
+                      employeeId: widget.employeeId,
+                      period: widget.period,
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+Widget _buildDesktopAttendanceList(List<AttendanceDay> filtered) {
+  return _glass(
+    Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // HEADER
+        Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: Row(
+            children: [
+              const Text(
+                'Attendance Records',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.blue.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  '${filtered.length} records',
+                  style: TextStyle(fontSize: 11, color: Colors.blue.shade700),
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        // TABLE
+        Container(
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.grey.shade300),
+            borderRadius: BorderRadius.circular(8),
+            color: Colors.white.withOpacity(0.3),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: Column(
+              children: [
+                // HEADER ROW
+                Container(
+                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                  color: Colors.grey.shade200,
+                  child: Row(
+                    children: [
+                      SizedBox(width: 12), // Untuk color bar
+                      const Expanded(flex: 2, child: Text('Date / Location', style: TextStyle(fontWeight: FontWeight.w600))),
+                      const Expanded(flex: 2, child: Center(child: Text('Status', style: TextStyle(fontWeight: FontWeight.w600)))),
+                      const Expanded(flex: 2, child: Center(child: Text('Check In/Out', style: TextStyle(fontWeight: FontWeight.w600)))),
+                      const Expanded(flex: 2, child: Center(child: Text('Notes', style: TextStyle(fontWeight: FontWeight.w600)))),
+                      const SizedBox(width: 24),
+                    ],
+                  ),
+                ),
+                
+                // LIST
+                if (filtered.isEmpty)
+                  Container(
+                    height: 200,
+                    alignment: Alignment.center,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.inbox, size: 48, color: Colors.grey.shade400),
+                        const SizedBox(height: 12),
+                        Text('No attendance records', style: TextStyle(color: Colors.grey.shade600)),
+                      ],
+                    ),
+                  )
+                else
+                  ...filtered.map((day) => _buildTableRow(day)).toList(),
+              ],
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+Widget _buildTableRow(AttendanceDay day) {
+  final color = _getStatusColor(day.status);
+  
+  // Format jam
+  String checkInTime = day.checkInHour != null && day.checkInMinute != null
+      ? '${day.checkInHour!.toString().padLeft(2, '0')}:${day.checkInMinute!.toString().padLeft(2, '0')}'
+      : '';
+  String checkOutTime = day.checkOutHour != null && day.checkOutMinute != null
+      ? '${day.checkOutHour!.toString().padLeft(2, '0')}:${day.checkOutMinute!.toString().padLeft(2, '0')}'
+      : '';
+  
+  String locationText = day.location == AttendanceLocation.office ? 'Office' : 'Outstation';
+  if (day.customerName != null && day.customerName!.isNotEmpty) {
+    locationText += ' • ${day.customerName}';
+  }
+
+  return Container(
+    decoration: BoxDecoration(
+      border: Border(
+        bottom: BorderSide(color: Colors.grey.shade300),
+      ),
+    ),
+    child: InkWell(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => AttendanceInputPage(
+              employeeId: widget.employeeId,
+              date: day.date,
+              existingDay: day,
+            ),
+          ),
+        );
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+        child: Row(
+          children: [
+            // Color bar
+            Container(
+              width: 4,
+              height: 40,
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(width: 8),
+            
+            // Date/Location
+            Expanded(
+              flex: 2,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '${day.date.day}/${day.date.month}/${day.date.year}',
+                    style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    locationText,
+                    style: TextStyle(fontSize: 12, color: Colors.grey.shade600), // DIPERBESAR
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+            
+            // Status
+            Expanded(
+              flex: 2,
+              child: Center(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    day.status.label,
+                    style: TextStyle(color: color, fontSize: 13, fontWeight: FontWeight.w600), // DIPERBESAR
+                  ),
+                ),
+              ),
+            ),
+            
+            // Check In/Out - DIPERBESAR
+            Expanded(
+              flex: 2,
+              child: Center(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (checkInTime.isNotEmpty)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.green.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          checkInTime,
+                          style: TextStyle(
+                            fontSize: 14, // DIPERBESAR dari 11
+                            color: Colors.green.shade700,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    if (checkInTime.isNotEmpty && checkOutTime.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        child: Text(
+                          '•', // Ganti dengan bullet point
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey.shade400,
+                          ),
+                        ),
+                      ),
+                    if (checkOutTime.isNotEmpty)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.red.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          checkOutTime,
+                          style: TextStyle(
+                            fontSize: 14, // DIPERBESAR dari 11
+                            color: Colors.red.shade700,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    if (checkInTime.isEmpty && checkOutTime.isEmpty)
+                      Text(
+                        '-',
+                        style: TextStyle(
+                          fontSize: 14, // DIPERBESAR
+                          color: Colors.grey.shade400,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+            
+            // Notes
+            Expanded(
+              flex: 2,
+              child: Center(
+                child: Text(
+                  day.note ?? '-',
+                  style: TextStyle(
+                    color: Colors.grey.shade600,
+                    fontSize: 13, // DIPERBESAR
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+            
+            // Arrow
+            const SizedBox(width: 24),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
+  Color _getStatusColor(AttendanceStatus status) {
+    switch (status) {
+      case AttendanceStatus.present:
+        return Colors.green;
+      case AttendanceStatus.off:
+        return Colors.grey;
+      case AttendanceStatus.sickLeave:
+        return Colors.orange;
+      case AttendanceStatus.annualLeave:
+        return Colors.blue;
+      case AttendanceStatus.traveling:
+        return Colors.purple;
+      case AttendanceStatus.joinHoliday:
+        return Colors.pink;
+    }
+  }
+
+  // ================= MOBILE LAYOUT (TETAP SAMA) =================
+  Widget _buildMobileLayout(List<AttendanceDay> filtered, Map<String, int> summary) {
+    // ... (Kode mobile layout tetap sama seperti sebelumnya)
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Daily Attendance Section
+          _glass(
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Daily Attendance',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                _StatusChips(
+                  summary: summary,
+                  active: _activeStatus,
+                  onTap: (s) {
+                    setState(() {
+                      _activeStatus = _activeStatus == s ? null : s;
+                    });
+                  },
+                ),
+                const Divider(height: 24),
+                if (filtered.isEmpty)
+                  const Text(
+                    'No attendance data',
+                    style: TextStyle(color: Colors.black54),
+                  ),
+                for (final d in filtered.take(3))
+                  ListTile(
+                    dense: true,
+                    title: Text('${d.date.day}/${d.date.month}/${d.date.year}'),
+                    subtitle: Text(d.status.label),
+                    trailing: const Icon(Icons.chevron_right, size: 18),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => AttendanceInputPage(
+                            employeeId: widget.employeeId,
+                            date: d.date,
+                            existingDay: d,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                const SizedBox(height: 12),
+                Column(
+                  children: [
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        icon: const Icon(Icons.add),
+                        label: const Text('Add Attendance'),
+                        onPressed: () async {
+                          final navigator = Navigator.of(context);
+                          final picked = await showDatePicker(
+                            context: context,
+                            initialDate: DateTime.now(),
+                            firstDate: DateTime(2020),
+                            lastDate: DateTime(2035),
+                          );
+                          if (picked == null) return;
+                          if (!mounted) return;
+                          navigator.push(
+                            MaterialPageRoute(
+                              builder: (_) => AttendanceInputPage(
+                                employeeId: widget.employeeId,
+                                date: picked,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blueGrey.shade100,
+                          foregroundColor: Colors.black87,
+                        ),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => AttendanceListPage(
+                                employeeId: widget.employeeId,
+                                period: widget.period,
+                              ),
+                            ),
+                          );
+                        },
+                        child: const Text('View Attendance'),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Overnight Section
+          _glass(
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Overnight',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                StreamBuilder<Map<String, int>>(
+                  stream: _overnightSummaryStream(),
+                  builder: (context, snapshot) {
+                    final summary = snapshot.data ?? {'domestic': 0, 'overseas': 0};
+                    return Wrap(
+                      spacing: 8,
+                      children: [
+                        _StaticChip(
+                          label: 'Domestic ${summary['domestic']}',
+                          color: Colors.blue,
+                        ),
+                        _StaticChip(
+                          label: 'Overseas ${summary['overseas']}',
+                          color: Colors.purple,
+                        ),
+                      ],
+                    );
+                  },
+                ),
+                const Divider(height: 24),
+                StreamBuilder<List<Map<String, dynamic>>>(
+                  stream: _overnightPreviewStream(),
+                  builder: (context, snapshot) {
+                    final data = snapshot.data ?? [];
+                    if (data.isEmpty) {
+                      return const Text(
+                        'No overnight data',
+                        style: TextStyle(color: Colors.black54),
+                      );
+                    }
+                    return Column(
+                      children: data.map((o) {
+                        final start = (o['startDate'] as Timestamp).toDate();
+                        final end = (o['endDate'] as Timestamp).toDate();
+                        return ListTile(
+                          dense: true,
+                          title: Text(
+                            o['customerName'] ?? '-',
+                            style: const TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                          subtitle: Text(
+                            '${o['customerCategory']} • '
+                            '${start.day}/${start.month} → ${end.day}/${end.month} '
+                            '(${o['totalNights']} nights)',
+                          ),
+                          trailing: const Icon(Icons.chevron_right, size: 18),
+                        );
+                      }).toList(),
+                    );
+                  },
+                ),
+                const SizedBox(height: 12),
+                Column(
+                  children: [
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        icon: const Icon(Icons.add),
+                        label: const Text('Add Overnight'),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => AddOvernightPage(
+                                employeeId: widget.employeeId,
+                                period: widget.period,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blueGrey.shade100,
+                          foregroundColor: Colors.black87,
+                        ),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => OvernightDetailPage(
+                                employeeId: widget.employeeId,
+                                period: widget.period,
+                              ),
+                            ),
+                          );
+                        },
+                        child: const Text('View Overnight'),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Activities Section
+          _glass(
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Activities',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                StreamBuilder<List<Map<String, dynamic>>>(
+                  stream: _activityPreviewStream(),
+                  builder: (context, snapshot) {
+                    final activities = snapshot.data ?? [];
+                    if (activities.isEmpty) {
+                      return const Text(
+                        'No activity data',
+                        style: TextStyle(color: Colors.black54),
+                      );
+                    }
+                    return Column(
+                      children: activities.map((a) {
+                        return ListTile(
+                          dense: true,
+                          title: Text(a['activityType']),
+                          subtitle: Text(
+                            '${a['factoryClient']} • ${a['machine']}',
+                          ),
+                          trailing: const Icon(Icons.chevron_right, size: 18),
+                        );
+                      }).toList(),
+                    );
+                  },
+                ),
+                const SizedBox(height: 12),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => ActivityListPage(
+                            employeeId: widget.employeeId,
+                            period: widget.period,
+                          ),
+                        ),
+                      );
+                    },
+                    child: const Text('View Activities'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Helper functions
+  void _filterByDate(DateTime date) {
+    // Implementasi filter by date
+    setState(() {
+      _activeStatus = null;
+      // Filter logic akan di-handle oleh stream
+    });
+  }
+
+  void _filterByWeek() {
+    // Implementasi filter by week
+    setState(() {
+      _activeStatus = null;
+    });
+  }
+
+  void _filterByMonth() {
+    // Implementasi filter by month
+    setState(() {
+      _activeStatus = null;
+    });
+  }
+}
+
+// ================= UI HELPERS =================
 Widget _glass(Widget child) {
   return ClipRRect(
     borderRadius: BorderRadius.circular(20),
@@ -563,10 +1324,9 @@ Widget _glass(Widget child) {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.3),
+          color: Colors.white.withOpacity(0.3),
           borderRadius: BorderRadius.circular(20),
-          border:
-              Border.all(color: Colors.white.withValues(alpha: 0.4)),
+          border: Border.all(color: Colors.white.withOpacity(0.4)),
         ),
         child: child,
       ),
@@ -586,12 +1346,11 @@ class _StaticChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding:
-          const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.15),
+        color: color.withOpacity(0.15),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: color.withValues(alpha: 0.4)),
+        border: Border.all(color: color.withOpacity(0.4)),
       ),
       child: Text(
         label,
@@ -616,36 +1375,6 @@ class _StatusChips extends StatelessWidget {
     required this.onTap,
   });
 
-  Widget _chip(
-    String label,
-    int value,
-    Color color,
-    AttendanceStatus status,
-  ) {
-    return InkWell(
-      onTap: () => onTap(status),
-      child: Container(
-        padding:
-            const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: color.withValues(
-              alpha: active == status ? 0.25 : 0.15),
-          borderRadius: BorderRadius.circular(14),
-          border:
-              Border.all(color: color.withValues(alpha: 0.45)),
-        ),
-        child: Text(
-          '$label $value',
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            color: color,
-          ),
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Wrap(
@@ -665,22 +1394,44 @@ class _StatusChips extends StatelessWidget {
         _chip('Join Holiday', summary['joinHoliday'] ?? 0,
             Colors.pink, AttendanceStatus.joinHoliday),
         Container(
-  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-  decoration: BoxDecoration(
-    color: Colors.red.withValues(alpha: 0.15),
-    borderRadius: BorderRadius.circular(14),
-    border: Border.all(color: Colors.red.withValues(alpha: 0.45)),
-  ),
-  child: Text(
-    'Overtime ${summary['overtime'] ?? 0}',
-    style: const TextStyle(
-      fontSize: 12,
-      fontWeight: FontWeight.w600,
-      color: Colors.red,
-    ),
-  ),
-),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: Colors.red.withOpacity(0.15),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: Colors.red.withOpacity(0.45)),
+          ),
+          child: Text(
+            'Overtime ${summary['overtime'] ?? 0}',
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: Colors.red,
+            ),
+          ),
+        ),
       ],
+    );
+  }
+
+  Widget _chip(String label, int value, Color color, AttendanceStatus status) {
+    return InkWell(
+      onTap: () => onTap(status),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: color.withOpacity(active == status ? 0.25 : 0.15),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: color.withOpacity(0.45)),
+        ),
+        child: Text(
+          '$label $value',
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: color,
+          ),
+        ),
+      ),
     );
   }
 }

@@ -315,17 +315,17 @@ class _SettingsPageState extends State<SettingsPage> {
                           style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.red),
                           onPressed: isImporting
-                              ? null
-                              : () {
-                                  if (!isAdmin) {
-                                    _showAdminWarning();
-                                    return;
-                                  }
-                                  confirmImport(
-                                    context,
-                                    runImportWithProgress,
-                                  );
-                                },
+    ? null
+    : () {
+        if (!isAdmin) {
+          _showAdminWarning();
+          return;
+        }
+        confirmImport(
+          context,
+          runImportWithProgress,
+        );
+      },
                           child: const Text('IMPORT SPARE PARTS'),
                         ),
                         if (isImporting) ...[

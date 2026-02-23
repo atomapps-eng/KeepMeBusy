@@ -1,16 +1,15 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-
 import '../pages/common/placeholder_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-
+import '../theme/app_theme.dart';
 import '../pages/settings/settings_page.dart';
 import '../core/menu/floating_menu_launcher.dart';
 import '../core/menu/menu_registry.dart';
 import '../pages/partners/partner_list_page.dart';
 import '../pages/spare_part/low_stock_page.dart';
-
+import '../features/auth/select_company_page.dart';
 import '../attendance/pages/attendance_page.dart';
 import '../attendance/services/attendance_period_helper.dart';
 import '../login/login_page.dart'; 
@@ -76,6 +75,24 @@ class _HomeMobileState extends State<HomeMobile> {
   print("LOGOUT PRESSED");
   await FirebaseAuth.instance.signOut();
 }
+}
+
+// Di dalam _HomeMobileState
+Stream<String> _getCurrentCompanyName() {
+  final companyId = CompanySession.selectedCompanyId;
+  if (companyId == null) return Stream.value('No Company');
+  
+  return FirebaseFirestore.instance
+      .collection('companies')
+      .doc(companyId)
+      .snapshots()
+      .map((doc) {
+        if (doc.exists) {
+          final data = doc.data() as Map<String, dynamic>;
+          return data['name'] ?? 'ATOM ${companyId.toUpperCase()}';
+        }
+        return 'ATOM ${companyId.toUpperCase()}';
+      });
 }
 
   @override
@@ -383,9 +400,39 @@ class _HomeMobileState extends State<HomeMobile> {
                         color: Colors.black54,
                       ),
                     ),
+                    // Setelah Text(email)
+const SizedBox(height: 2),
+StreamBuilder<String>(
+  stream: _getCurrentCompanyName(),
+  builder: (context, snapshot) {
+    return Text(
+      snapshot.data ?? 'Loading...',
+      style: TextStyle(
+        fontSize: 11,
+        color: AppTheme.primaryColor,
+        fontWeight: FontWeight.w500,
+      ),
+    );
+  },
+),
                   ],
                 ),
               ),
+
+               // SWITCH COMPANY BUTTON
+            Container(
+              margin: const EdgeInsets.only(right: 8),
+              child: IconButton(
+                icon: Icon(
+                  Icons.business,
+                  color: const Color.fromARGB(255, 10, 140, 8),
+                  size: 27,
+                ),
+                onPressed: () => _switchCompany(context),
+                tooltip: 'Switch Company',
+              ),
+            ),
+
               IconButton(
                 icon: const Icon(Icons.logout),
                 onPressed: () => _confirmLogout(context),
@@ -465,7 +512,36 @@ Widget _buildDashboardCards() {
     ],
   );
 }
-
+// Tambahkan method ini di dalam class _HomeMobileState
+Future<void> _switchCompany(BuildContext context) async {
+  try {
+    final uid = FirebaseAuth.instance.currentUser!.uid;
+    
+    final userDoc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .get();
+    
+    final companyIds = List<String>.from(userDoc['companyIds'] ?? []);
+    
+    if (!mounted) return;
+    
+    // Navigasi ke SelectCompanyPage
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (_) => SelectCompanyPage(
+          companyIds: companyIds,
+        ),
+      ),
+    );
+  } catch (e) {
+    print('Error switching company: $e');
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Gagal switch company: $e')),
+    );
+  }
+}
 
 }
 

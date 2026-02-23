@@ -5,7 +5,6 @@ import '../../core/session/company_session.dart';
 import '../../home/home_page.dart';
 import '../../main.dart';
 import '../../theme/app_theme.dart';
-import 'package:flag/flag.dart';
 
 class SelectCompanyPage extends StatelessWidget {
   final List<String> companyIds;
@@ -174,7 +173,7 @@ class SelectCompanyPage extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Selamat datang,',
+                          'Welcome,',
                           style: TextStyle(
                             fontSize: 14,
                             color: AppTheme.textSecondary,
@@ -215,7 +214,7 @@ class SelectCompanyPage extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.only(bottom: 16),
                 child: Text(
-                  'Pilih perusahaan untuk melanjutkan',
+                  'Choose a country to continue',
                   style: TextStyle(
                     fontSize: 14,
                     color: AppTheme.textSecondary,
@@ -259,7 +258,7 @@ class SelectCompanyPage extends StatelessWidget {
   return {
     'flag': _getFlagEmoji(companyId), // Gunakan fungsi untuk dapat flag yang benar
     'name': displayName,
-    'city': 'Sentul City, Bogor',
+    'city': '',
     'employees': '0 employees',
     'color': AppTheme.primaryColor,
   };
