@@ -110,6 +110,7 @@ bool get _canAccessSettings => _isAdmin;
 
   String _getGreeting() {
     final hour = DateTime.now().hour;
+    if (hour < 4) return 'You should sleep, have a nice dreams';
     if (hour < 12) return 'Good morning! Ready to start the day?';
     if (hour < 17) return 'Good afternoon! Hope you\'re having a productive day.';
     return 'Good evening! Wrapping up for the day?';
@@ -254,18 +255,55 @@ final bool canAccessSettings = isAdmin;
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
-                          children: [
-                            Text(
-                              'Welcome back, ${_getDisplayName()}!',
-                              style: const TextStyle(
-                                fontSize: 32,
-                                fontWeight: FontWeight.bold,
-                                color: AppTheme.textPrimary,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                          ],
-                        ),
+  children: [
+    Text(
+      'Welcome back, ${_getDisplayName()}!',
+      style: const TextStyle(
+        fontSize: 32,
+        fontWeight: FontWeight.bold,
+        color: AppTheme.textPrimary,
+      ),
+    ),
+
+    if (_isSuperAdmin) ...[
+      const SizedBox(width: 12),
+      Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: 10,
+          vertical: 6,
+        ),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [
+              Color(0xFFE1BEE7),
+              Color(0xFFD1C4E9),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              '🌍',
+              style: TextStyle(fontSize: 14),
+            ),
+            SizedBox(width: 6),
+            Text(
+              'GLOBAL',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                color: Colors.deepPurple,
+                letterSpacing: 0.5,
+              ),
+            ),
+          ],
+        ),
+      ),
+    ],
+  ],
+),
                         const SizedBox(height: 8),
                         Text(
   _getGreeting(),
