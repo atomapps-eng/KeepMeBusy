@@ -19,7 +19,6 @@ class _SettingsPageState extends State<SettingsPage> with TickerProviderStateMix
   bool isAdmin = false;
   bool _isCheckingAdmin = true;
   String? _userEmail;
-  String _debugMessage = '';
   
   // Animation controllers
   late AnimationController _fadeInController;
@@ -71,96 +70,45 @@ class _SettingsPageState extends State<SettingsPage> with TickerProviderStateMix
   }
 
   // =========================
-  // ADMIN CHECK - FIXED VERSION
+  // ADMIN CHECK
   // =========================
-Future<bool> isCurrentUserAdmin() async {
-  final user = FirebaseAuth.instance.currentUser;
-  
-  print('===== ADMIN CHECK DEBUG =====');
-  print('Current user: ${user?.email}');
-  
-  if (user == null || user.email == null) {
-    print('ERROR: No user logged in or no email');
-    return false;
-  }
-  
-  final userEmail = user.email!.toLowerCase().trim();
-  print('Checking admin for email: "$userEmail"');
-  
-  try {
-    // Gunakan collection admin_whitelist
-    final docRef = FirebaseFirestore.instance
-        .collection('admin_whitelist')  // ← Pakai admin_whitelist
-        .doc(userEmail);
+  Future<bool> isCurrentUserAdmin() async {
+    final user = FirebaseAuth.instance.currentUser;
     
-    print('Document path: admin_whitelist/$userEmail');
+    if (user == null || user.email == null) return false;
     
-    final doc = await docRef.get();
+    final userEmail = user.email!.toLowerCase().trim();
     
-    print('Document exists: ${doc.exists}');
-    
-    if (doc.exists) {
-      print('Document data: ${doc.data()}');
-      
-      // Cek apakah ada field active
-      final data = doc.data();
-      if (data != null && data.containsKey('active')) {
-        final isActive = data['active'] == true;
-        print('Active field value: ${data['active']}');
-        print('Active field type: ${data['active'].runtimeType}');
-        print('Is active: $isActive');
-        return isActive;
-      }
-      
-      // Jika tidak ada field active, anggap true karena dokumennya exist
-      print('No active field, but document exists - treating as admin');
-      return true;
-    } else {
-      print('Email not found in admin_whitelist');
-      
-      // Tampilkan semua dokumen yang ada untuk debugging
-      print('\nListing all documents in admin_whitelist:');
-      final snapshot = await FirebaseFirestore.instance
+    try {
+      final doc = await FirebaseFirestore.instance
           .collection('admin_whitelist')
+          .doc(userEmail)
           .get();
       
-      print('Total documents: ${snapshot.docs.length}');
-      for (var doc in snapshot.docs) {
-        print(' - Document ID: "${doc.id}", Data: ${doc.data()}');
+      if (doc.exists) {
+        final data = doc.data();
+        if (data != null && data.containsKey('active')) {
+          return data['active'] == true;
+        }
+        return true;
       }
-      
+      return false;
+    } catch (e) {
       return false;
     }
-  } catch (e) {
-    print('ERROR checking admin: $e');
-    print('Stack trace: ${StackTrace.current}');
-    return false;
   }
-}
 
   Future<void> _checkAdmin() async {
     setState(() {
       _isCheckingAdmin = true;
-      _debugMessage = 'Checking admin status...';
     });
     
-    try {
-      final result = await isCurrentUserAdmin();
-      print('Admin check result: $result');
-      
-      setState(() {
-        isAdmin = result;
-        _isCheckingAdmin = false;
-        _debugMessage = result ? '✓ Admin access granted' : '✗ Admin access denied';
-      });
-    } catch (e) {
-      print('Error in _checkAdmin: $e');
-      setState(() {
-        isAdmin = false;
-        _isCheckingAdmin = false;
-        _debugMessage = 'Error: $e';
-      });
-    }
+    final result = await isCurrentUserAdmin();
+    
+    setState(() {
+      isAdmin = result;
+      _isCheckingAdmin = false;
+    });
   }
 
   Future<void> _refreshAdminStatus() async {
@@ -168,7 +116,7 @@ Future<bool> isCurrentUserAdmin() async {
   }
 
   // =========================
-  // SNACKBARS WITH STYLE
+  // SNACKBARS
   // =========================
   void _showStyledSnackbar(String message, {bool isError = false, bool isWarning = false}) {
     final color = isError ? Colors.red : (isWarning ? Colors.orange : Colors.green);
@@ -195,7 +143,6 @@ Future<bool> isCurrentUserAdmin() async {
   // TEST LOAD JSON
   // =========================
   Future<void> _handleTestLoadJson() async {
-    print('Test Load JSON clicked');
     if (!isAdmin) {
       _showStyledSnackbar('Anda tidak memiliki hak akses', isWarning: true);
       return;
@@ -206,7 +153,6 @@ Future<bool> isCurrentUserAdmin() async {
       final List<dynamic> data = json.decode(jsonString);
       _showStyledSnackbar('JSON berhasil dimuat: ${data.length} data');
     } catch (e) {
-      print('Error loading JSON: $e');
       _showStyledSnackbar('Gagal load JSON: $e', isError: true);
     }
   }
@@ -215,7 +161,6 @@ Future<bool> isCurrentUserAdmin() async {
   // TEST FIRESTORE
   // =========================
   Future<void> _handleTestFirestore() async {
-    print('Test Firestore clicked');
     if (!isAdmin) {
       _showStyledSnackbar('Anda tidak memiliki hak akses', isWarning: true);
       return;
@@ -229,7 +174,6 @@ Future<bool> isCurrentUserAdmin() async {
       });
       _showStyledSnackbar('Firestore connection OK');
     } catch (e) {
-      print('Error testing Firestore: $e');
       _showStyledSnackbar('Firestore connection FAILED: $e', isError: true);
     }
   }
@@ -555,8 +499,6 @@ Future<bool> isCurrentUserAdmin() async {
 
   @override
   Widget build(BuildContext context) {
-    print('Building SettingsPage, isAdmin: $isAdmin, isChecking: $_isCheckingAdmin');
-    
     return Scaffold(
       body: Stack(
         children: [
@@ -638,15 +580,6 @@ Future<bool> isCurrentUserAdmin() async {
                                             color: Colors.grey.shade600,
                                           ),
                                         ),
-                                        const SizedBox(height: 2),
-                                        Text(
-                                          _debugMessage,
-                                          style: TextStyle(
-                                            fontSize: 11,
-                                            color: isAdmin ? Colors.green : Colors.red,
-                                            fontWeight: FontWeight.w500,
-                                          ),
-                                        ),
                                       ],
                                     ),
                                   ),
@@ -680,7 +613,6 @@ Future<bool> isCurrentUserAdmin() async {
                                     ),
                                   ),
                                   onPressed: isAdmin ? () {
-                                    print('Navigating to AdminAnalyticsPage');
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(

@@ -41,7 +41,6 @@ class HomeDesktop extends StatefulWidget {
 
   @override
   State<HomeDesktop> createState() => _HomeDesktopState();
-  
 }
 
 class _HomeDesktopState extends State<HomeDesktop> {
@@ -51,6 +50,10 @@ class _HomeDesktopState extends State<HomeDesktop> {
 
   List<Map<String, dynamic>> _recentActivities = [];
   final FocusNode _focusNode = FocusNode();
+
+  // Admin status
+  bool isAdmin = false;
+  bool _isCheckingAdmin = true;
 
   // Tips bergantian (rotating tips)
   final List<String> _proTips = [
@@ -66,8 +69,8 @@ class _HomeDesktopState extends State<HomeDesktop> {
   @override
   void initState() {
     super.initState();
-    _loadActivities(); 
-    // Rotate tips every 10 seconds
+    _loadActivities();
+    _checkAdminStatus();
     _startTipRotation();
   }
 
@@ -78,6 +81,45 @@ class _HomeDesktopState extends State<HomeDesktop> {
         _recentActivities = activities;
       });
     }
+  }
+
+  Future<bool> isCurrentUserAdmin() async {
+    final user = FirebaseAuth.instance.currentUser;
+    
+    if (user == null || user.email == null) return false;
+    
+    final userEmail = user.email!.toLowerCase().trim();
+    
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection('admin_whitelist')
+          .doc(userEmail)
+          .get();
+      
+      if (doc.exists) {
+        final data = doc.data();
+        if (data != null && data.containsKey('active')) {
+          return data['active'] == true;
+        }
+        return true;
+      }
+      return false;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  Future<void> _checkAdminStatus() async {
+    setState(() {
+      _isCheckingAdmin = true;
+    });
+    
+    final result = await isCurrentUserAdmin();
+    
+    setState(() {
+      isAdmin = result;
+      _isCheckingAdmin = false;
+    });
   }
 
   void _startTipRotation() {
@@ -214,13 +256,62 @@ void _handleKeyPress(RawKeyEvent event) {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          'Welcome back, ${_getDisplayName()}!',
-                          style: const TextStyle(
-                            fontSize: 32,
-                            fontWeight: FontWeight.bold,
-                            color: AppTheme.textPrimary,
-                          ),
+                        Row(
+                          children: [
+                            Text(
+                              'Welcome back, ${_getDisplayName()}!',
+                              style: const TextStyle(
+                                fontSize: 32,
+                                fontWeight: FontWeight.bold,
+                                color: AppTheme.textPrimary,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            if (!_isCheckingAdmin && isAdmin)
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: [Colors.green.shade300, Colors.green.shade700],
+                                  ),
+                                  borderRadius: BorderRadius.circular(20),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.green.withOpacity(0.3),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(2),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withOpacity(0.2),
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: const Icon(
+                                        Icons.admin_panel_settings,
+                                        color: Colors.white,
+                                        size: 16,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    const Text(
+                                      'ADMIN',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                        letterSpacing: 0.5,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                          ],
                         ),
                         const SizedBox(height: 8),
                         Text(
@@ -403,7 +494,7 @@ LayoutBuilder(
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Recent Activities (Left Column)
+                // Recent Activities (Left Column) - Dibatasi 5 items
                 Expanded(
                   flex: 2,
                   child: Column(
@@ -439,7 +530,7 @@ LayoutBuilder(
                               ),
                             )
                           : Column(
-                              children: _recentActivities.map((activity) {
+                              children: _recentActivities.take(5).map((activity) {
                                 return Column(
                                   children: [
                                     _activityItem(
@@ -448,13 +539,30 @@ LayoutBuilder(
                                       activity['time'],
                                       activity['color'],
                                     ),
-                                    if (activity != _recentActivities.last)
+                                    if (activity != _recentActivities.take(5).last)
                                       const Divider(height: 24),
                                   ],
                                 );
                               }).toList(),
-                        ),
+                            ),
                       ),
+                      if (_recentActivities.length > 5)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                '${_recentActivities.length - 5} more activities',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey.shade600,
+                                  fontStyle: FontStyle.italic,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                     ],
                   ),
                 ),
