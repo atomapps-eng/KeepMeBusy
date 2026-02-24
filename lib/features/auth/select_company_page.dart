@@ -469,18 +469,4 @@ String _getFlagEmoji(String companyId) {
       return '🏢';
   }
 }
-
-// Disimpan untuk referensi jika nanti mau pakai flag package
-
-String _getCountryCode(String companyId) {
-  switch (companyId.toLowerCase()) {
-    case 'indonesia': return 'ID';
-    case 'india': return 'IN';
-    case 'vietnam': return 'VN';
-    case 'singapore': return 'SG';
-    case 'malaysia': return 'MY';
-    case 'thailand': return 'TH';
-    default: return 'UN';
-  }
-}
 }

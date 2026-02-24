@@ -19,6 +19,8 @@ import '../theme/app_theme.dart';
 import '../../../models/read_tracker_service.dart';
 import '../services/activity_service.dart';
 import 'package:flutter/services.dart';
+import '../order_in/order_in_mobile.dart';
+import '../order_out/order_out_mobile.dart';
 
 enum DesktopSection {
   dashboard,
@@ -91,63 +93,40 @@ class _HomeDesktopState extends State<HomeDesktop> {
 
 // TAMBAHKAN METHOD INI UNTUK HANDLE KEYBOARD SHORTCUT
 void _handleKeyPress(RawKeyEvent event) {
-  if (!event.isControlPressed) return; // Hanya respons jika Ctrl ditekan
+  if (!event.isControlPressed) return;
 
-  // Log untuk debugging
-  print('Key pressed: ${event.logicalKey.keyLabel}, Ctrl: ${event.isControlPressed}');
-
-  // Ctrl + N : New Order In
-  if (event.logicalKey == LogicalKeyboardKey.keyN) {  // <-- PERBAIKAN DI SINI
-    print('Ctrl+N pressed - Opening Order In');
-    setState(() {
-      selectedSection = DesktopSection.inventory;
-      inventoryView = InventoryView.orderIn;
-    });
-    
-    // Record activity
-    ActivityService.addActivity(
-      icon: Icons.input,
-      title: 'Used shortcut: New Order In (Ctrl+N)',
-      color: Colors.green,
-    ).then((_) => _loadActivities());
+  // Ctrl + N : New Order In - LANGSUNG BUKA FORM
+  if (event.logicalKey == LogicalKeyboardKey.keyN) {
+    print('Ctrl+N pressed - Opening Order In Form');
+    _openOrderInForm(); // <-- PANGGIL METHOD INI
   }
   
-  // Ctrl + M : New Order Out
-  else if (event.logicalKey == LogicalKeyboardKey.keyM) {  // <-- PERBAIKAN DI SINI
-    print('Ctrl+M pressed - Opening Order Out');
-    setState(() {
-      selectedSection = DesktopSection.inventory;
-      inventoryView = InventoryView.orderOut;
-    });
-    
-    // Record activity
-    ActivityService.addActivity(
-      icon: Icons.output,
-      title: 'Used shortcut: New Order Out (Ctrl+M)',
-      color: Colors.redAccent,
-    ).then((_) => _loadActivities());
+  // Ctrl + M : New Order Out - LANGSUNG BUKA FORM
+  else if (event.logicalKey == LogicalKeyboardKey.keyM) {
+    print('Ctrl+M pressed - Opening Order Out Form');
+    _openOrderOutForm(); // <-- PANGGIL METHOD INI
   }
   
   // Ctrl + F : Search (Open Spare Parts)
-  else if (event.logicalKey == LogicalKeyboardKey.keyF) {  // <-- PERBAIKAN DI SINI
+  else if (event.logicalKey == LogicalKeyboardKey.keyF) {
     print('Ctrl+F pressed - Opening Spare Parts');
     _openSpareParts();
   }
   
   // Ctrl + A : Attendance
-  else if (event.logicalKey == LogicalKeyboardKey.keyA) {  // <-- PERBAIKAN DI SINI
+  else if (event.logicalKey == LogicalKeyboardKey.keyA) {
     print('Ctrl+A pressed - Opening Attendance');
     _openAttendance();
   }
   
   // Ctrl + S : Settings
-  else if (event.logicalKey == LogicalKeyboardKey.keyS) {  // <-- PERBAIKAN DI SINI
+  else if (event.logicalKey == LogicalKeyboardKey.keyS) {
     print('Ctrl+S pressed - Opening Settings');
     _openSettings();
   }
   
   // Ctrl + D : Dashboard
-  else if (event.logicalKey == LogicalKeyboardKey.keyD) {  // <-- PERBAIKAN DI SINI
+  else if (event.logicalKey == LogicalKeyboardKey.keyD) {
     print('Ctrl+D pressed - Going to Dashboard');
     setState(() {
       selectedSection = DesktopSection.dashboard;
@@ -155,7 +134,7 @@ void _handleKeyPress(RawKeyEvent event) {
   }
   
   // Ctrl + I : Inventory
-  else if (event.logicalKey == LogicalKeyboardKey.keyI) {  // <-- PERBAIKAN DI SINI
+  else if (event.logicalKey == LogicalKeyboardKey.keyI) {
     print('Ctrl+I pressed - Going to Inventory');
     setState(() {
       selectedSection = DesktopSection.inventory;
@@ -164,15 +143,15 @@ void _handleKeyPress(RawKeyEvent event) {
   }
   
   // Ctrl + R : Reports
-  else if (event.logicalKey == LogicalKeyboardKey.keyR) {  // <-- PERBAIKAN DI SINI
+  else if (event.logicalKey == LogicalKeyboardKey.keyR) {
     print('Ctrl+R pressed - Going to Reports');
     setState(() {
       selectedSection = DesktopSection.reports;
     });
   }
   
-  // Ctrl + ? : Show Help (perbaikan untuk tombol ?)
-  else if (event.logicalKey == LogicalKeyboardKey.slash && event.isShiftPressed) {  // <-- PERBAIKAN DI SINI
+  // Ctrl + ? : Show Help
+  else if (event.logicalKey == LogicalKeyboardKey.slash && event.isShiftPressed) {
     print('Ctrl+? pressed - Showing Help');
     _showKeyboardShortcutsHelp();
   }
@@ -334,81 +313,90 @@ void _handleKeyPress(RawKeyEvent event) {
             const SizedBox(height: 16),
 
             // Quick Actions Grid
-            LayoutBuilder(
-              builder: (context, constraints) {
-                final crossAxisCount = constraints.maxWidth > 800 ? 4 : 2;
-                
-                return GridView.count(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  crossAxisCount: crossAxisCount,
-                  crossAxisSpacing: 16,
-                  mainAxisSpacing: 16,
-                  childAspectRatio: 1.3,
-                  children: [
-                    _quickActionCard(
-                      Icons.add_shopping_cart,
-                      'New Order In',
-                      Colors.green,
-                      () => setState(() {
-                        selectedSection = DesktopSection.inventory;
-                        inventoryView = InventoryView.orderIn;
-                      }),
-                    ),
-                    _quickActionCard(
-                      Icons.remove_shopping_cart,
-                      'New Order Out',
-                      Colors.redAccent,
-                      () => setState(() {
-                        selectedSection = DesktopSection.inventory;
-                        inventoryView = InventoryView.orderOut;
-                      }),
-                    ),
-                    _quickActionCard(
-                      Icons.inventory,
-                      'Check Stock',
-                      Colors.blueGrey,
-                      _openSpareParts,
-                    ),
-                    _quickActionCard(
-                      Icons.event_available,
-                      'Attendance',
-                      Colors.blue,
-                      _openAttendance,
-                    ),
-                    _quickActionCard(
-                      Icons.groups,
-                      'Partners',
-                      Colors.deepPurple,
-                      _openPartners,
-                    ),
-                    _quickActionCard(
-                      Icons.precision_manufacturing,
-                      'Machinery',
-                      Colors.pinkAccent,
-                      () => setState(() {
-                        selectedSection = DesktopSection.machinery;
-                      }),
-                    ),
-                    _quickActionCard(
-                      Icons.bar_chart,
-                      'Reports',
-                      Colors.orange,
-                      () => setState(() {
-                        selectedSection = DesktopSection.reports;
-                      }),
-                    ),
-                    _quickActionCard(
-                      Icons.settings,
-                      'Settings',
-                      Colors.grey,
-                      _openSettings,
-                    ),
-                  ],
-                );
-              },
-            ),
-
+LayoutBuilder(
+  builder: (context, constraints) {
+    final crossAxisCount = constraints.maxWidth > 800 ? 4 : 2;
+    
+    return GridView.count(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      crossAxisCount: crossAxisCount,
+      crossAxisSpacing: 16,
+      mainAxisSpacing: 16,
+      childAspectRatio: 1.3,
+      children: [
+        // New Order In
+        _quickActionCard(
+          Icons.add_shopping_cart,
+          'New Order In',
+          Colors.green,
+          _openOrderInForm,
+        ),
+        
+        // New Order Out
+        _quickActionCard(
+          Icons.remove_shopping_cart,
+          'New Order Out',
+          Colors.redAccent,
+          _openOrderOutForm,
+        ),
+        
+        // Check Stock
+        _quickActionCard(
+          Icons.inventory,
+          'Check Stock',
+          Colors.blueGrey,
+          _openSpareParts,
+        ),
+        
+        // Attendance
+        _quickActionCard(
+          Icons.event_available,
+          'Attendance',
+          Colors.blue,
+          _openAttendance,
+        ),
+        
+        // Partners
+        _quickActionCard(
+          Icons.groups,
+          'Partners',
+          Colors.deepPurple,
+          _openPartners,
+        ),
+        
+        // Machinery
+        _quickActionCard(
+          Icons.precision_manufacturing,
+          'Machinery',
+          Colors.pinkAccent,
+          () => setState(() {
+            selectedSection = DesktopSection.machinery;
+          }),
+        ),
+        
+        // Reports
+        _quickActionCard(
+          Icons.bar_chart,
+          'Reports',
+          Colors.orange,
+          () => setState(() {
+            selectedSection = DesktopSection.reports;
+          }),
+        ),
+        
+        // Settings
+        _quickActionCard(
+          Icons.settings,
+          'Settings',
+          Colors.grey,
+          _openSettings,
+        ),
+      ],
+    );
+  },
+),
+            
             const SizedBox(height: 32),
 
             // Two Column Layout untuk Recent Activities dan Tips
@@ -889,25 +877,17 @@ void _handleKeyPress(RawKeyEvent event) {
                       },
                     ),
                     _desktopMenuCard(
-                      Icons.input,
-                      'Orders In',
-                      Colors.green,
-                      () {
-                        setState(() {
-                          inventoryView = InventoryView.orderIn;
-                        });
-                      },
-                    ),
+  Icons.input,
+  'Orders In',
+  Colors.green,
+  _openOrderInForm, // <-- UBAH dari setState menjadi langsung buka form
+),
                     _desktopMenuCard(
-                      Icons.output_outlined,
-                      'Orders Out',
-                      Colors.redAccent,
-                      () {
-                        setState(() {
-                          inventoryView = InventoryView.orderOut;
-                        });
-                      },
-                    ),
+  Icons.output_outlined,
+  'Orders Out',
+  Colors.redAccent,
+  _openOrderOutForm, // <-- UBAH dari setState menjadi langsung buka form
+),
                     _desktopMenuCard(
                       Icons.groups,
                       'Partners',
@@ -1431,8 +1411,6 @@ Widget build(BuildContext context) {
                   
                   companyName = companyName.replaceAll(RegExp(r'\s+'), ' ').trim();
                 }
-
-                final flag = snapshot.data?['flag'] ?? 
                     _getFlagForCompany(companyId);
 
                 return Container(
@@ -1902,6 +1880,60 @@ Widget build(BuildContext context) {
     MaterialPageRoute(
       builder: (_) => const SettingsPage(),
     ),
+  );
+}
+
+// ==================== METHOD UNTUK MEMBUKA FORM ORDER IN/OUT LANGSUNG ====================
+
+void _openOrderInForm() {
+  // Record activity
+  ActivityService.addActivity(
+    icon: Icons.input,
+    title: 'Opened Order In Form',
+    color: Colors.green,
+  ).then((_) => _loadActivities());
+
+  // Buka form Order In langsung
+  showGeneralDialog(
+    context: context,
+    barrierDismissible: false, // Tidak bisa ditutup dengan klik di luar
+    barrierLabel: "CreateOrderIn",
+    barrierColor: Colors.black.withOpacity(0.35),
+    transitionDuration: const Duration(milliseconds: 200),
+    pageBuilder: (_, _, _) {
+      return DraggableResizableWindow(
+        title: "Create Order In",
+        child: const OrderInMobile(
+          isCompact: false,
+        ),
+      );
+    },
+  );
+}
+
+void _openOrderOutForm() {
+  // Record activity
+  ActivityService.addActivity(
+    icon: Icons.output,
+    title: 'Opened Order Out Form',
+    color: Colors.redAccent,
+  ).then((_) => _loadActivities());
+
+  // Buka form Order Out langsung
+  showGeneralDialog(
+    context: context,
+    barrierDismissible: false,
+    barrierLabel: "CreateOrderOut",
+    barrierColor: Colors.black.withOpacity(0.35),
+    transitionDuration: const Duration(milliseconds: 200),
+    pageBuilder: (_, _, _) {
+      return DraggableResizableWindow(
+        title: "Create Order Out",
+        child: const OrderOutMobile(
+          isCompact: false,
+        ),
+      );
+    },
   );
 }
   // ==================== COMPANY INFO METHODS (TIDAK BERUBAH) ====================
