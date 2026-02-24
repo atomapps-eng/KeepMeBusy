@@ -24,20 +24,6 @@ class HomeMobile extends StatefulWidget {
 }
 
 class _HomeMobileState extends State<HomeMobile> {
-  // ================= LOW STOCK STREAM =================
-  Stream<int> lowStockCountStream() {
-    return CompanyFirestore
-        .collection('spare_parts')
-        .snapshots()
-        .map((snapshot) {
-          return snapshot.docs.where((doc) {
-            final data = doc.data();
-            final int currentStock = data['currentStock'] ?? 0;
-            final int minimumStock = data['minimumStock'] ?? 0;
-            return currentStock < minimumStock;
-          }).length;
-        });
-  }
   // ================= LOGOUT =================
   Future<void> _confirmLogout(BuildContext context) async {
   final bool? result = await showDialog<bool>(
@@ -92,6 +78,31 @@ Stream<String> _getCurrentCompanyName() {
           return data['name'] ?? 'ATOM ${companyId.toUpperCase()}';
         }
         return 'ATOM ${companyId.toUpperCase()}';
+      });
+}
+
+// ================= DASHBOARD STATS STREAM =================
+Stream<Map<String, dynamic>> dashboardStatsStream() {
+  return CompanyFirestore
+      .collection('dashboard')
+      .doc('stats')
+      .snapshots()
+      .map((doc) {
+        if (!doc.exists) {
+          return {
+            'totalItems': 0,
+            'lowStock': 0,
+            'totalValue': 0,
+          };
+        }
+
+        final data = doc.data() as Map<String, dynamic>;
+
+        return {
+          'totalItems': data['totalItems'] ?? 0,
+          'lowStock': data['lowStock'] ?? 0,
+          'totalValue': data['totalValue'] ?? 0,
+        };
       });
 }
 
@@ -446,70 +457,73 @@ StreamBuilder<String>(
 
   // ================= DASHBOARD SUMMARY =================
 Widget _buildDashboardCards() {
-  return Row(
-    children: [
-      Expanded(
-        child: StreamBuilder<QuerySnapshot>(
-          stream: CompanyFirestore
-              .collection('spare_parts')
-              .snapshots(),
-          builder: (context, snapshot) {
-            final count = snapshot.data?.docs.length ?? 0;
+  return StreamBuilder<Map<String, dynamic>>(
+    stream: dashboardStatsStream(),
+    builder: (context, snapshot) {
 
-            return _DashboardCard(
+      if (snapshot.connectionState == ConnectionState.waiting) {
+        return Row(
+          children: const [
+            Expanded(
+              child: _DashboardCard(
+                title: 'Spare Parts',
+                value: '-',
+                icon: Icons.inventory_2,
+                color: Colors.blueGrey,
+              ),
+            ),
+            SizedBox(width: 12),
+            Expanded(
+              child: _DashboardCard(
+                title: 'Low Stock',
+                value: '-',
+                icon: Icons.warning,
+                color: Colors.redAccent,
+              ),
+            ),
+          ],
+        );
+      }
+
+      final data = snapshot.data ?? {
+        'totalItems': 0,
+        'lowStock': 0,
+        'totalValue': 0,
+      };
+
+      final totalItems = data['totalItems'];
+      final lowStock = data['lowStock'];
+
+      return Row(
+        children: [
+          Expanded(
+            child: _DashboardCard(
               title: 'Spare Parts',
-              value: snapshot.connectionState == ConnectionState.waiting
-                  ? '-'
-                  : count.toString(),
+              value: totalItems.toString(),
               icon: Icons.inventory_2,
               color: Colors.blueGrey,
-            );
-          },
-        ),
-      ),
-      const SizedBox(width: 12), // ✅ JAGA JARAK
-      Expanded(
-  child: StreamBuilder<int>(
-    stream: lowStockCountStream(),
-    builder: (context, snapshot) {
-      if (snapshot.connectionState == ConnectionState.waiting) {
-        return const _DashboardCard(
-          title: 'Low Stock',
-          value: '-',
-          icon: Icons.warning,
-          color: Colors.redAccent,
-        );
-      }
-
-      if (snapshot.hasError) {
-        return const _DashboardCard(
-          title: 'Low Stock',
-          value: '!',
-          icon: Icons.warning,
-          color: Colors.redAccent,
-        );
-      }
-
-      final count = snapshot.data ?? 0;
-
-      return _DashboardCard(
-        title: 'Low Stock',
-        value: count.toString(),
-        icon: Icons.warning,
-        color: Colors.redAccent,
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => const LowStockPage(),
             ),
-          );
-        },
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: _DashboardCard(
+              title: 'Low Stock',
+              value: lowStock.toString(),
+              icon: Icons.warning,
+              color: Colors.redAccent,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const LowStockPage(),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
       );
     },
-  ),
-),
-    ],
   );
 }
 // Tambahkan method ini di dalam class _HomeMobileState

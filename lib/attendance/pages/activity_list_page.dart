@@ -6,11 +6,13 @@ import '../../core/services/company_firestore.dart';
 class ActivityListPage extends StatelessWidget {
   final String employeeId;
   final String period;
+  final DateTime? initialDate;
 
   const ActivityListPage({
     super.key,
     required this.employeeId,
     required this.period,
+     this.initialDate,
   });
 
   Stream<List<Map<String, dynamic>>> _activityStream() async* {

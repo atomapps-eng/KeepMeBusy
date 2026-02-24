@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 enum SparePartCategory {
   autoCutting,
   manualCutting;
@@ -69,6 +71,11 @@ class SparePart {
     this.origin = SparePartOrigin.local,
 
   });
+
+  factory SparePart.fromFirestore(DocumentSnapshot doc) {
+  final data = doc.data() as Map<String, dynamic>;
+  return SparePart.fromMap(data, doc.id);
+}
 
   factory SparePart.fromMap(Map<String, dynamic> data, String id) {
     return SparePart(

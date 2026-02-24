@@ -7,6 +7,7 @@ import 'barcode_scanner_page.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'spare_part_detail_page.dart';
 import '../../core/widgets/draggable_window.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 
 class SparePartListPage extends StatefulWidget {
@@ -33,11 +34,86 @@ class _SparePartListPageState extends State<SparePartListPage> {
   final TextEditingController searchController = TextEditingController();
   final FocusNode searchFocusNode = FocusNode();
 
+  // ===== PAGINATION STATE =====
+final ScrollController _scrollController = ScrollController();
+
+List<SparePart> _parts = [];
+DocumentSnapshot? _lastDocument;
+
+bool _isLoading = false;
+bool _hasMore = true;
+
   @override
+  void initState() {
+  super.initState();
+
+  _loadInitialData();
+
+  _scrollController.addListener(() {
+    if (_scrollController.position.pixels >=
+            _scrollController.position.maxScrollExtent - 200 &&
+        !_isLoading &&
+        _hasMore) {
+      _loadMore();
+    }
+  });
+}
 void dispose() {
   searchFocusNode.dispose(); // STEP 1
   searchController.dispose(); // sudah ada controller
   super.dispose();
+}
+
+// ===============================
+// INITIAL LOAD
+// ===============================
+Future<void> _loadInitialData() async {
+  setState(() => _isLoading = true);
+
+  final service = SparePartService();
+  final snapshot = await service.fetchSpareParts();
+
+  if (snapshot.docs.isNotEmpty) {
+    _lastDocument = snapshot.docs.last;
+
+    _parts = snapshot.docs
+        .map((doc) => SparePart.fromFirestore(doc))
+        .toList();
+  }
+
+  _hasMore = snapshot.docs.length == 50;
+  _isLoading = false;
+
+  setState(() {});
+}
+
+// ===============================
+// LOAD MORE
+// ===============================
+Future<void> _loadMore() async {
+  if (_lastDocument == null) return;
+
+  setState(() => _isLoading = true);
+
+  final service = SparePartService();
+  final snapshot = await service.fetchSpareParts(
+    lastDoc: _lastDocument,
+  );
+
+  if (snapshot.docs.isNotEmpty) {
+    _lastDocument = snapshot.docs.last;
+
+    _parts.addAll(
+      snapshot.docs.map(
+        (doc) => SparePart.fromFirestore(doc),
+      ),
+    );
+  }
+
+  _hasMore = snapshot.docs.length == 50;
+  _isLoading = false;
+
+  setState(() {});
 }
 
   @override
@@ -94,88 +170,75 @@ Widget build(BuildContext context) {
                   ),
                 if (!widget.isCompact) const SizedBox(height: 12),
                 Expanded(
-                  child: StreamBuilder<List<SparePart>>(
-                    stream: service.getSpareParts(),
-                    builder: (context, snapshot) {
-                      if (!snapshot.hasData) {
-                        return const Center(
-                          child: CircularProgressIndicator(),
-                        );
-                      }
+  child: _parts.isEmpty && _isLoading
+      ? const Center(child: CircularProgressIndicator())
+      : ListView.builder(
+          controller: _scrollController,
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          itemCount: _parts.length + (_hasMore ? 1 : 0),
+          itemBuilder: (context, index) {
 
-                      final parts = snapshot.data!;
-                      final keyword = widget.isCompact
-                          ? (widget.searchKeyword ?? '').toLowerCase()
-                          : searchController.text.toLowerCase();
+            // Loading indicator di bawah
+            if (index == _parts.length) {
+              return const Padding(
+                padding: EdgeInsets.all(16),
+                child: Center(
+                  child: CircularProgressIndicator(),
+                ),
+              );
+            }
 
-                      final filteredParts = parts.where((part) {
-                        return part.partCode.toLowerCase().contains(keyword) ||
-                            part.name.toLowerCase().contains(keyword) ||
-                            part.nameEn.toLowerCase().contains(keyword) ||
-                            part.location.toLowerCase().contains(keyword);
-                      }).toList();
+            final part = _parts[index];
 
-                      if (filteredParts.isEmpty) {
-                        return const Center(child: Text('No data'));
-                      }
+            return GestureDetector(
+              onTap: () {
+                // ===== SELECTION MODE =====
+                if (widget.selectionMode) {
+                  Navigator.pop(context, part);
+                  return;
+                }
 
-                      return ListView.builder(
-                        padding:
-                            const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                        itemCount: filteredParts.length,
-                        itemBuilder: (context, index) {
-                          final part = filteredParts[index];
-return GestureDetector(
-  onTap: () {
-    // ===== SELECTION MODE =====
-    if (widget.selectionMode) {
-      Navigator.pop(context, part);
-      return;
-    }
+                if (widget.isCompact) return;
 
-    if (widget.isCompact) return;
+                final isDesktop =
+                    MediaQuery.of(context).size.width >= 900;
 
-    final isDesktop =
-        MediaQuery.of(context).size.width >= 900;
-
-    if (isDesktop) {
-      showGeneralDialog(
-        context: context,
-        barrierDismissible: true,
-        barrierLabel: "SparePartDetail",
-        barrierColor:
-            Colors.black.withValues(alpha: 0.35),
-        transitionDuration:
-            const Duration(milliseconds: 200),
-        pageBuilder: (_, _, _) {
-          return DraggableResizableWindow(
-            title: "Spare Part Detail",
-            headerColor: Colors.blueGrey,
-            child: SparePartDetailPage(part: part),
-          );
-        },
-      );
-    } else {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) =>
-              SparePartDetailPage(part: part),
-        ),
-      );
-    }
-  },
-                            child: _GlassCard(
-                              child: widget.isCompact
-                                  ? _CompactItem(part: part)
-                                  : _FullscreenItem(part: part),
-                            ),
-                          );
-                        },
+                if (isDesktop) {
+                  showGeneralDialog(
+                    context: context,
+                    barrierDismissible: true,
+                    barrierLabel: "SparePartDetail",
+                    barrierColor:
+                        Colors.black.withOpacity(0.35),
+                    transitionDuration:
+                        const Duration(milliseconds: 200),
+                    pageBuilder: (_, _, _) {
+                      return DraggableResizableWindow(
+                        title: "Spare Part Detail",
+                        headerColor: Colors.blueGrey,
+                        child: SparePartDetailPage(part: part),
                       );
                     },
-                  ),
-                ),
+                  );
+                } else {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) =>
+                          SparePartDetailPage(part: part),
+                    ),
+                  );
+                }
+              },
+              child: _GlassCard(
+                child: widget.isCompact
+                    ? _CompactItem(part: part)
+                    : _FullscreenItem(part: part),
+              ),
+            );
+          },
+        ),
+),
               ],
             ),
           ),

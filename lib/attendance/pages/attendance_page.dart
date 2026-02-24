@@ -14,6 +14,7 @@ import '../attendance_summary/attendance_summary_page.dart';
 import '../../core/services/company_firestore.dart';
 import '../../theme/app_theme.dart';
 
+
 class AttendancePage extends StatefulWidget {
   final String employeeId;
   final String period;
@@ -290,7 +291,7 @@ class _AttendancePageState extends State<AttendancePage> {
   }
 
   // ================= DESKTOP LAYOUT =================
-  Widget _buildDesktopLayout(
+Widget _buildDesktopLayout(
   List<AttendanceDay> filtered,
   Map<String, int> summary,
 ) {
@@ -301,7 +302,7 @@ class _AttendancePageState extends State<AttendancePage> {
       Container(
         width: 300,
         margin: const EdgeInsets.only(right: 16),
-        child: SingleChildScrollView( // TAMBAHKAN INI
+        child: SingleChildScrollView(
           child: Column(
             children: [
               _buildDesktopStatsCard(summary),
@@ -321,7 +322,7 @@ class _AttendancePageState extends State<AttendancePage> {
             _buildDesktopActionButtons(),
             const SizedBox(height: 16),
             Expanded(
-              child: _buildDesktopAttendanceList(filtered),
+              child: _buildDesktopAttendanceList(filtered), // PASTIKAN Expanded DI SINI
             ),
           ],
         ),
@@ -754,24 +755,25 @@ Widget _buildDesktopAttendanceList(List<AttendanceDay> filtered) {
           ),
         ),
 
-        // TABLE
+        // TABLE - BUNGKUS DENGAN CONTAINER YANG MEMILIKI TINGGI MAKSIMUM
         Container(
           decoration: BoxDecoration(
             border: Border.all(color: Colors.grey.shade300),
             borderRadius: BorderRadius.circular(8),
             color: Colors.white.withOpacity(0.3),
           ),
+          height: 500, // Tentukan tinggi maksimum
           child: ClipRRect(
             borderRadius: BorderRadius.circular(8),
             child: Column(
               children: [
-                // HEADER ROW
+                // HEADER ROW (FIXED)
                 Container(
                   padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                   color: Colors.grey.shade200,
                   child: Row(
                     children: [
-                      SizedBox(width: 12), // Untuk color bar
+                      const SizedBox(width: 12), // Untuk color bar
                       const Expanded(flex: 2, child: Text('Date / Location', style: TextStyle(fontWeight: FontWeight.w600))),
                       const Expanded(flex: 2, child: Center(child: Text('Status', style: TextStyle(fontWeight: FontWeight.w600)))),
                       const Expanded(flex: 2, child: Center(child: Text('Check In/Out', style: TextStyle(fontWeight: FontWeight.w600)))),
@@ -781,22 +783,26 @@ Widget _buildDesktopAttendanceList(List<AttendanceDay> filtered) {
                   ),
                 ),
                 
-                // LIST
-                if (filtered.isEmpty)
-                  Container(
-                    height: 200,
-                    alignment: Alignment.center,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.inbox, size: 48, color: Colors.grey.shade400),
-                        const SizedBox(height: 12),
-                        Text('No attendance records', style: TextStyle(color: Colors.grey.shade600)),
-                      ],
-                    ),
-                  )
-                else
-                  ...filtered.map((day) => _buildTableRow(day)).toList(),
+                // LIST VIEW UNTUK SCROLL (Expanded)
+                Expanded(
+                  child: filtered.isEmpty
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.inbox, size: 48, color: Colors.grey.shade400),
+                              const SizedBox(height: 12),
+                              Text('No attendance records', style: TextStyle(color: Colors.grey.shade600)),
+                            ],
+                          ),
+                        )
+                      : ListView.builder(
+                          itemCount: filtered.length,
+                          itemBuilder: (context, index) {
+                            return _buildTableRow(filtered[index]);
+                          },
+                        ),
+                ),
               ],
             ),
           ),
@@ -862,14 +868,54 @@ Widget _buildTableRow(AttendanceDay day) {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    '${day.date.day}/${day.date.month}/${day.date.year}',
-                    style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                  Row(
+                    children: [
+                      Text(
+                        '${day.date.day}/${day.date.month}/${day.date.year}',
+                        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                      ),
+                      const SizedBox(width: 8),
+                      // INDICATOR ACTIVITY
+                      StreamBuilder<bool>(
+                        stream: _hasActivities(day.date),
+                        builder: (context, snapshot) {
+                          if (snapshot.hasData && snapshot.data == true) {
+                            return Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: Colors.blue.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.bolt,
+                                    size: 10,
+                                    color: Colors.blue.shade700,
+                                  ),
+                                  const SizedBox(width: 2),
+                                  Text(
+                                    'Activity',
+                                    style: TextStyle(
+                                      fontSize: 9,
+                                      color: Colors.blue.shade700,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }
+                          return const SizedBox.shrink();
+                        },
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 2),
                   Text(
                     locationText,
-                    style: TextStyle(fontSize: 12, color: Colors.grey.shade600), // DIPERBESAR
+                    style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -889,13 +935,13 @@ Widget _buildTableRow(AttendanceDay day) {
                   ),
                   child: Text(
                     day.status.label,
-                    style: TextStyle(color: color, fontSize: 13, fontWeight: FontWeight.w600), // DIPERBESAR
+                    style: TextStyle(color: color, fontSize: 13, fontWeight: FontWeight.w600),
                   ),
                 ),
               ),
             ),
             
-            // Check In/Out - DIPERBESAR
+            // Check In/Out
             Expanded(
               flex: 2,
               child: Center(
@@ -913,7 +959,7 @@ Widget _buildTableRow(AttendanceDay day) {
                         child: Text(
                           checkInTime,
                           style: TextStyle(
-                            fontSize: 14, // DIPERBESAR dari 11
+                            fontSize: 14,
                             color: Colors.green.shade700,
                             fontWeight: FontWeight.w600,
                           ),
@@ -923,7 +969,7 @@ Widget _buildTableRow(AttendanceDay day) {
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 4),
                         child: Text(
-                          '•', // Ganti dengan bullet point
+                          '•',
                           style: TextStyle(
                             fontSize: 14,
                             color: Colors.grey.shade400,
@@ -940,7 +986,7 @@ Widget _buildTableRow(AttendanceDay day) {
                         child: Text(
                           checkOutTime,
                           style: TextStyle(
-                            fontSize: 14, // DIPERBESAR dari 11
+                            fontSize: 14,
                             color: Colors.red.shade700,
                             fontWeight: FontWeight.w600,
                           ),
@@ -950,7 +996,7 @@ Widget _buildTableRow(AttendanceDay day) {
                       Text(
                         '-',
                         style: TextStyle(
-                          fontSize: 14, // DIPERBESAR
+                          fontSize: 14,
                           color: Colors.grey.shade400,
                         ),
                       ),
@@ -959,20 +1005,55 @@ Widget _buildTableRow(AttendanceDay day) {
               ),
             ),
             
-            // Notes
+            // Notes + Activity Button
             Expanded(
               flex: 2,
-              child: Center(
-                child: Text(
-                  day.note ?? '-',
-                  style: TextStyle(
-                    color: Colors.grey.shade600,
-                    fontSize: 13, // DIPERBESAR
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Notes
+                  Expanded(
+                    child: Text(
+                      day.note ?? '-',
+                      style: TextStyle(
+                        color: Colors.grey.shade600,
+                        fontSize: 13,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                    ),
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.center,
-                ),
+                  
+                  // Activity Button
+                  StreamBuilder<bool>(
+                    stream: _hasActivities(day.date),
+                    builder: (context, snapshot) {
+                      if (snapshot.hasData && snapshot.data == true) {
+                        return Container(
+                          margin: const EdgeInsets.only(left: 4),
+                          child: IconButton(
+                            icon: Icon(
+                              Icons.bolt,
+                              size: 16,
+                              color: Colors.blue.shade700,
+                            ),
+                            constraints: const BoxConstraints(
+                              minWidth: 24,
+                              minHeight: 24,
+                            ),
+                            padding: EdgeInsets.zero,
+                            onPressed: () {
+                              _openActivityDetail(day.date);
+                            },
+                            tooltip: 'View Activities',
+                          ),
+                        );
+                      }
+                      return const SizedBox.shrink();
+                    },
+                  ),
+                ],
               ),
             ),
             
@@ -1313,6 +1394,34 @@ Widget _buildTableRow(AttendanceDay day) {
       _activeStatus = null;
     });
   }
+
+Stream<bool> _hasActivities(DateTime date) {
+  final dateStr = '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+  
+  return CompanyFirestore
+      .collection('attendance')
+      .doc(widget.employeeId)
+      .collection('days')
+      .doc(dateStr)
+      .collection('activities')
+      .snapshots()
+      .map((snapshot) => snapshot.docs.isNotEmpty);
+}
+void _openActivityDetail(DateTime date) {
+  // Navigasi ke ActivityListPage dan setelah kembali, refresh jika perlu
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (_) => ActivityListPage(
+        employeeId: widget.employeeId,
+        period: widget.period,
+      ),
+    ),
+  ).then((_) {
+    // Optional: refresh data setelah kembali
+    setState(() {});
+  });
+}
 }
 
 // ================= UI HELPERS =================
@@ -1332,6 +1441,7 @@ Widget _glass(Widget child) {
       ),
     ),
   );
+  
 }
 
 class _StaticChip extends StatelessWidget {

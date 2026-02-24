@@ -3,6 +3,22 @@ import '../models/spare_part.dart';
 import '../core/services/company_firestore.dart';
 
 class SparePartService {
+  Future<QuerySnapshot> fetchSpareParts({
+    DocumentSnapshot? lastDoc,
+    int limit = 50,
+  }) async {
+
+    Query query = CompanyFirestore
+        .collection('spare_parts')
+        .orderBy('partCode')
+        .limit(limit);
+
+    if (lastDoc != null) {
+      query = query.startAfterDocument(lastDoc);
+    }
+
+    return await query.get();
+  }
   String normalizeLocation(String location) {
   return location
       .trim()

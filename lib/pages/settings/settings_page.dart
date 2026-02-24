@@ -5,6 +5,8 @@ import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../core/services/company_firestore.dart';
+import '../../features/admin/pages/admin_analytics_page.dart';
+import '../../../models/read_tracker_service.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -310,6 +312,86 @@ class _SettingsPageState extends State<SettingsPage> {
                           child:
                               const Text('TEST FIRESTORE CONNECTION'),
                         ),
+                        // Di bagian SettingsPage, tambahkan button di bawah TEST FIRESTORE CONNECTION
+
+// Tambahkan di bagian dalam _GlassCard setelah TEST FIRESTORE CONNECTION
+const SizedBox(height: 8),
+
+// ADMIN ANALYTICS BUTTON
+Container(
+  decoration: BoxDecoration(
+    gradient: LinearGradient(
+      colors: [Colors.purple.shade300, Colors.purple.shade700],
+    ),
+    borderRadius: BorderRadius.circular(12),
+  ),
+  child: ElevatedButton(
+    style: ElevatedButton.styleFrom(
+      backgroundColor: Colors.transparent,
+      shadowColor: Colors.transparent,
+      padding: const EdgeInsets.symmetric(vertical: 12),
+    ),
+    onPressed: isAdmin ? () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const AdminAnalyticsPage(),
+        ),
+      );
+    } : _showAdminWarning,
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.2),
+            shape: BoxShape.circle,
+          ),
+          child: const Icon(Icons.analytics, color: Colors.white, size: 20),
+        ),
+        const SizedBox(width: 8),
+        const Text(
+          'ADMIN ANALYTICS',
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ],
+    ),
+  ),
+),
+
+// Tambahkan info badge jika sedang tracking
+if (ReadTrackerService().isTracking) ...[
+  const SizedBox(height: 8),
+  Container(
+    padding: const EdgeInsets.all(8),
+    decoration: BoxDecoration(
+      color: Colors.green.withOpacity(0.1),
+      borderRadius: BorderRadius.circular(8),
+      border: Border.all(color: Colors.green),
+    ),
+    child: Row(
+      children: [
+        Container(
+          width: 8,
+          height: 8,
+          decoration: const BoxDecoration(
+            color: Colors.green,
+            shape: BoxShape.circle,
+          ),
+        ),
+        const SizedBox(width: 8),
+        const Text(
+          'Analytics Tracking Active',
+          style: TextStyle(color: Colors.green),
+        ),
+      ],
+    ),
+  ),
+],
                         const SizedBox(height: 16),
                         ElevatedButton(
                           style: ElevatedButton.styleFrom(
