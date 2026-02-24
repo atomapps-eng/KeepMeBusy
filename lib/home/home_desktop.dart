@@ -12,7 +12,6 @@ import '../order_out/order_out_desktop.dart';
 import '../core/widgets/draggable_window.dart';
 import '../login/login_page.dart'; 
 import '../core/session/company_session.dart';
-import '../core/services/company_firestore.dart';
 import '../features/auth/select_company_page.dart';
 import '../services/logout_helper.dart';
 import '../theme/app_theme.dart';
@@ -21,6 +20,7 @@ import '../services/activity_service.dart';
 import 'package:flutter/services.dart';
 import '../order_in/order_in_mobile.dart';
 import '../order_out/order_out_mobile.dart';
+import '../services/role_service.dart';
 
 enum DesktopSection {
   dashboard,
@@ -51,9 +51,8 @@ class _HomeDesktopState extends State<HomeDesktop> {
   List<Map<String, dynamic>> _recentActivities = [];
   final FocusNode _focusNode = FocusNode();
 
-  // Admin status
-  bool isAdmin = false;
-  bool _isCheckingAdmin = true;
+  // User role
+  String? _userEmail;
 
   // Tips bergantian (rotating tips)
   final List<String> _proTips = [
@@ -70,7 +69,6 @@ class _HomeDesktopState extends State<HomeDesktop> {
   void initState() {
     super.initState();
     _loadActivities();
-    _checkAdminStatus();
     _startTipRotation();
   }
 
@@ -83,131 +81,127 @@ class _HomeDesktopState extends State<HomeDesktop> {
     }
   }
 
-  Future<bool> isCurrentUserAdmin() async {
+  String _getDisplayName() {
     final user = FirebaseAuth.instance.currentUser;
-    
-    if (user == null || user.email == null) return false;
-    
-    final userEmail = user.email!.toLowerCase().trim();
-    
-    try {
-      final doc = await FirebaseFirestore.instance
-          .collection('admin_whitelist')
-          .doc(userEmail)
-          .get();
-      
-      if (doc.exists) {
-        final data = doc.data();
-        if (data != null && data.containsKey('active')) {
-          return data['active'] == true;
-        }
-        return true;
-      }
-      return false;
-    } catch (e) {
-      return false;
+    if (user?.displayName != null && user!.displayName!.isNotEmpty) {
+      return user.displayName!.split(' ').first;
     }
+    return 'User';
   }
 
-  Future<void> _checkAdminStatus() async {
-    setState(() {
-      _isCheckingAdmin = true;
-    });
-    
-    final result = await isCurrentUserAdmin();
-    
-    setState(() {
-      isAdmin = result;
-      _isCheckingAdmin = false;
-    });
+  // ===== ROLE HELPERS GLOBAL =====
+
+UserRole get _currentRole {
+  // Ini aman karena build() sudah pakai FutureBuilder
+  // dan widget tidak dirender sebelum role ada
+  return _cachedRole ?? UserRole.user;
+}
+
+UserRole? _cachedRole;
+
+bool get _isAdmin =>
+    _currentRole == UserRole.superAdmin ||
+    _currentRole == UserRole.admin;
+
+bool get _isSuperAdmin =>
+    _currentRole == UserRole.superAdmin;
+
+bool get _canAccessSettings => _isAdmin;
+
+  String _getGreeting() {
+    final hour = DateTime.now().hour;
+    if (hour < 12) return 'Good morning! Ready to start the day?';
+    if (hour < 17) return 'Good afternoon! Hope you\'re having a productive day.';
+    return 'Good evening! Wrapping up for the day?';
   }
 
-  void _startTipRotation() {
-    Future.delayed(const Duration(seconds: 10), () {
-      if (mounted) {
-        setState(() {
-          _currentTipIndex = (_currentTipIndex + 1) % _proTips.length;
-        });
-        _startTipRotation();
-      }
-    });
+  String _getFormattedDate() {
+    final now = DateTime.now();
+    final months = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    return '${now.day} ${months[now.month - 1]} ${now.year}';
   }
-
-// TAMBAHKAN METHOD INI UNTUK HANDLE KEYBOARD SHORTCUT
-void _handleKeyPress(RawKeyEvent event) {
-  if (!event.isControlPressed) return;
-
-  // Ctrl + N : New Order In - LANGSUNG BUKA FORM
-  if (event.logicalKey == LogicalKeyboardKey.keyN) {
-    print('Ctrl+N pressed - Opening Order In Form');
-    _openOrderInForm(); // <-- PANGGIL METHOD INI
-  }
-  
-  // Ctrl + M : New Order Out - LANGSUNG BUKA FORM
-  else if (event.logicalKey == LogicalKeyboardKey.keyM) {
-    print('Ctrl+M pressed - Opening Order Out Form');
-    _openOrderOutForm(); // <-- PANGGIL METHOD INI
-  }
-  
-  // Ctrl + F : Search (Open Spare Parts)
-  else if (event.logicalKey == LogicalKeyboardKey.keyF) {
-    print('Ctrl+F pressed - Opening Spare Parts');
-    _openSpareParts();
-  }
-  
-  // Ctrl + A : Attendance
-  else if (event.logicalKey == LogicalKeyboardKey.keyA) {
-    print('Ctrl+A pressed - Opening Attendance');
-    _openAttendance();
-  }
-  
-  // Ctrl + S : Settings
-  else if (event.logicalKey == LogicalKeyboardKey.keyS) {
-    print('Ctrl+S pressed - Opening Settings');
-    _openSettings();
-  }
-  
-  // Ctrl + D : Dashboard
-  else if (event.logicalKey == LogicalKeyboardKey.keyD) {
-    print('Ctrl+D pressed - Going to Dashboard');
-    setState(() {
-      selectedSection = DesktopSection.dashboard;
-    });
-  }
-  
-  // Ctrl + I : Inventory
-  else if (event.logicalKey == LogicalKeyboardKey.keyI) {
-    print('Ctrl+I pressed - Going to Inventory');
-    setState(() {
-      selectedSection = DesktopSection.inventory;
-      inventoryView = InventoryView.menu;
-    });
-  }
-  
-  // Ctrl + R : Reports
-  else if (event.logicalKey == LogicalKeyboardKey.keyR) {
-    print('Ctrl+R pressed - Going to Reports');
-    setState(() {
-      selectedSection = DesktopSection.reports;
-    });
-  }
-  
-  // Ctrl + ? : Show Help
-  else if (event.logicalKey == LogicalKeyboardKey.slash && event.isShiftPressed) {
-    print('Ctrl+? pressed - Showing Help');
-    _showKeyboardShortcutsHelp();
+String _getRoleDisplay(UserRole role) {
+  switch (role) {
+    case UserRole.superAdmin:
+      return 'SUPER ADMIN';
+    case UserRole.admin:
+      return 'ADMIN';
+    case UserRole.user:
+      return 'USER';
   }
 }
 
-  Stream<int> lowStockCountStream() {
-    return CompanyFirestore
-        .collection('dashboard')
-        .doc('stats')
-        .snapshots()
-        .map((doc) {
-          final data = doc.data();
-          return data?['lowStock'] ?? 0;
-        });
+  Color _getRoleColor(UserRole role) {
+  switch (role) {
+    case UserRole.superAdmin:
+      return Colors.purple;
+    case UserRole.admin:
+      return Colors.green;
+    case UserRole.user:
+      return Colors.blue;
+  }
+}
+
+  IconData _getRoleIcon(UserRole role) {
+  switch (role) {
+    case UserRole.superAdmin:
+      return Icons.admin_panel_settings;
+    case UserRole.admin:
+      return Icons.verified_user;
+    case UserRole.user:
+      return Icons.person;
+  }
+}
+
+  String _getCountryFlag(String? countryId) {
+  if (countryId == null) return '🌐';
+
+  switch (countryId.toLowerCase()) {
+    case 'indonesia':
+    case 'atomindonesia':
+    case 'indonesia atom':
+      return '🇮🇩';
+    case 'india':
+    case 'atomindia':
+    case 'india atom':
+      return '🇮🇳';
+    case 'vietnam':
+    case 'atomvietnam':
+    case 'vietnam atom':
+      return '🇻🇳';
+    default:
+      return '🏢';
+  }
+}
+
+  void _handleKeyPress(RawKeyEvent event) {
+    if (!event.isControlPressed) return;
+
+    if (event.logicalKey == LogicalKeyboardKey.keyN) {
+      _openOrderInForm();
+    } else if (event.logicalKey == LogicalKeyboardKey.keyM) {
+      _openOrderOutForm();
+    } else if (event.logicalKey == LogicalKeyboardKey.keyF) {
+      _openSpareParts();
+    } else if (event.logicalKey == LogicalKeyboardKey.keyA) {
+      _openAttendance();
+    } else if (event.logicalKey == LogicalKeyboardKey.keyS && _canAccessSettings) {
+      _openSettings();
+    } else if (event.logicalKey == LogicalKeyboardKey.keyD) {
+      setState(() => selectedSection = DesktopSection.dashboard);
+    } else if (event.logicalKey == LogicalKeyboardKey.keyI) {
+      setState(() {
+        selectedSection = DesktopSection.inventory;
+        inventoryView = InventoryView.menu;
+      });
+    } else if (event.logicalKey == LogicalKeyboardKey.keyR) {
+      setState(() => selectedSection = DesktopSection.reports);
+    } else if (event.logicalKey == LogicalKeyboardKey.slash && event.isShiftPressed) {
+      _showKeyboardShortcutsHelp();
+    }
   }
 
   int _crossAxis(double width) {
@@ -217,15 +211,18 @@ void _handleKeyPress(RawKeyEvent event) {
     return 3;
   }
 
-  // ==================== WELCOME SCREEN (Pengganti Dashboard) ====================
-  Widget _buildDesktopWelcome() {
+  // ==================== WELCOME SCREEN ====================
+  Widget _buildDesktopWelcome(UserRole role) {
+    final bool isAdmin =
+    role == UserRole.superAdmin || role == UserRole.admin;
+final bool canAccessSettings = isAdmin;
     return SingleChildScrollView(
       child: Padding(
         padding: const EdgeInsets.all(32),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Welcome Header dengan Gradient
+            // Welcome Header dengan Role Badge
             Container(
               padding: const EdgeInsets.all(32),
               decoration: BoxDecoration(
@@ -267,60 +264,16 @@ void _handleKeyPress(RawKeyEvent event) {
                               ),
                             ),
                             const SizedBox(width: 12),
-                            if (!_isCheckingAdmin && isAdmin)
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    colors: [Colors.green.shade300, Colors.green.shade700],
-                                  ),
-                                  borderRadius: BorderRadius.circular(20),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.green.withOpacity(0.3),
-                                      blurRadius: 8,
-                                      offset: const Offset(0, 2),
-                                    ),
-                                  ],
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.all(2),
-                                      decoration: BoxDecoration(
-                                        color: Colors.white.withOpacity(0.2),
-                                        shape: BoxShape.circle,
-                                      ),
-                                      child: const Icon(
-                                        Icons.admin_panel_settings,
-                                        color: Colors.white,
-                                        size: 16,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 4),
-                                    const Text(
-                                      'ADMIN',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.bold,
-                                        letterSpacing: 0.5,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
                           ],
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          _getGreeting(),
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.grey.shade600,
-                          ),
-                        ),
+  _getGreeting(),
+  style: TextStyle(
+    fontSize: 16,
+    color: Colors.grey.shade700,
+  ),
+),
                         const SizedBox(height: 16),
                         Container(
                           padding: const EdgeInsets.symmetric(
@@ -391,12 +344,8 @@ void _handleKeyPress(RawKeyEvent event) {
                   ),
                 ),
                 TextButton.icon(
-                  onPressed: () {
-                    setState(() {
-                      selectedSection = DesktopSection.inventory;
-                    });
-                  },
-                  icon: const Icon(Icons.arrow_forward),
+                  onPressed: _showAllMenusDialog,
+                  icon: const Icon(Icons.grid_view),
                   label: const Text('View All'),
                 ),
               ],
@@ -404,89 +353,90 @@ void _handleKeyPress(RawKeyEvent event) {
             const SizedBox(height: 16),
 
             // Quick Actions Grid
-LayoutBuilder(
-  builder: (context, constraints) {
-    final crossAxisCount = constraints.maxWidth > 800 ? 4 : 2;
-    
-    return GridView.count(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      crossAxisCount: crossAxisCount,
-      crossAxisSpacing: 16,
-      mainAxisSpacing: 16,
-      childAspectRatio: 1.3,
-      children: [
-        // New Order In
-        _quickActionCard(
-          Icons.add_shopping_cart,
-          'New Order In',
-          Colors.green,
-          _openOrderInForm,
-        ),
-        
-        // New Order Out
-        _quickActionCard(
-          Icons.remove_shopping_cart,
-          'New Order Out',
-          Colors.redAccent,
-          _openOrderOutForm,
-        ),
-        
-        // Check Stock
-        _quickActionCard(
-          Icons.inventory,
-          'Check Stock',
-          Colors.blueGrey,
-          _openSpareParts,
-        ),
-        
-        // Attendance
-        _quickActionCard(
-          Icons.event_available,
-          'Attendance',
-          Colors.blue,
-          _openAttendance,
-        ),
-        
-        // Partners
-        _quickActionCard(
-          Icons.groups,
-          'Partners',
-          Colors.deepPurple,
-          _openPartners,
-        ),
-        
-        // Machinery
-        _quickActionCard(
-          Icons.precision_manufacturing,
-          'Machinery',
-          Colors.pinkAccent,
-          () => setState(() {
-            selectedSection = DesktopSection.machinery;
-          }),
-        ),
-        
-        // Reports
-        _quickActionCard(
-          Icons.bar_chart,
-          'Reports',
-          Colors.orange,
-          () => setState(() {
-            selectedSection = DesktopSection.reports;
-          }),
-        ),
-        
-        // Settings
-        _quickActionCard(
-          Icons.settings,
-          'Settings',
-          Colors.grey,
-          _openSettings,
-        ),
-      ],
-    );
-  },
-),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final crossAxisCount = constraints.maxWidth > 800 ? 4 : 2;
+                
+                return GridView.count(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  crossAxisCount: crossAxisCount,
+                  crossAxisSpacing: 16,
+                  mainAxisSpacing: 16,
+                  childAspectRatio: 1.3,
+                  children: [
+                    // New Order In
+                    _quickActionCard(
+                      Icons.add_shopping_cart,
+                      'New Order In',
+                      Colors.green,
+                      _openOrderInForm,
+                    ),
+                    
+                    // New Order Out
+                    _quickActionCard(
+                      Icons.remove_shopping_cart,
+                      'New Order Out',
+                      Colors.redAccent,
+                      _openOrderOutForm,
+                    ),
+                    
+                    // Check Stock
+                    _quickActionCard(
+                      Icons.inventory,
+                      'Check Stock',
+                      Colors.blueGrey,
+                      _openSpareParts,
+                    ),
+                    
+                    // Attendance
+                    _quickActionCard(
+                      Icons.event_available,
+                      'Attendance',
+                      Colors.blue,
+                      _openAttendance,
+                    ),
+                    
+                    // Partners
+                    _quickActionCard(
+                      Icons.groups,
+                      'Partners',
+                      Colors.deepPurple,
+                      _openPartners,
+                    ),
+                    
+                    // Machinery
+                    _quickActionCard(
+                      Icons.precision_manufacturing,
+                      'Machinery',
+                      Colors.pinkAccent,
+                      () => setState(() {
+                        selectedSection = DesktopSection.machinery;
+                      }),
+                    ),
+                    
+                    // Reports
+                    _quickActionCard(
+                      Icons.bar_chart,
+                      'Reports',
+                      Colors.orange,
+                      () => setState(() {
+                        selectedSection = DesktopSection.reports;
+                      }),
+                    ),
+                    
+                    // Settings (hanya untuk super admin)
+                    if (canAccessSettings)
+                      _quickActionCard(
+                        Icons.settings,
+                        'Settings',
+                        Colors.grey,
+                        _openSettings,
+                      ),
+                  ],
+                );
+              },
+            ),
             
             const SizedBox(height: 32),
 
@@ -494,7 +444,7 @@ LayoutBuilder(
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Recent Activities (Left Column) - Dibatasi 5 items
+                // Recent Activities (Left Column)
                 Expanded(
                   flex: 2,
                   child: Column(
@@ -702,7 +652,7 @@ LayoutBuilder(
 
             const SizedBox(height: 24),
 
-            // Footer dengan Statistik Singkat (tanpa stream)
+            // Footer dengan Statistik Singkat
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
@@ -746,30 +696,325 @@ LayoutBuilder(
     );
   }
 
-  // ==================== HELPER METHODS ====================
-  String _getDisplayName() {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user?.displayName != null && user!.displayName!.isNotEmpty) {
-      return user.displayName!.split(' ').first;
-    }
-    return 'User';
-  }
+  // ==================== DIALOG VIEW ALL MENUS ====================
+ // ==================== DIALOG VIEW ALL MENUS ====================
+void _showAllMenusDialog() {
+  showDialog(
+    context: context,
+    builder: (context) => Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      child: Container(
+        width: 900,
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.8, // Maksimal 80% tinggi layar
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Header
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    AppTheme.primaryColor.withOpacity(0.1),
+                    Colors.white,
+                  ],
+                ),
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(24),
+                  topRight: Radius.circular(24),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryColor.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.grid_view,
+                      color: AppTheme.primaryColor,
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  const Text(
+                    'All Menus',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+            ),
+            
+            // Content dengan Scroll
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Inventory Section
+                    _buildMenuSection(
+                      title: 'INVENTORY',
+                      icon: Icons.inventory,
+                      color: Colors.blueGrey,
+                      items: [
+                        _MenuItem(
+                          icon: Icons.storage,
+                          label: 'Database',
+                          color: Colors.blueGrey,
+                          onTap: () {
+                            Navigator.pop(context);
+                            _openSpareParts();
+                          },
+                        ),
+                        _MenuItem(
+                          icon: Icons.input,
+                          label: 'Orders In',
+                          color: Colors.green,
+                          onTap: () {
+                            Navigator.pop(context);
+                            _openOrderInForm();
+                          },
+                        ),
+                        _MenuItem(
+                          icon: Icons.output,
+                          label: 'Orders Out',
+                          color: Colors.redAccent,
+                          onTap: () {
+                            Navigator.pop(context);
+                            _openOrderOutForm();
+                          },
+                        ),
+                        _MenuItem(
+                          icon: Icons.groups,
+                          label: 'Partners',
+                          color: Colors.deepPurple,
+                          onTap: () {
+                            Navigator.pop(context);
+                            _openPartners();
+                          },
+                        ),
+                      ],
+                    ),
+                    
+                    const SizedBox(height: 24),
+                    
+                    // Machinery Section
+                    _buildMenuSection(
+                      title: 'MACHINERY',
+                      icon: Icons.precision_manufacturing,
+                      color: Colors.pinkAccent,
+                      items: [
+                        _MenuItem(
+                          icon: Icons.list,
+                          label: 'Machine List',
+                          color: Colors.pinkAccent,
+                          onTap: () {
+                            Navigator.pop(context);
+                            setState(() => selectedSection = DesktopSection.machinery);
+                          },
+                        ),
+                        _MenuItem(
+                          icon: Icons.menu_book,
+                          label: 'Machine Manual',
+                          color: Colors.teal,
+                          onTap: () {
+                            Navigator.pop(context);
+                            setState(() => selectedSection = DesktopSection.machinery);
+                          },
+                        ),
+                        _MenuItem(
+                          icon: Icons.auto_stories,
+                          label: 'Machine Catalogue',
+                          color: Colors.indigo,
+                          onTap: () {
+                            Navigator.pop(context);
+                            setState(() => selectedSection = DesktopSection.machinery);
+                          },
+                        ),
+                        _MenuItem(
+                          icon: Icons.verified,
+                          label: 'Licenses',
+                          color: Colors.orange,
+                          onTap: () {
+                            Navigator.pop(context);
+                            setState(() => selectedSection = DesktopSection.machinery);
+                          },
+                        ),
+                      ],
+                    ),
+                    
+                    const SizedBox(height: 24),
+                    
+                    // Reports Section
+                    _buildMenuSection(
+                      title: 'REPORTS',
+                      icon: Icons.bar_chart,
+                      color: Colors.orange,
+                      items: [
+                        _MenuItem(
+                          icon: Icons.event_available,
+                          label: 'Daily Attendance',
+                          color: Colors.blue,
+                          onTap: () {
+                            Navigator.pop(context);
+                            setState(() => selectedSection = DesktopSection.reports);
+                          },
+                        ),
+                        _MenuItem(
+                          icon: Icons.build_circle,
+                          label: 'Service Report',
+                          color: Colors.green,
+                          onTap: () {
+                            Navigator.pop(context);
+                            setState(() => selectedSection = DesktopSection.reports);
+                          },
+                        ),
+                        _MenuItem(
+                          icon: Icons.flight_takeoff,
+                          label: 'Business Trip Report',
+                          color: Colors.purple,
+                          onTap: () {
+                            Navigator.pop(context);
+                            setState(() => selectedSection = DesktopSection.reports);
+                          },
+                        ),
+                      ],
+                    ),
+                    
+                    // Systems Section (hanya untuk super admin)
+                    if (_canAccessSettings) ...[
+                      const SizedBox(height: 24),
+                      
+                      _buildMenuSection(
+                        title: 'SYSTEMS',
+                        icon: Icons.settings,
+                        color: Colors.grey,
+                        items: [
+                          _MenuItem(
+                            icon: Icons.settings,
+                            label: 'Settings',
+                            color: Colors.grey,
+                            onTap: () {
+                              Navigator.pop(context);
+                              _openSettings();
+                            },
+                          ),
+                          _MenuItem(
+                            icon: Icons.logout,
+                            label: 'Logout',
+                            color: Colors.redAccent,
+                            onTap: () {
+                              Navigator.pop(context);
+                              _confirmLogout(context);
+                            },
+                          ),
+                        ],
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
 
-  String _getGreeting() {
-    final hour = DateTime.now().hour;
-    if (hour < 12) return 'Good morning! Ready to start the day?';
-    if (hour < 17) return 'Good afternoon! Hope you\'re having a productive day.';
-    return 'Good evening! Wrapping up for the day?';
-  }
+Widget _buildMenuSection({
+  required String title,
+  required IconData icon,
+  required Color color,
+  required List<_MenuItem> items,
+}) {
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, color: color, size: 18),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+      const SizedBox(height: 12),
+      GridView.count(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        crossAxisCount: 4,
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 12,
+        childAspectRatio: 1.2,
+        children: items.map((item) => _buildMenuItemCard(item)).toList(),
+      ),
+    ],
+  );
+}
 
-  String _getFormattedDate() {
-    final now = DateTime.now();
-    final months = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
-    ];
-    return '${now.day} ${months[now.month - 1]} ${now.year}';
-  }
+Widget _buildMenuItemCard(_MenuItem item) {
+  return InkWell(
+    onTap: item.onTap,
+    borderRadius: BorderRadius.circular(12),
+    child: Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: item.color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: item.color.withOpacity(0.3),
+        ),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(item.icon, color: item.color, size: 24),
+          const SizedBox(height: 8),
+          Text(
+            item.label,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 12,
+              color: item.color,
+              fontWeight: FontWeight.w500,
+            ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
+    ),
+  );
+}
 
   // ==================== UI COMPONENTS ====================
   Widget _quickActionCard(
@@ -931,7 +1176,7 @@ LayoutBuilder(
     );
   }
 
-  // ==================== ORIGINAL METHODS (TIDAK BERUBAH) ====================
+  // ==================== EXISTING METHODS ====================
   Widget _buildDesktopInventory() {
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -985,17 +1230,17 @@ LayoutBuilder(
                       },
                     ),
                     _desktopMenuCard(
-  Icons.input,
-  'Orders In',
-  Colors.green,
-  _openOrderInForm, // <-- UBAH dari setState menjadi langsung buka form
-),
+                      Icons.input,
+                      'Orders In',
+                      Colors.green,
+                      _openOrderInForm,
+                    ),
                     _desktopMenuCard(
-  Icons.output_outlined,
-  'Orders Out',
-  Colors.redAccent,
-  _openOrderOutForm, // <-- UBAH dari setState menjadi langsung buka form
-),
+                      Icons.output_outlined,
+                      'Orders Out',
+                      Colors.redAccent,
+                      _openOrderOutForm,
+                    ),
                     _desktopMenuCard(
                       Icons.groups,
                       'Partners',
@@ -1270,10 +1515,6 @@ LayoutBuilder(
         (route) => false,
       );
     }
-    if (result == true) {
-      print("LOGOUT PRESSED");
-      await FirebaseAuth.instance.signOut();
-    }
   }
 
   Widget _buildDesktopSystems() {
@@ -1366,40 +1607,7 @@ LayoutBuilder(
     );
   }
 
-  @override
-Widget build(BuildContext context) {
-  if (FirebaseAuth.instance.currentUser == null) {
-    return const SizedBox.shrink();
-  }
-
-  WidgetsBinding.instance.addPostFrameCallback((_) {
-    ReadTrackerService().trackRead(
-      page: 'HomeDesktop',
-      collection: 'multiple',
-      operation: 'page_view',
-      documentsCount: 0,
-    );
-  });
-
-  // UBAH RETURN MENJADI RawKeyboardListener
-  return RawKeyboardListener(
-    focusNode: _focusNode,
-    onKey: _handleKeyPress,
-    autofocus: true, // Penting! Agar bisa menerima keyboard input
-    child: Scaffold(
-      body: Row(
-        children: [
-          _buildSidebar(),
-          Expanded(
-            child: _buildContent(),
-          ),
-        ],
-      ),
-    ),
-  );
-}
-
-  Widget _buildContent() {
+ Widget _buildContent(UserRole role) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       String pageName = '';
       String collection = '';
@@ -1437,23 +1645,66 @@ Widget build(BuildContext context) {
 
     switch (selectedSection) {
       case DesktopSection.dashboard:
-        return _buildDesktopWelcome(); // GANTI DENGAN WELCOME SCREEN
-
+        return _buildDesktopWelcome(role);
       case DesktopSection.inventory:
         return _buildInventoryContent();
-
       case DesktopSection.machinery:
         return _buildDesktopMachinery();
-
       case DesktopSection.reports:
         return _buildDesktopReports();
-
       case DesktopSection.systems:
         return _buildDesktopSystems();
     }
   }
 
-  Widget _buildSidebar() {
+ // === STEP 4: ROLE FUTURE BUILDER START ===
+
+@override
+Widget build(BuildContext context) {
+  if (FirebaseAuth.instance.currentUser == null) {
+    return const SizedBox.shrink();
+  }
+
+  return FutureBuilder<UserRole>(
+    future: RoleService.getUserRole(),
+    builder: (context, snapshot) {
+
+      if (!snapshot.hasData) {
+        return const Scaffold(
+          body: Center(child: CircularProgressIndicator()),
+        );
+      }
+
+      final role = snapshot.data!;
+      _cachedRole = role;
+
+      return RawKeyboardListener(
+        focusNode: _focusNode,
+        onKey: _handleKeyPress,
+        autofocus: true,
+        child: Scaffold(
+          body: Row(
+            children: [
+              _buildSidebar(role),
+              Expanded(
+                child: _buildContent(role),
+              ),
+            ],
+          ),
+        ),
+      );
+    },
+  );
+}
+
+// === STEP 4: ROLE FUTURE BUILDER END ===
+
+  Widget _buildSidebar(UserRole role){
+final bool isSuperAdmin = role == UserRole.superAdmin;
+final bool isAdmin =
+    role == UserRole.superAdmin || role == UserRole.admin;
+final bool canAccessSettings = isAdmin;
+    role == UserRole.superAdmin || role == UserRole.admin;
     final user = FirebaseAuth.instance.currentUser;
     final displayName = user?.displayName?.isNotEmpty == true
         ? user!.displayName!
@@ -1519,7 +1770,6 @@ Widget build(BuildContext context) {
                   
                   companyName = companyName.replaceAll(RegExp(r'\s+'), ' ').trim();
                 }
-                    _getFlagForCompany(companyId);
 
                 return Container(
                   margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -1624,22 +1874,47 @@ Widget build(BuildContext context) {
               },
             ),
 
-          // User Info
+          // User Info dengan Role Badge
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Column(
               children: [
-                CircleAvatar(
-                  radius: 24,
-                  backgroundColor: AppTheme.primaryColor.withOpacity(0.2),
-                  child: Text(
-                    displayName.isNotEmpty ? displayName[0].toUpperCase() : 'U',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: AppTheme.primaryColor,
+                Stack(
+                  children: [
+                    CircleAvatar(
+                      radius: 24,
+                      backgroundColor: _getRoleColor(role).withOpacity(0.2),
+                      child: Text(
+                        displayName.isNotEmpty ? displayName[0].toUpperCase() : 'U',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: _getRoleColor(role),
+                        ),
+                      ),
                     ),
-                  ),
+                    if (isAdmin)
+                      Positioned(
+                        bottom: 0,
+                        right: 0,
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: _getRoleColor(role),
+                              width: 2,
+                            ),
+                          ),
+                          child: Icon(
+                            _getRoleIcon(role),
+                            color: _getRoleColor(role),
+                            size: 12,
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
                 const SizedBox(height: 8),
                 Text(
@@ -1658,6 +1933,22 @@ Widget build(BuildContext context) {
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 4),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: _getRoleColor(role).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    _getRoleDisplay(role),
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: _getRoleColor(role),
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -1687,7 +1978,9 @@ Widget build(BuildContext context) {
                           context,
                           MaterialPageRoute(
                             builder: (_) => SelectCompanyPage(
-                              companyIds: companyIds,
+                              companyIds: isSuperAdmin 
+                                  ? ['indonesia', 'india', 'vietnam'] 
+                                  : companyIds,
                             ),
                           ),
                         );
@@ -1796,12 +2089,13 @@ Widget build(BuildContext context) {
                   'Reports',
                   DesktopSection.reports,
                 ),
-                _sidebarItem(
-                  Icons.settings_outlined,
-                  Icons.settings,
-                  'Systems',
-                  DesktopSection.systems,
-                ),
+                if (canAccessSettings)
+                  _sidebarItem(
+                    Icons.settings_outlined,
+                    Icons.settings,
+                    'Systems',
+                    DesktopSection.systems,
+                  ),
               ],
             ),
           ),
@@ -1898,153 +2192,147 @@ Widget build(BuildContext context) {
 
   // ==================== ACTION METHODS ====================
   void _openSpareParts() async {
-  // Record activity (TAMBAHKAN 3 BARIS INI)
-  await ActivityService.addActivity(
-    icon: Icons.inventory,
-    title: 'Viewed spare parts',
-    color: Colors.blueGrey,
+    await ActivityService.addActivity(
+      icon: Icons.inventory,
+      title: 'Viewed spare parts',
+      color: Colors.blueGrey,
+    );
+
+    if (CompanySession.selectedCompanyId == null) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(content: Text("Please select company first")),
   );
-  
-  // Refresh recent activities (TAMBAHKAN INI)
-  await _loadActivities();
-  
-  // Buka dialog (CODE YANG SUDAH ADA)
-  showGeneralDialog(
-    context: context,
-    barrierDismissible: true,
-    barrierLabel: "SpareParts",
-    barrierColor: Colors.black.withOpacity(0.35),
-    transitionDuration: const Duration(milliseconds: 200),
-    pageBuilder: (_, __, ___) {
-      return const DraggableResizableWindow(
-        title: "Spare Parts",
-        headerColor: Colors.blueGrey,
-        child: SparePartListPage(),
-      );
-    },
-  );
+  return;
 }
+    
+    await _loadActivities();
+    
+    showGeneralDialog(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: "SpareParts",
+      barrierColor: Colors.black.withOpacity(0.35),
+      transitionDuration: const Duration(milliseconds: 200),
+      pageBuilder: (_, __, ___) {
+        return const DraggableResizableWindow(
+          title: "Spare Parts",
+          headerColor: Colors.blueGrey,
+          child: SparePartListPage(),
+        );
+      },
+    );
+  }
 
   void _openAttendance() async {
-  // Record activity (TAMBAHKAN 3 BARIS INI)
-  await ActivityService.addActivity(
-    icon: Icons.event_available,
-    title: 'Opened attendance page',
-    color: Colors.blue,
-  );
-  
-  // Refresh recent activities (TAMBAHKAN INI)
-  await _loadActivities();
-  
-  final user = FirebaseAuth.instance.currentUser!;
-  final employeeId = user.displayName!;
-  final now = DateTime.now();
-  final period = AttendancePeriodHelper.resolvePeriod(now);
+    await ActivityService.addActivity(
+      icon: Icons.event_available,
+      title: 'Opened attendance page',
+      color: Colors.blue,
+    );
+    
+    await _loadActivities();
+    
+    final user = FirebaseAuth.instance.currentUser!;
+    final employeeId = user.displayName ?? user.uid;
+    final now = DateTime.now();
+    final period = AttendancePeriodHelper.resolvePeriod(now);
 
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (_) => AttendancePage(
-        employeeId: employeeId,
-        period: period,
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AttendancePage(
+          employeeId: employeeId,
+          period: period,
+        ),
       ),
-    ),
-  );
-}
-
+    );
+  }
 
   void _openPartners() async {
-  // Record activity (TAMBAHKAN 3 BARIS INI)
-  await ActivityService.addActivity(
-    icon: Icons.groups,
-    title: 'Viewed partners list',
-    color: Colors.deepPurple,
-  );
-  
-  // Refresh recent activities (TAMBAHKAN INI)
-  await _loadActivities();
-  
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (_) => const PartnerListPage(),
-    ),
-  );
-}
+    await ActivityService.addActivity(
+      icon: Icons.groups,
+      title: 'Viewed partners list',
+      color: Colors.deepPurple,
+    );
+    
+    await _loadActivities();
+    
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const PartnerListPage(),
+      ),
+    );
+  }
 
   void _openSettings() async {
-  // Record activity (TAMBAHKAN 3 BARIS INI)
-  await ActivityService.addActivity(
-    icon: Icons.settings,
-    title: 'Opened settings',
-    color: Colors.grey,
-  );
-  
-  // Refresh recent activities (TAMBAHKAN INI)
-  await _loadActivities();
-  
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (_) => const SettingsPage(),
-    ),
-  );
-}
+    if (!_canAccessSettings) return;
+    
+    await ActivityService.addActivity(
+      icon: Icons.settings,
+      title: 'Opened settings',
+      color: Colors.grey,
+    );
+    
+    await _loadActivities();
+    
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const SettingsPage(),
+      ),
+    );
+  }
 
-// ==================== METHOD UNTUK MEMBUKA FORM ORDER IN/OUT LANGSUNG ====================
+  void _openOrderInForm() {
+    ActivityService.addActivity(
+      icon: Icons.input,
+      title: 'Opened Order In Form',
+      color: Colors.green,
+    ).then((_) => _loadActivities());
 
-void _openOrderInForm() {
-  // Record activity
-  ActivityService.addActivity(
-    icon: Icons.input,
-    title: 'Opened Order In Form',
-    color: Colors.green,
-  ).then((_) => _loadActivities());
+    showGeneralDialog(
+      context: context,
+      barrierDismissible: false,
+      barrierLabel: "CreateOrderIn",
+      barrierColor: Colors.black.withOpacity(0.35),
+      transitionDuration: const Duration(milliseconds: 200),
+      pageBuilder: (_, _, _) {
+        return DraggableResizableWindow(
+          title: "Create Order In",
+          child: const OrderInMobile(
+            isCompact: false,
+          ),
+        );
+      },
+    );
+  }
 
-  // Buka form Order In langsung
-  showGeneralDialog(
-    context: context,
-    barrierDismissible: false, // Tidak bisa ditutup dengan klik di luar
-    barrierLabel: "CreateOrderIn",
-    barrierColor: Colors.black.withOpacity(0.35),
-    transitionDuration: const Duration(milliseconds: 200),
-    pageBuilder: (_, _, _) {
-      return DraggableResizableWindow(
-        title: "Create Order In",
-        child: const OrderInMobile(
-          isCompact: false,
-        ),
-      );
-    },
-  );
-}
+  void _openOrderOutForm() {
+    ActivityService.addActivity(
+      icon: Icons.output,
+      title: 'Opened Order Out Form',
+      color: Colors.redAccent,
+    ).then((_) => _loadActivities());
 
-void _openOrderOutForm() {
-  // Record activity
-  ActivityService.addActivity(
-    icon: Icons.output,
-    title: 'Opened Order Out Form',
-    color: Colors.redAccent,
-  ).then((_) => _loadActivities());
+    showGeneralDialog(
+      context: context,
+      barrierDismissible: false,
+      barrierLabel: "CreateOrderOut",
+      barrierColor: Colors.black.withOpacity(0.35),
+      transitionDuration: const Duration(milliseconds: 200),
+      pageBuilder: (_, _, _) {
+        return DraggableResizableWindow(
+          title: "Create Order Out",
+          child: const OrderOutMobile(
+            isCompact: false,
+          ),
+        );
+      },
+    );
+  }
 
-  // Buka form Order Out langsung
-  showGeneralDialog(
-    context: context,
-    barrierDismissible: false,
-    barrierLabel: "CreateOrderOut",
-    barrierColor: Colors.black.withOpacity(0.35),
-    transitionDuration: const Duration(milliseconds: 200),
-    pageBuilder: (_, _, _) {
-      return DraggableResizableWindow(
-        title: "Create Order Out",
-        child: const OrderOutMobile(
-          isCompact: false,
-        ),
-      );
-    },
-  );
-}
-  // ==================== COMPANY INFO METHODS (TIDAK BERUBAH) ====================
+  // ==================== COMPANY INFO METHODS ====================
   Future<Map<String, dynamic>> _getSelectedCompanyInfo() async {
     final companyId = CompanySession.selectedCompanyId;
     if (companyId == null) return {};
@@ -2112,17 +2400,14 @@ void _openOrderOutForm() {
       case 'atomindonesia':
       case 'indonesia atom':
         return '🇮🇩';
-        
       case 'india':
       case 'atomindia':
       case 'india atom':
         return '🇮🇳';
-        
       case 'vietnam':
       case 'atomvietnam':
       case 'vietnam atom':
         return '🇻🇳';
-        
       default:
         final lowerId = companyId.toLowerCase();
         if (lowerId.contains('indonesia')) return '🇮🇩';
@@ -2131,80 +2416,105 @@ void _openOrderOutForm() {
         return '🏢';
     }
   }
-  // TAMBAHKAN METHOD UNTUK MENAMPILKAN HELP
-void _showKeyboardShortcutsHelp() {
-  showDialog(
-    context: context,
-    builder: (context) => AlertDialog(
-      title: Row(
-        children: [
-          Icon(Icons.keyboard, color: AppTheme.primaryColor),
-          const SizedBox(width: 8),
-          const Text('Keyboard Shortcuts'),
-        ],
-      ),
-      content: Container(
-        width: 400,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
+
+  void _showKeyboardShortcutsHelp() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
           children: [
-            _buildShortcutListItem('Ctrl + N', 'New Order In'),
-            const Divider(),
-            _buildShortcutListItem('Ctrl + M', 'New Order Out'),
-            const Divider(),
-            _buildShortcutListItem('Ctrl + F', 'Search Spare Parts'),
-            const Divider(),
-            _buildShortcutListItem('Ctrl + A', 'Attendance'),
-            const Divider(),
-            _buildShortcutListItem('Ctrl + S', 'Settings'),
-            const Divider(),
-            _buildShortcutListItem('Ctrl + D', 'Dashboard'),
-            const Divider(),
-            _buildShortcutListItem('Ctrl + I', 'Inventory'),
-            const Divider(),
-            _buildShortcutListItem('Ctrl + R', 'Reports'),
-            const Divider(),
-            _buildShortcutListItem('Ctrl + ?', 'Show this help'),
+            Icon(Icons.keyboard, color: AppTheme.primaryColor),
+            const SizedBox(width: 8),
+            const Text('Keyboard Shortcuts'),
           ],
         ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Close'),
-        ),
-      ],
-    ),
-  );
-}
-
-Widget _buildShortcutListItem(String key, String description) {
-  return Padding(
-    padding: const EdgeInsets.symmetric(vertical: 4),
-    child: Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          decoration: BoxDecoration(
-            color: Colors.grey.shade200,
-            borderRadius: BorderRadius.circular(4),
-            border: Border.all(color: Colors.grey.shade400),
+        content: Container(
+          width: 400,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildShortcutListItem('Ctrl + N', 'New Order In'),
+              const Divider(),
+              _buildShortcutListItem('Ctrl + M', 'New Order Out'),
+              const Divider(),
+              _buildShortcutListItem('Ctrl + F', 'Search Spare Parts'),
+              const Divider(),
+              _buildShortcutListItem('Ctrl + A', 'Attendance'),
+              const Divider(),
+              _buildShortcutListItem('Ctrl + S', 'Settings'),
+              const Divider(),
+              _buildShortcutListItem('Ctrl + D', 'Dashboard'),
+              const Divider(),
+              _buildShortcutListItem('Ctrl + I', 'Inventory'),
+              const Divider(),
+              _buildShortcutListItem('Ctrl + R', 'Reports'),
+              const Divider(),
+              _buildShortcutListItem('Ctrl + ?', 'Show this help'),
+            ],
           ),
-          child: Text(
-            key,
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 12,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildShortcutListItem(String key, String description) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade200,
+              borderRadius: BorderRadius.circular(4),
+              border: Border.all(color: Colors.grey.shade400),
+            ),
+            child: Text(
+              key,
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+              ),
             ),
           ),
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: Text(description),
-        ),
-      ],
-    ),
-  );
+          const SizedBox(width: 16),
+          Expanded(
+            child: Text(description),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _startTipRotation() {
+    Future.delayed(const Duration(seconds: 10), () {
+      if (mounted) {
+        setState(() {
+          _currentTipIndex = (_currentTipIndex + 1) % _proTips.length;
+        });
+        _startTipRotation();
+      }
+    });
+  }
 }
+
+class _MenuItem {
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+
+  _MenuItem({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.onTap,
+  });
 }
