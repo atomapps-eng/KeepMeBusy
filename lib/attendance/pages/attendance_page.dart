@@ -13,6 +13,10 @@ import 'overnight_detail_page.dart';
 import '../attendance_summary/attendance_summary_page.dart';
 import '../../core/services/company_firestore.dart';
 import '../../theme/app_theme.dart';
+import '../../services/pdf_report_service.dart';
+import '../../attendance/attendance_summary/attendance_summary_calculator.dart';
+import 'package:intl/intl.dart';
+
 
 
 class AttendancePage extends StatefulWidget {
@@ -40,13 +44,51 @@ class _AttendancePageState extends State<AttendancePage> {
     super.dispose();
   }
 
-  void _exportAttendanceToPdf() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Export PDF clicked'),
+Future<void> _exportAttendanceToPdf() async {
+  try {
+    if (!mounted) return;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(
+        child: CircularProgressIndicator(),
       ),
     );
+
+    final service = AttendanceService();
+
+    List<AttendanceDay> days = [];
+    await for (var snapshot
+        in service.streamAttendanceDays(widget.employeeId)) {
+      days = snapshot;
+      break;
+    }
+
+    final summary = await AttendanceSummaryCalculator.calculate(
+      employeeId: widget.employeeId,
+      period: widget.period,
+    );
+
+    if (mounted) Navigator.pop(context);
+
+    await PdfReportService.generateAndPreview(
+      employeeId: widget.employeeId,
+      employeeName: 'Employee ${widget.employeeId}',
+      period: widget.period,
+      attendanceDays: days,
+      summary: summary,
+    );
+
+  } catch (e) {
+    if (mounted) {
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error generating PDF: $e')),
+      );
+    }
   }
+}
 
   Stream<List<Map<String, dynamic>>> _activityPreviewStream() {
     return CompanyFirestore
