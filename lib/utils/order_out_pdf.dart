@@ -187,7 +187,7 @@ class OrderOutPdfGenerator {
         text,
         style: pw.TextStyle(
           color: PdfColors.white,
-          fontWeight: pw.FontWeight.bold,
+         fontWeight: pw.FontWeight.bold,
         ),
         textAlign: pw.TextAlign.center,
       ),

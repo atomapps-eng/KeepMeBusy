@@ -14,6 +14,7 @@ import '../attendance_summary/attendance_summary_page.dart';
 import '../../core/services/company_firestore.dart';
 import '../../theme/app_theme.dart';
 import '../../services/pdf_report_service.dart';
+import '../../services/pdf_action_service.dart';
 import '../../attendance/attendance_summary/attendance_summary_calculator.dart';
 import 'package:intl/intl.dart';
 
@@ -72,13 +73,17 @@ Future<void> _exportAttendanceToPdf() async {
 
     if (mounted) Navigator.pop(context);
 
-    await PdfReportService.generateAndPreview(
+   final bytes = await PdfReportService.generatePdf(
       employeeId: widget.employeeId,
       employeeName: 'Employee ${widget.employeeId}',
       period: widget.period,
       attendanceDays: days,
       summary: summary,
     );
+
+     print("PDF GENERATED, size: ${bytes.length}");
+
+await openPdf(bytes, 'attendance_${widget.employeeId}_${widget.period}.pdf');
 
   } catch (e) {
     if (mounted) {

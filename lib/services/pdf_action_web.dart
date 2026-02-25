@@ -1,8 +1,9 @@
 import 'dart:typed_data';
-import 'package:printing/printing.dart';
+import 'dart:html' as html;
 
 Future<void> openPdf(Uint8List bytes, String fileName) async {
-  await Printing.layoutPdf(
-    onLayout: (_) async => bytes,
-  );
+  final blob = html.Blob([bytes], 'application/pdf');
+  final url = html.Url.createObjectUrlFromBlob(blob);
+
+  html.window.open(url, "_blank");
 }

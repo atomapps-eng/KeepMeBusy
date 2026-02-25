@@ -1,14 +1,13 @@
 import 'package:flutter/services.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
-import 'package:printing/printing.dart';
 import 'package:intl/intl.dart';
 import '../attendance/models/attendance_day.dart';
 import '../attendance/attendance_summary/attendance_summary_model.dart';
 import '../attendance/services/attendance_summary_helper.dart';
 
 class PdfReportService {
-  static Future<void> generateAndPreview({
+  static Future<Uint8List> generatePdf({
     required String employeeId,
     required String employeeName,
     required String period,
@@ -35,10 +34,17 @@ class PdfReportService {
         totalDays == 0 ? 0 : ((summary.present / totalDays) * 100).round();
 
     final dateFormat = DateFormat('dd MMM yyyy');
+    final exportTime = DateFormat('dd MMM yyyy HH:mm')
+    .format(DateTime.now());
 
     pdf.addPage(
+
   pw.Page(
     pageFormat: PdfPageFormat.a4.landscape,
+    theme: pw.ThemeData.withFont(
+      base: fontRegular,
+      bold: fontBold,
+    ),
     build: (context) => pw.Center(
       child: pw.Column(
         mainAxisAlignment: pw.MainAxisAlignment.center,
@@ -52,7 +58,7 @@ class PdfReportService {
             "ATTENDANCE REPORT",
             style: pw.TextStyle(
               fontSize: 36,
-              fontWeight: pw.FontWeight.bold,
+              font: fontBold,
             ),
           ),
           pw.SizedBox(height: 10),
@@ -65,7 +71,7 @@ class PdfReportService {
             employeeName,
             style: pw.TextStyle(
               fontSize: 26,
-              fontWeight: pw.FontWeight.bold,
+              font: fontBold,
             ),
           ),
           pw.Text("Employee ID: $employeeId"),
@@ -112,10 +118,14 @@ class PdfReportService {
                         "ATTENDANCE REPORT",
                         style: pw.TextStyle(
                           fontSize: 22,
-                          fontWeight: pw.FontWeight.bold,
+                          font: fontBold,
                         ),
                       ),
                       pw.Text(period),
+                      pw.Text(
+  "Exported: $exportTime",
+  style: const pw.TextStyle(fontSize: 10),
+),
                     ],
                   ),
                 ],
@@ -132,7 +142,7 @@ class PdfReportService {
                       "$attendanceRate%",
                       style: pw.TextStyle(
                         fontSize: 28,
-                        fontWeight: pw.FontWeight.bold,
+                        font: fontBold,
                         color: PdfColors.blue800,
                       ),
                     ),
@@ -148,7 +158,7 @@ class PdfReportService {
 pw.Text(
   "Attendance Overview",
   style: pw.TextStyle(
-    fontWeight: pw.FontWeight.bold,
+    font: fontBold,
     fontSize: 14,
   ),
 ),
@@ -202,7 +212,7 @@ pw.SizedBox(height: 10),
           pw.Text(
             "Attendance Details",
             style: pw.TextStyle(
-              fontWeight: pw.FontWeight.bold,
+              font: fontBold,
               fontSize: 14,
             ),
           ),
@@ -282,7 +292,7 @@ pw.SizedBox(height: 10),
                 "YES",
                 style: pw.TextStyle(
                   color: PdfColors.red800,
-                  fontWeight: pw.FontWeight.bold,
+                  font: fontBold,
                   fontSize: 9,
                 ),
               ),
@@ -303,7 +313,7 @@ pw.SizedBox(height: 30),
 pw.Text(
   "Overnight Details",
   style: pw.TextStyle(
-    fontWeight: pw.FontWeight.bold,
+    font: fontBold,
     fontSize: 14,
   ),
 ),
@@ -371,10 +381,7 @@ summary.overnights.isEmpty
         ],
       ),
     );
-
-    await Printing.layoutPdf(
-      onLayout: (format) async => pdf.save(),
-    );
+    return pdf.save();
   }
 
   static pw.Widget _summaryCard(
@@ -392,7 +399,7 @@ summary.overnights.isEmpty
             value.toString(),
             style: pw.TextStyle(
               fontSize: 18,
-              fontWeight: pw.FontWeight.bold,
+             fontWeight: pw.FontWeight.bold,
               color: color,
             ),
           ),
