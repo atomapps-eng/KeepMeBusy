@@ -5,6 +5,7 @@ import 'package:printing/printing.dart';
 import 'package:intl/intl.dart';
 import '../attendance/models/attendance_day.dart';
 import '../attendance/attendance_summary/attendance_summary_model.dart';
+import '../attendance/services/attendance_summary_helper.dart';
 
 class PdfReportService {
   static Future<void> generateAndPreview({
@@ -17,7 +18,7 @@ class PdfReportService {
 
     final pdf = pw.Document();
 
-    final logo = await rootBundle.load('assets/images/atom.png');
+    final logo = await rootBundle.load('assets/images/Atom.png');
     final fontRegular =
         pw.Font.ttf(await rootBundle.load('assets/fonts/Roboto-Regular.ttf'));
     final fontBold =
@@ -34,6 +35,45 @@ class PdfReportService {
         totalDays == 0 ? 0 : ((summary.present / totalDays) * 100).round();
 
     final dateFormat = DateFormat('dd MMM yyyy');
+
+    pdf.addPage(
+  pw.Page(
+    pageFormat: PdfPageFormat.a4.landscape,
+    build: (context) => pw.Center(
+      child: pw.Column(
+        mainAxisAlignment: pw.MainAxisAlignment.center,
+        children: [
+          pw.Image(
+            pw.MemoryImage(logo.buffer.asUint8List()),
+            height: 80,
+          ),
+          pw.SizedBox(height: 30),
+          pw.Text(
+            "ATTENDANCE REPORT",
+            style: pw.TextStyle(
+              fontSize: 36,
+              fontWeight: pw.FontWeight.bold,
+            ),
+          ),
+          pw.SizedBox(height: 10),
+          pw.Text(
+            period,
+            style: const pw.TextStyle(fontSize: 20),
+          ),
+          pw.SizedBox(height: 40),
+          pw.Text(
+            employeeName,
+            style: pw.TextStyle(
+              fontSize: 26,
+              fontWeight: pw.FontWeight.bold,
+            ),
+          ),
+          pw.Text("Employee ID: $employeeId"),
+        ],
+      ),
+    ),
+  ),
+);
 
     pdf.addPage(
       pw.MultiPage(
@@ -103,6 +143,18 @@ class PdfReportService {
             ],
           ),
 
+          pw.SizedBox(height: 30),
+
+pw.Text(
+  "Attendance Overview",
+  style: pw.TextStyle(
+    fontWeight: pw.FontWeight.bold,
+    fontSize: 14,
+  ),
+),
+
+pw.SizedBox(height: 10),
+
           pw.SizedBox(height: 25),
 
           /// EMPLOYEE INFO
@@ -135,31 +187,14 @@ class PdfReportService {
               _summaryCard("Annual", summary.annualLeave, PdfColors.blue),
               _summaryCard("Travel", summary.traveling, PdfColors.purple),
               _summaryCard("Holiday", summary.joinHoliday, PdfColors.pink),
+              _summaryCard("Office", summary.office, PdfColors.blueGrey),
+              _summaryCard("Outstation", summary.outstation, PdfColors.deepOrange),
             ],
           ),
 
           pw.SizedBox(height: 30),
 
-          /// BAR CHART
-          pw.Text(
-            "Attendance Distribution",
-            style: pw.TextStyle(
-              fontWeight: pw.FontWeight.bold,
-              fontSize: 14,
-            ),
-          ),
           pw.SizedBox(height: 10),
-
-          pw.Row(
-            children: [
-              _bar(summary.present, totalDays, PdfColors.green),
-              _bar(summary.off, totalDays, PdfColors.grey),
-              _bar(summary.sickLeave, totalDays, PdfColors.orange),
-              _bar(summary.annualLeave, totalDays, PdfColors.blue),
-              _bar(summary.traveling, totalDays, PdfColors.purple),
-              _bar(summary.joinHoliday, totalDays, PdfColors.pink),
-            ],
-          ),
 
           pw.SizedBox(height: 30),
 
@@ -175,26 +210,144 @@ class PdfReportService {
           pw.SizedBox(height: 10),
 
           pw.Table(
-            border: pw.TableBorder.all(color: PdfColors.grey300),
-            children: [
-              pw.TableRow(
-                decoration:
-                    const pw.BoxDecoration(color: PdfColors.grey300),
-                children: [
-                  _header("Date"),
-                  _header("Status"),
-                  _header("Location"),
-                ],
+  border: pw.TableBorder.all(color: PdfColors.grey300),
+  columnWidths: {
+  0: const pw.FlexColumnWidth(1.5),
+  1: const pw.FlexColumnWidth(1.5),
+  2: const pw.FlexColumnWidth(1.1),
+  3: const pw.FlexColumnWidth(1.8), // Client
+  4: const pw.FlexColumnWidth(1.2),
+  5: const pw.FlexColumnWidth(1.2),
+  6: const pw.FlexColumnWidth(1),
+},
+  children: [
+    /// HEADER
+    pw.TableRow(
+      decoration: const pw.BoxDecoration(
+        color: PdfColors.grey300,
+      ),
+      children: [
+        _headerCell("Date"),
+        _headerCell("Status"),
+        _headerCell("Location"),
+        _headerCell("Client"),
+        _headerCell("Check In"),
+        _headerCell("Check Out"),
+        _headerCell("Overtime"),
+      ],
+    ),
+
+    /// DATA
+    ...attendanceDays
+        .where((d) => d.period == period)
+        .map((d) {
+      final checkIn = _formatTime(d.checkInHour, d.checkInMinute);
+      final checkOut = _formatTime(d.checkOutHour, d.checkOutMinute);
+      final isOvertime = AttendanceSummaryHelper.isOvertimeDay(d);
+
+      return pw.TableRow(
+  children: [
+    _cell(dateFormat.format(d.date)),
+    _cell(d.status.label),
+
+    // LOCATION
+    _cell(
+      d.location.name.toLowerCase() == "outstation"
+          ? "Outstation"
+          : "Office",
+    ),
+
+    // CLIENT
+    _cell(
+      d.location.name.toLowerCase() == "outstation"
+          ? (d.customerName ?? "-")
+          : "-",
+    ),
+
+    _cell(checkIn),
+    _cell(checkOut),
+
+    pw.Container(
+      padding: const pw.EdgeInsets.all(6),
+      alignment: pw.Alignment.center,
+      child: isOvertime
+          ? pw.Container(
+              padding: const pw.EdgeInsets.symmetric(
+                  horizontal: 6, vertical: 3),
+              decoration: pw.BoxDecoration(
+                color: PdfColors.red100,
+                borderRadius: pw.BorderRadius.circular(6),
               ),
-              ...attendanceDays.map((d) => pw.TableRow(
-                    children: [
-                      _cell(dateFormat.format(d.date)),
-                      _statusCell(d.status.label),
-                      _cell(d.location.name),
-                    ],
-                  )),
+              child: pw.Text(
+                "YES",
+                style: pw.TextStyle(
+                  color: PdfColors.red800,
+                  fontWeight: pw.FontWeight.bold,
+                  fontSize: 9,
+                ),
+              ),
+            )
+          : pw.Text(
+              "-",
+              style: const pw.TextStyle(fontSize: 9),
+            ),
+    ),
+  ],
+);
+    }),
+  ],
+),
+
+pw.SizedBox(height: 30),
+
+pw.Text(
+  "Overnight Details",
+  style: pw.TextStyle(
+    fontWeight: pw.FontWeight.bold,
+    fontSize: 14,
+  ),
+),
+
+pw.SizedBox(height: 10),
+
+summary.overnights.isEmpty
+    ? pw.Text("No overnight records")
+    : pw.Table(
+        border: pw.TableBorder.all(color: PdfColors.grey300),
+        columnWidths: {
+          0: const pw.FlexColumnWidth(2),
+          1: const pw.FlexColumnWidth(3),
+          2: const pw.FlexColumnWidth(2),
+          3: const pw.FlexColumnWidth(2),
+          4: const pw.FlexColumnWidth(1),
+        },
+        children: [
+          pw.TableRow(
+            decoration: const pw.BoxDecoration(
+              color: PdfColors.grey300,
+            ),
+            children: [
+              _headerCell("Location"),
+              _headerCell("Customer"),
+              _headerCell("Start Date"),
+              _headerCell("End Date"),
+              _headerCell("Nights"),
             ],
           ),
+
+          ...summary.overnights.map((o) {
+            return pw.TableRow(
+              children: [
+                _cell(o.location),
+                _cell(o.customer),
+                _cell(dateFormat.format(o.startDate)),
+                _cell(dateFormat.format(o.endDate)),
+                _cell(o.nights.toString()),
+              ],
+            );
+          }),
+        ],
+      ),
 
           pw.SizedBox(height: 50),
 
@@ -249,29 +402,6 @@ class PdfReportService {
     );
   }
 
-  static pw.Widget _bar(int value, int total, PdfColor color) {
-  final percent = total == 0 ? 0.0 : value / total;
-
-  return pw.Expanded(
-    child: pw.Container(
-      height: 20,
-      margin: const pw.EdgeInsets.symmetric(horizontal: 2),
-      decoration: pw.BoxDecoration(
-        border: pw.Border.all(color: PdfColors.grey300),
-      ),
-      child: pw.Row(
-        children: [
-          pw.Container(
-            width: percent * 200, // 200 = max width scale
-            height: 20,
-            color: color,
-          ),
-        ],
-      ),
-    ),
-  );
-}
-
   static pw.Widget _header(String text) {
     return pw.Padding(
       padding: const pw.EdgeInsets.all(6),
@@ -298,4 +428,32 @@ class PdfReportService {
       ),
     );
   }
+  static String _formatTime(int? h, int? m) {
+  if (h == null) return "-";
+  return "${h.toString().padLeft(2, '0')}:${(m ?? 0).toString().padLeft(2, '0')}";
+}
+
+static String _buildLocationText(AttendanceDay d) {
+  if (d.location.name.toLowerCase() == "outstation") {
+    if (d.customerName != null && d.customerName!.isNotEmpty) {
+      return "Outstation - ${d.customerName}";
+    }
+    return "Outstation";
+  }
+
+  return "Office";
+}
+
+static pw.Widget _headerCell(String text) {
+  return pw.Padding(
+    padding: const pw.EdgeInsets.all(6),
+    child: pw.Text(
+      text,
+      style: pw.TextStyle(
+        fontWeight: pw.FontWeight.bold,
+        fontSize: 10,
+      ),
+    ),
+  );
+}
 }

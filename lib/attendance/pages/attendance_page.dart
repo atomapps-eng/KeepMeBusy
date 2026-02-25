@@ -420,6 +420,7 @@ Widget _buildDesktopStatsCard(Map<String, int> summary) {
             _buildStatItem('Annual', summary['annualLeave'] ?? 0, Colors.blue, Icons.beach_access),
             _buildStatItem('Travel', summary['traveling'] ?? 0, Colors.purple, Icons.flight),
             _buildStatItem('Holiday', summary['joinHoliday'] ?? 0, Colors.pink, Icons.celebration),
+            _buildStatItem('Overtime', summary['overtime'] ?? 0, Colors.red, Icons.access_time),
           ],
         ),
 
@@ -917,6 +918,36 @@ Widget _buildTableRow(AttendanceDay day) {
                         style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
                       ),
                       const SizedBox(width: 8),
+
+                      if (isOvertime(day))
+        Container(
+          margin: const EdgeInsets.only(left: 4, right: 2),
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+          decoration: BoxDecoration(
+            color: Colors.red.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.access_time,
+                size: 10,
+                color: Colors.red.shade700,
+              ),
+              const SizedBox(width: 2),
+              Text(
+                'OT',
+                style: TextStyle(
+                  fontSize: 9,
+                  color: Colors.red.shade700,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+        
                       // INDICATOR ACTIVITY
                       StreamBuilder<bool>(
                         stream: _hasActivities(day.date),
@@ -1545,6 +1576,11 @@ class _StatusChips extends StatelessWidget {
             Colors.deepPurple, AttendanceStatus.traveling),
         _chip('Join Holiday', summary['joinHoliday'] ?? 0,
             Colors.pink, AttendanceStatus.joinHoliday),
+
+
+
+
+
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
