@@ -9,6 +9,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'spare_part_detail_page.dart';
 import '../../core/widgets/draggable_window.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../core/session/company_session.dart';
 
 
 class SparePartListPage extends StatefulWidget {
@@ -52,6 +53,8 @@ class _SparePartListPageState extends State<SparePartListPage> {
   @override
   void initState() {
     super.initState();
+
+    print("ACTIVE COMPANY (LIST PAGE): ${CompanySession.selectedCompanyId}");
     
     // Cek apakah ada searchKeyword dari parameter
     if (widget.searchKeyword != null && widget.searchKeyword!.isNotEmpty) {
@@ -152,26 +155,31 @@ class _SparePartListPageState extends State<SparePartListPage> {
   // INITIAL LOAD
   // ===============================
   Future<void> _loadInitialData() async {
-    setState(() => _isLoading = true);
+  setState(() {
+    _isLoading = true;
+    _parts.clear();
+    _lastDocument = null;
+    _hasMore = true;
+  });
 
-    try {
-      final service = SparePartService();
-      final snapshot = await service.fetchSpareParts();
+  try {
+    final service = SparePartService();
+    final snapshot = await service.fetchSpareParts();
 
-      if (snapshot.docs.isNotEmpty) {
-        _lastDocument = snapshot.docs.last;
-        _parts = snapshot.docs
-            .map((doc) => SparePart.fromFirestore(doc))
-            .toList();
-      }
-
-      _hasMore = snapshot.docs.length == 50;
-    } catch (e) {
-      print('Error loading initial data: $e');
-    } finally {
-      setState(() => _isLoading = false);
+    if (snapshot.docs.isNotEmpty) {
+      _lastDocument = snapshot.docs.last;
+      _parts = snapshot.docs
+          .map((doc) => SparePart.fromFirestore(doc))
+          .toList();
     }
+
+    _hasMore = snapshot.docs.length == 50;
+  } catch (e) {
+    print('Error loading initial data: $e');
+  } finally {
+    setState(() => _isLoading = false);
   }
+}
 
   // ===============================
   // LOAD MORE

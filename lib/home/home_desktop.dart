@@ -2017,7 +2017,7 @@ final bool canAccessSettings = isAdmin;
                           MaterialPageRoute(
                             builder: (_) => SelectCompanyPage(
                               companyIds: isSuperAdmin 
-                                  ? ['indonesia', 'india', 'vietnam'] 
+  ? ['atomIndonesia', 'atomIndia', 'atomVietnam']
                                   : companyIds,
                             ),
                           ),
@@ -2252,11 +2252,13 @@ final bool canAccessSettings = isAdmin;
       barrierColor: Colors.black.withOpacity(0.35),
       transitionDuration: const Duration(milliseconds: 200),
       pageBuilder: (_, __, ___) {
-        return const DraggableResizableWindow(
-          title: "Spare Parts",
-          headerColor: Colors.blueGrey,
-          child: SparePartListPage(),
-        );
+        return DraggableResizableWindow(
+  title: "Spare Parts",
+  headerColor: Colors.blueGrey,
+  child: SparePartListPage(
+    key: ValueKey(CompanySession.selectedCompanyId),
+  ),
+);
       },
     );
   }

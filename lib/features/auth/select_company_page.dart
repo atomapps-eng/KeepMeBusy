@@ -17,7 +17,7 @@ class SelectCompanyPage extends StatelessWidget {
   // Data company dengan informasi lengkap termasuk logo
   Map<String, Map<String, dynamic>> get _companyDetails {
   return {
-    'indonesia': {
+    'atomIndonesia': {
       'flag': '🇮🇩',
       'logo': 'assets/images/logo_indonesia.png',
       'name': 'ATOM INDONESIA', // Tambah spasi
@@ -26,7 +26,7 @@ class SelectCompanyPage extends StatelessWidget {
       'icon': Icons.location_on,
       'color': const Color(0xFFFF6B6B),
     },
-    'india': {
+    'atomIndia': {
       'flag': '🇮🇳',
       'logo': 'assets/images/logo_india.png',
       'name': 'ATOM INDIA', // Tambah spasi
@@ -35,7 +35,7 @@ class SelectCompanyPage extends StatelessWidget {
       'icon': Icons.location_on,
       'color': const Color(0xFFFFA06B),
     },
-    'vietnam': {
+    'atomVietnam': {
       'flag': '🇻🇳',
       'logo': 'assets/images/logo_vietnam.png',
       'name': 'ATOM VIETNAM', // Tambah spasi

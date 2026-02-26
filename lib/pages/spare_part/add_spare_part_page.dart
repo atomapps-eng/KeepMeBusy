@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../../models/spare_part.dart';
 import '../../core/services/company_firestore.dart';
+import '../../core/session/company_session.dart';
 
 
 class AddSparePartPage extends StatefulWidget {
@@ -166,6 +167,10 @@ request.fields['public_id'] = uniqueId;
   // SAVE DATA
   // =========================
   Future<void> saveData() async {
+
+      // 🔥 DEBUG COMPANY
+  print("CURRENT COMPANY: ${CompanySession.selectedCompanyId}");
+
   // ✅ AMBIL DEPENDENCY CONTEXT DI AWAL
   final navigator = Navigator.of(context);
   final messenger = ScaffoldMessenger.of(context);
@@ -242,6 +247,12 @@ request.fields['public_id'] = uniqueId;
     'origin': _selectedOrigin.name.toUpperCase(),
     'createdAt': Timestamp.now(),
   });
+
+  final checkDoc = await CompanyFirestore
+    .doc('spare_parts', partCode)
+    .get();
+
+print("AFTER SAVE DATA: ${checkDoc.data()}");
 
   if (!mounted) return;
 
