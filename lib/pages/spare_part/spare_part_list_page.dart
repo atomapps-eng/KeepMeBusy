@@ -1,4 +1,5 @@
 import 'dart:ui';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../services/spare_part_service.dart';
 import '../../models/spare_part.dart';
@@ -34,220 +35,330 @@ class _SparePartListPageState extends State<SparePartListPage> {
   final TextEditingController searchController = TextEditingController();
   final FocusNode searchFocusNode = FocusNode();
 
+  // ================= SEARCH STATE =================
+  List<SparePart> _searchResults = [];
+  bool _isSearching = false;
+  Timer? _debounce;
+  String _currentSearchKeyword = ''; // Tambahkan ini
+
   // ===== PAGINATION STATE =====
-final ScrollController _scrollController = ScrollController();
-
-List<SparePart> _parts = [];
-DocumentSnapshot? _lastDocument;
-
-bool _isLoading = false;
-bool _hasMore = true;
+  final ScrollController _scrollController = ScrollController();
+  List<SparePart> _parts = [];
+  DocumentSnapshot? _lastDocument;
+  bool _isLoading = false;
+  bool _hasMore = true;
+  bool _isLoadingMore = false; // Tambahkan ini untuk loading indicator
 
   @override
   void initState() {
-  super.initState();
-
-  _loadInitialData();
-
-  _scrollController.addListener(() {
-    if (_scrollController.position.pixels >=
-            _scrollController.position.maxScrollExtent - 200 &&
-        !_isLoading &&
-        _hasMore) {
-      _loadMore();
+    super.initState();
+    
+    // Cek apakah ada searchKeyword dari parameter
+    if (widget.searchKeyword != null && widget.searchKeyword!.isNotEmpty) {
+      searchController.text = widget.searchKeyword!;
+      _performSearch(widget.searchKeyword!);
+    } else {
+      _loadInitialData();
     }
-  });
-}
-void dispose() {
-  searchFocusNode.dispose(); // STEP 1
-  searchController.dispose(); // sudah ada controller
-  super.dispose();
-}
 
-// ===============================
-// INITIAL LOAD
-// ===============================
-Future<void> _loadInitialData() async {
-  setState(() => _isLoading = true);
-
-  final service = SparePartService();
-  final snapshot = await service.fetchSpareParts();
-
-  if (snapshot.docs.isNotEmpty) {
-    _lastDocument = snapshot.docs.last;
-
-    _parts = snapshot.docs
-        .map((doc) => SparePart.fromFirestore(doc))
-        .toList();
+    _scrollController.addListener(() {
+      if (_scrollController.position.pixels >=
+              _scrollController.position.maxScrollExtent - 200 &&
+          !_isLoading &&
+          !_isLoadingMore &&
+          _hasMore) {
+        
+        // Tentukan data mana yang akan di-load more
+        if (_isSearching && _currentSearchKeyword.isNotEmpty) {
+          _loadMoreSearchResults();
+        } else {
+          _loadMore();
+        }
+      }
+    });
   }
 
-  _hasMore = snapshot.docs.length == 50;
-  _isLoading = false;
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    searchFocusNode.dispose();
+    searchController.dispose();
+    _scrollController.dispose();
+    super.dispose();
+  }
 
-  setState(() {});
-}
+  // ===============================
+  // SEARCH FUNCTION
+  // ===============================
+  Future<void> _performSearch(String keyword) async {
+    if (keyword.isEmpty) {
+      setState(() {
+        _isSearching = false;
+        _searchResults.clear();
+        _currentSearchKeyword = '';
+      });
+      return;
+    }
 
-// ===============================
-// LOAD MORE
-// ===============================
-Future<void> _loadMore() async {
-  if (_lastDocument == null) return;
+    setState(() {
+      _isSearching = true;
+      _isLoading = true;
+      _currentSearchKeyword = keyword;
+      _searchResults.clear(); // Reset hasil pencarian sebelumnya
+    });
 
-  setState(() => _isLoading = true);
+    final service = SparePartService();
+    final results = await service.searchSpareParts(keyword);
 
-  final service = SparePartService();
-  final snapshot = await service.fetchSpareParts(
-    lastDoc: _lastDocument,
-  );
+    setState(() {
+      _searchResults = results;
+      _isLoading = false;
+    });
+  }
 
-  if (snapshot.docs.isNotEmpty) {
-    _lastDocument = snapshot.docs.last;
+  // ===============================
+  // LOAD MORE SEARCH RESULTS
+  // ===============================
+  Future<void> _loadMoreSearchResults() async {
+    if (_currentSearchKeyword.isEmpty || _isLoadingMore) return;
 
-    _parts.addAll(
-      snapshot.docs.map(
-        (doc) => SparePart.fromFirestore(doc),
+    setState(() {
+      _isLoadingMore = true;
+    });
+
+    try {
+      final service = SparePartService();
+      // Anda perlu mengimplementasikan method search dengan pagination
+      final moreResults = await service.searchSparePartsMore(
+        keyword: _currentSearchKeyword,
+        lastDoc: _lastDocument,
+      );
+
+      if (moreResults.isNotEmpty) {
+        setState(() {
+          _searchResults.addAll(moreResults);
+        });
+      }
+    } catch (e) {
+      print('Error loading more search results: $e');
+    } finally {
+      setState(() {
+        _isLoadingMore = false;
+      });
+    }
+  }
+
+  // ===============================
+  // INITIAL LOAD
+  // ===============================
+  Future<void> _loadInitialData() async {
+    setState(() => _isLoading = true);
+
+    try {
+      final service = SparePartService();
+      final snapshot = await service.fetchSpareParts();
+
+      if (snapshot.docs.isNotEmpty) {
+        _lastDocument = snapshot.docs.last;
+        _parts = snapshot.docs
+            .map((doc) => SparePart.fromFirestore(doc))
+            .toList();
+      }
+
+      _hasMore = snapshot.docs.length == 50;
+    } catch (e) {
+      print('Error loading initial data: $e');
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  // ===============================
+  // LOAD MORE
+  // ===============================
+  Future<void> _loadMore() async {
+    if (_lastDocument == null || _isLoadingMore) return;
+
+    setState(() => _isLoadingMore = true);
+
+    try {
+      final service = SparePartService();
+      final snapshot = await service.fetchSpareParts(
+        lastDoc: _lastDocument,
+      );
+
+      if (snapshot.docs.isNotEmpty) {
+        _lastDocument = snapshot.docs.last;
+        _parts.addAll(
+          snapshot.docs.map(
+            (doc) => SparePart.fromFirestore(doc),
+          ),
+        );
+      }
+
+      _hasMore = snapshot.docs.length == 50;
+    } catch (e) {
+      print('Error loading more: $e');
+    } finally {
+      setState(() => _isLoadingMore = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.translucent,
+      onTap: () {
+        FocusScope.of(context).unfocus();
+      },
+      child: Scaffold(
+        floatingActionButton: widget.isCompact
+            ? null
+            : FloatingActionButton(
+                backgroundColor: Colors.blueGrey,
+                foregroundColor: Colors.white,
+                child: const Icon(Icons.add),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const AddSparePartPage(),
+                    ),
+                  );
+                },
+              ),
+        body: Stack(
+          children: [
+            Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Color(0xFFFFE0B2),
+                    Color(0xFFFFFFFF),
+                  ],
+                ),
+              ),
+            ),
+            SafeArea(
+              child: Column(
+                children: [
+                  if (!widget.isCompact)
+                    Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: _buildHeader(context),
+                    ),
+                  if (!widget.isCompact)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: _buildSearchBar(context),
+                    ),
+                  if (!widget.isCompact) const SizedBox(height: 12),
+                  Expanded(
+                    child: _buildPartsList(),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  _hasMore = snapshot.docs.length == 50;
-  _isLoading = false;
+  Widget _buildPartsList() {
+    // Tentukan data yang akan ditampilkan
+    final displayList = _isSearching ? _searchResults : _parts;
+    
+    // Tentukan apakah masih ada data untuk di-load
+    final hasMoreData = _isSearching ? false : _hasMore; // Sesuaikan dengan kebutuhan
 
-  setState(() {});
-}
+    if (displayList.isEmpty && _isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
 
-  @override
-Widget build(BuildContext context) {
-  final service = SparePartService();
-
-  return GestureDetector(
-    behavior: HitTestBehavior.translucent,
-    onTap: () {
-      FocusScope.of(context).unfocus(); // STEP 2
-    },
-    child: Scaffold(
-      floatingActionButton: widget.isCompact
-          ? null
-          : FloatingActionButton(
-              backgroundColor: Colors.blueGrey,
-              foregroundColor: Colors.white,
-              child: const Icon(Icons.add),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const AddSparePartPage(),
-                  ),
-                );
-              },
+    if (displayList.isEmpty && !_isLoading) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              _isSearching ? Icons.search_off : Icons.inventory,
+              size: 64,
+              color: Colors.grey,
             ),
-      body: Stack(
-        children: [
-          Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Color(0xFFFFE0B2),
-                  Color(0xFFFFFFFF),
-                ],
-              ),
+            const SizedBox(height: 16),
+            Text(
+              _isSearching ? 'No results found' : 'No spare parts available',
+              style: const TextStyle(fontSize: 16, color: Colors.grey),
             ),
-          ),
-          SafeArea(
-            child: Column(
-              children: [
-                if (!widget.isCompact)
-                  Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: _buildHeader(context),
-                  ),
-                if (!widget.isCompact)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: _buildSearchBar(context),
-                  ),
-                if (!widget.isCompact) const SizedBox(height: 12),
-                Expanded(
-  child: _parts.isEmpty && _isLoading
-      ? const Center(child: CircularProgressIndicator())
-      : ListView.builder(
-          controller: _scrollController,
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-          itemCount: _parts.length + (_hasMore ? 1 : 0),
-          itemBuilder: (context, index) {
+          ],
+        ),
+      );
+    }
 
-            // Loading indicator di bawah
-            if (index == _parts.length) {
-              return const Padding(
-                padding: EdgeInsets.all(16),
-                child: Center(
-                  child: CircularProgressIndicator(),
+    return ListView.builder(
+      controller: _scrollController,
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      itemCount: displayList.length + (hasMoreData ? 1 : 0),
+      itemBuilder: (context, index) {
+        // Loading indicator di bawah
+        if (hasMoreData && index == displayList.length) {
+          return const Padding(
+            padding: EdgeInsets.all(16),
+            child: Center(
+              child: CircularProgressIndicator(),
+            ),
+          );
+        }
+
+        final part = displayList[index];
+
+        return GestureDetector(
+          onTap: () {
+            if (widget.selectionMode) {
+              Navigator.pop(context, part);
+              return;
+            }
+
+            if (widget.isCompact) return;
+
+            final isDesktop = MediaQuery.of(context).size.width >= 900;
+
+            if (isDesktop) {
+              showGeneralDialog(
+                context: context,
+                barrierDismissible: true,
+                barrierLabel: "SparePartDetail",
+                barrierColor: Colors.black.withOpacity(0.35),
+                transitionDuration: const Duration(milliseconds: 200),
+                pageBuilder: (_, _, _) {
+                  return DraggableResizableWindow(
+                    title: "Spare Part Detail",
+                    headerColor: Colors.blueGrey,
+                    child: SparePartDetailPage(part: part),
+                  );
+                },
+              );
+            } else {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => SparePartDetailPage(part: part),
                 ),
               );
             }
-
-            final part = _parts[index];
-
-            return GestureDetector(
-              onTap: () {
-                // ===== SELECTION MODE =====
-                if (widget.selectionMode) {
-                  Navigator.pop(context, part);
-                  return;
-                }
-
-                if (widget.isCompact) return;
-
-                final isDesktop =
-                    MediaQuery.of(context).size.width >= 900;
-
-                if (isDesktop) {
-                  showGeneralDialog(
-                    context: context,
-                    barrierDismissible: true,
-                    barrierLabel: "SparePartDetail",
-                    barrierColor:
-                        Colors.black.withOpacity(0.35),
-                    transitionDuration:
-                        const Duration(milliseconds: 200),
-                    pageBuilder: (_, _, _) {
-                      return DraggableResizableWindow(
-                        title: "Spare Part Detail",
-                        headerColor: Colors.blueGrey,
-                        child: SparePartDetailPage(part: part),
-                      );
-                    },
-                  );
-                } else {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) =>
-                          SparePartDetailPage(part: part),
-                    ),
-                  );
-                }
-              },
-              child: _GlassCard(
-                child: widget.isCompact
-                    ? _CompactItem(part: part)
-                    : _FullscreenItem(part: part),
-              ),
-            );
           },
-        ),
-),
-              ],
-            ),
+          child: _GlassCard(
+            child: widget.isCompact
+                ? _CompactItem(part: part)
+                : _FullscreenItem(part: part),
           ),
-        ],
-      ),
-    ),
-  );
-}
-
+        );
+      },
+    );
+  }
 
   Widget _buildHeader(BuildContext context) {
     return ClipRRect(
@@ -257,9 +368,9 @@ Widget build(BuildContext context) {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha:.25),
+            color: Colors.white.withValues(alpha: .25),
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.white.withValues(alpha:0.35)),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.35)),
           ),
           child: Row(
             children: [
@@ -269,11 +380,10 @@ Widget build(BuildContext context) {
               ),
               const SizedBox(width: 8),
               Text(
-  widget.selectionMode
-      ? 'Select Spare Part'
-      : 'Spare Part Database',
-),
-
+                widget.selectionMode
+                    ? 'Select Spare Part'
+                    : 'Spare Part Database',
+              ),
             ],
           ),
         ),
@@ -289,13 +399,13 @@ Widget build(BuildContext context) {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12),
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha:0.25),
+            color: Colors.white.withValues(alpha: 0.25),
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: Colors.white.withValues(alpha:0.35)),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.35)),
           ),
           child: TextField(
             controller: searchController,
-            focusNode: searchFocusNode, // ✅ STEP 1
+            focusNode: searchFocusNode,
             decoration: InputDecoration(
               hintText: 'Search spare part...',
               border: InputBorder.none,
@@ -311,12 +421,17 @@ Widget build(BuildContext context) {
                   );
                   if (result != null && result is String) {
                     searchController.text = result;
-                    setState(() {});
+                    _performSearch(result);
                   }
                 },
               ),
             ),
-            onChanged: (_) => setState(() {}),
+            onChanged: (value) {
+              if (_debounce?.isActive ?? false) _debounce!.cancel();
+              _debounce = Timer(const Duration(milliseconds: 400), () {
+                _performSearch(value.trim());
+              });
+            },
           ),
         ),
       ),
