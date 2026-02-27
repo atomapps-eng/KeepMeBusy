@@ -52,6 +52,9 @@ dependencies:
   intl: ^0.18.1
   flutter_html_to_pdf: ^0.7.0
   permission_handler: ^11.0.1
+  video_player: ^2.8.1
+  file_picker: ^8.0.0
+  signature: ^5.4.0
 
 
   # The following adds the Cupertino Icons font to your application.

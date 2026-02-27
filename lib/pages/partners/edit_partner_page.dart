@@ -114,7 +114,7 @@ class _EditPartnerPageState extends State<EditPartnerPage> with TickerProviderSt
     setState(() => isSaving = true);
 
     try {
-      String logoUrl = currentLogoUrl;
+      String? logoUrl = currentLogoUrl;
 
       if (selectedImage != null) {
         logoUrl = await CloudinaryService.uploadImage(
@@ -141,7 +141,7 @@ class _EditPartnerPageState extends State<EditPartnerPage> with TickerProviderSt
         email: emailController.text.trim().isEmpty
             ? null
             : emailController.text.trim(),
-        logoUrl: logoUrl,
+        logoUrl: logoUrl ?? '',
       );
 
       if (!mounted) return;

@@ -66,7 +66,7 @@ class _AddPartnerPageState extends State<AddPartnerPage> {
     setState(() => isSaving = true);
 
     try {
-     String logoUrl = '';
+     String? logoUrl = '';
 
 if (selectedImage != null) {
   logoUrl = await CloudinaryService.uploadImage(
@@ -93,7 +93,7 @@ if (selectedImage != null) {
   email: emailController.text.trim().isEmpty
       ? null
       : emailController.text.trim(),
-  logoUrl: logoUrl,
+  logoUrl: logoUrl ?? '',
 );
 
 

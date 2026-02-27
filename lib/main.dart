@@ -10,6 +10,8 @@ import 'core/session/company_session.dart';
 import 'package:provider/provider.dart';
 import 'auth_controller.dart';
 
+final GlobalKey<ScaffoldMessengerState> rootScaffoldMessengerKey =
+    GlobalKey<ScaffoldMessengerState>();
 // Global navigator key
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -78,15 +80,16 @@ class KeepMeBusyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      navigatorKey: navigatorKey,
-      debugShowCheckedModeBanner: false,
-      title: 'Keep Me Busy',
-      theme: AppTheme.lightTheme,
-      home: const AuthGate(),
-      routes: {
-        '/register': (_) => const RegisterPage(),
-        '/migration': (_) => const MigrationPage(),
-      },
-    );
+  navigatorKey: navigatorKey,
+  scaffoldMessengerKey: rootScaffoldMessengerKey, // 🔥 TAMBAHKAN INI
+  debugShowCheckedModeBanner: false,
+  title: 'Keep Me Busy',
+  theme: AppTheme.lightTheme,
+  home: const AuthGate(),
+  routes: {
+    '/register': (_) => const RegisterPage(),
+    '/migration': (_) => const MigrationPage(),
+  },
+);
   }
 }
