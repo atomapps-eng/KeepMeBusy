@@ -2,6 +2,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../core/session/company_session.dart';
 import '../../models/user_model.dart';
+import 'company_collection_resolver.dart';
 
 class ServiceReportFirestore {
   // Method untuk super_admin - PERBAIKI INI
@@ -10,27 +11,21 @@ class ServiceReportFirestore {
   }) {
     // Tambahkan .withConverter untuk menentukan tipe data
     return FirebaseFirestore.instance
-        .collectionGroup('service_reports')
-        .withConverter<Map<String, dynamic>>(
-          fromFirestore: (snapshot, _) => snapshot.data()!,
-          toFirestore: (data, _) => data,
-        )
-        .snapshots();
+    .collectionGroup('service_reports')
+    .withConverter<Map<String, dynamic>>(
+      fromFirestore: (snapshot, _) => snapshot.data()!,
+      toFirestore: (data, _) => data,
+    )
+    .where('companyId', whereIn: companyIds)
+    .orderBy("createdAt", descending: true)
+    .snapshots();
   }
 
   // Method untuk stream berdasarkan selected company (untuk admin/user)
   static Stream<QuerySnapshot<Map<String, dynamic>>> streamCompanyReports() {
-    final companyId = CompanySession.selectedCompanyId;
 
-    if (companyId == null) {
-      // Return stream kosong dengan error handling
-      return Stream.error("Company not selected");
-    }
-
-    return FirebaseFirestore.instance
-        .collection('companies')
-        .doc(companyId)
-        .collection('service_reports')
+   return CompanyCollectionResolver
+    .serviceReports()
         .withConverter<Map<String, dynamic>>(
           fromFirestore: (snapshot, _) => snapshot.data()!,
           toFirestore: (data, _) => data,
@@ -63,11 +58,9 @@ static Future<String> createServiceReport({
   // Generate sheetId TERLEBIH DAHULU sebelum save
   final sheetId = await generateSheetId();
 
-  final docRef = FirebaseFirestore.instance
-      .collection('companies')
-      .doc(companyId)
-      .collection('service_reports')
-      .doc();
+  final docRef = CompanyCollectionResolver
+    .serviceReports()
+    .doc();
 
   // Data yang akan disimpan
   final reportData = {
@@ -96,12 +89,10 @@ static Future<String> createServiceReport({
       throw Exception("Company not selected.");
     }
 
-    await FirebaseFirestore.instance
-        .collection('companies')
-        .doc(companyId)
-        .collection('service_reports')
-        .doc(docId)
-        .update(data);
+    await CompanyCollectionResolver
+    .serviceReports()
+    .doc(docId)
+    .update(data);
   }
 
   // GET SINGLE
@@ -113,16 +104,14 @@ static Future<String> createServiceReport({
       throw Exception("Company not selected.");
     }
 
-    return await FirebaseFirestore.instance
-        .collection('companies')
-        .doc(companyId)
-        .collection('service_reports')
-        .doc(docId)
-        .withConverter<Map<String, dynamic>>(
-          fromFirestore: (snapshot, _) => snapshot.data()!,
-          toFirestore: (data, _) => data,
-        )
-        .get();
+    return await CompanyCollectionResolver
+    .serviceReports()
+    .doc(docId)
+    .withConverter<Map<String, dynamic>>(
+      fromFirestore: (snapshot, _) => snapshot.data()!,
+      toFirestore: (data, _) => data,
+    )
+    .get();
   }
 
   // GENERATE SHEET ID
@@ -134,11 +123,9 @@ static Future<String> createServiceReport({
     }
 
     final year = DateTime.now().year;
-    final counterRef = FirebaseFirestore.instance
-        .collection('companies')
-        .doc(companyId)
-        .collection('counters')
-        .doc('service_report_$year');
+    final counterRef = CompanyCollectionResolver
+    .counters()
+    .doc('service_report_$year');
 
     return FirebaseFirestore.instance.runTransaction((transaction) async {
       final snapshot = await transaction.get(counterRef);
@@ -186,12 +173,10 @@ static Future<void> submitServiceReport(String docId) async {
     throw Exception("Company not selected.");
   }
 
-  await FirebaseFirestore.instance
-      .collection('companies')
-      .doc(companyId)
-      .collection('service_reports')
-      .doc(docId)
-      .update({
+  await CompanyCollectionResolver
+    .serviceReports()
+    .doc(docId)
+    .update({
         "status": "Submitted",
         "submittedAt": FieldValue.serverTimestamp(),
         "submittedBy": "user-id-here", // TODO: ambil dari auth

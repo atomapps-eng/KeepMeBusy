@@ -17,6 +17,7 @@ class SparePartListPage extends StatefulWidget {
   final String? searchKeyword;
   final bool selectionMode;
   final ValueChanged<SparePart>? onSelected;
+  final bool selectMode;
 
 
  const SparePartListPage({
@@ -25,6 +26,7 @@ class SparePartListPage extends StatefulWidget {
   this.searchKeyword,
   this.selectionMode = false,
   this.onSelected,
+  this.selectMode = false,
 });
 
 
@@ -334,46 +336,48 @@ if (!mounted || _isDisposed) return;
         final part = displayList[index];
 
         return GestureDetector(
-          onTap: () {
-            if (widget.selectionMode) {
-              Navigator.pop(context, part);
-              return;
-            }
+  onTap: () {
+    // ✅ SELECT MODE
+    if (widget.selectionMode) {
+      Navigator.pop(context, part);
+      return;
+    }
 
-            if (widget.isCompact) return;
+    // Normal mode
+    if (widget.isCompact) return;
 
-            final isDesktop = MediaQuery.of(context).size.width >= 900;
+    final isDesktop = MediaQuery.of(context).size.width >= 900;
 
-            if (isDesktop) {
-              showGeneralDialog(
-                context: context,
-                barrierDismissible: true,
-                barrierLabel: "SparePartDetail",
-                barrierColor: Colors.black.withOpacity(0.35),
-                transitionDuration: const Duration(milliseconds: 200),
-                pageBuilder: (_, _, _) {
-                  return DraggableResizableWindow(
-                    title: "Spare Part Detail",
-                    headerColor: Colors.blueGrey,
-                    child: SparePartDetailPage(part: part),
-                  );
-                },
-              );
-            } else {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => SparePartDetailPage(part: part),
-                ),
-              );
-            }
-          },
-          child: _GlassCard(
-            child: widget.isCompact
-                ? _CompactItem(part: part)
-                : _FullscreenItem(part: part),
-          ),
-        );
+    if (isDesktop) {
+      showGeneralDialog(
+        context: context,
+        barrierDismissible: true,
+        barrierLabel: "SparePartDetail",
+        barrierColor: Colors.black.withOpacity(0.35),
+        transitionDuration: const Duration(milliseconds: 200),
+        pageBuilder: (_, _, _) {
+          return DraggableResizableWindow(
+            title: "Spare Part Detail",
+            headerColor: Colors.blueGrey,
+            child: SparePartDetailPage(part: part),
+          );
+        },
+      );
+    } else {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => SparePartDetailPage(part: part),
+        ),
+      );
+    }
+  },
+  child: _GlassCard(
+    child: widget.isCompact
+        ? _CompactItem(part: part)
+        : _FullscreenItem(part: part),
+  ),
+);
       },
     );
   }

@@ -13,6 +13,9 @@ import 'signature_page.dart';
 import '../../main.dart';
 import '../../theme/app_theme.dart';
 import '../../pages/common/app_background_wrapper.dart';
+import '../services/company_collection_resolver.dart';
+import '../../pages/spare_part/spare_part_list_page.dart';
+import '../../models/spare_part.dart';
 
 class ServiceReportFormPage extends StatefulWidget {
   final String? reportId;
@@ -27,6 +30,9 @@ class _ServiceReportFormPageState extends State<ServiceReportFormPage> {
   bool _isSaving = false;
   bool _isLoading = false;
   String? _currentReportId;
+
+  List<String> partnerList = [];
+  bool _isLoadingPartners = true; 
   
   // BASIC
   DateTime? startDate;
@@ -50,14 +56,19 @@ class _ServiceReportFormPageState extends State<ServiceReportFormPage> {
   String? tech2;
   String? tech3;
 
+  List<String> technicianList = [];
+  bool _isLoadingTechnicians = true;
+
   // CUSTOMER
   final customerNameController = TextEditingController();
 
   // SPARE PART
   List<Map<String, dynamic>> spareParts = [];
+  List<Map<String, dynamic>> sparePartMaster = [];
+  bool _isLoadingSpareParts = true;
 
   // DUMMY DATA
-  final partners = ["PT ORISOL", "PT POUCHEN", "PT ATOM"];
+  
   final technicians = ["Basuki", "Agus", "Rudi"];
 
   // MEDIA
@@ -76,11 +87,97 @@ class _ServiceReportFormPageState extends State<ServiceReportFormPage> {
   @override
   void initState() {
     super.initState();
+    _loadPartners();
+     _loadTechnicians();
+      _loadSpareParts();
     _currentReportId = widget.reportId;
     if (_currentReportId != null) {
       _loadReportData();
     }
   }
+
+  Future<void> _loadPartners() async {
+  try {
+    final snapshot = await CompanyCollectionResolver
+        .partners()
+        .orderBy('name')
+        .get();
+
+    final data = snapshot.docs
+        .map((doc) => doc.data()['name'] as String)
+        .toList();
+
+    setState(() {
+      partnerList = data;
+      _isLoadingPartners = false;
+    });
+  } catch (e) {
+    print("Error loading partners: $e");
+    setState(() {
+      _isLoadingPartners = false;
+    });
+  }
+}
+
+Future<void> _loadTechnicians() async {
+  try {
+    final companyId = CompanySession.selectedCompanyId;
+
+    if (companyId == null) {
+      throw Exception("Company not selected");
+    }
+
+    final snapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .where('companyIds', arrayContains: companyId)
+        .where('position', isEqualTo: 'technician')
+        .where('active', isEqualTo: true)
+        .get();
+
+    final data = snapshot.docs
+    .map((doc) => doc.data()['username'])
+    .where((name) => name != null && name.toString().isNotEmpty)
+    .map((name) => name.toString())
+    .toList();
+
+        print("Technician snapshot count: ${snapshot.docs.length}");
+        print("Mapped technician list: $data");
+
+    setState(() {
+      technicianList = data;
+      _isLoadingTechnicians = false;
+    });
+  } catch (e) {
+    print("Error loading technicians: $e");
+    setState(() {
+      _isLoadingTechnicians = false;
+    });
+    print("Technician list final: $technicianList");
+  }
+}
+
+Future<void> _loadSpareParts() async {
+  try {
+    final snapshot = await CompanyCollectionResolver
+        .spareParts()
+        .orderBy('name')
+        .get();
+
+    final data = snapshot.docs
+        .map((doc) => doc.data())
+        .toList();
+
+    setState(() {
+      sparePartMaster = data;
+      _isLoadingSpareParts = false;
+    });
+  } catch (e) {
+    print("Error loading spare parts: $e");
+    setState(() {
+      _isLoadingSpareParts = false;
+    });
+  }
+}
 
   Future<void> _loadReportData() async {
     if (_currentReportId == null) return;
@@ -516,9 +613,23 @@ class _ServiceReportFormPageState extends State<ServiceReportFormPage> {
             ],
           ),
           const SizedBox(height: 16),
-          _buildDropdownField('Factory *', factory, partners, (val) => setState(() => factory = val)),
+         _isLoadingPartners
+    ? const CircularProgressIndicator()
+    : _buildDropdownField(
+        'Factory *',
+        factory,
+        partnerList,
+        (val) => setState(() => factory = val),
+      ),
           const SizedBox(height: 16),
-          _buildDropdownField('End Customer', endCustomer, partners, (val) => setState(() => endCustomer = val)),
+          _isLoadingPartners
+    ? const CircularProgressIndicator()
+    : _buildDropdownField(
+        'End Customer',
+        endCustomer,
+        partnerList,
+        (val) => setState(() => endCustomer = val),
+      ),
           const SizedBox(height: 16),
           _buildTextField(customerCodeController, 'Customer Code'),
         ],
@@ -567,7 +678,7 @@ class _ServiceReportFormPageState extends State<ServiceReportFormPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           ElevatedButton.icon(
-            onPressed: _addSparePartDialog,
+            onPressed: _openSparePartSelector,
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.blue.shade50,
               foregroundColor: Colors.blue,
@@ -645,14 +756,35 @@ class _ServiceReportFormPageState extends State<ServiceReportFormPage> {
       Colors.brown,
       Column(
         children: [
-          _buildDropdownField('Technician 1 *', tech1, technicians, (val) => setState(() => tech1 = val)),
+          _isLoadingTechnicians
+    ? const CircularProgressIndicator()
+    : _buildDropdownField(
+        'Technician 1 *',
+        tech1,
+        technicianList,
+        (val) => setState(() => tech1 = val),
+      ),
           if (tech1 != null) ...[
             const SizedBox(height: 16),
-            _buildDropdownField('Technician 2', tech2, technicians, (val) => setState(() => tech2 = val)),
+            _isLoadingTechnicians
+    ? const CircularProgressIndicator()
+    : _buildDropdownField(
+        'Technician 2',
+        tech2,
+        technicianList,
+        (val) => setState(() => tech2 = val),
+      ),
           ],
           if (tech2 != null) ...[
             const SizedBox(height: 16),
-            _buildDropdownField('Technician 3', tech3, technicians, (val) => setState(() => tech3 = val)),
+            _isLoadingTechnicians
+    ? const CircularProgressIndicator()
+    : _buildDropdownField(
+        'Technician 3',
+        tech3,
+        technicianList,
+        (val) => setState(() => tech3 = val),
+      ),
           ],
         ],
       ),
@@ -862,9 +994,23 @@ class _ServiceReportFormPageState extends State<ServiceReportFormPage> {
                 const SizedBox(height: 12),
                 _buildMobileDatePicker('End Date', endDate, (date) => setState(() => endDate = date)),
                 const SizedBox(height: 12),
-                _buildDropdownField('Factory *', factory, partners, (val) => setState(() => factory = val)),
+                _isLoadingPartners
+    ? const CircularProgressIndicator()
+    : _buildDropdownField(
+        'Factory *',
+        factory,
+        partnerList,
+        (val) => setState(() => factory = val),
+      ),
                 const SizedBox(height: 12),
-                _buildDropdownField('End Customer', endCustomer, partners, (val) => setState(() => endCustomer = val)),
+                _isLoadingPartners
+    ? const CircularProgressIndicator()
+    : _buildDropdownField(
+        'End Customer',
+        endCustomer,
+        partnerList,
+        (val) => setState(() => endCustomer = val),
+      ),
                 const SizedBox(height: 12),
                 _buildTextField(customerCodeController, 'Customer Code'),
               ],
@@ -948,7 +1094,10 @@ class _ServiceReportFormPageState extends State<ServiceReportFormPage> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(part['name'], style: const TextStyle(fontWeight: FontWeight.w600)),
+                              Text(
+  "${part['partCode']} - ${part['name']}",
+  style: const TextStyle(fontWeight: FontWeight.w600),
+),
                               Text('Qty: ${part['qty']}', style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
                             ],
                           ),
@@ -985,14 +1134,35 @@ class _ServiceReportFormPageState extends State<ServiceReportFormPage> {
             Colors.brown,
             Column(
               children: [
-                _buildDropdownField('Technician 1 *', tech1, technicians, (val) => setState(() => tech1 = val)),
+                _isLoadingTechnicians
+    ? const CircularProgressIndicator()
+    : _buildDropdownField(
+        'Technician 1 *',
+        tech1,
+        technicianList,
+        (val) => setState(() => tech1 = val),
+      ),
                 if (tech1 != null) ...[
                   const SizedBox(height: 12),
-                  _buildDropdownField('Technician 2', tech2, technicians, (val) => setState(() => tech2 = val)),
+                  _isLoadingTechnicians
+    ? const CircularProgressIndicator()
+    : _buildDropdownField(
+        'Technician 2',
+        tech2,
+        technicianList,
+        (val) => setState(() => tech2 = val),
+      ),
                 ],
                 if (tech2 != null) ...[
                   const SizedBox(height: 12),
-                  _buildDropdownField('Technician 3', tech3, technicians, (val) => setState(() => tech3 = val)),
+                  _isLoadingTechnicians
+    ? const CircularProgressIndicator()
+    : _buildDropdownField(
+        'Technician 3',
+        tech3,
+        technicianList,
+        (val) => setState(() => tech3 = val),
+      ),
                 ],
               ],
             ),
@@ -1408,49 +1578,124 @@ class _ServiceReportFormPageState extends State<ServiceReportFormPage> {
 
   // ================= DIALOGS =================
   void _addSparePartDialog() {
-    final qtyController = TextEditingController();
-    final nameController = TextEditingController(text: "RAM Module");
+  final qtyController = TextEditingController();
+  String? selectedPart;
 
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text("Add Spare Part"),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: nameController,
-              decoration: const InputDecoration(labelText: "Part Name"),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: qtyController,
-              decoration: const InputDecoration(labelText: "Quantity"),
-              keyboardType: TextInputType.number,
+  showDialog(
+    context: context,
+    builder: (_) => AlertDialog(
+      title: const Text("Add Spare Part"),
+      content: _isLoadingSpareParts
+          ? const SizedBox(
+              height: 80,
+              child: Center(child: CircularProgressIndicator()),
             )
-          ],
+          : Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                DropdownButtonFormField<String>(
+                  value: selectedPart,
+                  items: sparePartMaster
+                      .map((e) => DropdownMenuItem<String>(
+                            value: e['name'],
+                            child: Text(e['name']),
+                          ))
+                      .toList(),
+                  onChanged: (val) {
+                    selectedPart = val;
+                  },
+                  decoration:
+                      const InputDecoration(labelText: "Spare Part"),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: qtyController,
+                  decoration:
+                      const InputDecoration(labelText: "Quantity"),
+                  keyboardType: TextInputType.number,
+                )
+              ],
+            ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text("CANCEL"),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("CANCEL"),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              setState(() {
-                spareParts.add({
-                  "name": nameController.text,
-                  "qty": qtyController.text,
-                });
+        ElevatedButton(
+          onPressed: () {
+            if (selectedPart == null) return;
+
+            setState(() {
+              spareParts.add({
+                "name": selectedPart,
+                "qty": qtyController.text,
               });
-              Navigator.pop(context);
-            },
-            child: const Text("Add"),
-          )
-        ],
+            });
+
+            Navigator.pop(context);
+          },
+          child: const Text("Add"),
+        )
+      ],
+    ),
+  );
+}
+
+Future<void> _openSparePartSelector() async {
+  final selectedPart = await Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (_) => const SparePartListPage(
+        selectionMode: true,
       ),
-    );
-  }
+    ),
+  );
+
+  if (selectedPart == null) return;
+
+  _showQtyDialog(selectedPart);
+}
+
+void _showQtyDialog(SparePart part) {
+  final qtyController = TextEditingController();
+
+  showDialog(
+    context: context,
+    builder: (_) => AlertDialog(
+      title: Text("Add ${part.partCode}"),
+      content: TextField(
+        controller: qtyController,
+        keyboardType: TextInputType.number,
+        decoration: const InputDecoration(
+          labelText: "Quantity",
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text("Cancel"),
+        ),
+        ElevatedButton(
+          onPressed: () {
+            final qty = int.tryParse(qtyController.text);
+            if (qty == null || qty <= 0) return;
+
+            setState(() {
+              spareParts.add({
+                "partCode": part.partCode,
+                "name": part.name,
+                "qty": qty,
+              });
+            });
+
+            Navigator.pop(context);
+          },
+          child: const Text("Add"),
+        ),
+      ],
+    ),
+  );
+}
 
   // ================= EXISTING METHODS (TIDAK DIUBAH) =================
   Future<void> _openSignaturePad() async {
