@@ -7,7 +7,13 @@ import 'add_partner_page.dart';
 import 'edit_partner_page.dart';
 
 class PartnerListPage extends StatefulWidget {
-  const PartnerListPage({super.key});
+  final bool selectionMode;
+
+  const PartnerListPage({
+    super.key,
+    this.selectionMode = false,
+  });
+  
 
   @override
   State<PartnerListPage> createState() => _PartnerListPageState();
@@ -54,9 +60,11 @@ class _PartnerListPageState extends State<PartnerListPage> with TickerProviderSt
       behavior: HitTestBehavior.translucent,
       onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
-        floatingActionButton: ScaleTransition(
-          scale: _fabAnimation,
-          child: FloatingActionButton.extended(
+        floatingActionButton: widget.selectionMode
+    ? null
+    : ScaleTransition(
+        scale: _fabAnimation,
+        child: FloatingActionButton.extended(
             backgroundColor: Colors.blueGrey.shade700,
             foregroundColor: Colors.white,
             icon: const Icon(Icons.add),
@@ -322,14 +330,21 @@ class _PartnerListPageState extends State<PartnerListPage> with TickerProviderSt
   Widget _buildPartnerCard(Partner partner) {
     return InkWell(
       borderRadius: BorderRadius.circular(14),
-      onTap: () async {
-        await Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => EditPartnerPage(partner: partner),
-          ),
-        );
-      },
+     onTap: () async {
+  if (widget.selectionMode) {
+    Navigator.pop(context, partner);
+    return;
+  }
+
+  await Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (_) => EditPartnerPage(partner: partner),
+    ),
+  );
+
+  setState(() {});
+},
       child: _GlassCard(
         child: _PartnerItem(partner: partner),
       ),
@@ -427,8 +442,8 @@ class _PartnerListPageState extends State<PartnerListPage> with TickerProviderSt
                 ),
               ),
               const SizedBox(width: 12),
-              const Text(
-                'Partners',
+              Text(
+  widget.selectionMode ? 'Select Partner' : 'Partners',
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.w600,

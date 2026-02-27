@@ -16,6 +16,9 @@ import '../../pages/common/app_background_wrapper.dart';
 import '../services/company_collection_resolver.dart';
 import '../../pages/spare_part/spare_part_list_page.dart';
 import '../../models/spare_part.dart';
+import '../../models/service_report_spare_part.dart';
+import '../../pages/partners/partner_list_page.dart';
+import '../../models/partner.dart';
 
 class ServiceReportFormPage extends StatefulWidget {
   final String? reportId;
@@ -33,6 +36,9 @@ class _ServiceReportFormPageState extends State<ServiceReportFormPage> {
 
   List<String> partnerList = [];
   bool _isLoadingPartners = true; 
+
+  static List<String>? _cachedPartners;
+  static List<String>? _cachedTechnicians;
   
   // BASIC
   DateTime? startDate;
@@ -63,7 +69,7 @@ class _ServiceReportFormPageState extends State<ServiceReportFormPage> {
   final customerNameController = TextEditingController();
 
   // SPARE PART
-  List<Map<String, dynamic>> spareParts = [];
+  List<ServiceReportSparePart> spareParts = [];
   List<Map<String, dynamic>> sparePartMaster = [];
   bool _isLoadingSpareParts = true;
 
@@ -89,7 +95,6 @@ class _ServiceReportFormPageState extends State<ServiceReportFormPage> {
     super.initState();
     _loadPartners();
      _loadTechnicians();
-      _loadSpareParts();
     _currentReportId = widget.reportId;
     if (_currentReportId != null) {
       _loadReportData();
@@ -97,6 +102,14 @@ class _ServiceReportFormPageState extends State<ServiceReportFormPage> {
   }
 
   Future<void> _loadPartners() async {
+  if (_cachedPartners != null) {
+    setState(() {
+      partnerList = _cachedPartners!;
+      _isLoadingPartners = false;
+    });
+    return;
+  }
+
   try {
     final snapshot = await CompanyCollectionResolver
         .partners()
@@ -106,6 +119,8 @@ class _ServiceReportFormPageState extends State<ServiceReportFormPage> {
     final data = snapshot.docs
         .map((doc) => doc.data()['name'] as String)
         .toList();
+
+    _cachedPartners = data;
 
     setState(() {
       partnerList = data;
@@ -120,9 +135,16 @@ class _ServiceReportFormPageState extends State<ServiceReportFormPage> {
 }
 
 Future<void> _loadTechnicians() async {
+  if (_cachedTechnicians != null) {
+    setState(() {
+      technicianList = _cachedTechnicians!;
+      _isLoadingTechnicians = false;
+    });
+    return;
+  }
+
   try {
     final companyId = CompanySession.selectedCompanyId;
-
     if (companyId == null) {
       throw Exception("Company not selected");
     }
@@ -135,13 +157,12 @@ Future<void> _loadTechnicians() async {
         .get();
 
     final data = snapshot.docs
-    .map((doc) => doc.data()['username'])
-    .where((name) => name != null && name.toString().isNotEmpty)
-    .map((name) => name.toString())
-    .toList();
+        .map((doc) => doc.data()['username'])
+        .where((name) => name != null && name.toString().isNotEmpty)
+        .map((name) => name.toString())
+        .toList();
 
-        print("Technician snapshot count: ${snapshot.docs.length}");
-        print("Mapped technician list: $data");
+    _cachedTechnicians = data;
 
     setState(() {
       technicianList = data;
@@ -152,7 +173,6 @@ Future<void> _loadTechnicians() async {
     setState(() {
       _isLoadingTechnicians = false;
     });
-    print("Technician list final: $technicianList");
   }
 }
 
@@ -163,9 +183,15 @@ Future<void> _loadSpareParts() async {
         .orderBy('name')
         .get();
 
-    final data = snapshot.docs
-        .map((doc) => doc.data())
-        .toList();
+    final data = snapshot.docs.map((doc) {
+      final d = doc.data();
+      return {
+        'partCode': d['partCode'],
+        'name': d['name'],
+        'currentStock': d['currentStock'],
+        'location': d['location'],
+      };
+    }).toList();
 
     setState(() {
       sparePartMaster = data;
@@ -187,7 +213,15 @@ Future<void> _loadSpareParts() async {
     });
 
     try {
-      final doc = await ServiceReportFirestore.getReport(_currentReportId!);
+      final companyId = CompanySession.selectedCompanyId;
+if (companyId == null) {
+  throw Exception("Company not selected");
+}
+
+final doc = await ServiceReportFirestore.getReport(
+  companyId: companyId,
+  docId: _currentReportId!,
+);
       
       if (!mounted) return;
 
@@ -228,8 +262,14 @@ Future<void> _loadSpareParts() async {
 
         // SPARE PARTS
         if (data['spareParts'] != null) {
-          spareParts = List<Map<String, dynamic>>.from(data['spareParts']);
-        }
+  final List<dynamic> rawSpareParts = data['spareParts'];
+
+  spareParts = rawSpareParts
+      .map((e) => ServiceReportSparePart.fromMap(
+            Map<String, dynamic>.from(e),
+          ))
+      .toList();
+}
 
         // MEDIA
         _photo1Url = data['photo1'];
@@ -615,21 +655,27 @@ Future<void> _loadSpareParts() async {
           const SizedBox(height: 16),
          _isLoadingPartners
     ? const CircularProgressIndicator()
-    : _buildDropdownField(
-        'Factory *',
-        factory,
-        partnerList,
-        (val) => setState(() => factory = val),
-      ),
+    : _buildPartnerSelector(
+  label: 'Factory *',
+  value: factory,
+  onSelected: (partner) {
+    setState(() {
+      factory = partner.name;
+    });
+  },
+),
           const SizedBox(height: 16),
           _isLoadingPartners
     ? const CircularProgressIndicator()
-    : _buildDropdownField(
-        'End Customer',
-        endCustomer,
-        partnerList,
-        (val) => setState(() => endCustomer = val),
-      ),
+    : _buildPartnerSelector(
+  label: 'End Customer',
+  value: endCustomer,
+  onSelected: (partner) {
+    setState(() {
+      endCustomer = partner.name;
+    });
+  },
+),
           const SizedBox(height: 16),
           _buildTextField(customerCodeController, 'Customer Code'),
         ],
@@ -714,13 +760,11 @@ Future<void> _loadSpareParts() async {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          part['name'],
-                          style: const TextStyle(fontWeight: FontWeight.w600),
-                        ),
-                        Text(
-                          'Qty: ${part['qty']}',
-                          style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
-                        ),
+  part.name,
+),
+Text(
+  'Qty: ${part.qty}',
+),
                       ],
                     ),
                   ),
@@ -1095,10 +1139,16 @@ Future<void> _loadSpareParts() async {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-  "${part['partCode']} - ${part['name']}",
+  "${part.partCode} - ${part.name}",
   style: const TextStyle(fontWeight: FontWeight.w600),
 ),
-                              Text('Qty: ${part['qty']}', style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
+                              Text(
+  'Qty: ${part.qty}',
+  style: TextStyle(
+    color: Colors.grey.shade600,
+    fontSize: 12,
+  ),
+),
                             ],
                           ),
                         ),
@@ -1415,6 +1465,52 @@ Future<void> _loadSpareParts() async {
     );
   }
 
+  Widget _buildPartnerSelector({
+  required String label,
+  required String? value,
+  required Function(Partner) onSelected,
+}) {
+  return InkWell(
+    onTap: () async {
+      final selected = await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const PartnerListPage(
+            selectionMode: true,
+          ),
+        ),
+      );
+
+      if (selected != null && selected is Partner) {
+        onSelected(selected);
+      }
+    },
+    child: Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey.shade400),
+        borderRadius: BorderRadius.circular(8),
+        color: Colors.white.withOpacity(0.5),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.business, size: 16),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              value ?? label,
+              style: TextStyle(
+                color: value != null ? Colors.black : Colors.grey.shade600,
+              ),
+            ),
+          ),
+          const Icon(Icons.arrow_forward_ios, size: 14),
+        ],
+      ),
+    ),
+  );
+}
+
   Widget _buildDatePicker(String label, DateTime? date, Function(DateTime) onSelected) {
     return InkWell(
       onTap: () async {
@@ -1623,17 +1719,26 @@ Future<void> _loadSpareParts() async {
         ),
         ElevatedButton(
           onPressed: () {
-            if (selectedPart == null) return;
+  if (selectedPart == null) return;
 
-            setState(() {
-              spareParts.add({
-                "name": selectedPart,
-                "qty": qtyController.text,
-              });
-            });
+  final selected = sparePartMaster
+      .firstWhere((e) => e['name'] == selectedPart);
 
-            Navigator.pop(context);
-          },
+  final qty = int.tryParse(qtyController.text) ?? 0;
+  if (qty <= 0) return;
+
+ _addOrUpdateSparePart(
+  ServiceReportSparePart(
+    partCode: selected['partCode'],
+    name: selected['name'],
+    qty: qty,
+    currentStock: selected['currentStock'] ?? 0,
+    location: selected['location'] ?? '',
+  ),
+);
+
+  Navigator.pop(context);
+},
           child: const Text("Add"),
         )
       ],
@@ -1680,13 +1785,15 @@ void _showQtyDialog(SparePart part) {
             final qty = int.tryParse(qtyController.text);
             if (qty == null || qty <= 0) return;
 
-            setState(() {
-              spareParts.add({
-                "partCode": part.partCode,
-                "name": part.name,
-                "qty": qty,
-              });
-            });
+            _addOrUpdateSparePart(
+  ServiceReportSparePart(
+    partCode: part.partCode,
+    name: part.name,
+    qty: qty,
+    currentStock: part.currentStock,
+    location: part.location,
+  ),
+);
 
             Navigator.pop(context);
           },
@@ -1934,7 +2041,9 @@ void _showQtyDialog(SparePart part) {
         "technician2": tech2,
         "technician3": tech3,
         "customerName": customerNameController.text,
-        "spareParts": spareParts,
+        "spareParts": spareParts
+    .map((e) => e.toMap())
+    .toList(),
         "photo1": _photo1Url,
         "photo2": _photo2Url,
         "photo3": _photo3Url,
@@ -1946,7 +2055,11 @@ void _showQtyDialog(SparePart part) {
       if (_currentReportId == null) {
         await ServiceReportFirestore.createServiceReport(data: reportData);
       } else {
-        await ServiceReportFirestore.updateServiceReport(_currentReportId!, reportData);
+        await ServiceReportFirestore.updateServiceReport(
+  companyId: companyId,
+  docId: _currentReportId!,
+  data: reportData,
+);
       }
 
       if (!mounted) return;
@@ -2103,7 +2216,9 @@ void _showQtyDialog(SparePart part) {
         "technician2": tech2,
         "technician3": tech3,
         "customerName": customerNameController.text,
-        "spareParts": spareParts,
+       "spareParts": spareParts
+    .map((e) => e.toMap())
+    .toList(),
         "photo1": _photo1Url,
         "photo2": _photo2Url,
         "photo3": _photo3Url,
@@ -2117,12 +2232,20 @@ void _showQtyDialog(SparePart part) {
           "status": "Submitted",
         });
       } else {
-        await ServiceReportFirestore.updateServiceReport(_currentReportId!, {
-          ...reportData,
-          "status": "Submitted",
-          "submittedAt": FieldValue.serverTimestamp(),
-        });
-        await ServiceReportFirestore.submitServiceReport(_currentReportId!);
+        await ServiceReportFirestore.updateServiceReport(
+  companyId: companyId,
+  docId: _currentReportId!,
+  data: {
+    ...reportData,
+    "status": "Submitted",
+    "submittedAt": FieldValue.serverTimestamp(),
+  },
+);
+
+await ServiceReportFirestore.submitServiceReport(
+  companyId: companyId,
+  docId: _currentReportId!,
+);
       }
 
       if (!mounted) return;
@@ -2154,6 +2277,49 @@ void _showQtyDialog(SparePart part) {
       });
     }
   }
+  void _addOrUpdateSparePart(ServiceReportSparePart newPart) {
+  final index = spareParts.indexWhere(
+    (sp) => sp.partCode == newPart.partCode,
+  );
+
+  if (index != -1) {
+    final existing = spareParts[index];
+
+    final updatedQty = existing.qty + newPart.qty;
+
+    if (updatedQty > existing.currentStock) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Qty melebihi stock tersedia"),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    spareParts[index] = ServiceReportSparePart(
+      partCode: existing.partCode,
+      name: existing.name,
+      qty: updatedQty,
+      currentStock: existing.currentStock,
+      location: existing.location,
+    );
+  } else {
+    if (newPart.qty > newPart.currentStock) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Qty melebihi stock tersedia"),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    spareParts.add(newPart);
+  }
+
+  setState(() {});
+}
 }
 
 // ================= UI HELPERS =================

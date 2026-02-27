@@ -22,6 +22,7 @@ class SparePartService {
 
   // Stream untuk real-time updates (pertahankan)
   Stream<List<SparePart>> getSpareParts() {
+    print("🔥 getSpareParts STREAM ATTACHED");
     final ref = CompanyFirestore.collection('spare_parts');
     return ref.snapshots().map((snapshot) {
       return snapshot.docs.map((doc) {

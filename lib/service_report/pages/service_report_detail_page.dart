@@ -11,8 +11,13 @@ import '../../pages/common/app_background_wrapper.dart';
 
 class ServiceReportDetailPage extends StatefulWidget {
   final String reportId;
+  final String companyId;
   
-  const ServiceReportDetailPage({super.key, required this.reportId});
+  const ServiceReportDetailPage({
+  super.key,
+  required this.reportId,
+  required this.companyId,
+});
 
   @override
   State<ServiceReportDetailPage> createState() => _ServiceReportDetailPageState();
@@ -38,7 +43,10 @@ class _ServiceReportDetailPageState extends State<ServiceReportDetailPage> {
     });
 
     try {
-      final doc = await ServiceReportFirestore.getReport(widget.reportId);
+      final doc = await ServiceReportFirestore.getReport(
+  companyId: widget.companyId,
+  docId: widget.reportId,
+);
       
       if (!mounted) return;
       
@@ -88,7 +96,10 @@ class _ServiceReportDetailPageState extends State<ServiceReportDetailPage> {
     });
 
     try {
-      await ServiceReportFirestore.submitServiceReport(widget.reportId);
+      await ServiceReportFirestore.submitServiceReport(
+  companyId: widget.companyId,
+  docId: widget.reportId,
+);
       
       if (!mounted) return;
       
@@ -903,35 +914,53 @@ class _ServiceReportDetailPageState extends State<ServiceReportDetailPage> {
   }
 
   Widget _buildDesktopActionButtons() {
-    return _glass(
-      Row(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          ElevatedButton.icon(
-            onPressed: _editReport,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.grey.shade200,
-              foregroundColor: Colors.black87,
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+  return _glass(
+    Column(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            ElevatedButton.icon(
+              onPressed: _editReport,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.grey.shade200,
+                foregroundColor: Colors.black87,
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              ),
+              icon: const Icon(Icons.edit),
+              label: const Text("Edit Draft"),
             ),
-            icon: const Icon(Icons.edit),
-            label: const Text("Edit Draft"),
-          ),
-          const SizedBox(width: 16),
-          ElevatedButton.icon(
-            onPressed: _submitReport,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blue,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            const SizedBox(width: 16),
+            ElevatedButton.icon(
+              onPressed: _submitReport,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              ),
+              icon: const Icon(Icons.send),
+              label: const Text("Submit Report"),
             ),
-            icon: const Icon(Icons.send),
-            label: const Text("Submit Report"),
+          ],
+        ),
+
+        const SizedBox(height: 12),
+
+        ElevatedButton.icon(
+          onPressed: _deleteReport,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.red,
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
           ),
-        ],
-      ),
-    );
-  }
+          icon: const Icon(Icons.delete),
+          label: const Text("Delete Report"),
+        ),
+      ],
+    ),
+  );
+}
 
   // ================= MOBILE LAYOUT =================
   Widget _buildMobileLayout(Map<String, dynamic> data, String status, bool isDraft) {
@@ -1163,39 +1192,58 @@ class _ServiceReportDetailPageState extends State<ServiceReportDetailPage> {
           const SizedBox(height: 20),
 
           // Action Buttons
-          if (isDraft && !_isSubmitting)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 20),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: _editReport,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.grey.shade200,
-                        foregroundColor: Colors.black87,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                      ),
-                      icon: const Icon(Icons.edit),
-                      label: const Text("Edit Draft"),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: _submitReport,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                      ),
-                      icon: const Icon(Icons.send),
-                      label: const Text("Submit"),
-                    ),
-                  ),
-                ],
+          // Action Buttons
+if (isDraft && !_isSubmitting) ...[
+  Padding(
+    padding: const EdgeInsets.only(bottom: 12),
+    child: Row(
+      children: [
+        Expanded(
+          child: ElevatedButton.icon(
+            onPressed: _editReport,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.grey.shade200,
+              foregroundColor: Colors.black87,
+              padding: const EdgeInsets.symmetric(vertical: 12),
+            ),
+            icon: const Icon(Icons.edit),
+            label: const Text("Edit Draft"),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: ElevatedButton.icon(
+            onPressed: _submitReport,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.blue,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 12),
+            ),
+            icon: const Icon(Icons.send),
+            label: const Text("Submit"),
+          ),
+        ),
+      ],
+    ),
+  ),
+
+  Padding(
+    padding: const EdgeInsets.only(bottom: 20),
+    child: SizedBox(
+      width: double.infinity,
+      child: ElevatedButton.icon(
+        onPressed: _deleteReport,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.red,
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(vertical: 12),
+        ),
+        icon: const Icon(Icons.delete),
+        label: const Text("Delete Report"),
+     ),
               ),
             ),
+          ],
         ],
       ),
     );
@@ -1259,6 +1307,60 @@ class _ServiceReportDetailPageState extends State<ServiceReportDetailPage> {
       ),
     );
   }
+  Future<void> _deleteReport() async {
+  final confirm = await showDialog<bool>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: const Text("Delete Service Report"),
+      content: const Text(
+        "This action cannot be undone.\n\nAre you sure you want to delete this report?",
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, false),
+          child: const Text("CANCEL"),
+        ),
+        ElevatedButton(
+          onPressed: () => Navigator.pop(context, true),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.red,
+          ),
+          child: const Text("DELETE"),
+        ),
+      ],
+    ),
+  );
+
+  if (confirm != true) return;
+
+  try {
+    await ServiceReportFirestore.deleteServiceReport(
+      companyId: widget.companyId,
+      docId: widget.reportId,
+    );
+
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("Service Report deleted successfully"),
+        backgroundColor: Colors.green,
+      ),
+    );
+
+    Navigator.pop(context, true);
+
+  } catch (e) {
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text("Error deleting report: $e"),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
+}
 }
 
 // ================= UI HELPERS =================

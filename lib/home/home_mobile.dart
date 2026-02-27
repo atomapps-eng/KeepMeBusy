@@ -15,6 +15,7 @@ import '../attendance/services/attendance_period_helper.dart';
 import '../login/login_page.dart'; 
 import '../core/session/company_session.dart';
 import '../core/services/company_firestore.dart';
+import '../service_report/pages/service_report_list_page.dart';
 
 class HomeMobile extends StatefulWidget {
   const HomeMobile({super.key});
@@ -303,20 +304,19 @@ Stream<Map<String, dynamic>> dashboardStatsStream() {
 },
 ),
 
-    _MenuCard(
-      icon: Icons.build_circle,
-      label: 'Service Report',
-      color: Colors.green,
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) =>
-                const PlaceholderPage(title: 'Service Report'),
-          ),
-        );
-      },
-    ),
+   _MenuCard(
+  icon: Icons.build_circle,
+  label: 'Service Report',
+  color: Colors.green,
+  onTap: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const ServiceReportListPage(),
+      ),
+    );
+  },
+),
     _MenuCard(
       icon: Icons.flight_takeoff,
       label: 'Buss. Trip Report',

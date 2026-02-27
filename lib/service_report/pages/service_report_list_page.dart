@@ -11,6 +11,7 @@ import '../../theme/app_theme.dart';
 import '../../pages/common/app_background_wrapper.dart';
 
 class ServiceReportListPage extends StatefulWidget {
+  
   const ServiceReportListPage({super.key});
 
   @override
@@ -144,117 +145,132 @@ class _ServiceReportListPageState extends State<ServiceReportListPage> {
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: Row(
+  centerTitle: false,
+  titleSpacing: 16,
+  backgroundColor: Colors.transparent,
+  elevation: 0,
+
+  title: Row(
+    children: [
+      Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: AppTheme.primaryColor.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: const Icon(
+          Icons.description,
+          color: AppTheme.primaryColor,
+          size: 22,
+        ),
+      ),
+      const SizedBox(width: 12),
+
+      /// 🔥 FIX UTAMA ADA DI SINI
+      Expanded(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: AppTheme.primaryColor.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
+            const Text(
+              'Service Reports',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
               ),
-              child: const Icon(
-                Icons.description,
-                color: AppTheme.primaryColor,
-                size: 24,
-              ),
+              overflow: TextOverflow.ellipsis,
             ),
-            const SizedBox(width: 12),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Service Reports',
+
+            /// Subtitle hanya tampil di DESKTOP
+            if (isDesktop)
+              if (_currentUser?.role == 'super_admin')
+                Text(
+                  'Super Admin: Viewing all companies',
                   style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                    color: Colors.blue.shade600,
                   ),
+                  overflow: TextOverflow.ellipsis,
+                )
+              else if (CompanySession.selectedCompanyId != null)
+                Text(
+                  'Company: ${CompanySession.selectedCompanyId}',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey.shade600,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
-                if (_currentUser?.role == 'super_admin')
-                  Text(
-                    'Super Admin: Viewing all companies',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.blue.shade600,
-                    ),
-                  ),
-                if (_currentUser?.role != 'super_admin' && 
-                    CompanySession.selectedCompanyId != null)
-                  Text(
-                    'Company: ${CompanySession.selectedCompanyId}',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey.shade600,
-                    ),
-                  ),
-              ],
-            ),
           ],
         ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        actions: [
-          // SEARCH BAR (DESKTOP ONLY)
-          if (isDesktop)
-            Container(
-              width: 250,
-              margin: const EdgeInsets.symmetric(vertical: 12),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(30),
-                border: Border.all(
-                  color: Colors.white.withOpacity(0.3),
-                ),
-              ),
-              child: TextField(
-                controller: _searchController,
-                onChanged: (value) => setState(() => _searchQuery = value),
-                decoration: InputDecoration(
-                  hintText: 'Search reports...',
-                  hintStyle: TextStyle(color: Colors.grey.shade600),
-                  prefixIcon: Icon(Icons.search, color: Colors.grey.shade600),
-                  border: InputBorder.none,
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
-                  ),
-                ),
-              ),
-            ),
-          const SizedBox(width: 8),
+      ),
+    ],
+  ),
 
-          // ADD REPORT BUTTON
-          Container(
-            margin: const EdgeInsets.only(right: 16),
-            decoration: BoxDecoration(
-              color: Colors.green.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: IconButton(
-              tooltip: 'Add Report',
-              icon: const Icon(Icons.add, color: Colors.green),
-              onPressed: () {
-                if (_currentUser!.role != 'super_admin' && 
-                    CompanySession.selectedCompanyId == null) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Please select a company first'),
-                      backgroundColor: Colors.orange,
-                    ),
-                  );
-                  return;
-                }
-                
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const ServiceReportFormPage(),
-                  ),
-                );
-              },
+  actions: [
+    /// SEARCH BAR (DESKTOP ONLY)
+    if (isDesktop)
+      Container(
+        width: 250,
+        margin: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.2),
+          borderRadius: BorderRadius.circular(30),
+          border: Border.all(
+            color: Colors.white.withOpacity(0.3),
+          ),
+        ),
+        child: TextField(
+          controller: _searchController,
+          onChanged: (value) => setState(() => _searchQuery = value),
+          decoration: InputDecoration(
+            hintText: 'Search reports...',
+            hintStyle: TextStyle(color: Colors.grey.shade600),
+            prefixIcon: Icon(Icons.search, color: Colors.grey.shade600),
+            border: InputBorder.none,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 12,
             ),
           ),
-        ],
+        ),
       ),
+
+    const SizedBox(width: 8),
+
+    /// ADD BUTTON
+    Container(
+      margin: const EdgeInsets.only(right: 16),
+      decoration: BoxDecoration(
+        color: Colors.green.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: IconButton(
+        tooltip: 'Add Report',
+        icon: const Icon(Icons.add, color: Colors.green),
+        onPressed: () {
+          if (_currentUser!.role != 'super_admin' &&
+              CompanySession.selectedCompanyId == null) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Please select a company first'),
+                backgroundColor: Colors.orange,
+              ),
+            );
+            return;
+          }
+
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => const ServiceReportFormPage(),
+            ),
+          );
+        },
+      ),
+    ),
+  ],
+),
       body: AppBackgroundWrapper(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
         child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
@@ -757,14 +773,17 @@ class _ServiceReportListPageState extends State<ServiceReportListPage> {
       ),
       child: InkWell(
         onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => ServiceReportDetailPage(
-                reportId: doc.id,
-              ),
-            ),
-          );
+          final companyId = doc.reference.parent.parent!.id;
+
+Navigator.push(
+  context,
+  MaterialPageRoute(
+    builder: (context) => ServiceReportDetailPage(
+      reportId: doc.id,
+      companyId: companyId,
+    ),
+  ),
+);
         },
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
@@ -1062,14 +1081,17 @@ class _ServiceReportListPageState extends State<ServiceReportListPage> {
           ],
         ),
         onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => ServiceReportDetailPage(
-                reportId: doc.id,
-              ),
-            ),
-          );
+          final companyId = doc.reference.parent.parent!.id;
+
+Navigator.push(
+  context,
+  MaterialPageRoute(
+    builder: (context) => ServiceReportDetailPage(
+      reportId: doc.id,
+      companyId: companyId,
+    ),
+  ),
+);
         },
       ),
     );

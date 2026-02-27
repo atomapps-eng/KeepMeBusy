@@ -79,40 +79,35 @@ static Future<String> createServiceReport({
 }
 
   // UPDATE
-  static Future<void> updateServiceReport(
-    String docId,
-    Map<String, dynamic> data,
-  ) async {
-    final companyId = CompanySession.selectedCompanyId;
-
-    if (companyId == null) {
-      throw Exception("Company not selected.");
-    }
-
-    await CompanyCollectionResolver
-    .serviceReports()
-    .doc(docId)
-    .update(data);
-  }
+  static Future<void> updateServiceReport({
+  required String companyId,
+  required String docId,
+  required Map<String, dynamic> data,
+}) async {
+  await FirebaseFirestore.instance
+      .collection('companies')
+      .doc(companyId)
+      .collection('service_reports')
+      .doc(docId)
+      .update(data);
+}
 
   // GET SINGLE
-  static Future<DocumentSnapshot<Map<String, dynamic>>> getReport(
-      String docId) async {
-    final companyId = CompanySession.selectedCompanyId;
-
-    if (companyId == null) {
-      throw Exception("Company not selected.");
-    }
-
-    return await CompanyCollectionResolver
-    .serviceReports()
-    .doc(docId)
-    .withConverter<Map<String, dynamic>>(
-      fromFirestore: (snapshot, _) => snapshot.data()!,
-      toFirestore: (data, _) => data,
-    )
-    .get();
-  }
+  static Future<DocumentSnapshot<Map<String, dynamic>>> getReport({
+  required String companyId,
+  required String docId,
+}) async {
+  return await FirebaseFirestore.instance
+      .collection('companies')
+      .doc(companyId)
+      .collection('service_reports')
+      .doc(docId)
+      .withConverter<Map<String, dynamic>>(
+        fromFirestore: (snapshot, _) => snapshot.data()!,
+        toFirestore: (data, _) => data,
+      )
+      .get();
+}
 
   // GENERATE SHEET ID
   static Future<String> generateSheetId() async {
@@ -166,21 +161,31 @@ static Future<String> createServiceReport({
   }
 
 // Tambahkan method ini setelah updateServiceReport
-static Future<void> submitServiceReport(String docId) async {
-  final companyId = CompanySession.selectedCompanyId;
-
-  if (companyId == null) {
-    throw Exception("Company not selected.");
-  }
-
-  await CompanyCollectionResolver
-    .serviceReports()
-    .doc(docId)
-    .update({
+static Future<void> submitServiceReport({
+  required String companyId,
+  required String docId,
+}) async {
+  await FirebaseFirestore.instance
+      .collection('companies')
+      .doc(companyId)
+      .collection('service_reports')
+      .doc(docId)
+      .update({
         "status": "Submitted",
         "submittedAt": FieldValue.serverTimestamp(),
-        "submittedBy": "user-id-here", // TODO: ambil dari auth
+        "submittedBy": "user-id-here",
       });
 }
 
+static Future<void> deleteServiceReport({
+  required String companyId,
+  required String docId,
+}) async {
+  await FirebaseFirestore.instance
+      .collection('companies')
+      .doc(companyId)
+      .collection('service_reports')
+      .doc(docId)
+      .delete();
+}
 }
