@@ -21,6 +21,7 @@ import 'package:flutter/services.dart';
 import '../order_in/order_in_mobile.dart';
 import '../order_out/order_out_mobile.dart';
 import '../services/role_service.dart';
+import '../service_report/pages/service_report_list_page.dart';
 
 enum DesktopSection {
   dashboard,
@@ -51,6 +52,8 @@ class _HomeDesktopState extends State<HomeDesktop> {
   List<Map<String, dynamic>> _recentActivities = [];
   final FocusNode _focusNode = FocusNode();
 
+  late Future<UserRole> _roleFuture;
+
   // User role
   String? _userEmail;
 
@@ -66,11 +69,17 @@ class _HomeDesktopState extends State<HomeDesktop> {
   int _currentTipIndex = 0;
 
   @override
-  void initState() {
-    super.initState();
-    _loadActivities();
-    _startTipRotation();
-  }
+void initState() {
+  super.initState();
+  _roleFuture = RoleService.getUserRole();
+  _loadActivities();
+  _startTipRotation();
+
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    if (!mounted) return;
+    _trackSectionView();
+  });
+}
 
   Future<void> _loadActivities() async {
     final activities = await ActivityService.getActivities();
@@ -1303,32 +1312,6 @@ Widget _buildMenuItemCard(_MenuItem item) {
   }
 
   Widget _buildInventoryContent() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      String pageName = '';
-      String collection = '';
-      
-      switch (inventoryView) {
-        case InventoryView.menu:
-          pageName = 'Inventory Menu';
-          collection = 'spare_parts';
-          break;
-        case InventoryView.orderIn:
-          pageName = 'Order In';
-          collection = 'order_in';
-          break;
-        case InventoryView.orderOut:
-          pageName = 'Order Out';
-          collection = 'order_out';
-          break;
-      }
-      
-      ReadTrackerService().trackRead(
-        page: pageName,
-        collection: collection,
-        operation: 'view',
-        documentsCount: 0,
-      );
-    });
 
     switch (inventoryView) {
       case InventoryView.menu:
@@ -1492,7 +1475,7 @@ Widget _buildMenuItemCard(_MenuItem item) {
                           context,
                           MaterialPageRoute(
                             builder: (_) =>
-                                const PlaceholderPage(title: 'Service Report'),
+                                 const ServiceReportListPage(),
                           ),
                         );
                       },
@@ -1646,40 +1629,6 @@ Widget _buildMenuItemCard(_MenuItem item) {
   }
 
  Widget _buildContent(UserRole role) {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      String pageName = '';
-      String collection = '';
-      
-      switch (selectedSection) {
-        case DesktopSection.dashboard:
-          pageName = 'Dashboard Section';
-          collection = 'spare_parts';
-          break;
-        case DesktopSection.inventory:
-          pageName = 'Inventory Section';
-          collection = 'spare_parts';
-          break;
-        case DesktopSection.machinery:
-          pageName = 'Machinery Section';
-          collection = 'machinery';
-          break;
-        case DesktopSection.reports:
-          pageName = 'Reports Section';
-          collection = 'attendance';
-          break;
-        case DesktopSection.systems:
-          pageName = 'Systems Section';
-          collection = 'settings';
-          break;
-      }
-      
-      ReadTrackerService().trackRead(
-        page: pageName,
-        collection: collection,
-        operation: 'section_view',
-        documentsCount: 0,
-      );
-    });
 
     switch (selectedSection) {
       case DesktopSection.dashboard:
@@ -1704,7 +1653,7 @@ Widget build(BuildContext context) {
   }
 
   return FutureBuilder<UserRole>(
-    future: RoleService.getUserRole(),
+    future: _roleFuture,
     builder: (context, snapshot) {
 
       if (!snapshot.hasData) {
@@ -2167,14 +2116,16 @@ final bool canAccessSettings = isAdmin;
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: () {
-            setState(() {
-              selectedSection = section;
-              if (section == DesktopSection.inventory) {
-                inventoryView = InventoryView.menu;
-              }
-            });
-          },
+         onTap: () {
+  setState(() {
+    selectedSection = section;
+  });
+
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    if (!mounted) return;
+    _trackSectionView();
+  });
+},
           borderRadius: BorderRadius.circular(12),
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 200),
@@ -2543,6 +2494,40 @@ final bool canAccessSettings = isAdmin;
       }
     });
   }
+  void _trackSectionView() {
+  String pageName = '';
+  String collection = '';
+
+  switch (selectedSection) {
+    case DesktopSection.dashboard:
+      pageName = 'Dashboard Section';
+      collection = 'spare_parts';
+      break;
+    case DesktopSection.inventory:
+      pageName = 'Inventory Section';
+      collection = 'spare_parts';
+      break;
+    case DesktopSection.machinery:
+      pageName = 'Machinery Section';
+      collection = 'machinery';
+      break;
+    case DesktopSection.reports:
+      pageName = 'Reports Section';
+      collection = 'attendance';
+      break;
+    case DesktopSection.systems:
+      pageName = 'Systems Section';
+      collection = 'settings';
+      break;
+  }
+
+  ReadTrackerService().trackRead(
+    page: pageName,
+    collection: collection,
+    operation: 'section_view',
+    documentsCount: 0,
+  );
+}
 }
 
 class _MenuItem {

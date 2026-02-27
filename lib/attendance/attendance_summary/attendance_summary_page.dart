@@ -23,21 +23,81 @@ class AttendanceSummaryPage extends StatefulWidget {
 class _AttendanceSummaryPageState extends State<AttendanceSummaryPage> {
   late Future<AttendanceSummaryModel> _future;
   String _selectedView = 'overview'; // overview, details, charts
+  late String _selectedPeriod;
+  late List<String> _availablePeriods;
   final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
+    _selectedPeriod = widget.period;
+    _generateAvailablePeriods(widget.period);
     _future = AttendanceSummaryCalculator.calculate(
       employeeId: widget.employeeId,
-      period: widget.period,
+      period: _selectedPeriod,
     );
+  }
+
+  void _generateAvailablePeriods(String currentPeriod) {
+    // Parse current period (format: YYYY-MM)
+    final parts = currentPeriod.split('-');
+    if (parts.length != 2) {
+      _availablePeriods = [currentPeriod];
+      return;
+    }
+
+    final year = int.parse(parts[0]);
+    final month = int.parse(parts[1]);
+
+    // Generate 3 periods before and 3 after (total 7 periods)
+    _availablePeriods = [];
+    
+    // Add 3 periods before
+    for (int i = 3; i >= 1; i--) {
+      int newMonth = month - i;
+      int newYear = year;
+      
+      while (newMonth < 1) {
+        newMonth += 12;
+        newYear -= 1;
+      }
+      
+      _availablePeriods.add('$newYear-${newMonth.toString().padLeft(2, '0')}');
+    }
+    
+    // Add current period
+    _availablePeriods.add(currentPeriod);
+    
+    // Add 3 periods after
+    for (int i = 1; i <= 3; i++) {
+      int newMonth = month + i;
+      int newYear = year;
+      
+      while (newMonth > 12) {
+        newMonth -= 12;
+        newYear += 1;
+      }
+      
+      _availablePeriods.add('$newYear-${newMonth.toString().padLeft(2, '0')}');
+    }
   }
 
   @override
   void dispose() {
     _scrollController.dispose();
     super.dispose();
+  }
+
+  void _changePeriod(String newPeriod) {
+    if (newPeriod != _selectedPeriod) {
+      setState(() {
+        _selectedPeriod = newPeriod;
+        _future = AttendanceSummaryCalculator.calculate(
+          employeeId: widget.employeeId,
+          period: _selectedPeriod,
+        );
+      });
+    }
   }
 
   @override
@@ -75,6 +135,108 @@ class _AttendanceSummaryPageState extends State<AttendanceSummaryPage> {
         elevation: 0,
         actions: isDesktop
             ? [
+                // PERIOD SELECTOR TOGGLE - DYNAMIC
+                Container(
+                  margin: const EdgeInsets.only(right: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(30),
+                    border: Border.all(color: Colors.white.withOpacity(0.3)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Previous period arrow
+                      if (_availablePeriods.indexOf(_selectedPeriod) > 0)
+                        InkWell(
+                          onTap: () => _changePeriod(
+                            _availablePeriods[_availablePeriods.indexOf(_selectedPeriod) - 1]
+                          ),
+                          borderRadius: BorderRadius.circular(30),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                            child: Icon(
+                              Icons.chevron_left,
+                              size: 20,
+                              color: Colors.grey.shade600,
+                            ),
+                          ),
+                        ),
+                      
+                      // Current period display with dropdown
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: AppTheme.primaryColor.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              _selectedPeriod,
+                              style: TextStyle(
+                                color: AppTheme.primaryColor,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 13,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            PopupMenuButton<String>(
+                              offset: const Offset(0, 40),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              onSelected: _changePeriod,
+                              itemBuilder: (context) {
+                                return _availablePeriods.map((period) {
+                                  return PopupMenuItem<String>(
+                                    value: period,
+                                    child: Text(
+                                      period,
+                                      style: TextStyle(
+                                        fontWeight: period == _selectedPeriod 
+                                            ? FontWeight.bold 
+                                            : FontWeight.normal,
+                                        color: period == _selectedPeriod 
+                                            ? AppTheme.primaryColor 
+                                            : null,
+                                      ),
+                                    ),
+                                  );
+                                }).toList();
+                              },
+                              child: Icon(
+                                Icons.arrow_drop_down,
+                                size: 20,
+                                color: AppTheme.primaryColor,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      
+                      // Next period arrow
+                      if (_availablePeriods.indexOf(_selectedPeriod) < _availablePeriods.length - 1)
+                        InkWell(
+                          onTap: () => _changePeriod(
+                            _availablePeriods[_availablePeriods.indexOf(_selectedPeriod) + 1]
+                          ),
+                          borderRadius: BorderRadius.circular(30),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                            child: Icon(
+                              Icons.chevron_right,
+                              size: 20,
+                              color: Colors.grey.shade600,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                // VIEW TOGGLE
                 Container(
                   margin: const EdgeInsets.only(right: 16),
                   decoration: BoxDecoration(
@@ -294,7 +456,7 @@ class _AttendanceSummaryPageState extends State<AttendanceSummaryPage> {
   Widget _buildStatProgress(String label, int value, Color color, double total) {
     final maxValue = 30.0; // Asumsi maksimum 30 hari
     final progress = (value / maxValue).clamp(0.0, 1.0);
-    
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Column(

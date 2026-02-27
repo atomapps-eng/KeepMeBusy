@@ -973,20 +973,38 @@ class _OrderInQuickView extends StatelessWidget {
           .limit(10)
           .snapshots(),
       builder: (_, snapshot) {
-        if (!snapshot.hasData) {
-          return const Center(child: CircularProgressIndicator());
-        }
+  // 1️⃣ Tampilkan error kalau ada
+  if (snapshot.hasError) {
+    return Center(
+      child: Text(
+        'Error: ${snapshot.error}',
+        style: const TextStyle(color: Colors.red),
+      ),
+    );
+  }
 
-        return ListView.builder(
-          padding: const EdgeInsets.all(16),
-          itemCount: snapshot.data!.docs.length,
-          itemBuilder: (_, i) {
-            final data =
-                snapshot.data!.docs[i].data() as Map<String, dynamic>;
-            return _OrderHistoryCard(data: data);
-          },
-        );
-      },
+  // 2️⃣ Saat masih loading pertama kali
+  if (snapshot.connectionState == ConnectionState.waiting) {
+    return const Center(child: CircularProgressIndicator());
+  }
+
+  // 3️⃣ Kalau tidak ada data
+  if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+    return const Center(child: Text('Belum ada Order'));
+  }
+
+  // 4️⃣ Data siap
+  return ListView.builder(
+    padding: const EdgeInsets.all(16),
+    itemCount: snapshot.data!.docs.length,
+    itemBuilder: (_, i) {
+      final data =
+          snapshot.data!.docs[i].data() as Map<String, dynamic>;
+
+      return _OrderHistoryCard(data: data);
+    },
+  );
+},
     );
   }
 }

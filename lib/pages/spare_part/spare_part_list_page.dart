@@ -49,6 +49,7 @@ class _SparePartListPageState extends State<SparePartListPage> {
   bool _isLoading = false;
   bool _hasMore = true;
   bool _isLoadingMore = false; // Tambahkan ini untuk loading indicator
+  bool _isDisposed = false;
 
   @override
   void initState() {
@@ -83,6 +84,7 @@ class _SparePartListPageState extends State<SparePartListPage> {
 
   @override
   void dispose() {
+    _isDisposed = true;
     _debounce?.cancel();
     searchFocusNode.dispose();
     searchController.dispose();
@@ -112,6 +114,7 @@ class _SparePartListPageState extends State<SparePartListPage> {
 
     final service = SparePartService();
     final results = await service.searchSpareParts(keyword);
+    if (!mounted || _isDisposed) return;
 
     setState(() {
       _searchResults = results;
@@ -137,6 +140,8 @@ class _SparePartListPageState extends State<SparePartListPage> {
         lastDoc: _lastDocument,
       );
 
+      if (!mounted || _isDisposed) return;
+
       if (moreResults.isNotEmpty) {
         setState(() {
           _searchResults.addAll(moreResults);
@@ -145,6 +150,7 @@ class _SparePartListPageState extends State<SparePartListPage> {
     } catch (e) {
       print('Error loading more search results: $e');
     } finally {
+     if (!mounted || _isDisposed) return;
       setState(() {
         _isLoadingMore = false;
       });
@@ -166,6 +172,8 @@ class _SparePartListPageState extends State<SparePartListPage> {
     final service = SparePartService();
     final snapshot = await service.fetchSpareParts();
 
+     if (!mounted || _isDisposed) return;
+
     if (snapshot.docs.isNotEmpty) {
       _lastDocument = snapshot.docs.last;
       _parts = snapshot.docs
@@ -177,7 +185,8 @@ class _SparePartListPageState extends State<SparePartListPage> {
   } catch (e) {
     print('Error loading initial data: $e');
   } finally {
-    setState(() => _isLoading = false);
+if (!mounted || _isDisposed) return;
+   setState(() => _isLoading = false);
   }
 }
 
@@ -208,6 +217,7 @@ class _SparePartListPageState extends State<SparePartListPage> {
     } catch (e) {
       print('Error loading more: $e');
     } finally {
+      if (!mounted || _isDisposed) return;
       setState(() => _isLoadingMore = false);
     }
   }
