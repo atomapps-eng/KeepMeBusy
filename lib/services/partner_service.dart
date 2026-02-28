@@ -45,7 +45,7 @@ class PartnerService {
       'updatedAt': Timestamp.now(),
     });
   }
-
+//
   Future<void> updatePartner({
     required String id,
     required String name,

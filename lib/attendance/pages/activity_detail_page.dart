@@ -668,7 +668,7 @@ class ActivityDetailPage extends StatelessWidget {
       ),
     );
   }
-
+//
   Widget _buildInfoItem(String label, String value, IconData icon, Color color) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
