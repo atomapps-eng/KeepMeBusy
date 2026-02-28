@@ -506,24 +506,10 @@ class _ServiceReportDetailPageState extends State<ServiceReportDetailPage> {
                 _buildDesktopHeaderCard(data),
                 const SizedBox(height: 16),
                 _buildDesktopContentCards(data),
-                if (!_isSubmitting) ...[
-  Padding(
-    padding: const EdgeInsets.only(bottom: 12),
-    child: SizedBox(
-      width: double.infinity,
-      child: ElevatedButton.icon(
-        onPressed: _printToPdf,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.green,
-          foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(vertical: 12),
-        ),
-        icon: const Icon(Icons.picture_as_pdf),
-        label: const Text("Print to PDF"),
-      ),
-    ),
-  ),
-],
+                const SizedBox(height: 24),
+
+if (!_isSubmitting)
+  _buildDesktopActionButtons(),
               ],
             ),
           ),

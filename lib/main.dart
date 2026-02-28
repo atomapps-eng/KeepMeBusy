@@ -25,11 +25,20 @@ void main() async {
 
   await CompanySession.load();
 
-  // 🔥 LOCK LANDSCAPE
-  await SystemChrome.setPreferredOrientations([
-    DeviceOrientation.landscapeLeft,
-    DeviceOrientation.landscapeRight,
-  ]);
+  // 🔥 Detect screen size sebelum runApp
+  final window = WidgetsBinding.instance.platformDispatcher.views.first;
+  final logicalSize = window.physicalSize / window.devicePixelRatio;
+
+  if (logicalSize.width >= 800) {
+    // Tablet → lock landscape
+    await SystemChrome.setPreferredOrientations([
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
+  } else {
+    // Phone → allow all orientations
+    await SystemChrome.setPreferredOrientations(DeviceOrientation.values);
+  }
 
   runApp(
     MultiProvider(
