@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../pages/common/app_background_wrapper.dart';
 import 'activity_detail_page.dart';
-import '../../core/services/company_firestore.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../core/session/company_session.dart';
 
 class ActivityListPage extends StatelessWidget {
   final String employeeId;
@@ -15,33 +16,24 @@ class ActivityListPage extends StatelessWidget {
      this.initialDate,
   });
 
-  Stream<List<Map<String, dynamic>>> _activityStream() async* {
-    final daysSnap = await CompanyFirestore
-        .collection('attendance')
-        .doc(employeeId)
-        .collection('days')
-        .get();
+ Stream<List<Map<String, dynamic>>> _activityStream() {
+  final companyId = CompanySession.selectedCompanyId;
 
-    final List<Map<String, dynamic>> all = [];
-
-    for (final day in daysSnap.docs) {
-      if (day['period'] != period) continue;
-
-      final actSnap = await day.reference
-          .collection('activities')
-          .orderBy('createdAt', descending: true)
-          .get();
-
-      for (final a in actSnap.docs) {
-        final data = a.data();
-        data['dayDocId'] = day.id;
-        data['activityId'] = a.id;
-        all.add(data);
-      }
-    }
-
-    yield all;
-  }
+  return FirebaseFirestore.instance
+      .collectionGroup('activities')
+      .where('companyId', isEqualTo: companyId)
+      .where('employeeId', isEqualTo: employeeId)
+      .orderBy('createdAt', descending: true)
+      .snapshots()
+      .map((snapshot) {
+        print("Activity docs: ${snapshot.docs.length}");
+        return snapshot.docs.map((doc) {
+          final data = doc.data();
+          data['activityId'] = doc.id;
+          return data;
+        }).toList();
+      });
+}
 
   @override
   Widget build(BuildContext context) {

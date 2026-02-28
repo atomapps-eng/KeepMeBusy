@@ -457,73 +457,55 @@ StreamBuilder<String>(
 
   // ================= DASHBOARD SUMMARY =================
 Widget _buildDashboardCards() {
-  return StreamBuilder<Map<String, dynamic>>(
-    stream: dashboardStatsStream(),
-    builder: (context, snapshot) {
+  final now = DateTime.now();
+  final period = AttendancePeriodHelper.resolvePeriod(now);
 
-      if (snapshot.connectionState == ConnectionState.waiting) {
-        return Row(
-          children: const [
-            Expanded(
-              child: _DashboardCard(
-                title: 'Spare Parts',
-                value: '-',
-                icon: Icons.inventory_2,
-                color: Colors.blueGrey,
-              ),
-            ),
-            SizedBox(width: 12),
-            Expanded(
-              child: _DashboardCard(
-                title: 'Low Stock',
-                value: '-',
-                icon: Icons.warning,
-                color: Colors.redAccent,
-              ),
-            ),
-          ],
-        );
-      }
-
-      final data = snapshot.data ?? {
-        'totalItems': 0,
-        'lowStock': 0,
-        'totalValue': 0,
-      };
-
-      final totalItems = data['totalItems'];
-      final lowStock = data['lowStock'];
-
-      return Row(
+  return Column(
+    children: [
+      Row(
         children: [
           Expanded(
             child: _DashboardCard(
-              title: 'Spare Parts',
-              value: totalItems.toString(),
-              icon: Icons.inventory_2,
-              color: Colors.blueGrey,
+              title: 'Today Activity',
+              subtitle: period,
+              icon: Icons.event_available,
+              color: Colors.blue,
+              onTap: () {
+                final user = FirebaseAuth.instance.currentUser!;
+                final employeeId = user.displayName ?? user.uid;
+
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => AttendancePage(
+                      employeeId: employeeId,
+                      period: period,
+                    ),
+                  ),
+                );
+              },
             ),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: _DashboardCard(
-              title: 'Low Stock',
-              value: lowStock.toString(),
-              icon: Icons.warning,
-              color: Colors.redAccent,
+              title: 'Service Report',
+              subtitle: 'Create or View',
+              icon: Icons.build_circle,
+              color: Colors.green,
               onTap: () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => const LowStockPage(),
+                    builder: (_) => const ServiceReportListPage(),
                   ),
                 );
               },
             ),
           ),
         ],
-      );
-    },
+      ),
+    ],
   );
 }
 // Tambahkan method ini di dalam class _HomeMobileState
@@ -660,28 +642,28 @@ class _MenuCard extends StatelessWidget {
 // ================= DASHBOARD CARD =================
 class _DashboardCard extends StatelessWidget {
   final String title;
-  final String value;
+  final String subtitle;
   final IconData icon;
   final Color color;
-  final VoidCallback? onTap; // ✅ TAMBAH
+  final VoidCallback? onTap;
 
   const _DashboardCard({
     required this.title,
-    required this.value,
+    required this.subtitle,
     required this.icon,
     required this.color,
-    this.onTap, // ✅ TAMBAH
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return InkWell( // ✅ BUNGKUS
+    return InkWell(
       borderRadius: BorderRadius.circular(16),
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: color.withValues(alpha:0.15),
+          color: color.withValues(alpha: 0.15),
           borderRadius: BorderRadius.circular(16),
         ),
         child: Column(
@@ -689,13 +671,16 @@ class _DashboardCard extends StatelessWidget {
           children: [
             Icon(icon, color: color),
             const SizedBox(height: 8),
-            Text(title),
+            Text(
+              title,
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
             const SizedBox(height: 4),
             Text(
-              value,
+              subtitle,
               style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
+                fontSize: 12,
+                color: Colors.black54,
               ),
             ),
           ],

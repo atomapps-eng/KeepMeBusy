@@ -282,46 +282,60 @@ class _ServiceReportDetailPageState extends State<ServiceReportDetailPage> {
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: AppTheme.primaryColor.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Icon(
-                Icons.description,
-                color: AppTheme.primaryColor,
-                size: 24,
-              ),
-            ),
-            const SizedBox(width: 12),
-            const Text(
-              'Service Report Detail',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
+  children: [
+    Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: AppTheme.primaryColor.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: const Icon(
+        Icons.description,
+        color: AppTheme.primaryColor,
+        size: 24,
+      ),
+    ),
+    const SizedBox(width: 12),
+
+    Expanded(
+      child: Text(
+        'Service Report Detail',
+        style: const TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
         ),
+        overflow: TextOverflow.ellipsis,
+      ),
+    ),
+  ],
+),
         backgroundColor: Colors.transparent,
         elevation: 0,
-        actions: [
-          if (_reportDoc != null && _reportDoc!.data()?['status'] == 'Draft' && !_isSubmitting)
-            Container(
-              margin: const EdgeInsets.only(right: 16),
-              decoration: BoxDecoration(
-                color: Colors.blue.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: IconButton(
-                icon: const Icon(Icons.edit, color: Colors.blue),
-                onPressed: _editReport,
-                tooltip: "Edit Report",
-              ),
-            ),
-        ],
+       actions: [
+  if (_reportDoc != null)
+    IconButton(
+      icon: Icon(
+        Icons.picture_as_pdf,
+        color: _reportDoc!.data()?['status'] == 'Submitted'
+            ? Colors.green
+            : Colors.grey,
+      ),
+      onPressed: (_reportDoc!.data()?['status'] == 'Submitted' && !_isSubmitting)
+          ? _printToPdf
+          : null, // disable kalau bukan Submitted
+      tooltip: _reportDoc!.data()?['status'] == 'Submitted'
+          ? "Print to PDF"
+          : "Report must be submitted before printing",
+    ),
+
+  if (_reportDoc != null &&
+      _reportDoc!.data()?['status'] == 'Draft' &&
+      !_isSubmitting)
+    IconButton(
+      icon: const Icon(Icons.edit, color: Colors.blue),
+      onPressed: _editReport,
+    ),
+],
       ),
       body: AppBackgroundWrapper(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),

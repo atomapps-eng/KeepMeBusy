@@ -5,7 +5,8 @@ import '../models/attendance_day.dart';
 import '../services/attendance_period_helper.dart';
 import 'activity_form_page.dart';
 import '../../pages/common/app_background_wrapper.dart';
-
+import 'package:firebase_auth/firebase_auth.dart';
+import '../../core/session/company_session.dart';
 // ⬇️ TAMBAHAN (WAJIB)
 import '../../services/partner_service.dart';
 import '../../models/partner.dart';
@@ -176,7 +177,7 @@ Future<void> _loadExistingActivities() async {
 }
 
 
-  Future<void> _saveAttendance() async {
+ Future<void> _saveAttendance() async {
   if (_isSaving) return;
 
   setState(() => _isSaving = true);
@@ -187,6 +188,8 @@ Future<void> _loadExistingActivities() async {
 
     final dateKey =
         '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+
+    final companyId = CompanySession.selectedCompanyId;
 
     final Map<String, dynamic> attendanceData = {
       'employeeId': widget.employeeId,
@@ -210,21 +213,29 @@ Future<void> _loadExistingActivities() async {
       });
     }
 
-    await CompanyFirestore
+    final dayRef = CompanyFirestore
         .collection('attendance')
         .doc(widget.employeeId)
         .collection('days')
-        .doc(dateKey)
-        .set(attendanceData, SetOptions(merge: true));
+        .doc(dateKey);
 
+    // 🔹 Save attendance
+    await dayRef.set(attendanceData, SetOptions(merge: true));
+
+    // 🔹 Hapus activities lama supaya tidak duplicate saat edit
+    final existingActs = await dayRef.collection('activities').get();
+    for (final doc in existingActs.docs) {
+      await doc.reference.delete();
+    }
+
+    // 🔹 Save activities baru
     for (final a in activities) {
-      await CompanyFirestore
-          .collection('attendance')
-          .doc(widget.employeeId)
-          .collection('days')
-          .doc(dateKey)
-          .collection('activities')
-          .add({
+      await dayRef.collection('activities').add({
+        'companyId': companyId,
+        'employeeId': widget.employeeId,
+        'createdBy': FirebaseAuth.instance.currentUser!.uid,
+        'createdAt': FieldValue.serverTimestamp(),
+
         'date': a.date,
         'factoryClient': a.factoryClient,
         'machine': a.machine,
@@ -233,7 +244,6 @@ Future<void> _loadExistingActivities() async {
         'description': a.description,
         'status': a.status,
         'note': a.note,
-        'createdAt': FieldValue.serverTimestamp(),
       });
     }
 
@@ -366,24 +376,22 @@ Future<void> _loadExistingActivities() async {
                     icon: const Icon(Icons.build),
                     label: const Text('Add Activity'),
                     onPressed: () async {
-                      final result =
-                          await Navigator.push<ActivityEntry>(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => ActivityFormPage(
-  attendanceDate: _selectedDate,
-  factoryClientName: selectedCustomerName!,
-),
+  final result = await Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (_) => ActivityFormPage(
+        attendanceDate: _selectedDate,
+        factoryClientName: selectedCustomerName ?? '',
+      ),
+    ),
+  );
 
-                        ),
-                      );
-                      if (result != null) {
-  setState(() {
-    activities.add(result);
-  });
-}
-
-                    },
+  if (result is ActivityEntry) {
+    setState(() {
+      activities.add(result);
+    });
+  }
+},
                   ),
                 ),
               ],

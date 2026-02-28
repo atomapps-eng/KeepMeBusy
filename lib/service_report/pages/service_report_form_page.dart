@@ -343,6 +343,7 @@ final doc = await ServiceReportFirestore.getReport(
           ),
           backgroundColor: Colors.transparent,
           elevation: 0,
+          
         ),
         body: AppBackgroundWrapper(
           child: const Center(child: CircularProgressIndicator()),
@@ -1307,6 +1308,7 @@ const SizedBox(height: 12),
             Column(
               children: [
                 SizedBox(
+                  
                   width: double.infinity,
                   child: ElevatedButton.icon(
                     onPressed: _saveDraft,
@@ -1832,48 +1834,42 @@ void _showQtyDialog(SparePart part) {
               _isUploading = true;
             });
 
-            try {
-              final companyId = CompanySession.selectedCompanyId;
-              if (companyId == null) {
-                throw Exception("Company not selected");
-              }
+           try {
+  final companyId = CompanySession.selectedCompanyId;
+  if (companyId == null) {
+    throw Exception("Company not selected");
+  }
 
-              final xfile = XFile.fromData(
-                bytes,
-                name: 'signature_${DateTime.now().millisecondsSinceEpoch}.png',
-                mimeType: 'image/png',
-              );
+  final uploadedUrl = await CloudinaryService.uploadBytes(
+    bytes: bytes,
+    fileName: 'signature_${DateTime.now().millisecondsSinceEpoch}.png',
+    folder: 'service_reports/$companyId/signatures',
+  );
 
-              final uploadedUrl = await CloudinaryService.uploadFile(
-                file: xfile,
-                folder: 'service_reports/$companyId/signatures',
-              );
+  if (!mounted) return;
 
-              if (!mounted) return;
+  setState(() {
+    _signatureUrl = uploadedUrl;
+    _signature = null;
+    _isUploading = false;
+  });
 
-              setState(() {
-                _signatureUrl = uploadedUrl;
-                _signature = null;
-                _isUploading = false;
-              });
-
-              if (uploadedUrl != null) {
-                rootScaffoldMessengerKey.currentState?.showSnackBar(
-                  const SnackBar(
-                    content: Text("Signature uploaded successfully"),
-                    backgroundColor: Colors.green,
-                  ),
-                );
-              } else {
-                rootScaffoldMessengerKey.currentState?.showSnackBar(
-                  const SnackBar(
-                    content: Text("Failed to upload signature"),
-                    backgroundColor: Colors.orange,
-                  ),
-                );
-              }
-
-            } catch (e) {
+  if (uploadedUrl != null) {
+    rootScaffoldMessengerKey.currentState?.showSnackBar(
+      const SnackBar(
+        content: Text("Signature uploaded successfully"),
+        backgroundColor: Colors.green,
+      ),
+    );
+  } else {
+    rootScaffoldMessengerKey.currentState?.showSnackBar(
+      const SnackBar(
+        content: Text("Failed to upload signature"),
+        backgroundColor: Colors.orange,
+      ),
+    );
+  }
+}catch (e) {
               if (!mounted) return;
 
               setState(() {
