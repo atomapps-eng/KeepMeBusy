@@ -24,6 +24,8 @@ class _EditPartnerPageState extends State<EditPartnerPage> with TickerProviderSt
   late TextEditingController lngController;
   late TextEditingController phoneController;
   late TextEditingController emailController;
+  late TextEditingController cityController;
+late TextEditingController countryController;
 
   File? selectedImage;
   late String currentLogoUrl;
@@ -57,6 +59,11 @@ class _EditPartnerPageState extends State<EditPartnerPage> with TickerProviderSt
         text: widget.partner.phone ?? '');
     emailController = TextEditingController(
         text: widget.partner.email ?? '');
+        cityController = TextEditingController(
+    text: widget.partner.city ?? '');
+
+countryController = TextEditingController(
+    text: widget.partner.country ?? '');
     currentLogoUrl = widget.partner.logoUrl;
   }
 
@@ -90,6 +97,8 @@ class _EditPartnerPageState extends State<EditPartnerPage> with TickerProviderSt
     lngController.dispose();
     phoneController.dispose();
     emailController.dispose();
+    cityController.dispose();
+countryController.dispose();
     _animationController.dispose();
     super.dispose();
   }
@@ -125,24 +134,30 @@ class _EditPartnerPageState extends State<EditPartnerPage> with TickerProviderSt
       }
 
       await service.updatePartner(
-        id: widget.partner.id,
-        name: nameController.text.trim(),
-        address: addressController.text.trim(),
-        category: widget.partner.category,
-        lat: latController.text.isEmpty
-            ? null
-            : double.tryParse(latController.text),
-        lng: lngController.text.isEmpty
-            ? null
-            : double.tryParse(lngController.text),
-        phone: phoneController.text.trim().isEmpty
-            ? null
-            : phoneController.text.trim(),
-        email: emailController.text.trim().isEmpty
-            ? null
-            : emailController.text.trim(),
-        logoUrl: logoUrl ?? '',
-      );
+  id: widget.partner.id,
+  name: nameController.text.trim(),
+  address: addressController.text.trim(),
+  category: widget.partner.category,
+  lat: latController.text.isEmpty
+      ? null
+      : double.tryParse(latController.text),
+  lng: lngController.text.isEmpty
+      ? null
+      : double.tryParse(lngController.text),
+  phone: phoneController.text.trim().isEmpty
+      ? null
+      : phoneController.text.trim(),
+  email: emailController.text.trim().isEmpty
+      ? null
+      : emailController.text.trim(),
+  city: cityController.text.trim().isEmpty
+      ? null
+      : cityController.text.trim(),
+  country: countryController.text.trim().isEmpty
+      ? null
+      : countryController.text.trim(),
+  logoUrl: logoUrl ?? '',
+);
 
       if (!mounted) return;
       
@@ -530,6 +545,17 @@ class _EditPartnerPageState extends State<EditPartnerPage> with TickerProviderSt
               icon: Icons.location_on,
               maxLines: 2,
             ),
+            _buildModernInput(
+  controller: cityController,
+  label: 'City',
+  icon: Icons.location_city,
+),
+
+_buildModernInput(
+  controller: countryController,
+  label: 'Country',
+  icon: Icons.public,
+),
           ],
         ),
         

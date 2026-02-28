@@ -27,6 +27,8 @@ class PartnerService {
     String? phone,
     String? email,
     required String logoUrl,
+    String? city,
+  String? country,
   }) async {
     await _ref.add({
       'name': name,
@@ -37,6 +39,8 @@ class PartnerService {
       'phone': phone,
       'email': email,
       'logoUrl': logoUrl,
+      'city': city,
+'country': country,
       'createdAt': Timestamp.now(),
       'updatedAt': Timestamp.now(),
     });
@@ -52,6 +56,8 @@ class PartnerService {
     String? phone,
     String? email,
     required String logoUrl,
+    String? city,
+  String? country,
   }) async {
     await _ref.doc(id).update({
       'name': name,
@@ -62,6 +68,8 @@ class PartnerService {
       'phone': phone,
       'email': email,
       'logoUrl': logoUrl,
+      'city': city,
+'country': country,
       'updatedAt': Timestamp.now(),
     });
   }

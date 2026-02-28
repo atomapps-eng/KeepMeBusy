@@ -229,23 +229,25 @@ Future<void> _loadExistingActivities() async {
     }
 
     // 🔹 Save activities baru
-    for (final a in activities) {
-      await dayRef.collection('activities').add({
-        'companyId': companyId,
-        'employeeId': widget.employeeId,
-        'createdBy': FirebaseAuth.instance.currentUser!.uid,
-        'createdAt': FieldValue.serverTimestamp(),
 
-        'date': a.date,
-        'factoryClient': a.factoryClient,
-        'machine': a.machine,
-        'serialNumber': a.serialNumber,
-        'activityType': a.activityType,
-        'description': a.description,
-        'status': a.status,
-        'note': a.note,
-      });
-    }
+for (final a in activities) {
+  await dayRef.collection('activities').add({
+    'companyId': companyId,
+    'employeeId': widget.employeeId,
+    'period': period, // 🔥 TAMBAHKAN INI
+    'createdBy': FirebaseAuth.instance.currentUser!.uid,
+    'createdAt': FieldValue.serverTimestamp(),
+
+    'date': a.date,
+    'factoryClient': a.factoryClient,
+    'machine': a.machine,
+    'serialNumber': a.serialNumber,
+    'activityType': a.activityType,
+    'description': a.description,
+    'status': a.status,
+    'note': a.note,
+  });
+}
 
     if (!mounted) return;
     Navigator.pop(context);

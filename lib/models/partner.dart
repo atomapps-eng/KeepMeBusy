@@ -10,6 +10,8 @@ class Partner {
   final String? email;
   final String category;
   final String logoUrl;
+  final String? city;
+final String? country;
 
   // ⬇️ BUAT NULLABLE
   final Timestamp? createdAt;
@@ -25,6 +27,8 @@ class Partner {
     this.phone,
     this.email,
     required this.logoUrl,
+    this.city,
+this.country,
     this.createdAt,
     this.updatedAt,
   });
@@ -42,6 +46,8 @@ class Partner {
       phone: data['phone'],
       email: data['email'],
       logoUrl: data['logoUrl'] ?? '',
+      city: data['city'],
+country: data['country'],
       createdAt: data['createdAt'],
       updatedAt: data['updatedAt'],
     );
@@ -57,6 +63,8 @@ class Partner {
       'phone': phone,
       'email': email,
       'logoUrl': logoUrl,
+      'city': city,
+'country': country,
       'createdAt': createdAt,
       'updatedAt': updatedAt,
     };

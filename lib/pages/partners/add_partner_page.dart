@@ -21,6 +21,8 @@ class _AddPartnerPageState extends State<AddPartnerPage> {
   final lngController = TextEditingController();
   final phoneController = TextEditingController();
   final emailController = TextEditingController();
+  final cityController = TextEditingController();
+final countryController = TextEditingController();
   String category = 'domestic';
   
 
@@ -37,6 +39,8 @@ class _AddPartnerPageState extends State<AddPartnerPage> {
     emailController.dispose();
     latController.dispose();
     lngController.dispose();
+    cityController.dispose();
+countryController.dispose();
     super.dispose();
   }
 
@@ -77,10 +81,10 @@ if (selectedImage != null) {
 }
 
 
-  await PartnerService().addPartner(
+ await PartnerService().addPartner(
   name: nameController.text.trim(),
   address: addressController.text.trim(),
-  category: category, // ⬅️ WAJIB
+  category: category,
   lat: latController.text.isEmpty
       ? null
       : double.tryParse(latController.text),
@@ -93,9 +97,14 @@ if (selectedImage != null) {
   email: emailController.text.trim().isEmpty
       ? null
       : emailController.text.trim(),
+  city: cityController.text.trim().isEmpty
+      ? null
+      : cityController.text.trim(),
+  country: countryController.text.trim().isEmpty
+      ? null
+      : countryController.text.trim(),
   logoUrl: logoUrl ?? '',
 );
-
 
       if (!mounted) return;
       Navigator.pop(context);
@@ -163,6 +172,15 @@ if (selectedImage != null) {
                               label: 'Address',
                               maxLines: 2,
                             ),
+                            _input(
+  controller: cityController,
+  label: 'City',
+),
+
+_input(
+  controller: countryController,
+  label: 'Country',
+),
                             _input(
   controller: phoneController,
   label: 'Phone',
