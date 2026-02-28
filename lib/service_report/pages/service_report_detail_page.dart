@@ -9,6 +9,8 @@ import 'service_report_form_page.dart';
 import '../../config/cloudinary_config.dart';
 import '../../theme/app_theme.dart';
 import '../../pages/common/app_background_wrapper.dart';
+import '../../services/service_report_pdf_service.dart';
+import '../../services/pdf_action_service.dart';
 
 class ServiceReportDetailPage extends StatefulWidget {
   final String reportId;
@@ -504,10 +506,24 @@ class _ServiceReportDetailPageState extends State<ServiceReportDetailPage> {
                 _buildDesktopHeaderCard(data),
                 const SizedBox(height: 16),
                 _buildDesktopContentCards(data),
-                if (isDraft && !_isSubmitting) ...[
-                  const SizedBox(height: 16),
-                  _buildDesktopActionButtons(),
-                ],
+                if (!_isSubmitting) ...[
+  Padding(
+    padding: const EdgeInsets.only(bottom: 12),
+    child: SizedBox(
+      width: double.infinity,
+      child: ElevatedButton.icon(
+        onPressed: _printToPdf,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.green,
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(vertical: 12),
+        ),
+        icon: const Icon(Icons.picture_as_pdf),
+        label: const Text("Print to PDF"),
+      ),
+    ),
+  ),
+],
               ],
             ),
           ),
@@ -641,7 +657,7 @@ class _ServiceReportDetailPageState extends State<ServiceReportDetailPage> {
           const SizedBox(height: 12),
           _buildInfoTile('Factory', data['factory'] ?? '-', Icons.factory),
           _buildInfoTile('Machine', data['machine'] ?? '-', Icons.precision_manufacturing),
-          _buildInfoTile('Customer', data['customerName'] ?? '-', Icons.person),
+          _buildInfoTile('Customer Name', data['customerName'] ?? '-', Icons.person),
           _buildInfoTile('Technician', data['technician1'] ?? '-', Icons.engineering),
         ],
       ),
@@ -937,6 +953,23 @@ class _ServiceReportDetailPageState extends State<ServiceReportDetailPage> {
         const SizedBox(height: 16),
 
         _buildDesktopInfoSection(
+        'CUSTOMER NAME',
+        Icons.person,
+        Colors.green,
+        [
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Text(
+              data['customerName'] ?? '-',
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+            ),
+          ),
+        ],
+      ),
+
+        const SizedBox(height: 16),
+
+        _buildDesktopInfoSection(
           'MEDIA',
           Icons.photo_library,
           Colors.pink,
@@ -1100,46 +1133,57 @@ class _ServiceReportDetailPageState extends State<ServiceReportDetailPage> {
   }
 
   Widget _buildDesktopActionButtons() {
-    return _glass(
-      Row(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          ElevatedButton.icon(
-            onPressed: _editReport,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.grey.shade200,
-              foregroundColor: Colors.black87,
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-            ),
-            icon: const Icon(Icons.edit),
-            label: const Text("Edit Draft"),
+  return _glass(
+    Row(
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: [
+        ElevatedButton.icon(
+          onPressed: _isSubmitting ? null : _printToPdf,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.green,
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
           ),
-          const SizedBox(width: 16),
-          ElevatedButton.icon(
-            onPressed: _submitReport,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blue,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-            ),
-            icon: const Icon(Icons.send),
-            label: const Text("Submit Report"),
+          icon: const Icon(Icons.picture_as_pdf),
+          label: const Text("Print to PDF"),
+        ),
+        const SizedBox(width: 16),
+        ElevatedButton.icon(
+          onPressed: _isSubmitting ? null : _editReport,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.grey.shade200,
+            foregroundColor: Colors.black87,
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
           ),
-          const SizedBox(width: 16),
-          ElevatedButton.icon(
-            onPressed: _deleteReport,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-            ),
-            icon: const Icon(Icons.delete),
-            label: const Text("Delete"),
+          icon: const Icon(Icons.edit),
+          label: const Text("Edit Draft"),
+        ),
+        const SizedBox(width: 16),
+        ElevatedButton.icon(
+          onPressed: _isSubmitting ? null : _submitReport,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.blue,
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
           ),
-        ],
-      ),
-    );
-  }
+          icon: const Icon(Icons.send),
+          label: const Text("Submit Report"),
+        ),
+        const SizedBox(width: 16),
+        ElevatedButton.icon(
+          onPressed: _isSubmitting ? null : _deleteReport,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.red,
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          ),
+          icon: const Icon(Icons.delete),
+          label: const Text("Delete"),
+        ),
+      ],
+    ),
+  );
+}
 
   // ================= MOBILE LAYOUT =================
   Widget _buildMobileLayout(Map<String, dynamic> data, String status, bool isDraft) {
@@ -1340,6 +1384,22 @@ class _ServiceReportDetailPageState extends State<ServiceReportDetailPage> {
           const SizedBox(height: 12),
 
           _buildMobileInfoCard(
+  'CUSTOMER NAME',
+  Icons.person,
+  Colors.green,
+  [
+    Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Text(
+        data['customerName'] ?? '-',
+        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+      ),
+    ),
+  ],
+),
+const SizedBox(height: 12),
+
+          _buildMobileInfoCard(
             'MEDIA',
             Icons.photo_library,
             Colors.pink,
@@ -1476,6 +1536,63 @@ class _ServiceReportDetailPageState extends State<ServiceReportDetailPage> {
       ),
     );
   }
+  
+Future<void> _printToPdf() async {
+  if (_reportDoc == null) return;
+
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (_) => const Center(
+      child: Card(
+        elevation: 8,
+        child: Padding(
+          padding: EdgeInsets.all(24),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(width: 20),
+              Text("Generating PDF..."),
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
+
+  try {
+    final data = _reportDoc!.data()!;
+    
+    await Future.delayed(Duration(milliseconds: 100));
+    final bytes = await ServiceReportPdfService.generatePdf(
+      data: data,
+    );
+
+    final fileName =
+        "${data['sheetId'] ?? 'service_report'}.pdf";
+
+    // ⛔ JANGAN CLOSE DULU
+    await openPdf(bytes, fileName);
+
+    if (mounted) {
+      Navigator.of(context, rootNavigator: true).pop();
+    }
+
+  } catch (e) {
+    if (mounted) {
+      Navigator.of(context, rootNavigator: true).pop();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Gagal generate PDF: $e"),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+}
+
 }
 
 // ================= UI HELPERS =================

@@ -1,61 +1,77 @@
-import 'package:flutter/material.dart';
+// lib/core/cache/user_cache.dart
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../models/user_model.dart';
 
-class DesktopShell extends StatelessWidget {
-  final int selectedIndex;
-  final ValueChanged<int> onMenuSelected;
-  final Widget content;
-  final Widget sidebarHeader;
+class UserCache {
+  // Singleton pattern
+  static final UserCache _instance = UserCache._internal();
+  factory UserCache() => _instance;
+  UserCache._internal();
 
-  const DesktopShell({
-    super.key,
-    required this.selectedIndex,
-    required this.onMenuSelected,
-    required this.content,
-    required this.sidebarHeader,
-  });
+  // Data cache
+  UserModel? _currentUser;
+  DateTime? _lastFetch;
+  
+  // Durasi cache (5 menit)
+  static const Duration _cacheDuration = Duration(minutes: 5);
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Row(
-        children: [
-          NavigationRail(
-            extended: true,
-            minExtendedWidth: 220,
-            selectedIndex: selectedIndex,
-            onDestinationSelected: onMenuSelected,
-            leading: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 24),
-              child: sidebarHeader,
-            ),
-            destinations: const [
-  NavigationRailDestination(
-    icon: Icon(Icons.dashboard_rounded),
-    label: Text('Dashboard'),
-  ),
-  NavigationRailDestination(
-    icon: Icon(Icons.inventory_2_rounded),
-    label: Text('Inventory'),
-  ),
-  NavigationRailDestination(
-    icon: Icon(Icons.build_circle_rounded),
-    label: Text('Machinery'),
-  ),
-  NavigationRailDestination(
-    icon: Icon(Icons.bar_chart_rounded),
-    label: Text('Reports'),
-  ),
-  NavigationRailDestination(
-    icon: Icon(Icons.settings_rounded),
-    label: Text('Settings'),
-  ),
-],
-
-          ),
-          const VerticalDivider(width: 1),
-          Expanded(child: content),
-        ],
-      ),
-    );
+  // 🔥 METHOD BARU: Set user langsung ke cache
+  Future<void> setUser(UserModel user) async {
+    _currentUser = user;
+    _lastFetch = DateTime.now();
+    print("📦 User cached manually: ${user.name}");
   }
+
+  // Get user dari cache atau Firestore
+  Future<UserModel> getUser() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) throw Exception("User not authenticated");
+
+    // Cek apakah cache masih valid
+    if (_isCacheValid()) {
+      print("📦 Using cached user data");
+      return _currentUser!;
+    }
+
+    // Ambil dari Firestore
+    print("📦 Fetching user data from Firestore");
+    final userDoc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .get();
+
+    if (!userDoc.exists) {
+      throw Exception("User document not found");
+    }
+
+    _currentUser = UserModel.fromFirestore(userDoc);
+    _lastFetch = DateTime.now();
+    
+    return _currentUser!;
+  }
+
+  // Cek apakah cache masih valid
+  bool _isCacheValid() {
+    if (_currentUser == null || _lastFetch == null) return false;
+    
+    final age = DateTime.now().difference(_lastFetch!);
+    return age < _cacheDuration;
+  }
+
+  // Clear cache (panggil saat logout)
+  void clear() {
+    _currentUser = null;
+    _lastFetch = null;
+    print("📦 User cache cleared");
+  }
+
+  // Force refresh (panggil setelah update profile)
+  Future<UserModel> refreshUser() async {
+    clear();
+    return await getUser();
+  }
+
+  // Get current user tanpa fetch (synchronous)
+  UserModel? get currentUser => _currentUser;
 }

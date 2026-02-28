@@ -20,6 +20,7 @@ import '../../models/service_report_spare_part.dart';
 import '../../pages/partners/partner_list_page.dart';
 import '../../models/partner.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../../core/cache/company_cache.dart';
 
 class ServiceReportFormPage extends StatefulWidget {
   final String? reportId;
@@ -31,6 +32,7 @@ class ServiceReportFormPage extends StatefulWidget {
 }
 
 class _ServiceReportFormPageState extends State<ServiceReportFormPage> {
+  final CompanyCache _companyCache = CompanyCache();
   bool _isSaving = false;
   bool _isLoading = false;
   String? _currentReportId;
@@ -149,6 +151,8 @@ Future<void> _loadTechnicians() async {
     if (companyId == null) {
       throw Exception("Company not selected");
     }
+
+    final technicians = await _companyCache.getTechnicians(companyId);
 
     final snapshot = await FirebaseFirestore.instance
         .collection('users')
@@ -433,6 +437,8 @@ final doc = await ServiceReportFirestore.getReport(
                 _buildDesktopTechnicianSection(),
                 const SizedBox(height: 16),
                 _buildDesktopSignatureSection(),
+                const SizedBox(height: 16),
+  _buildDesktopCustomerNameSection(),
                 const SizedBox(height: 16),
                 _buildDesktopMediaSection(),
                 const SizedBox(height: 24),
@@ -1261,6 +1267,14 @@ Text(
             ),
           ),
           const SizedBox(height: 12),
+
+          _buildMobileSection(
+  'CUSTOMER NAME',
+  Icons.person,
+  Colors.green,
+  _buildTextField(customerNameController, 'Customer Name *'),
+),
+const SizedBox(height: 12),
 
           // MEDIA
           _buildMobileSection(
@@ -2330,6 +2344,17 @@ await ServiceReportFirestore.submitServiceReport(
 
   setState(() {});
 }
+
+// Tambahkan method ini di dalam class _ServiceReportFormPageState
+Widget _buildDesktopCustomerNameSection() {
+  return _formSection(
+    'CUSTOMER NAME',
+    Icons.person,
+    Colors.green,
+    _buildTextField(customerNameController, 'Customer Name *'),
+  );
+}
+
 }
 
 // ================= UI HELPERS =================

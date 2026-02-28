@@ -86,6 +86,7 @@ flutter:
     - assets/images/Atom.png
     - assets/icon/app_icon.png
     - assets/data/spare_parts.json
+    - assets/images/ATOM_INDO.png
   uses-material-design: true
 
   fonts:
@@ -93,6 +94,11 @@ flutter:
       fonts:
         - asset: assets/fonts/Roboto-Regular.ttf
         - asset: assets/fonts/Roboto-Bold.ttf
+          weight: 700
+    - family: CorporateSerif
+      fonts:
+        - asset: assets/fonts/LibreBaskerville-Regular.ttf
+        - asset: assets/fonts/LibreBaskerville-Bold.ttf
           weight: 700
 
 flutter_icons:
