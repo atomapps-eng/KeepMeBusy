@@ -5,6 +5,8 @@ import '../../pages/common/app_background_wrapper.dart';
 import 'activity_form_page.dart';
 import '../../core/services/company_firestore.dart';
 import '../../theme/app_theme.dart';
+import '../../services/partner_service.dart';
+import '../../models/partner.dart';
 
 class ActivityDetailPage extends StatelessWidget {
   final String employeeId;
@@ -248,12 +250,7 @@ class ActivityDetailPage extends StatelessWidget {
                   Icons.category,
                   color,
                 ),
-                _buildInfoItem(
-                  'Factory / Client',
-                  activity['factoryClient'] ?? '-',
-                  Icons.business,
-                  Colors.blue,
-                ),
+               _buildPartnerSection(),
                 _buildInfoItem(
                   'Machine',
                   activity['machine'] ?? '-',
@@ -581,7 +578,7 @@ class ActivityDetailPage extends StatelessWidget {
                 const Divider(height: 24),
 
                 // Details
-                _buildDetailRow('Factory / Client', activity['factoryClient'] ?? '-', Icons.business),
+                _buildPartnerSection(),
                 _buildDetailRow('Machine', activity['machine'] ?? '-', Icons.precision_manufacturing),
                 _buildDetailRow('Serial Number', activity['serialNumber'] ?? '-', Icons.qr_code),
                 
@@ -856,6 +853,7 @@ class ActivityDetailPage extends StatelessWidget {
         builder: (_) => ActivityFormPage(
           attendanceDate: (activity['date'] as Timestamp).toDate(),
           factoryClientName: activity['factoryClient'] ?? '',
+          customerId: activity['customerId'] ?? '',
         ),
       ),
     );
@@ -893,6 +891,53 @@ class ActivityDetailPage extends StatelessWidget {
       );
     }
   }
+
+Widget _buildPartnerSection() {
+  final partnerName = activity['factoryClient'] ?? '-';
+  final customerId = activity['customerId'];
+
+  if (customerId == null) {
+    return _buildSimplePartner(partnerName, null);
+  }
+
+  return StreamBuilder<Partner?>(
+    stream: PartnerService().getPartnerById(customerId),
+    builder: (context, snapshot) {
+      final partner = snapshot.data;
+
+      return _buildSimplePartner(
+        partnerName,
+        partner == null
+            ? null
+            : '${partner.city ?? ''}'
+              '${partner.city != null && partner.country != null ? ', ' : ''}'
+              '${partner.country ?? ''}',
+      );
+    },
+  );
+}
+
+Widget _buildSimplePartner(String name, String? location) {
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      _buildInfoItem(
+        'Factory / Client',
+        name,
+        Icons.business,
+        Colors.blue,
+      ),
+      if (location != null && location.isNotEmpty)
+        _buildInfoItem(
+          'City / Country',
+          location,
+          Icons.location_on,
+          Colors.teal,
+        ),
+    ],
+  );
+}
+
 }
 
 // =======================================================

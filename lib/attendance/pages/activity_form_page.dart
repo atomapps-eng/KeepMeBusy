@@ -4,6 +4,7 @@ import '../../pages/common/app_background_wrapper.dart';
 class ActivityEntry {
   final DateTime date;
   final String factoryClient;
+  final String customerId; // 🔥 TAMBAHAN
   final String machine;
   final String serialNumber;
   final String activityType;
@@ -14,6 +15,7 @@ class ActivityEntry {
   ActivityEntry({
     required this.date,
     required this.factoryClient,
+    required this.customerId, // 🔥 TAMBAHAN
     required this.machine,
     required this.serialNumber,
     required this.activityType,
@@ -25,12 +27,14 @@ class ActivityEntry {
 
 class ActivityFormPage extends StatefulWidget {
   final DateTime attendanceDate;      // ✅ dari attendance
-  final String factoryClientName;     // ✅ NAMA customer
+  final String factoryClientName; 
+  final String customerId;    // ✅ NAMA customer
 
   const ActivityFormPage({
     super.key,
     required this.attendanceDate,
     required this.factoryClientName,
+    required this.customerId,
   });
 
   @override
@@ -177,7 +181,8 @@ _field(noteCtrl, 'Note', lines: 2),
                             ActivityEntry(
                               date: date,
                               factoryClient:
-                                  widget.factoryClientName, // ✅ NAME
+                              widget.factoryClientName,
+                              customerId: widget.customerId, // ✅ NAME
                               machine: machineCtrl.text,
                               serialNumber: serialCtrl.text,
                               activityType: activityType,

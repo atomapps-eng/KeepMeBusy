@@ -18,6 +18,13 @@ class PartnerService {
     });
   }
 
+  Stream<Partner?> getPartnerById(String id) {
+  return _ref.doc(id).snapshots().map((doc) {
+    if (!doc.exists) return null;
+    return Partner.fromFirestore(doc);
+  });
+}
+
   Future<void> addPartner({
     required String name,
     required String address,

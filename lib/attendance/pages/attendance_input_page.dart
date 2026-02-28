@@ -131,18 +131,19 @@ Future<void> _loadExistingActivities() async {
       .get();
 
   final loaded = snap.docs.map((d) {
-    final data = d.data();
-    return ActivityEntry(
-      date: (data['date'] as Timestamp).toDate(),
-      factoryClient: data['factoryClient'],
-      machine: data['machine'],
-      serialNumber: data['serialNumber'],
-      activityType: data['activityType'],
-      description: data['description'],
-      status: data['status'],
-      note: data['note'],
-    );
-  }).toList();
+  final data = d.data();
+  return ActivityEntry(
+    date: (data['date'] as Timestamp).toDate(),
+    factoryClient: data['factoryClient'] ?? '',
+    customerId: data['customerId'] ?? '', // 🔥 TAMBAHAN
+    machine: data['machine'] ?? '',
+    serialNumber: data['serialNumber'] ?? '',
+    activityType: data['activityType'] ?? '',
+    description: data['description'] ?? '',
+    status: data['status'] ?? '',
+    note: data['note'] ?? '',
+  );
+}).toList();
 
   setState(() {
     activities.addAll(loaded);
@@ -237,7 +238,7 @@ for (final a in activities) {
     'period': period, // 🔥 TAMBAHKAN INI
     'createdBy': FirebaseAuth.instance.currentUser!.uid,
     'createdAt': FieldValue.serverTimestamp(),
-
+    'customerId': a.customerId,
     'date': a.date,
     'factoryClient': a.factoryClient,
     'machine': a.machine,
@@ -378,12 +379,22 @@ for (final a in activities) {
                     icon: const Icon(Icons.build),
                     label: const Text('Add Activity'),
                     onPressed: () async {
+  if (selectedCustomerId == null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Please select customer first'),
+      ),
+    );
+    return;
+  }
+
   final result = await Navigator.push(
     context,
     MaterialPageRoute(
       builder: (_) => ActivityFormPage(
         attendanceDate: _selectedDate,
         factoryClientName: selectedCustomerName ?? '',
+        customerId: selectedCustomerId!, // 🔥 ini dari AttendanceInputPage
       ),
     ),
   );
