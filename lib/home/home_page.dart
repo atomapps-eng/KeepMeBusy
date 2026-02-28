@@ -7,17 +7,14 @@ class HomePageAfterLogin extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final platform = Theme.of(context).platform;
+    final width = MediaQuery.of(context).size.width;
 
-    final isDesktopPlatform =
-        platform == TargetPlatform.windows ||
-        platform == TargetPlatform.macOS ||
-        platform == TargetPlatform.linux;
-
-    if (isDesktopPlatform) {
+    // Tablet landscape & desktop
+    if (width >= 800) {
       return const HomeDesktop();
     }
 
+    // Phone
     return const HomeMobile();
   }
 }

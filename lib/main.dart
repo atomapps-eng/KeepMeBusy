@@ -9,6 +9,7 @@ import 'tools/migration_page.dart';
 import 'core/session/company_session.dart';
 import 'package:provider/provider.dart';
 import 'auth_controller.dart';
+import 'package:flutter/services.dart';
 
 final GlobalKey<ScaffoldMessengerState> rootScaffoldMessengerKey =
     GlobalKey<ScaffoldMessengerState>();
@@ -23,6 +24,12 @@ void main() async {
   );
 
   await CompanySession.load();
+
+  // 🔥 LOCK LANDSCAPE
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.landscapeLeft,
+    DeviceOrientation.landscapeRight,
+  ]);
 
   runApp(
     MultiProvider(
