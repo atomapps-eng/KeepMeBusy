@@ -60,7 +60,7 @@ class _ServiceReportListPageState extends State<ServiceReportListPage> {
     if (_currentUser == null) return snapshot.docs;
     
     return snapshot.docs.where((doc) {
-      final companyId = doc.reference.parent.parent!.id;
+      final companyId = doc.data()['companyId'];
       return _currentUser!.companyIds.contains(companyId);
     }).toList();
   }
@@ -274,35 +274,30 @@ class _ServiceReportListPageState extends State<ServiceReportListPage> {
       body: AppBackgroundWrapper(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
         child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-          stream: ServiceReportFirestore.streamReports(user: _currentUser!),
-          builder: (context, snapshot) {
-            if (snapshot.hasError) {
-              return Center(
-                child: Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: Colors.red.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.error_outline, size: 48, color: Colors.red),
-                      const SizedBox(height: 12),
-                      Text(
-                        'Error loading reports: ${snapshot.error}',
-                        style: TextStyle(color: Colors.red.shade700),
+  stream: ServiceReportFirestore.streamReports(user: _currentUser!),
+  builder: (context, snapshot) {
+    if (snapshot.hasError) {
+      print('Stream error: ${snapshot.error}'); // Debug
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.error_outline, size: 48, color: Colors.red),
+            const SizedBox(height: 16),
+            Text(
+              'Error: ${snapshot.error}',
+              style: const TextStyle(color: Colors.red),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () => setState(() {}),
+              child: const Text('Retry'),
                       ),
-                      const SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: () => setState(() {}),
-                        child: const Text('Retry'),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            }
+          ],
+        ),
+      );
+    }
 
             if (!snapshot.hasData) {
               return const Center(child: CircularProgressIndicator());
@@ -665,213 +660,230 @@ class _ServiceReportListPageState extends State<ServiceReportListPage> {
     );
   }
 
-  Widget _buildDesktopReportsList(
-    List<QueryDocumentSnapshot<Map<String, dynamic>>> filteredDocs,
-  ) {
-    return _glass(
-      Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // HEADER
-          Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: Row(
-              children: [
-                const Text(
-                  'Reports List',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+ Widget _buildDesktopReportsList(
+  List<QueryDocumentSnapshot<Map<String, dynamic>>> filteredDocs,
+) {
+  return _glass(
+    Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: Row(
+            children: [
+              const Text(
+                'Reports List',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.blue.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(20),
                 ),
-                const Spacer(),
+                child: Text(
+                  '${filteredDocs.length} reports',
+                  style: TextStyle(fontSize: 11, color: Colors.blue.shade700),
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        // TABLE
+        Container(
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.grey.shade300),
+            borderRadius: BorderRadius.circular(8),
+            color: Colors.white.withOpacity(0.3),
+          ),
+          height: 500,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: Column(
+              children: [
+                // HEADER ROW
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.blue.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(20),
+                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                  color: Colors.grey.shade200,
+                  child: Row(
+                    children: [
+                      const SizedBox(width: 12),
+                      const Expanded(flex: 2, child: Text('Sheet ID', style: TextStyle(fontWeight: FontWeight.w600))),
+                      const Expanded(flex: 2, child: Text('Factory / Machine', style: TextStyle(fontWeight: FontWeight.w600))),
+                      const Expanded(flex: 2, child: Center(child: Text('Start Date', style: TextStyle(fontWeight: FontWeight.w600)))),
+                      const Expanded(flex: 2, child: Center(child: Text('Technician', style: TextStyle(fontWeight: FontWeight.w600)))),
+                      const Expanded(flex: 1, child: Center(child: Text('Status', style: TextStyle(fontWeight: FontWeight.w600)))),
+                      const SizedBox(width: 24),
+                    ],
                   ),
-                  child: Text(
-                    '${filteredDocs.length} reports',
-                    style: TextStyle(fontSize: 11, color: Colors.blue.shade700),
-                  ),
+                ),
+                
+                // LIST VIEW
+                Expanded(
+                  child: filteredDocs.isEmpty
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.inbox, size: 48, color: Colors.grey.shade400),
+                              const SizedBox(height: 12),
+                              Text('No reports found', style: TextStyle(color: Colors.grey.shade600)),
+                            ],
+                          ),
+                        )
+                      : ListView.builder(
+                          itemCount: filteredDocs.length,
+                          itemBuilder: (context, index) {
+                            final doc = filteredDocs[index];
+                            final data = doc.data();
+
+                              print("Report ID: ${doc.id}, Company ID: ${data['companyId']}");
+                            
+                            // 👇 DEFINISIKAN DI SINI, di dalam itemBuilder
+                            String factoryMachine = data['factory'] ?? '-';
+                            if (data['machine'] != null && data['machine'].toString().isNotEmpty) {
+                              factoryMachine += ' • ${data['machine']}';
+                            }
+                            
+                            return _buildTableRow(doc, factoryMachine); // 👈 KIRIMKAN KE FUNCTION
+                          },
+                        ),
                 ),
               ],
             ),
           ),
-
-          // TABLE
-          Container(
-            decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey.shade300),
-              borderRadius: BorderRadius.circular(8),
-              color: Colors.white.withOpacity(0.3),
-            ),
-            height: 500,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: Column(
-                children: [
-                  // HEADER ROW
-                  Container(
-                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                    color: Colors.grey.shade200,
-                    child: Row(
-                      children: [
-                        const SizedBox(width: 12),
-                        const Expanded(flex: 2, child: Text('Sheet ID', style: TextStyle(fontWeight: FontWeight.w600))),
-                        const Expanded(flex: 2, child: Text('Factory / Machine', style: TextStyle(fontWeight: FontWeight.w600))),
-                        const Expanded(flex: 2, child: Center(child: Text('Start Date', style: TextStyle(fontWeight: FontWeight.w600)))),
-                        const Expanded(flex: 2, child: Center(child: Text('Technician', style: TextStyle(fontWeight: FontWeight.w600)))),
-                        const Expanded(flex: 1, child: Center(child: Text('Status', style: TextStyle(fontWeight: FontWeight.w600)))),
-                        const SizedBox(width: 24),
-                      ],
-                    ),
-                  ),
-                  
-                  // LIST VIEW
-                  Expanded(
-                    child: filteredDocs.isEmpty
-                        ? Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.inbox, size: 48, color: Colors.grey.shade400),
-                                const SizedBox(height: 12),
-                                Text('No reports found', style: TextStyle(color: Colors.grey.shade600)),
-                              ],
-                            ),
-                          )
-                        : ListView.builder(
-                            itemCount: filteredDocs.length,
-                            itemBuilder: (context, index) {
-                              return _buildTableRow(filteredDocs[index]);
-                            },
-                          ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTableRow(QueryDocumentSnapshot<Map<String, dynamic>> doc) {
-    final data = doc.data();
-    final status = data['status'] ?? 'Draft';
-    final color = status.toLowerCase() == 'draft' ? Colors.orange : Colors.green;
-    
-    String factoryMachine = data['factory'] ?? '-';
-    if (data['machine'] != null && data['machine'].toString().isNotEmpty) {
-      factoryMachine += ' • ${data['machine']}';
-    }
-
-    return Container(
-      decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(color: Colors.grey.shade300),
         ),
-      ),
-      child: InkWell(
-        onTap: () {
-          final companyId = doc.reference.parent.parent!.id;
-
-Navigator.push(
-  context,
-  MaterialPageRoute(
-    builder: (context) => ServiceReportDetailPage(
-      reportId: doc.id,
-      companyId: companyId,
+      ],
     ),
-  ),
-);
-        },
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-          child: Row(
-            children: [
-              // Color bar
-              Container(
-                width: 4,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: color,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              const SizedBox(width: 8),
-              
-              // Sheet ID
-              Expanded(
-                flex: 2,
-                child: Text(
-                  data['sheetId'] ?? '-',
-                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-                ),
-              ),
-              
-              // Factory / Machine
-              Expanded(
-                flex: 2,
-                child: Text(
-                  factoryMachine,
-                  style: TextStyle(fontSize: 13, color: Colors.grey.shade700),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              
-              // Start Date
-              Expanded(
-                flex: 2,
-                child: Center(
-                  child: Text(
-                    _formatDate(data['startDate']),
-                    style: const TextStyle(fontSize: 13),
-                  ),
-                ),
-              ),
-              
-              // Technician
-              Expanded(
-                flex: 2,
-                child: Center(
-                  child: Text(
-                    data['technician1'] ?? '-',
-                    style: const TextStyle(fontSize: 13),
-                  ),
-                ),
-              ),
-              
-              // Status
-              Expanded(
-                flex: 1,
-                child: Center(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: color.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      status,
-                      style: TextStyle(
-                        color: color,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              
-              // Arrow
-              const SizedBox(width: 24),
-            ],
+  );
+}
+
+Widget _buildTableRow(
+  QueryDocumentSnapshot<Map<String, dynamic>> doc, 
+  String factoryMachine, // 👈 TAMBAHKAN PARAMETER INI
+) {
+  final data = doc.data();
+  final status = data['status'] ?? 'Draft';
+  final color = status.toLowerCase() == 'draft' ? Colors.orange : Colors.green;
+
+  return Container(
+    decoration: BoxDecoration(
+      border: Border(
+        bottom: BorderSide(color: Colors.grey.shade300),
+      ),
+    ),
+    child: InkWell(
+      onTap: () {
+        final companyId = data['companyId'];
+        if (companyId == null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Company ID tidak ditemukan dalam data report'),
+              backgroundColor: Colors.red,
+            ),
+          );
+          return;
+        }
+
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ServiceReportDetailPage(
+              reportId: doc.id,
+              companyId: companyId,
+            ),
           ),
+        );
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+        child: Row(
+          children: [
+            // Color bar
+            Container(
+              width: 4,
+              height: 40,
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(width: 8),
+            
+            // Sheet ID
+            Expanded(
+              flex: 2,
+              child: Text(
+                data['sheetId'] ?? '-',
+                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+              ),
+            ),
+            
+            // Factory / Machine - GUNAKAN PARAMETER YANG DITERIMA
+            Expanded(
+              flex: 2,
+              child: Text(
+                factoryMachine, // 👈 GUNAKAN PARAMETER INI
+                style: TextStyle(fontSize: 13, color: Colors.grey.shade700),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            
+            // Start Date
+            Expanded(
+              flex: 2,
+              child: Center(
+                child: Text(
+                  _formatDate(data['startDate']),
+                  style: const TextStyle(fontSize: 13),
+                ),
+              ),
+            ),
+            
+            // Technician
+            Expanded(
+              flex: 2,
+              child: Center(
+                child: Text(
+                  data['technician1'] ?? '-',
+                  style: const TextStyle(fontSize: 13),
+                ),
+              ),
+            ),
+            
+            // Status
+            Expanded(
+              flex: 1,
+              child: Center(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    status,
+                    style: TextStyle(
+                      color: color,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            
+            // Arrow
+            const SizedBox(width: 24),
+          ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   // ================= MOBILE LAYOUT =================
   Widget _buildMobileLayout(
@@ -1029,16 +1041,16 @@ Navigator.push(
   }
 
   Widget _buildMobileReportTile(QueryDocumentSnapshot<Map<String, dynamic>> doc) {
-    final data = doc.data();
-    final status = data['status'] ?? 'Draft';
-    final color = status.toLowerCase() == 'draft' ? Colors.orange : Colors.green;
+  final data = doc.data();
+  final status = data['status'] ?? 'Draft';
+  final color = status.toLowerCase() == 'draft' ? Colors.orange : Colors.green;
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: ListTile(
+  return Card(
+    margin: const EdgeInsets.only(bottom: 8),
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(12),
+    ),
+    child: ListTile(
         leading: Container(
           width: 4,
           height: 40,
@@ -1081,21 +1093,32 @@ Navigator.push(
           ],
         ),
         onTap: () {
-          final companyId = doc.reference.parent.parent!.id;
+        final companyId = data['companyId']; // AMBIL DARI DATA
+        if (companyId == null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Company ID tidak ditemukan'),
+              backgroundColor: Colors.red,
+            ),
+          );
+          return;
+        }
 
-Navigator.push(
-  context,
-  MaterialPageRoute(
-    builder: (context) => ServiceReportDetailPage(
-      reportId: doc.id,
-      companyId: companyId,
+        print("Navigating to detail - Report ID: ${doc.id}, Company ID: $companyId");
+
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ServiceReportDetailPage(
+              reportId: doc.id,
+              companyId: companyId,
+            ),
+          ),
+        );
+      },
     ),
-  ),
-);
-        },
-      ),
-    );
-  }
+  );
+}
 
   // Helper functions
   void _filterByDateRange(String range) {

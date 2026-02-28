@@ -1,46 +1,55 @@
 // lib/services/service_report_firestore.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../core/session/company_session.dart';
 import '../../models/user_model.dart';
 import 'company_collection_resolver.dart';
 
 class ServiceReportFirestore {
-  // Method untuk super_admin - PERBAIKI INI
+  
+  // Stream untuk SUPER ADMIN - menggunakan collectionGroup
   static Stream<QuerySnapshot<Map<String, dynamic>>> streamAllCompaniesReports({
     required List<String> companyIds,
   }) {
-    // Tambahkan .withConverter untuk menentukan tipe data
-    return FirebaseFirestore.instance
-    .collectionGroup('service_reports')
-    .withConverter<Map<String, dynamic>>(
-      fromFirestore: (snapshot, _) => snapshot.data()!,
-      toFirestore: (data, _) => data,
-    )
-    .where('companyId', whereIn: companyIds)
-    .orderBy("createdAt", descending: true)
-    .snapshots();
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      return Stream.error('User not authenticated');
+    }
+
+    Query<Map<String, dynamic>> query = FirebaseFirestore.instance
+        .collectionGroup('service_reports')
+        .orderBy("createdAt", descending: true);
+
+    // SUPER ADMIN bisa lihat semua company dalam companyIds mereka
+    if (companyIds.isNotEmpty) {
+      query = query.where('companyId', whereIn: companyIds);
+    }
+
+    return query.snapshots();
   }
 
-  // Method untuk stream berdasarkan selected company (untuk admin/user)
+  // Stream untuk REGULAR USER - berdasarkan company terpilih
   static Stream<QuerySnapshot<Map<String, dynamic>>> streamCompanyReports() {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      return Stream.error('User not authenticated');
+    }
 
-   return CompanyCollectionResolver
-    .serviceReports()
-        .withConverter<Map<String, dynamic>>(
-          fromFirestore: (snapshot, _) => snapshot.data()!,
-          toFirestore: (data, _) => data,
-        )
+    return CompanyCollectionResolver
+        .serviceReports()
         .orderBy("createdAt", descending: true)
         .snapshots();
   }
 
-  // Method utama yang akan dipanggil UI
+  // Method utama - dipanggil UI
   static Stream<QuerySnapshot<Map<String, dynamic>>> streamReports({
     required UserModel user,
   }) {
     if (user.role == 'super_admin') {
+      // SUPER ADMIN: Gunakan collectionGroup dengan filter companyIds
       return streamAllCompaniesReports(companyIds: user.companyIds);
     } else {
+      // REGULAR USER: Hanya bisa lihat company yang dipilih
       return streamCompanyReports();
     }
   }
@@ -49,143 +58,141 @@ class ServiceReportFirestore {
 static Future<String> createServiceReport({
   required Map<String, dynamic> data,
 }) async {
+  final user = FirebaseAuth.instance.currentUser;
+  if (user == null) throw Exception("User not authenticated");
+
   final companyId = CompanySession.selectedCompanyId;
-
-  if (companyId == null) {
-    throw Exception("Company not selected.");
-  }
-
-  // Generate sheetId TERLEBIH DAHULU sebelum save
+  if (companyId == null) throw Exception("Company not selected.");
+  
+  print("Creating report for company: $companyId");
+  
   final sheetId = await generateSheetId();
 
-  final docRef = CompanyCollectionResolver
-    .serviceReports()
-    .doc();
+  // Buat document reference TERLEBIH DAHULU
+  final docRef = FirebaseFirestore.instance
+      .collection('companies')
+      .doc(companyId)
+      .collection('service_reports')
+      .doc(); // Auto-generate ID
 
-  // Data yang akan disimpan
   final reportData = {
-    ...data, // Data dari form
+    ...data,
     "sheetId": sheetId,
-    "status": "Draft", // Default status
+    "status": "Draft",
     "createdAt": FieldValue.serverTimestamp(),
-    "createdBy": "user-id-here", // TODO: ambil dari auth
-    "companyId": companyId, // Simpan companyId untuk memudahkan filtering
+    "createdBy": user.uid,
+    "companyId": companyId,
   };
 
+  print("Saving report with ID: ${docRef.id}");
+  print("Data: $reportData");
+  
+  // Simpan dengan ID yang sudah digenerate
   await docRef.set(reportData);
   
-  // Return sheetId untuk keperluan UI (optional)
-  return sheetId;
+  // Return ID dokumen
+  return docRef.id;
 }
 
   // UPDATE
   static Future<void> updateServiceReport({
-  required String companyId,
-  required String docId,
-  required Map<String, dynamic> data,
-}) async {
-  await FirebaseFirestore.instance
-      .collection('companies')
-      .doc(companyId)
-      .collection('service_reports')
-      .doc(docId)
-      .update(data);
-}
+    required String companyId,
+    required String docId,
+    required Map<String, dynamic> data,
+  }) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) throw Exception("User not authenticated");
+
+    await FirebaseFirestore.instance
+        .collection('companies')
+        .doc(companyId)
+        .collection('service_reports')
+        .doc(docId)
+        .update({
+      ...data,
+      "updatedAt": FieldValue.serverTimestamp(),
+      "updatedBy": user.uid,
+    });
+  }
+
+  // SUBMIT
+  static Future<void> submitServiceReport({
+    required String companyId,
+    required String docId,
+  }) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) throw Exception("User not authenticated");
+
+    await FirebaseFirestore.instance
+        .collection('companies')
+        .doc(companyId)
+        .collection('service_reports')
+        .doc(docId)
+        .update({
+      "status": "Submitted",
+      "submittedAt": FieldValue.serverTimestamp(),
+      "submittedBy": user.uid,
+    });
+  }
+
+  // DELETE
+  static Future<void> deleteServiceReport({
+    required String companyId,
+    required String docId,
+  }) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) throw Exception("User not authenticated");
+
+    // Verifikasi kepemilikan
+    final doc = await getReport(companyId: companyId, docId: docId);
+    if (doc.data()?['createdBy'] != user.uid) {
+      throw Exception("You can only delete your own reports");
+    }
+
+    await FirebaseFirestore.instance
+        .collection('companies')
+        .doc(companyId)
+        .collection('service_reports')
+        .doc(docId)
+        .delete();
+  }
 
   // GET SINGLE
   static Future<DocumentSnapshot<Map<String, dynamic>>> getReport({
-  required String companyId,
-  required String docId,
-}) async {
-  return await FirebaseFirestore.instance
-      .collection('companies')
-      .doc(companyId)
-      .collection('service_reports')
-      .doc(docId)
-      .withConverter<Map<String, dynamic>>(
-        fromFirestore: (snapshot, _) => snapshot.data()!,
-        toFirestore: (data, _) => data,
-      )
-      .get();
-}
+    required String companyId,
+    required String docId,
+  }) async {
+    print("Getting report from: companies/$companyId/service_reports/$docId");
+    return await FirebaseFirestore.instance
+        .collection('companies')
+        .doc(companyId)
+        .collection('service_reports')
+        .doc(docId)
+        .get();
+  }
 
   // GENERATE SHEET ID
   static Future<String> generateSheetId() async {
     final companyId = CompanySession.selectedCompanyId;
-
-    if (companyId == null) {
-      throw Exception("Company not selected.");
-    }
+    if (companyId == null) throw Exception("Company not selected.");
 
     final year = DateTime.now().year;
-    final counterRef = CompanyCollectionResolver
-    .counters()
-    .doc('service_report_$year');
-
-    return FirebaseFirestore.instance.runTransaction((transaction) async {
-      final snapshot = await transaction.get(counterRef);
-
-      int newNumber = 1;
-
-      if (snapshot.exists) {
-        final data = snapshot.data();
-        final current = data?['current'] ?? 0;
-        newNumber = current + 1;
-      }
-
-      transaction.set(counterRef, {
-        'current': newNumber,
-      });
-
-      final padded = newNumber.toString().padLeft(4, '0');
-      return "SR-$year-$padded";
-    });
-  }
-
-  // Private getter untuk collection (hanya dipakai admin/user)
-  static CollectionReference<Map<String, dynamic>> get _collection {
-    final companyId = CompanySession.selectedCompanyId;
-
-    if (companyId == null) {
-      throw Exception("Company not selected.");
-    }
-
-    return FirebaseFirestore.instance
+    final counterRef = FirebaseFirestore.instance
         .collection('companies')
         .doc(companyId)
-        .collection('service_reports')
-        .withConverter<Map<String, dynamic>>(
-          fromFirestore: (snapshot, _) => snapshot.data()!,
-          toFirestore: (data, _) => data,
-        );
+        .collection('counters')
+        .doc('service_report_$year');
+
+    // Run in transaction untuk keamanan
+    return await FirebaseFirestore.instance.runTransaction<String>(
+      (transaction) async {
+        final snapshot = await transaction.get(counterRef);
+        final current = (snapshot.data()?['current'] ?? 0) + 1;
+        
+        transaction.set(counterRef, {'current': current});
+        
+        return "SR-$year-${current.toString().padLeft(4, '0')}";
+      },
+    );
   }
-
-// Tambahkan method ini setelah updateServiceReport
-static Future<void> submitServiceReport({
-  required String companyId,
-  required String docId,
-}) async {
-  await FirebaseFirestore.instance
-      .collection('companies')
-      .doc(companyId)
-      .collection('service_reports')
-      .doc(docId)
-      .update({
-        "status": "Submitted",
-        "submittedAt": FieldValue.serverTimestamp(),
-        "submittedBy": "user-id-here",
-      });
-}
-
-static Future<void> deleteServiceReport({
-  required String companyId,
-  required String docId,
-}) async {
-  await FirebaseFirestore.instance
-      .collection('companies')
-      .doc(companyId)
-      .collection('service_reports')
-      .doc(docId)
-      .delete();
-}
 }

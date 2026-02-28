@@ -2,6 +2,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../services/service_report_firestore.dart';
 import '../../core/session/company_session.dart';
 import 'service_report_form_page.dart';
@@ -14,10 +15,10 @@ class ServiceReportDetailPage extends StatefulWidget {
   final String companyId;
   
   const ServiceReportDetailPage({
-  super.key,
-  required this.reportId,
-  required this.companyId,
-});
+    super.key,
+    required this.reportId,
+    required this.companyId,
+  });
 
   @override
   State<ServiceReportDetailPage> createState() => _ServiceReportDetailPageState();
@@ -33,6 +34,12 @@ class _ServiceReportDetailPageState extends State<ServiceReportDetailPage> {
   @override
   void initState() {
     super.initState();
+    // DEBUG: Lihat parameter yang diterima
+    print("=== SERVICE REPORT DETAIL PAGE ===");
+    print("reportId: ${widget.reportId}");
+    print("companyId: ${widget.companyId}");
+    print("Current User: ${FirebaseAuth.instance.currentUser?.uid}");
+    
     _loadReport();
   }
 
@@ -43,20 +50,58 @@ class _ServiceReportDetailPageState extends State<ServiceReportDetailPage> {
     });
 
     try {
-      final doc = await ServiceReportFirestore.getReport(
-  companyId: widget.companyId,
-  docId: widget.reportId,
-);
+      print("Mencoba membaca dokumen: companies/${widget.companyId}/service_reports/${widget.reportId}");
+      // Validasi input
+      if (widget.companyId.isEmpty || widget.reportId.isEmpty) {
+        throw Exception("companyId atau reportId tidak valid");
+      }
+
+      // Path lengkap ke dokumen
+      String path = 'companies/${widget.companyId}/service_reports/${widget.reportId}';
+      print("Mencoba membaca dokumen: $path");
+
+      // Ambil dokumen dari Firestore
+      final doc = await FirebaseFirestore.instance
+          .collection('companies')
+          .doc(widget.companyId)
+          .collection('service_reports')
+          .doc(widget.reportId)
+          .get();
+
+      print("Hasil query:");
+      print("  exists: ${doc.exists}");
       
+      if (doc.exists) {
+        print("  data: ${doc.data()}");
+        print("  companyId in data: ${doc.data()?['companyId']}");
+      }
+
       if (!mounted) return;
-      
+
+      if (!doc.exists) {
+        setState(() {
+          _error = "Report tidak ditemukan di database";
+          _isLoading = false;
+        });
+        return;
+      }
+
+      // Cast ke tipe yang benar
       setState(() {
-        _reportDoc = doc;
+        _reportDoc = doc as DocumentSnapshot<Map<String, dynamic>>;
         _isLoading = false;
       });
-    } catch (e) {
+
+      print("Report berhasil dimuat");
+
+    } catch (e, stackTrace) {
+      print("ERROR saat memuat report:");
+      print("  tipe error: ${e.runtimeType}");
+      print("  pesan: $e");
+      print("  stackTrace: $stackTrace");
+
       if (!mounted) return;
-      
+
       setState(() {
         _error = e.toString();
         _isLoading = false;
@@ -70,13 +115,12 @@ class _ServiceReportDetailPageState extends State<ServiceReportDetailPage> {
       builder: (context) => AlertDialog(
         title: const Text("Submit Service Report"),
         content: const Text(
-          "After submission, this report cannot be edited. "
-          "Are you sure you want to submit?"
+          "Setelah disubmit, report tidak bisa diedit lagi. Yakin ingin submit?"
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text("CANCEL"),
+            child: const Text("BATAL"),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
@@ -97,9 +141,9 @@ class _ServiceReportDetailPageState extends State<ServiceReportDetailPage> {
 
     try {
       await ServiceReportFirestore.submitServiceReport(
-  companyId: widget.companyId,
-  docId: widget.reportId,
-);
+        companyId: widget.companyId,
+        docId: widget.reportId,
+      );
       
       if (!mounted) return;
       
@@ -107,7 +151,7 @@ class _ServiceReportDetailPageState extends State<ServiceReportDetailPage> {
       
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text("Service Report submitted successfully"),
+          content: Text("Service Report berhasil disubmit"),
           backgroundColor: Colors.green,
         ),
       );
@@ -117,7 +161,7 @@ class _ServiceReportDetailPageState extends State<ServiceReportDetailPage> {
       
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text("Error submitting: $e"),
+          content: Text("Error: $e"),
           backgroundColor: Colors.red,
         ),
       );
@@ -142,6 +186,61 @@ class _ServiceReportDetailPageState extends State<ServiceReportDetailPage> {
     
     if (result == true) {
       _loadReport();
+    }
+  }
+
+  Future<void> _deleteReport() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Hapus Service Report"),
+        content: const Text(
+          "Data akan dihapus permanen. Yakin ingin menghapus?"
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text("BATAL"),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+            ),
+            child: const Text("HAPUS"),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    try {
+      await ServiceReportFirestore.deleteServiceReport(
+        companyId: widget.companyId,
+        docId: widget.reportId,
+      );
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Service Report dihapus"),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+      Navigator.pop(context, true);
+
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Error: $e"),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
@@ -230,34 +329,73 @@ class _ServiceReportDetailPageState extends State<ServiceReportDetailPage> {
   }
 
   Widget _buildBody() {
-    if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
+    // TAMPILAN ERROR
     if (_error != null) {
       return Center(
         child: Container(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(24),
+          margin: const EdgeInsets.all(20),
           decoration: BoxDecoration(
             color: Colors.red.withOpacity(0.1),
             borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.red.withOpacity(0.3)),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.error_outline, size: 48, color: Colors.red),
-              const SizedBox(height: 12),
+              Icon(Icons.error_outline, size: 64, color: Colors.red),
+              const SizedBox(height: 16),
               Text(
-                'Error: $_error',
+                'Error',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.red.shade700,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                _error!,
+                textAlign: TextAlign.center,
                 style: TextStyle(color: Colors.red.shade700),
               ),
               const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: _loadReport,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primaryColor,
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Text('Retry'),
+                child: Column(
+                  children: [
+                    const Text(
+                      'Debug Info:',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 4),
+                    Text('Report ID: ${widget.reportId}'),
+                    Text('Company ID: ${widget.companyId}'),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  ElevatedButton(
+                    onPressed: _loadReport,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                      foregroundColor: Colors.white,
+                    ),
+                    child: const Text('Coba Lagi'),
+                  ),
+                  const SizedBox(width: 12),
+                  OutlinedButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Kembali'),
+                  ),
+                ],
               ),
             ],
           ),
@@ -265,22 +403,58 @@ class _ServiceReportDetailPageState extends State<ServiceReportDetailPage> {
       );
     }
 
+    // TAMPILAN LOADING
+    if (_isLoading) {
+      return const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(height: 16),
+            Text('Memuat report...'),
+          ],
+        ),
+      );
+    }
+
+    // TAMPILAN TIDAK ADA DATA
     if (_reportDoc == null || !_reportDoc!.exists) {
       return Center(
         child: Container(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(24),
+          margin: const EdgeInsets.all(20),
           decoration: BoxDecoration(
             color: Colors.orange.withOpacity(0.1),
             borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.orange.withOpacity(0.3)),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.inbox, size: 48, color: Colors.orange.shade700),
-              const SizedBox(height: 12),
+              Icon(Icons.inbox, size: 64, color: Colors.orange.shade700),
+              const SizedBox(height: 16),
               Text(
-                'Report not found',
+                'Report Tidak Ditemukan',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.orange.shade700,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Report dengan ID ${widget.reportId} tidak ditemukan di company ${widget.companyId}',
+                textAlign: TextAlign.center,
                 style: TextStyle(color: Colors.orange.shade700),
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(context),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.orange,
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('Kembali ke Daftar'),
               ),
             ],
           ),
@@ -288,6 +462,7 @@ class _ServiceReportDetailPageState extends State<ServiceReportDetailPage> {
       );
     }
 
+    // TAMPILAN DATA
     final data = _reportDoc!.data()!;
     final status = data['status'] ?? 'Draft';
     final isDraft = status == 'Draft';
@@ -304,7 +479,7 @@ class _ServiceReportDetailPageState extends State<ServiceReportDetailPage> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // LEFT SIDEBAR - REPORT METADATA
+        // LEFT SIDEBAR
         Container(
           width: 300,
           margin: const EdgeInsets.only(right: 16),
@@ -321,7 +496,7 @@ class _ServiceReportDetailPageState extends State<ServiceReportDetailPage> {
           ),
         ),
 
-        // RIGHT CONTENT - REPORT DETAILS
+        // RIGHT CONTENT
         Expanded(
           child: SingleChildScrollView(
             child: Column(
@@ -396,7 +571,7 @@ class _ServiceReportDetailPageState extends State<ServiceReportDetailPage> {
                         ),
                       ),
                       Text(
-                        isDraft ? 'Draft mode - editable' : 'Submitted - read only',
+                        isDraft ? 'Draft - bisa diedit' : 'Submitted - readonly',
                         style: TextStyle(
                           fontSize: 12,
                           color: Colors.grey.shade600,
@@ -411,7 +586,6 @@ class _ServiceReportDetailPageState extends State<ServiceReportDetailPage> {
 
           const SizedBox(height: 16),
 
-          // Sheet ID Info
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
@@ -536,6 +710,7 @@ class _ServiceReportDetailPageState extends State<ServiceReportDetailPage> {
             _buildSystemInfoRow('Submitted', _formatDateTime(data['submittedAt'])),
           if (data['submittedBy'] != null)
             _buildSystemInfoRow('Submitted By', data['submittedBy']),
+          _buildSystemInfoRow('Company ID', data['companyId'] ?? '-'),
         ],
       ),
     );
@@ -612,7 +787,6 @@ class _ServiceReportDetailPageState extends State<ServiceReportDetailPage> {
   Widget _buildDesktopContentCards(Map<String, dynamic> data) {
     return Column(
       children: [
-        // BASIC INFORMATION
         _buildDesktopInfoSection(
           'BASIC INFORMATION',
           Icons.info,
@@ -620,6 +794,7 @@ class _ServiceReportDetailPageState extends State<ServiceReportDetailPage> {
           [
             _buildDetailRow('Start Date', _formatDate(data['startDate'])),
             _buildDetailRow('End Date', _formatDate(data['endDate'])),
+            _buildDetailRow('Factory', data['factory'] ?? '-'),
             _buildDetailRow('End Customer', data['endCustomer'] ?? '-'),
             _buildDetailRow('Customer Code', data['customerCode'] ?? '-'),
           ],
@@ -627,12 +802,12 @@ class _ServiceReportDetailPageState extends State<ServiceReportDetailPage> {
 
         const SizedBox(height: 16),
 
-        // MACHINE INFORMATION
         _buildDesktopInfoSection(
           'MACHINE INFORMATION',
           Icons.precision_manufacturing,
           Colors.purple,
           [
+            _buildDetailRow('Machine', data['machine'] ?? '-'),
             _buildDetailRow('Serial Number', data['serialNumber'] ?? '-'),
             _buildDetailRow('Asset Number', data['assetNumber'] ?? '-'),
           ],
@@ -640,7 +815,6 @@ class _ServiceReportDetailPageState extends State<ServiceReportDetailPage> {
 
         const SizedBox(height: 16),
 
-        // DESCRIPTION
         _buildDesktopInfoSection(
           'PROBLEM DESCRIPTION',
           Icons.description,
@@ -655,7 +829,6 @@ class _ServiceReportDetailPageState extends State<ServiceReportDetailPage> {
 
         const SizedBox(height: 16),
 
-        // ACTIVITY
         _buildDesktopInfoSection(
           'ACTIVITY',
           Icons.bolt,
@@ -670,7 +843,6 @@ class _ServiceReportDetailPageState extends State<ServiceReportDetailPage> {
 
         const SizedBox(height: 16),
 
-        // NOTE FOR CUSTOMER
         if (data['noteForCustomer'] != null && data['noteForCustomer'].toString().isNotEmpty)
           _buildDesktopInfoSection(
             'NOTE FOR CUSTOMER',
@@ -687,7 +859,6 @@ class _ServiceReportDetailPageState extends State<ServiceReportDetailPage> {
         if (data['noteForCustomer'] != null && data['noteForCustomer'].toString().isNotEmpty)
           const SizedBox(height: 16),
 
-        // TECHNICIANS
         _buildDesktopInfoSection(
           'TECHNICIANS',
           Icons.engineering,
@@ -703,7 +874,6 @@ class _ServiceReportDetailPageState extends State<ServiceReportDetailPage> {
 
         const SizedBox(height: 16),
 
-        // SPARE PARTS
         if (data['spareParts'] != null && (data['spareParts'] as List).isNotEmpty)
           _buildDesktopInfoSection(
             'SPARE PARTS',
@@ -735,7 +905,6 @@ class _ServiceReportDetailPageState extends State<ServiceReportDetailPage> {
         if (data['spareParts'] != null && (data['spareParts'] as List).isNotEmpty)
           const SizedBox(height: 16),
 
-        // SIGNATURE
         _buildDesktopInfoSection(
           'CUSTOMER SIGNATURE',
           Icons.draw,
@@ -753,10 +922,13 @@ class _ServiceReportDetailPageState extends State<ServiceReportDetailPage> {
                       child: Image.network(
                         data['signature'],
                         fit: BoxFit.contain,
+                        errorBuilder: (_, __, ___) => const Center(
+                          child: Text("Gagal memuat signature"),
+                        ),
                       ),
                     )
                   : const Center(
-                      child: Text("No signature"),
+                      child: Text("Tidak ada signature"),
                     ),
             ),
           ],
@@ -764,7 +936,6 @@ class _ServiceReportDetailPageState extends State<ServiceReportDetailPage> {
 
         const SizedBox(height: 16),
 
-        // MEDIA
         _buildDesktopInfoSection(
           'MEDIA',
           Icons.photo_library,
@@ -788,6 +959,11 @@ class _ServiceReportDetailPageState extends State<ServiceReportDetailPage> {
             data['photo1'],
             height: 200,
             fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => Container(
+              height: 200,
+              color: Colors.grey.shade200,
+              child: const Center(child: Text("Gagal memuat gambar")),
+            ),
           ),
         ),
         const SizedBox(height: 16),
@@ -804,6 +980,11 @@ class _ServiceReportDetailPageState extends State<ServiceReportDetailPage> {
             data['photo2'],
             height: 200,
             fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => Container(
+              height: 200,
+              color: Colors.grey.shade200,
+              child: const Center(child: Text("Gagal memuat gambar")),
+            ),
           ),
         ),
         const SizedBox(height: 16),
@@ -820,6 +1001,11 @@ class _ServiceReportDetailPageState extends State<ServiceReportDetailPage> {
             data['photo3'],
             height: 200,
             fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => Container(
+              height: 200,
+              color: Colors.grey.shade200,
+              child: const Center(child: Text("Gagal memuat gambar")),
+            ),
           ),
         ),
         const SizedBox(height: 16),
@@ -848,7 +1034,7 @@ class _ServiceReportDetailPageState extends State<ServiceReportDetailPage> {
     }
     
     if (widgets.isEmpty) {
-      widgets.add(const Center(child: Text("No media")));
+      widgets.add(const Center(child: Text("Tidak ada media")));
     }
     
     return widgets;
@@ -914,60 +1100,52 @@ class _ServiceReportDetailPageState extends State<ServiceReportDetailPage> {
   }
 
   Widget _buildDesktopActionButtons() {
-  return _glass(
-    Column(
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            ElevatedButton.icon(
-              onPressed: _editReport,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.grey.shade200,
-                foregroundColor: Colors.black87,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              ),
-              icon: const Icon(Icons.edit),
-              label: const Text("Edit Draft"),
+    return _glass(
+      Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          ElevatedButton.icon(
+            onPressed: _editReport,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.grey.shade200,
+              foregroundColor: Colors.black87,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             ),
-            const SizedBox(width: 16),
-            ElevatedButton.icon(
-              onPressed: _submitReport,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              ),
-              icon: const Icon(Icons.send),
-              label: const Text("Submit Report"),
-            ),
-          ],
-        ),
-
-        const SizedBox(height: 12),
-
-        ElevatedButton.icon(
-          onPressed: _deleteReport,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.red,
-            foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            icon: const Icon(Icons.edit),
+            label: const Text("Edit Draft"),
           ),
-          icon: const Icon(Icons.delete),
-          label: const Text("Delete Report"),
-        ),
-      ],
-    ),
-  );
-}
+          const SizedBox(width: 16),
+          ElevatedButton.icon(
+            onPressed: _submitReport,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.blue,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            ),
+            icon: const Icon(Icons.send),
+            label: const Text("Submit Report"),
+          ),
+          const SizedBox(width: 16),
+          ElevatedButton.icon(
+            onPressed: _deleteReport,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            ),
+            icon: const Icon(Icons.delete),
+            label: const Text("Delete"),
+          ),
+        ],
+      ),
+    );
+  }
 
   // ================= MOBILE LAYOUT =================
   Widget _buildMobileLayout(Map<String, dynamic> data, String status, bool isDraft) {
     return SingleChildScrollView(
       child: Column(
         children: [
-          // Status Banner
           _glass(
             Container(
               padding: const EdgeInsets.all(16),
@@ -1029,7 +1207,6 @@ class _ServiceReportDetailPageState extends State<ServiceReportDetailPage> {
           ),
           const SizedBox(height: 16),
 
-          // Basic Info Card
           _buildMobileInfoCard(
             'BASIC INFORMATION',
             Icons.info,
@@ -1044,7 +1221,6 @@ class _ServiceReportDetailPageState extends State<ServiceReportDetailPage> {
           ),
           const SizedBox(height: 12),
 
-          // Machine Info Card
           _buildMobileInfoCard(
             'MACHINE INFORMATION',
             Icons.precision_manufacturing,
@@ -1057,7 +1233,6 @@ class _ServiceReportDetailPageState extends State<ServiceReportDetailPage> {
           ),
           const SizedBox(height: 12),
 
-          // Description Card
           _buildMobileInfoCard(
             'PROBLEM DESCRIPTION',
             Icons.description,
@@ -1068,7 +1243,6 @@ class _ServiceReportDetailPageState extends State<ServiceReportDetailPage> {
           ),
           const SizedBox(height: 12),
 
-          // Activity Card
           _buildMobileInfoCard(
             'ACTIVITY',
             Icons.bolt,
@@ -1079,7 +1253,6 @@ class _ServiceReportDetailPageState extends State<ServiceReportDetailPage> {
           ),
           const SizedBox(height: 12),
 
-          // Note Card
           if (data['noteForCustomer'] != null && data['noteForCustomer'].toString().isNotEmpty)
             _buildMobileInfoCard(
               'NOTE FOR CUSTOMER',
@@ -1092,7 +1265,6 @@ class _ServiceReportDetailPageState extends State<ServiceReportDetailPage> {
           if (data['noteForCustomer'] != null && data['noteForCustomer'].toString().isNotEmpty)
             const SizedBox(height: 12),
 
-          // Technicians Card
           _buildMobileInfoCard(
             'TECHNICIANS',
             Icons.engineering,
@@ -1107,7 +1279,6 @@ class _ServiceReportDetailPageState extends State<ServiceReportDetailPage> {
           ),
           const SizedBox(height: 12),
 
-          // Spare Parts Card
           if (data['spareParts'] != null && (data['spareParts'] as List).isNotEmpty)
             _buildMobileInfoCard(
               'SPARE PARTS',
@@ -1138,7 +1309,6 @@ class _ServiceReportDetailPageState extends State<ServiceReportDetailPage> {
           if (data['spareParts'] != null && (data['spareParts'] as List).isNotEmpty)
             const SizedBox(height: 12),
 
-          // Signature Card
           _buildMobileInfoCard(
             'CUSTOMER SIGNATURE',
             Icons.draw,
@@ -1156,26 +1326,27 @@ class _ServiceReportDetailPageState extends State<ServiceReportDetailPage> {
                         child: Image.network(
                           data['signature'],
                           fit: BoxFit.contain,
+                          errorBuilder: (_, __, ___) => const Center(
+                            child: Text("Gagal memuat signature"),
+                          ),
                         ),
                       )
                     : const Center(
-                        child: Text("No signature"),
+                        child: Text("Tidak ada signature"),
                       ),
               ),
             ],
           ),
           const SizedBox(height: 12),
 
-          // Media Card
           _buildMobileInfoCard(
             'MEDIA',
             Icons.photo_library,
             Colors.pink,
             _buildMediaWidgets(data),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 12),
 
-          // System Info Card
           _buildMobileInfoCard(
             'SYSTEM INFORMATION',
             Icons.settings,
@@ -1187,60 +1358,58 @@ class _ServiceReportDetailPageState extends State<ServiceReportDetailPage> {
                 _buildMobileInfoRow('Submitted At', _formatDateTime(data['submittedAt'])),
               if (data['submittedBy'] != null)
                 _buildMobileInfoRow('Submitted By', data['submittedBy']),
+              _buildMobileInfoRow('Company ID', data['companyId'] ?? '-'),
             ],
           ),
           const SizedBox(height: 20),
 
-          // Action Buttons
-          // Action Buttons
-if (isDraft && !_isSubmitting) ...[
-  Padding(
-    padding: const EdgeInsets.only(bottom: 12),
-    child: Row(
-      children: [
-        Expanded(
-          child: ElevatedButton.icon(
-            onPressed: _editReport,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.grey.shade200,
-              foregroundColor: Colors.black87,
-              padding: const EdgeInsets.symmetric(vertical: 12),
+          if (isDraft && !_isSubmitting) ...[
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: _editReport,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.grey.shade200,
+                        foregroundColor: Colors.black87,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      icon: const Icon(Icons.edit),
+                      label: const Text("Edit Draft"),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: _submitReport,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      icon: const Icon(Icons.send),
+                      label: const Text("Submit"),
+                    ),
+                  ),
+                ],
+              ),
             ),
-            icon: const Icon(Icons.edit),
-            label: const Text("Edit Draft"),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: ElevatedButton.icon(
-            onPressed: _submitReport,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blue,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 12),
-            ),
-            icon: const Icon(Icons.send),
-            label: const Text("Submit"),
-          ),
-        ),
-      ],
-    ),
-  ),
-
-  Padding(
-    padding: const EdgeInsets.only(bottom: 20),
-    child: SizedBox(
-      width: double.infinity,
-      child: ElevatedButton.icon(
-        onPressed: _deleteReport,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.red,
-          foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(vertical: 12),
-        ),
-        icon: const Icon(Icons.delete),
-        label: const Text("Delete Report"),
-     ),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 20),
+              child: SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: _deleteReport,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  icon: const Icon(Icons.delete),
+                  label: const Text("Delete Report"),
+                ),
               ),
             ),
           ],
@@ -1307,60 +1476,6 @@ if (isDraft && !_isSubmitting) ...[
       ),
     );
   }
-  Future<void> _deleteReport() async {
-  final confirm = await showDialog<bool>(
-    context: context,
-    builder: (context) => AlertDialog(
-      title: const Text("Delete Service Report"),
-      content: const Text(
-        "This action cannot be undone.\n\nAre you sure you want to delete this report?",
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context, false),
-          child: const Text("CANCEL"),
-        ),
-        ElevatedButton(
-          onPressed: () => Navigator.pop(context, true),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.red,
-          ),
-          child: const Text("DELETE"),
-        ),
-      ],
-    ),
-  );
-
-  if (confirm != true) return;
-
-  try {
-    await ServiceReportFirestore.deleteServiceReport(
-      companyId: widget.companyId,
-      docId: widget.reportId,
-    );
-
-    if (!mounted) return;
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text("Service Report deleted successfully"),
-        backgroundColor: Colors.green,
-      ),
-    );
-
-    Navigator.pop(context, true);
-
-  } catch (e) {
-    if (!mounted) return;
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text("Error deleting report: $e"),
-        backgroundColor: Colors.red,
-      ),
-    );
-  }
-}
 }
 
 // ================= UI HELPERS =================

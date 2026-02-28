@@ -19,6 +19,7 @@ import '../../models/spare_part.dart';
 import '../../models/service_report_spare_part.dart';
 import '../../pages/partners/partner_list_page.dart';
 import '../../models/partner.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class ServiceReportFormPage extends StatefulWidget {
   final String? reportId;
@@ -1968,6 +1969,8 @@ void _showQtyDialog(SparePart part) {
 
   // ================= EXISTING SAVE/SUBMIT METHODS (TIDAK DIUBAH) =================
   Future<void> _saveDraft() async {
+    print("AUTH UID: ${FirebaseAuth.instance.currentUser?.uid}");
+print("AUTH EMAIL: ${FirebaseAuth.instance.currentUser?.email}");
     final companyId = CompanySession.selectedCompanyId;
     if (companyId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -2025,32 +2028,33 @@ void _showQtyDialog(SparePart part) {
 
       setState(() => _isUploading = false);
 
-      final Map<String, dynamic> reportData = {
-        "startDate": startDate != null ? Timestamp.fromDate(startDate!) : null,
-        "endDate": endDate != null ? Timestamp.fromDate(endDate!) : null,
-        "factory": factory,
-        "endCustomer": endCustomer,
-        "customerCode": customerCodeController.text,
-        "machine": machineController.text,
-        "serialNumber": serialController.text,
-        "assetNumber": assetController.text,
-        "problemDescription": problemController.text,
-        "activity": activityController.text,
-        "noteForCustomer": noteController.text,
-        "technician1": tech1,
-        "technician2": tech2,
-        "technician3": tech3,
-        "customerName": customerNameController.text,
-        "spareParts": spareParts
-    .map((e) => e.toMap())
-    .toList(),
-        "photo1": _photo1Url,
-        "photo2": _photo2Url,
-        "photo3": _photo3Url,
-        "video": _videoUrl,
-        "signature": _signatureUrl,
-        "updatedAt": FieldValue.serverTimestamp(),
-      };
+      final rawData = {
+  "startDate": startDate != null ? Timestamp.fromDate(startDate!) : null,
+  "endDate": endDate != null ? Timestamp.fromDate(endDate!) : null,
+  "factory": factory,
+  "endCustomer": endCustomer,
+  "customerCode": customerCodeController.text,
+  "machine": machineController.text,
+  "serialNumber": serialController.text,
+  "assetNumber": assetController.text,
+  "problemDescription": problemController.text,
+  "activity": activityController.text,
+  "noteForCustomer": noteController.text,
+  "technician1": tech1,
+  "technician2": tech2,
+  "technician3": tech3,
+  "customerName": customerNameController.text,
+  "spareParts": spareParts.map((e) => e.toMap()).toList(),
+  "photo1": _photo1Url,
+  "photo2": _photo2Url,
+  "photo3": _photo3Url,
+  "video": _videoUrl,
+  "signature": _signatureUrl,
+  "updatedAt": FieldValue.serverTimestamp(),
+};
+
+final reportData = Map<String, dynamic>.from(rawData)
+  ..removeWhere((key, value) => value == null);
 
       if (_currentReportId == null) {
         await ServiceReportFirestore.createServiceReport(data: reportData);
@@ -2075,25 +2079,29 @@ void _showQtyDialog(SparePart part) {
         ),
       );
 
+      await Future.delayed(const Duration(seconds: 1));
+
       Navigator.pop(context, true);
 
-    } catch (e) {
-      if (!mounted) return;
+    } catch (e, stack) {
+  print("ERROR TYPE: ${e.runtimeType}");
+  print("ERROR DETAIL: $e");
+  print("STACK TRACE: $stack");
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Error: $e"),
-          backgroundColor: Colors.red,
-        ),
-      );
+  if (!mounted) return;
 
-      print("Error saving draft: $e");
-      
-      setState(() {
-        _isSaving = false;
-        _isUploading = false;
-      });
-    }
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text("Error saving draft: $e"),
+      backgroundColor: Colors.red,
+    ),
+  );
+
+  setState(() {
+    _isSaving = false;
+    _isUploading = false;
+  });
+}
   }
 
   Future<void> _submitReport() async {
@@ -2200,31 +2208,33 @@ void _showQtyDialog(SparePart part) {
 
       setState(() => _isUploading = false);
 
-      final Map<String, dynamic> reportData = {
-        "startDate": startDate != null ? Timestamp.fromDate(startDate!) : null,
-        "endDate": endDate != null ? Timestamp.fromDate(endDate!) : null,
-        "factory": factory,
-        "endCustomer": endCustomer,
-        "customerCode": customerCodeController.text,
-        "machine": machineController.text,
-        "serialNumber": serialController.text,
-        "assetNumber": assetController.text,
-        "problemDescription": problemController.text,
-        "activity": activityController.text,
-        "noteForCustomer": noteController.text,
-        "technician1": tech1,
-        "technician2": tech2,
-        "technician3": tech3,
-        "customerName": customerNameController.text,
-       "spareParts": spareParts
-    .map((e) => e.toMap())
-    .toList(),
-        "photo1": _photo1Url,
-        "photo2": _photo2Url,
-        "photo3": _photo3Url,
-        "video": _videoUrl,
-        "signature": _signatureUrl,
-      };
+      final rawData = {
+  "startDate": startDate != null ? Timestamp.fromDate(startDate!) : null,
+  "endDate": endDate != null ? Timestamp.fromDate(endDate!) : null,
+  "factory": factory,
+  "endCustomer": endCustomer,
+  "customerCode": customerCodeController.text,
+  "machine": machineController.text,
+  "serialNumber": serialController.text,
+  "assetNumber": assetController.text,
+  "problemDescription": problemController.text,
+  "activity": activityController.text,
+  "noteForCustomer": noteController.text,
+  "technician1": tech1,
+  "technician2": tech2,
+  "technician3": tech3,
+  "customerName": customerNameController.text,
+  "spareParts": spareParts.map((e) => e.toMap()).toList(),
+  "photo1": _photo1Url,
+  "photo2": _photo2Url,
+  "photo3": _photo3Url,
+  "video": _videoUrl,
+  "signature": _signatureUrl,
+  "updatedAt": FieldValue.serverTimestamp(),
+};
+
+final reportData = Map<String, dynamic>.from(rawData)
+  ..removeWhere((key, value) => value == null);
 
       if (_currentReportId == null) {
         await ServiceReportFirestore.createServiceReport(data: {
