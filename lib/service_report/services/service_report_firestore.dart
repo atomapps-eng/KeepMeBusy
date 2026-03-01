@@ -63,17 +63,23 @@ static Future<String> createServiceReport({
 
   final companyId = CompanySession.selectedCompanyId;
   if (companyId == null) throw Exception("Company not selected.");
-  
-  print("Creating report for company: $companyId");
-  
+
   final sheetId = await generateSheetId();
 
-  // Buat document reference TERLEBIH DAHULU
+  // 🔹 Ambil user document dari root users
+  final userDoc = await FirebaseFirestore.instance
+      .collection('users')
+      .doc(user.uid)
+      .get();
+
+  final username =
+      userDoc.data()?['username'] ?? user.email ?? user.uid;
+
   final docRef = FirebaseFirestore.instance
       .collection('companies')
       .doc(companyId)
       .collection('service_reports')
-      .doc(); // Auto-generate ID
+      .doc();
 
   final reportData = {
     ...data,
@@ -81,16 +87,12 @@ static Future<String> createServiceReport({
     "status": "Draft",
     "createdAt": FieldValue.serverTimestamp(),
     "createdBy": user.uid,
+    "createdByName": username,   // 🔥 SNAPSHOT NAME
     "companyId": companyId,
   };
 
-  print("Saving report with ID: ${docRef.id}");
-  print("Data: $reportData");
-  
-  // Simpan dengan ID yang sudah digenerate
   await docRef.set(reportData);
-  
-  // Return ID dokumen
+
   return docRef.id;
 }
 
@@ -116,24 +118,82 @@ static Future<String> createServiceReport({
   }
 
   // SUBMIT
-  static Future<void> submitServiceReport({
-    required String companyId,
-    required String docId,
-  }) async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) throw Exception("User not authenticated");
+ // SUBMIT (HYBRID SNAPSHOT)
+static Future<void> submitServiceReport({
+  required String companyId,
+  required String docId,
+}) async {
+  final user = FirebaseAuth.instance.currentUser;
+  if (user == null) throw Exception("User not authenticated");
 
-    await FirebaseFirestore.instance
+  final firestore = FirebaseFirestore.instance;
+
+  final userDoc = await firestore
+    .collection('users')
+    .doc(user.uid)
+    .get();
+
+  final username =
+    userDoc.data()?['username'] ?? user.email ?? user.uid;
+
+  final reportRef = firestore
+      .collection('companies')
+      .doc(companyId)
+      .collection('service_reports')
+      .doc(docId);
+
+  // 1️⃣ Ambil report dulu
+  final reportSnap = await reportRef.get();
+  if (!reportSnap.exists) {
+    throw Exception("Report not found");
+  }
+
+  final reportData = reportSnap.data()!;
+
+ Map<String, dynamic> updateData = {
+  "status": "Submitted",
+  "submittedAt": FieldValue.serverTimestamp(),
+  "submittedBy": user.uid,
+  "submittedByName": username,   // 🔥 SNAPSHOT NAME
+};
+
+  // 2️⃣ SNAPSHOT FACTORY
+  if (reportData['factoryId'] != null) {
+    final factoryDoc = await firestore
         .collection('companies')
         .doc(companyId)
-        .collection('service_reports')
-        .doc(docId)
-        .update({
-      "status": "Submitted",
-      "submittedAt": FieldValue.serverTimestamp(),
-      "submittedBy": user.uid,
+        .collection('partners')
+        .doc(reportData['factoryId'])
+        .get();
+
+    final factoryData = factoryDoc.data();
+
+    updateData.addAll({
+      "factoryCity": factoryData?['city'],
+      "factoryCountry": factoryData?['country'],
     });
   }
+
+  // 3️⃣ SNAPSHOT END CUSTOMER (optional)
+  if (reportData['endCustomerId'] != null) {
+    final endCustomerDoc = await firestore
+        .collection('companies')
+        .doc(companyId)
+        .collection('partners')
+        .doc(reportData['endCustomerId'])
+        .get();
+
+    final endCustomerData = endCustomerDoc.data();
+
+    updateData.addAll({
+      "endCustomerCity": endCustomerData?['city'],
+      "endCustomerCountry": endCustomerData?['country'],
+    });
+  }
+
+  // 4️⃣ Update report sekali saja
+  await reportRef.update(updateData);
+}
 
   // DELETE
   static Future<void> deleteServiceReport({

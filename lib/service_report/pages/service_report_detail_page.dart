@@ -740,12 +740,16 @@ if (!_isSubmitting)
           ),
           const SizedBox(height: 12),
           _buildSystemInfoRow('Created', _formatDateTime(data['createdAt'])),
-          _buildSystemInfoRow('Created By', data['createdBy'] ?? '-'),
+          _buildSystemInfoRow(
+  'Created By',
+  data['createdByName'] ?? data['createdBy'] ?? '-',
+),
           if (data['submittedAt'] != null)
             _buildSystemInfoRow('Submitted', _formatDateTime(data['submittedAt'])),
-          if (data['submittedBy'] != null)
-            _buildSystemInfoRow('Submitted By', data['submittedBy']),
-          _buildSystemInfoRow('Company ID', data['companyId'] ?? '-'),
+          _buildSystemInfoRow(
+  'Submitted By',
+  data['submittedByName'] ?? data['submittedBy'] ?? '-',
+),
         ],
       ),
     );
@@ -1454,11 +1458,17 @@ const SizedBox(height: 12),
             Colors.teal,
             [
               _buildMobileInfoRow('Created At', _formatDateTime(data['createdAt'])),
-              _buildMobileInfoRow('Created By', data['createdBy'] ?? '-'),
+              _buildMobileInfoRow(
+  'Created By',
+  data['createdByName'] ?? data['createdBy'] ?? '-',
+),
               if (data['submittedAt'] != null)
                 _buildMobileInfoRow('Submitted At', _formatDateTime(data['submittedAt'])),
-              if (data['submittedBy'] != null)
-                _buildMobileInfoRow('Submitted By', data['submittedBy']),
+
+                _buildMobileInfoRow(
+  'Submitted By',
+  data['submittedByName'] ?? data['submittedBy'] ?? '-',
+),
               _buildMobileInfoRow('Company ID', data['companyId'] ?? '-'),
             ],
           ),
