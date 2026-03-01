@@ -70,11 +70,10 @@ class _ServiceReportFormPageState extends State<ServiceReportFormPage> {
 
   // CUSTOMER
   final customerNameController = TextEditingController();
+  String? _customerId;
 
   // SPARE PART
   List<ServiceReportSparePart> spareParts = [];
-  List<Map<String, dynamic>> sparePartMaster = [];
-  bool _isLoadingSpareParts = true;
 
   // DUMMY DATA
   
@@ -177,35 +176,6 @@ Future<void> _loadTechnicians() async {
     print("Error loading technicians: $e");
     setState(() {
       _isLoadingTechnicians = false;
-    });
-  }
-}
-
-Future<void> _loadSpareParts() async {
-  try {
-    final snapshot = await CompanyCollectionResolver
-        .spareParts()
-        .orderBy('name')
-        .get();
-
-    final data = snapshot.docs.map((doc) {
-      final d = doc.data();
-      return {
-        'partCode': d['partCode'],
-        'name': d['name'],
-        'currentStock': d['currentStock'],
-        'location': d['location'],
-      };
-    }).toList();
-
-    setState(() {
-      sparePartMaster = data;
-      _isLoadingSpareParts = false;
-    });
-  } catch (e) {
-    print("Error loading spare parts: $e");
-    setState(() {
-      _isLoadingSpareParts = false;
     });
   }
 }
@@ -667,6 +637,7 @@ final doc = await ServiceReportFirestore.getReport(
   label: 'Factory *',
   value: factory,
   onSelected: (partner) {
+    _customerId = partner.id; 
     setState(() {
       factory = partner.name;
     });
@@ -681,6 +652,7 @@ final doc = await ServiceReportFirestore.getReport(
   onSelected: (partner) {
     setState(() {
       endCustomer = partner.name;
+      _customerId = partner.id; 
     });
   },
 ),
@@ -1111,7 +1083,7 @@ Text(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 ElevatedButton.icon(
-                  onPressed: _addSparePartDialog,
+                  onPressed: _openSparePartSelector,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.blue.shade50,
                     foregroundColor: Colors.blue,
@@ -1690,78 +1662,6 @@ const SizedBox(height: 12),
   }
 
   // ================= DIALOGS =================
-  void _addSparePartDialog() {
-  final qtyController = TextEditingController();
-  String? selectedPart;
-
-  showDialog(
-    context: context,
-    builder: (_) => AlertDialog(
-      title: const Text("Add Spare Part"),
-      content: _isLoadingSpareParts
-          ? const SizedBox(
-              height: 80,
-              child: Center(child: CircularProgressIndicator()),
-            )
-          : Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                DropdownButtonFormField<String>(
-                  value: selectedPart,
-                  items: sparePartMaster
-                      .map((e) => DropdownMenuItem<String>(
-                            value: e['name'],
-                            child: Text(e['name']),
-                          ))
-                      .toList(),
-                  onChanged: (val) {
-                    selectedPart = val;
-                  },
-                  decoration:
-                      const InputDecoration(labelText: "Spare Part"),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: qtyController,
-                  decoration:
-                      const InputDecoration(labelText: "Quantity"),
-                  keyboardType: TextInputType.number,
-                )
-              ],
-            ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text("CANCEL"),
-        ),
-        ElevatedButton(
-          onPressed: () {
-  if (selectedPart == null) return;
-
-  final selected = sparePartMaster
-      .firstWhere((e) => e['name'] == selectedPart);
-
-  final qty = int.tryParse(qtyController.text) ?? 0;
-  if (qty <= 0) return;
-
- _addOrUpdateSparePart(
-  ServiceReportSparePart(
-    partCode: selected['partCode'],
-    name: selected['name'],
-    qty: qty,
-    currentStock: selected['currentStock'] ?? 0,
-    location: selected['location'] ?? '',
-  ),
-);
-
-  Navigator.pop(context);
-},
-          child: const Text("Add"),
-        )
-      ],
-    ),
-  );
-}
 
 Future<void> _openSparePartSelector() async {
   final selectedPart = await Navigator.push(
@@ -2042,6 +1942,7 @@ print("AUTH EMAIL: ${FirebaseAuth.instance.currentUser?.email}");
   "startDate": startDate != null ? Timestamp.fromDate(startDate!) : null,
   "endDate": endDate != null ? Timestamp.fromDate(endDate!) : null,
   "factory": factory,
+   "customerId": _customerId,
   "endCustomer": endCustomer,
   "customerCode": customerCodeController.text,
   "machine": machineController.text,
@@ -2222,6 +2123,7 @@ final reportData = Map<String, dynamic>.from(rawData)
   "startDate": startDate != null ? Timestamp.fromDate(startDate!) : null,
   "endDate": endDate != null ? Timestamp.fromDate(endDate!) : null,
   "factory": factory,
+  "customerId": _customerId,
   "endCustomer": endCustomer,
   "customerCode": customerCodeController.text,
   "machine": machineController.text,
