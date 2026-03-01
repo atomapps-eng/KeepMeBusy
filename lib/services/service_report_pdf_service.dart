@@ -112,7 +112,24 @@ final fontBold = pw.Font.ttf(
 
             // ================= PUSH CONTENT UP =================
             pw.Expanded(child: pw.Container()),
+pw.SizedBox(height: 8),
+pw.Divider(),
 
+pw.SizedBox(height: 6),
+
+pw.Row(
+  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+  children: [
+    pw.Text(
+      "Created By : ${data['createdByName'] ?? data['createdBy'] ?? '-'}",
+      style: pw.TextStyle(fontSize: 9),
+    ),
+    pw.Text(
+      "Submitted By : ${data['submittedByName'] ?? data['submittedBy'] ?? '-'}",
+      style: pw.TextStyle(fontSize: 9),
+    ),
+  ],
+),
           // ================= SIGNATURE ALWAYS BOTTOM =================
 pw.Divider(),
 pw.SizedBox(height: 8),
@@ -333,9 +350,24 @@ pw.Container(
                 style: pw.TextStyle(font: bold, fontSize: 11),
               ),
               pw.Text(
-                data['technician'] ?? "-",
-                style: pw.TextStyle(fontSize: 11),
-              ),
+  [
+    data['technician1'],
+    data['technician2'],
+    data['technician3']
+  ]
+      .where((e) => e != null && e.toString().isNotEmpty)
+      .join(", ")
+      .isEmpty
+      ? "-"
+      : [
+          data['technician1'],
+          data['technician2'],
+          data['technician3']
+        ]
+          .where((e) => e != null && e.toString().isNotEmpty)
+          .join(", "),
+  style: pw.TextStyle(fontSize: 11),
+),
             ],
           ),
         ],
@@ -391,39 +423,54 @@ pw.Container(
       5: const pw.FlexColumnWidth(1.8),
     },
     children: [
-      _gridRow("Customer Name", data['factory'],
-          "Company Name", "PT. ATOM INDONESIA RAYA"),
 
-      _gridRow("End Customer", data['endCustomer'],
-          "Phone", "+62 21 87962621"),
+  // Row 1
+  _gridRow(
+    "Customer Name",
+    data['factory'],
+    "Company Name",
+    "PT. ATOM INDONESIA RAYA",
+  ),
 
-      _gridRow("City / Country",
-          "${data['city'] ?? '-'} / ${data['country'] ?? '-'}",
-          "VAT No.", "94.729.653.9-403.000"),
+  // Row 2
+  _gridRow(
+    "Address",
+    data['factoryAddress'],
+    "Address",
+    "Plaza Niaga 1 Blok B No.2, Sentul City, Kel. Citaringgul, Kec. Babakan Madang, Kab. Bogor, West Java, Indonesia 16810",
+  ),
 
-      pw.TableRow(
-        children: [
-          _gridCell("Customer Code", true),
-          _gridCell(":", true),
-          _gridCell(data['customerCode'] ?? "-", false),
-          _gridCell("Address", true),
-          _gridCell(":", true),
-          // Address dengan justify
-          pw.Padding(
-            padding: const pw.EdgeInsets.symmetric(vertical: 2),
-            child: pw.Container(
-              width: 200,
-              child: pw.Text(
-                "Plaza Niaga 1 Blok B No.2, Sentul City, Kel. Citaringgul, Kec. Babakan Madang, Kab. Bogor, West java, Indonesia, Postal Code 16810",
-                style: pw.TextStyle(fontSize: 11),
-                textAlign: pw.TextAlign.justify,
-                softWrap: true,
-              ),
-            ),
-          ),
-        ],
-      ),
+  // Row 3
+  _gridRow(
+    "End Customer",
+    data['endCustomer'],
+    "Phone",
+    "+62 21 87962621",
+  ),
+
+  // Row 4
+  _gridRow(
+    "City / Country",
+    "${data['factoryCity'] ?? ''}${data['factoryCountry'] != null ? ' / ${data['factoryCountry']}' : ''}".isEmpty
+        ? "-"
+        : "${data['factoryCity'] ?? ''}${data['factoryCountry'] != null ? ' / ${data['factoryCountry']}' : ''}",
+    "VAT No.",
+    "94.729.653.9-403.000",
+  ),
+
+  // Row 5
+  pw.TableRow(
+    children: [
+      _gridCell("Customer Code", true),
+      _gridCell(":", true),
+      _gridCell(data['customerCode'] ?? "-", false),
+
+      _gridCell("", true),
+      _gridCell("", true),
+      _gridCell("", false),
     ],
+  ),
+],
   );
 }
 

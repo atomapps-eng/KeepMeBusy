@@ -171,6 +171,7 @@ static Future<void> submitServiceReport({
     updateData.addAll({
       "factoryCity": factoryData?['city'],
       "factoryCountry": factoryData?['country'],
+      "factoryAddress": factoryData?['address'],
     });
   }
 
