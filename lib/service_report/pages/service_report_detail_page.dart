@@ -11,6 +11,7 @@ import '../../theme/app_theme.dart';
 import '../../pages/common/app_background_wrapper.dart';
 import '../../services/service_report_pdf_service.dart';
 import '../../services/pdf_action_service.dart';
+import '../services/company_collection_resolver.dart';
 
 class ServiceReportDetailPage extends StatefulWidget {
   final String reportId;
@@ -32,6 +33,7 @@ class _ServiceReportDetailPageState extends State<ServiceReportDetailPage> {
   DocumentSnapshot<Map<String, dynamic>>? _reportDoc;
   String? _error;
   bool _isDesktop = false;
+  Map<String, dynamic>? _factoryPartner;
 
   @override
   void initState() {
@@ -89,10 +91,26 @@ class _ServiceReportDetailPageState extends State<ServiceReportDetailPage> {
       }
 
       // Cast ke tipe yang benar
-      setState(() {
-        _reportDoc = doc as DocumentSnapshot<Map<String, dynamic>>;
-        _isLoading = false;
-      });
+      final reportData = doc.data();
+
+Map<String, dynamic>? factoryPartner;
+
+if (reportData?['factoryId'] != null) {
+  final partnerDoc = await CompanyCollectionResolver
+      .partners()
+      .doc(reportData!['factoryId'])
+      .get();
+
+  factoryPartner = partnerDoc.data();
+}
+
+if (!mounted) return;
+
+setState(() {
+  _reportDoc = doc;
+  _factoryPartner = factoryPartner;
+  _isLoading = false;
+});
 
       print("Report berhasil dimuat");
 
@@ -480,6 +498,7 @@ class _ServiceReportDetailPageState extends State<ServiceReportDetailPage> {
 
     // TAMPILAN DATA
     final data = _reportDoc!.data()!;
+    print("DETAIL DEBUG factoryId: ${data['factoryId']}");
     final status = data['status'] ?? 'Draft';
     final isDraft = status == 'Draft';
 
@@ -810,7 +829,18 @@ if (!_isSubmitting)
           [
             _buildDetailRow('Start Date', _formatDate(data['startDate'])),
             _buildDetailRow('End Date', _formatDate(data['endDate'])),
-            _buildDetailRow('Factory', data['factory'] ?? '-'),
+
+          _buildDetailRow(
+  'Factory / Client',
+  data['factory'] ?? '-',
+),
+_buildDetailRow(
+  'City / Country',
+  _factoryPartner != null
+      ? "${_factoryPartner!['city'] ?? ''}, ${_factoryPartner!['country'] ?? ''}"
+      : '-',
+),
+
             _buildDetailRow('End Customer', data['endCustomer'] ?? '-'),
             _buildDetailRow('Customer Code', data['customerCode'] ?? '-'),
           ],
@@ -1258,7 +1288,18 @@ if (!_isSubmitting)
             [
               _buildMobileInfoRow('Start Date', _formatDate(data['startDate'])),
               _buildMobileInfoRow('End Date', _formatDate(data['endDate'])),
-              _buildMobileInfoRow('Factory', data['factory'] ?? '-'),
+
+             _buildDetailRow(
+  'Factory / Client',
+  data['factory'] ?? '-',
+),
+_buildDetailRow(
+  'City / Country',
+  _factoryPartner != null
+      ? "${_factoryPartner!['city'] ?? ''}, ${_factoryPartner!['country'] ?? ''}"
+      : '-',
+),
+
               _buildMobileInfoRow('End Customer', data['endCustomer'] ?? '-'),
               _buildMobileInfoRow('Customer Code', data['customerCode'] ?? '-'),
             ],
@@ -1591,6 +1632,20 @@ Future<void> _printToPdf() async {
       );
     }
   }
+}
+
+Future<Map<String, dynamic>?> _getPartnerData(String? partnerId) async {
+  if (partnerId == null) return null;
+
+  final doc = await CompanyCollectionResolver
+      .partners()
+      .doc(partnerId)
+      .get();
+
+       print("PARTNER EXISTS: ${doc.exists}");
+  print("PARTNER DATA: ${doc.data()}");
+
+  return doc.data();
 }
 
 }

@@ -70,7 +70,8 @@ class _ServiceReportFormPageState extends State<ServiceReportFormPage> {
 
   // CUSTOMER
   final customerNameController = TextEditingController();
-  String? _customerId;
+  String? _factoryId;
+  String? _endCustomerId;
 
   // SPARE PART
   List<ServiceReportSparePart> spareParts = [];
@@ -631,33 +632,40 @@ final doc = await ServiceReportFirestore.getReport(
             ],
           ),
           const SizedBox(height: 16),
-         _isLoadingPartners
+
+         // FACTORY
+_isLoadingPartners
     ? const CircularProgressIndicator()
     : _buildPartnerSelector(
-  label: 'Factory *',
-  value: factory,
-  onSelected: (partner) {
-    _customerId = partner.id; 
-    setState(() {
-      factory = partner.name;
-    });
-  },
-),
-          const SizedBox(height: 16),
-          _isLoadingPartners
+        label: 'Factory *',
+        value: factory,
+        onSelected: (partner) {
+          setState(() {
+            factory = partner.name;
+            _factoryId = partner.id;
+          });
+        },
+      ),
+
+const SizedBox(height: 12),
+
+// END CUSTOMER
+_isLoadingPartners
     ? const CircularProgressIndicator()
     : _buildPartnerSelector(
-  label: 'End Customer',
-  value: endCustomer,
-  onSelected: (partner) {
-    setState(() {
-      endCustomer = partner.name;
-      _customerId = partner.id; 
-    });
-  },
-),
-          const SizedBox(height: 16),
-          _buildTextField(customerCodeController, 'Customer Code'),
+        label: 'End Customer',
+        value: endCustomer,
+        onSelected: (partner) {
+          setState(() {
+            endCustomer = partner.name;
+            _endCustomerId = partner.id;
+          });
+        },
+      ),
+
+const SizedBox(height: 12),
+
+_buildTextField(customerCodeController, 'Customer Code'),
         ],
       ),
     );
@@ -1018,24 +1026,39 @@ Text(
                 const SizedBox(height: 12),
                 _buildMobileDatePicker('End Date', endDate, (date) => setState(() => endDate = date)),
                 const SizedBox(height: 12),
-                _isLoadingPartners
+
+                // FACTORY
+_isLoadingPartners
     ? const CircularProgressIndicator()
-    : _buildDropdownField(
-        'Factory *',
-        factory,
-        partnerList,
-        (val) => setState(() => factory = val),
+    : _buildPartnerSelector(
+        label: 'Factory *',
+        value: factory,
+        onSelected: (partner) {
+          setState(() {
+            factory = partner.name;
+            _factoryId = partner.id;
+          });
+        },
       ),
-                const SizedBox(height: 12),
-                _isLoadingPartners
+
+const SizedBox(height: 12),
+
+// END CUSTOMER
+_isLoadingPartners
     ? const CircularProgressIndicator()
-    : _buildDropdownField(
-        'End Customer',
-        endCustomer,
-        partnerList,
-        (val) => setState(() => endCustomer = val),
+    : _buildPartnerSelector(
+        label: 'End Customer',
+        value: endCustomer,
+        onSelected: (partner) {
+          setState(() {
+            endCustomer = partner.name;
+            _endCustomerId = partner.id;
+          });
+        },
       ),
-                const SizedBox(height: 12),
+
+const SizedBox(height: 12),
+
                 _buildTextField(customerCodeController, 'Customer Code'),
               ],
             ),
@@ -1938,11 +1961,16 @@ print("AUTH EMAIL: ${FirebaseAuth.instance.currentUser?.email}");
 
       setState(() => _isUploading = false);
 
+print("DEBUG FACTORY: $factory");
+print("DEBUG FACTORY ID: $_factoryId");
+print("DEBUG END CUSTOMER ID: $_endCustomerId");
+
       final rawData = {
   "startDate": startDate != null ? Timestamp.fromDate(startDate!) : null,
   "endDate": endDate != null ? Timestamp.fromDate(endDate!) : null,
   "factory": factory,
-   "customerId": _customerId,
+  "factoryId": _factoryId,
+"endCustomerId": _endCustomerId,
   "endCustomer": endCustomer,
   "customerCode": customerCodeController.text,
   "machine": machineController.text,
@@ -2123,7 +2151,8 @@ final reportData = Map<String, dynamic>.from(rawData)
   "startDate": startDate != null ? Timestamp.fromDate(startDate!) : null,
   "endDate": endDate != null ? Timestamp.fromDate(endDate!) : null,
   "factory": factory,
-  "customerId": _customerId,
+  "factoryId": _factoryId,
+"endCustomerId": _endCustomerId,
   "endCustomer": endCustomer,
   "customerCode": customerCodeController.text,
   "machine": machineController.text,

@@ -17,17 +17,13 @@ class CompanyCollectionResolver {
 
   /// ================= PARTNERS =================
   static CollectionReference<Map<String, dynamic>> partners() {
-    final companyId = _getCompanyId();
+  final companyId = _getCompanyId();
 
-    if (companyId == 'atomIndonesia') {
-      return _firestore.collection('partners');
-    }
-
-    return _firestore
-        .collection('companies')
-        .doc(companyId)
-        .collection('partners');
-  }
+  return _firestore
+      .collection('companies')
+      .doc(companyId)
+      .collection('partners');
+}
 
   /// ================= SPARE PARTS =================
   static CollectionReference<Map<String, dynamic>> spareParts() {
