@@ -61,134 +61,133 @@ final fontBold = pw.Font.ttf(
       margin: const pw.EdgeInsets.fromLTRB(45, 25, 45, 35),
       theme: pw.ThemeData.withFont(base: fontRegular, bold: fontBold),
       build: (context) {
-        return pw.Column(
+  return pw.Column(
+    crossAxisAlignment: pw.CrossAxisAlignment.start,
+    children: [
+
+      // ================= FLEXIBLE CONTENT =================
+      pw.Expanded(
+        child: pw.Column(
           crossAxisAlignment: pw.CrossAxisAlignment.start,
           children: [
 
             _buildHeader(data, logoBytes, df, fontBold),
 
-            pw.SizedBox(height: 8),
+            pw.SizedBox(height: 6),
             _customerCompanyGrid(data),
-            pw.SizedBox(height: 10),
 
-            pw.Divider(
-  thickness: 0.8,
-  color: PdfColors.black,
-),
+            pw.SizedBox(height: 6),
+            pw.Divider(thickness: 0.8),
 
             _machineRow(data),
-            pw.SizedBox(height: 10),
+
+            pw.SizedBox(height: 6),
 
             _sectionTitle("Problem Description", fontBold),
-            pw.SizedBox(height: 4),
             pw.Text(
-              safeText(data['problemDescription']),
-              style: pw.TextStyle(fontSize: 10),
-            ),
-
-            pw.SizedBox(height: 8),
-
-            _sectionTitle("Description of the work carried out", fontBold),
-            pw.SizedBox(height: 4),
-            pw.Text(
-              safeText(data['activity']),
+              safeText(data['problemDescription'], maxChars: 350),
               style: pw.TextStyle(fontSize: 9),
             ),
 
-            pw.SizedBox(height: 8),
+            pw.SizedBox(height: 6),
 
-            _sectionTitle("Spare Parts Used", fontBold),
-            pw.SizedBox(height: 4),
-            _sparePartTableLimited(limitedParts),
-
-            pw.SizedBox(height: 8),
-
-            _sectionTitle("Note For Customer", fontBold),
-            pw.SizedBox(height: 4),
+            _sectionTitle("Description of the work carried out", fontBold),
             pw.Text(
-              safeText(data['noteForCustomer'], maxChars: 300),
-              style: pw.TextStyle(fontSize: 10),
+              safeText(data['activity'], maxChars: 450),
+              style: pw.TextStyle(fontSize: 9),
             ),
 
-            // ================= PUSH CONTENT UP =================
-            pw.Expanded(child: pw.Container()),
-pw.SizedBox(height: 8),
-pw.Divider(),
+            pw.SizedBox(height: 6),
 
-pw.SizedBox(height: 6),
+            _sectionTitle("Spare Parts Used", fontBold),
+            _sparePartTableLimited(limitedParts),
 
-pw.Row(
-  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-  children: [
-    pw.Text(
-      "Created By : ${data['createdByName'] ?? data['createdBy'] ?? '-'}",
-      style: pw.TextStyle(fontSize: 9),
-    ),
-    pw.Text(
-      "Submitted By : ${data['submittedByName'] ?? data['submittedBy'] ?? '-'}",
-      style: pw.TextStyle(fontSize: 9),
-    ),
-  ],
-),
-          // ================= SIGNATURE ALWAYS BOTTOM =================
-pw.Divider(),
-pw.SizedBox(height: 8),
+            pw.SizedBox(height: 6),
 
-pw.Align(
-  alignment: pw.Alignment.center,
-  child: pw.Text(
-    "Confirmed that the technician had spent the time and use the parts above indicated",
-    textAlign: pw.TextAlign.center,
-    style: pw.TextStyle(
-      fontSize: 10,
-      fontStyle: pw.FontStyle.italic,
-    ),
-  ),
-),
-
-pw.SizedBox(height: 15),
-
-pw.Align(
-  alignment: pw.Alignment.centerRight,
-  child: pw.Container(
-    width: 220,
-    child: pw.Column(
-      crossAxisAlignment: pw.CrossAxisAlignment.center, // <<< FIX
-      children: [
-        pw.Text(
-          "Customer Signature",
-          style: pw.TextStyle(
-            fontSize: 10,
-            fontWeight: pw.FontWeight.bold,
-          ),
-        ),
-        pw.SizedBox(height: 6),
-        pw.Container(
-          height: 70,
-          decoration: signatureImage == null
-              ? pw.BoxDecoration(
-                  border: pw.Border.all(color: PdfColors.grey400),
-                )
-              : null,
-          child: signatureImage != null
-              ? pw.Image(signatureImage, fit: pw.BoxFit.contain)
-              : null,
-        ),
-        pw.SizedBox(height: 8),
-        pw.Text(
-          data['customerName'] ?? '-',
-          style: pw.TextStyle(
-            fontSize: 10,
-            fontWeight: pw.FontWeight.bold,
-          ),
-        ),
-      ],
-    ),
-  ),
-),
+            _sectionTitle("Note For Customer", fontBold),
+            pw.Text(
+              safeText(data['noteForCustomer'], maxChars: 200),
+              style: pw.TextStyle(fontSize: 9),
+            ),
           ],
-        );
-      },
+        ),
+      ),
+
+      // ================= FIXED SIGNATURE AREA =================
+
+      pw.Divider(),
+      pw.SizedBox(height: 6),
+
+      pw.Row(
+        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+        children: [
+          pw.Text(
+            "Created By : ${data['createdByName'] ?? data['createdBy'] ?? '-'}",
+            style: pw.TextStyle(fontSize: 9),
+          ),
+          pw.Text(
+            "Submitted By : ${data['submittedByName'] ?? data['submittedBy'] ?? '-'}",
+            style: pw.TextStyle(fontSize: 9),
+          ),
+        ],
+      ),
+
+      pw.SizedBox(height: 8),
+      pw.Divider(),
+      pw.SizedBox(height: 6),
+
+      pw.Text(
+        "Confirmed that the technician had spent the time and use the parts above indicated",
+        textAlign: pw.TextAlign.center,
+        style: pw.TextStyle(
+          fontSize: 9,
+          fontStyle: pw.FontStyle.italic,
+        ),
+      ),
+
+      pw.SizedBox(height: 10),
+
+      pw.Align(
+        alignment: pw.Alignment.centerRight,
+        child: pw.Container(
+          width: 200,
+          child: pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.center,
+            children: [
+              pw.Text(
+                "Customer Signature",
+                style: pw.TextStyle(
+                  fontSize: 9,
+                  fontWeight: pw.FontWeight.bold,
+                ),
+              ),
+              pw.SizedBox(height: 6),
+              pw.Container(
+                height: 60,
+                decoration: signatureImage == null
+                    ? pw.BoxDecoration(
+                        border: pw.Border.all(color: PdfColors.grey400),
+                      )
+                    : null,
+                child: signatureImage != null
+                    ? pw.Image(signatureImage, fit: pw.BoxFit.contain)
+                    : null,
+              ),
+              pw.SizedBox(height: 6),
+              pw.Text(
+                data['customerName'] ?? '-',
+                style: pw.TextStyle(
+                  fontSize: 9,
+                  fontWeight: pw.FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    ],
+  );
+}
     ),
   );
 
