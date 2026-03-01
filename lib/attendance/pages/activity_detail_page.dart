@@ -204,16 +204,17 @@ class ActivityDetailPage extends StatelessWidget {
     );
   }
 
-  Widget _buildDesktopLayout(BuildContext context, Color color, Timestamp? createdAt) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // LEFT SIDEBAR - ACTIVITY INFO
-        Container(
-          width: 350,
-          margin: const EdgeInsets.only(right: 16),
-          child: _glass(
-            Column(
+ Widget _buildDesktopLayout(BuildContext context, Color color, Timestamp? createdAt) {
+  return Row(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      // LEFT SIDEBAR - ACTIVITY INFO
+      Container(
+        width: 350,
+        margin: const EdgeInsets.only(right: 16),
+        child: _glass(
+          SingleChildScrollView(
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Header
@@ -250,7 +251,7 @@ class ActivityDetailPage extends StatelessWidget {
                   Icons.category,
                   color,
                 ),
-               _buildPartnerSection(),
+                _buildPartnerSection(),
                 _buildInfoItem(
                   'Machine',
                   activity['machine'] ?? '-',
@@ -286,50 +287,6 @@ class ActivityDetailPage extends StatelessWidget {
                   ],
                 ),
 
-                const SizedBox(height: 16),
-
-                // Description
-                const Text(
-                  'Description',
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
-                ),
-                const SizedBox(height: 4),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.withOpacity(0.05),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.grey.shade300),
-                  ),
-                  child: Text(
-                    activity['description'] ?? '-',
-                    style: const TextStyle(fontSize: 13),
-                  ),
-                ),
-
-                const SizedBox(height: 16),
-
-                // Note
-                const Text(
-                  'Note',
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
-                ),
-                const SizedBox(height: 4),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.withOpacity(0.05),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.grey.shade300),
-                  ),
-                  child: Text(
-                    activity['note'] ?? '-',
-                    style: const TextStyle(fontSize: 13),
-                  ),
-                ),
-
                 if (createdAt != null) ...[
                   const SizedBox(height: 16),
                   const Divider(),
@@ -356,57 +313,60 @@ class ActivityDetailPage extends StatelessWidget {
             ),
           ),
         ),
+      ),
 
-        // RIGHT CONTENT - ACTIONS & PREVIEW
-        Expanded(
-          child: Column(
-            children: [
-              // Action Buttons
-              Container(
-                margin: const EdgeInsets.only(bottom: 16),
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.white.withOpacity(0.3)),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                        ),
-                        icon: const Icon(Icons.edit),
-                        label: const Text('Edit Activity'),
-                        onPressed: () => _editActivity(context),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                        ),
-                        icon: const Icon(Icons.delete),
-                        label: const Text('Delete Activity'),
-                        onPressed: () => _deleteActivity(context),
-                      ),
-                    ),
-                  ],
-                ),
+      // RIGHT CONTENT - ACTIONS & PREVIEW
+      Expanded(
+        child: Column(
+          children: [
+            // Action Buttons
+            Container(
+              margin: const EdgeInsets.only(bottom: 16),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.white.withOpacity(0.3)),
               ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      icon: const Icon(Icons.edit),
+                      label: const Text('Edit Activity'),
+                      onPressed: () => _editActivity(context),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      icon: const Icon(Icons.delete),
+                      label: const Text('Delete Activity'),
+                      onPressed: () => _deleteActivity(context),
+                    ),
+                  ),
+                ],
+              ),
+            ),
 
-              // Preview Card
-              Expanded(
-                child: _glass(
-                  Column(
+            // Preview Card with Description and Note
+            Expanded(
+              child: _glass(
+                SingleChildScrollView(
+                  child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // Header
                       Row(
                         children: [
                           Container(
@@ -433,6 +393,7 @@ class ActivityDetailPage extends StatelessWidget {
                       ),
                       const SizedBox(height: 16),
 
+                      // Activity Type Preview Card
                       Center(
                         child: Container(
                           width: 300,
@@ -503,16 +464,97 @@ class ActivityDetailPage extends StatelessWidget {
                           ),
                         ),
                       ),
+
+                      const SizedBox(height: 24),
+
+                      // Description Section
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.withOpacity(0.05),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.grey.shade300),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.description,
+                                  size: 18,
+                                  color: color,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Description',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: color,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              activity['description'] ?? '-',
+                              style: const TextStyle(fontSize: 14),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      // Note Section
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.withOpacity(0.05),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.grey.shade300),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.note,
+                                  size: 18,
+                                  color: color,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Note',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: color,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              activity['note'] ?? '-',
+                              style: const TextStyle(fontSize: 14),
+                            ),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
-      ],
-    );
-  }
+      ),
+    ],
+  );
+}
 
   Widget _buildMobileLayout(BuildContext context, Color color, Timestamp? createdAt) {
     return SingleChildScrollView(

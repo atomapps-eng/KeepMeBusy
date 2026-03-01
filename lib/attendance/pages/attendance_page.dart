@@ -278,6 +278,32 @@ await openPdf(bytes, 'attendance_${widget.employeeId}_${widget.period}.pdf');
               },
             ),
           ),
+          // ACTIVITIES BUTTON
+Container(
+  margin: const EdgeInsets.only(right: 16),
+  decoration: BoxDecoration(
+    color: Colors.blue.withOpacity(0.1),
+    borderRadius: BorderRadius.circular(12),
+  ),
+  child: IconButton(
+    tooltip: 'View Activities',
+    icon: const Icon(
+      Icons.bolt,
+      color: Colors.blue,
+    ),
+    onPressed: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => ActivityListPage(
+            employeeId: widget.employeeId,
+            period: widget.period,
+          ),
+        ),
+      );
+    },
+  ),
+),
         ],
       ),
       body: AppBackgroundWrapper(
