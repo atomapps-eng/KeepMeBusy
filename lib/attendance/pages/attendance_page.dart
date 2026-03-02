@@ -37,6 +37,14 @@ class _AttendancePageState extends State<AttendancePage> {
   AttendanceStatus? _activeStatus;
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
+  late String _selectedPeriod;
+  bool _isAllPeriod = false;
+
+  @override
+void initState() {
+  super.initState();
+  _selectedPeriod = widget.period;
+}
 
   @override
   void dispose() {
@@ -95,72 +103,106 @@ await openPdf(bytes, 'attendance_${widget.employeeId}_${widget.period}.pdf');
 }
 
   Stream<List<Map<String, dynamic>>> _activityPreviewStream() {
-    return CompanyFirestore
-        .collection('attendance')
-        .doc(widget.employeeId)
-        .collection('days')
-        .snapshots()
-        .asyncMap((daySnap) async {
-      final List<Map<String, dynamic>> activities = [];
+  return CompanyFirestore
+      .collection('attendance')
+      .doc(widget.employeeId)
+      .collection('days')
+      .snapshots()
+      .asyncMap((daySnap) async {
+    final List<Map<String, dynamic>> activities = [];
 
-      for (final day in daySnap.docs) {
-        final actSnap = await day.reference
-            .collection('activities')
-            .orderBy('createdAt', descending: true)
-            .get();
+    for (final day in daySnap.docs) {
+      final dateParts = day.id.split('-');
+      if (dateParts.length != 3) continue;
 
-        for (final a in actSnap.docs) {
-          activities.add(a.data());
-        }
+      final year = dateParts[0];
+      final month = dateParts[1];
+
+      final period = '$year-$month';
+
+      if (!_isAllPeriod && period != _selectedPeriod) continue;
+
+      final actSnap = await day.reference
+          .collection('activities')
+          .orderBy('createdAt', descending: true)
+          .get();
+
+      for (final a in actSnap.docs) {
+        activities.add(a.data());
       }
+    }
 
-      activities.sort((a, b) {
-        final aTime = a['createdAt'] as Timestamp?;
-        final bTime = b['createdAt'] as Timestamp?;
-        return (bTime?.millisecondsSinceEpoch ?? 0)
-            .compareTo(aTime?.millisecondsSinceEpoch ?? 0);
-      });
-
-      return activities.take(3).toList();
+    activities.sort((a, b) {
+      final aTime = a['createdAt'] as Timestamp?;
+      final bTime = b['createdAt'] as Timestamp?;
+      return (bTime?.millisecondsSinceEpoch ?? 0)
+          .compareTo(aTime?.millisecondsSinceEpoch ?? 0);
     });
-  }
 
-  Stream<List<Map<String, dynamic>>> _overnightPreviewStream() {
-    return CompanyFirestore
-        .collection('attendance')
-        .doc(widget.employeeId)
-        .collection('overnight')
-        .orderBy('startDate', descending: true)
-        .limit(3)
-        .snapshots()
-        .map((snap) => snap.docs.map((d) => d.data()).toList());
-  }
+    return activities.take(3).toList();
+  });
+}
+
+ Stream<List<Map<String, dynamic>>> _overnightPreviewStream() {
+  return CompanyFirestore
+      .collection('attendance')
+      .doc(widget.employeeId)
+      .collection('overnight')
+      .snapshots()
+      .map((snap) {
+    final filtered = snap.docs.where((d) {
+      final data = d.data();
+      final start = (data['startDate'] as Timestamp).toDate();
+
+      final month = start.month.toString().padLeft(2, '0');
+      final period = '${start.year}-$month';
+
+      if (_isAllPeriod) return true;
+      return period == _selectedPeriod;
+    }).toList();
+
+    filtered.sort((a, b) {
+      final aDate = (a['startDate'] as Timestamp).millisecondsSinceEpoch;
+      final bDate = (b['startDate'] as Timestamp).millisecondsSinceEpoch;
+      return bDate.compareTo(aDate);
+    });
+
+    return filtered.take(3).map((d) => d.data()).toList();
+  });
+}
 
   Stream<Map<String, int>> _overnightSummaryStream() {
-    return CompanyFirestore
-        .collection('attendance')
-        .doc(widget.employeeId)
-        .collection('overnight')
-        .snapshots()
-        .map((snap) {
-      int domestic = 0;
-      int overseas = 0;
+  return CompanyFirestore
+      .collection('attendance')
+      .doc(widget.employeeId)
+      .collection('overnight')
+      .snapshots()
+      .map((snap) {
+    int domestic = 0;
+    int overseas = 0;
 
-      for (final d in snap.docs) {
-        final data = d.data();
-        final nights = (data['totalNights'] ?? 0) as int;
-        final category = data['customerCategory'];
+    for (final d in snap.docs) {
+      final data = d.data();
+      final start = (data['startDate'] as Timestamp).toDate();
 
-        if (category == 'domestic') {
-          domestic += nights;
-        } else if (category == 'overseas') {
-          overseas += nights;
-        }
+      final month = start.month.toString().padLeft(2, '0');
+      final period = '${start.year}-$month';
+
+      if (!_isAllPeriod && period != _selectedPeriod) continue;
+
+      final nights = (data['totalNights'] ?? 0) as int;
+      final category = data['customerCategory'];
+
+      if (category == 'domestic') {
+        domestic += nights;
+      } else if (category == 'overseas') {
+        overseas += nights;
       }
+    }
 
-      return {'domestic': domestic, 'overseas': overseas};
-    });
-  }
+    return {'domestic': domestic, 'overseas': overseas};
+  });
+}
 
   @override
   Widget build(BuildContext context) {
@@ -324,26 +366,41 @@ await openPdf(bytes, 'attendance_${widget.employeeId}_${widget.period}.pdf');
             }
 
             final allDays = (snapshot.data ?? []);
-            allDays.sort((a, b) => b.date.compareTo(a.date));
-            final summary = AttendanceSummaryHelper.calculateStatusSummary(allDays);
+allDays.sort((a, b) => b.date.compareTo(a.date));
 
-            // Filter berdasarkan status dan search query
-            final filtered = allDays.where((day) {
-              if (_activeStatus != null && day.status != _activeStatus) {
-                return false;
-              }
-              if (_searchQuery.isNotEmpty) {
-                final dateStr = '${day.date.day}/${day.date.month}/${day.date.year}';
-                return dateStr.contains(_searchQuery);
-              }
-              return true;
-            }).toList();
+// 🔥 APPLY PERIOD FILTER DI SINI
+final periodFilteredDays = _applyPeriodFilter(allDays);
+
+// 🔥 SUMMARY BERDASARKAN PERIOD
+final summary =
+    AttendanceSummaryHelper.calculateStatusSummary(periodFilteredDays);
+
+// 🔥 STATUS + SEARCH FILTER
+final filtered = periodFilteredDays.where((day) {
+  if (_activeStatus != null && day.status != _activeStatus) {
+    return false;
+  }
+  if (_searchQuery.isNotEmpty) {
+    final dateStr =
+        '${day.date.day}/${day.date.month}/${day.date.year}';
+    return dateStr.contains(_searchQuery);
+  }
+  return true;
+}).toList();
 
             // DESKTOP LAYOUT
             if (isDesktop) {
-              return _buildDesktopLayout(filtered, summary);
-            } else {
-              return _buildMobileLayout(filtered, summary);
+  return _buildDesktopLayout(
+    filtered,
+    summary,
+    allDays,
+  );
+} else {
+              return _buildMobileLayout(
+  filtered,
+  summary,
+  allDays,
+);
             }
           },
         ),
@@ -355,6 +412,7 @@ await openPdf(bytes, 'attendance_${widget.employeeId}_${widget.period}.pdf');
 Widget _buildDesktopLayout(
   List<AttendanceDay> filtered,
   Map<String, int> summary,
+  List<AttendanceDay> allDays,
 ) {
   return Row(
     crossAxisAlignment: CrossAxisAlignment.start,
@@ -366,10 +424,10 @@ Widget _buildDesktopLayout(
         child: SingleChildScrollView(
           child: Column(
             children: [
+              _buildDesktopPeriodFilter(allDays),
+              const SizedBox(height: 16),
               _buildDesktopStatsCard(summary),
-              const SizedBox(height: 16),
-              _buildDesktopFilterCard(),
-              const SizedBox(height: 16),
+              const SizedBox(height: 16),           
               _buildDesktopOvernightSummary(),
             ],
           ),
@@ -579,6 +637,9 @@ Widget _buildDesktopStatsCard(Map<String, int> summary) {
             Icons.calendar_month,
             () => _filterByMonth(),
           ),
+          const SizedBox(height: 16),
+const Divider(),
+const SizedBox(height: 8),
         ],
       ),
     );
@@ -682,6 +743,27 @@ Widget _buildDesktopStatsCard(Map<String, int> summary) {
             );
           },
         ),
+        const SizedBox(height: 8),
+
+ElevatedButton(
+  style: ElevatedButton.styleFrom(
+    backgroundColor: Colors.blueGrey.shade100,
+    foregroundColor: Colors.black87,
+    minimumSize: const Size(double.infinity, 36),
+  ),
+  onPressed: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => OvernightDetailPage(
+          employeeId: widget.employeeId,
+          period: _isAllPeriod ? 'ALL' : _selectedPeriod,
+        ),
+      ),
+    );
+  },
+  child: const Text('View Overnight'),
+),
       ],
     ),
   );
@@ -775,7 +857,7 @@ Widget _buildDesktopStatsCard(Map<String, int> summary) {
                   MaterialPageRoute(
                     builder: (_) => AttendanceListPage(
                       employeeId: widget.employeeId,
-                      period: widget.period,
+                      period: _isAllPeriod ? 'ALL' : _selectedPeriod,
                     ),
                   ),
                 );
@@ -1176,7 +1258,8 @@ Widget _buildTableRow(AttendanceDay day) {
   }
 
   // ================= MOBILE LAYOUT (TETAP SAMA) =================
-  Widget _buildMobileLayout(List<AttendanceDay> filtered, Map<String, int> summary) {
+  Widget _buildMobileLayout(List<AttendanceDay> 
+  filtered, Map<String, int> summary,List<AttendanceDay> allDays,) {
     // ... (Kode mobile layout tetap sama seperti sebelumnya)
     return SingleChildScrollView(
       child: Column(
@@ -1194,6 +1277,8 @@ Widget _buildTableRow(AttendanceDay day) {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
+                const SizedBox(height: 8),
+_buildMobilePeriodDropdown(allDays),
                 const SizedBox(height: 12),
                 _StatusChips(
                   summary: summary,
@@ -1272,7 +1357,7 @@ Widget _buildTableRow(AttendanceDay day) {
                             MaterialPageRoute(
                               builder: (_) => AttendanceListPage(
                                 employeeId: widget.employeeId,
-                                period: widget.period,
+                                period: _isAllPeriod ? 'ALL' : _selectedPeriod,
                               ),
                             ),
                           );
@@ -1386,7 +1471,7 @@ Widget _buildTableRow(AttendanceDay day) {
                             MaterialPageRoute(
                               builder: (_) => OvernightDetailPage(
                                 employeeId: widget.employeeId,
-                                period: widget.period,
+                                period: _isAllPeriod ? 'ALL' : _selectedPeriod,
                               ),
                             ),
                           );
@@ -1518,6 +1603,223 @@ void _openActivityDetail(DateTime date) {
     setState(() {});
   });
 }
+
+List<AttendanceDay> _applyPeriodFilter(List<AttendanceDay> days) {
+  if (_isAllPeriod) return days;
+
+  return days.where((day) {
+    final month = day.date.month.toString().padLeft(2, '0');
+    final period = '${day.date.year}-$month';
+    return period == _selectedPeriod;
+  }).toList();
+}
+
+Widget _buildDesktopPeriodFilter(List<AttendanceDay> allDays) {
+  final availablePeriods = _extractAvailablePeriods(allDays);
+
+  final currentValue = _isAllPeriod
+      ? 'ALL'
+      : (availablePeriods.contains(_selectedPeriod)
+          ? _selectedPeriod
+          : availablePeriods.isNotEmpty
+              ? availablePeriods.first
+              : null);
+
+  return _glass(
+    Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Period',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 12),
+
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.6),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: AppTheme.primaryColor.withOpacity(0.3),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 6,
+                offset: const Offset(0, 3),
+              )
+            ],
+          ),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<String>(
+              value: currentValue,
+              isExpanded: true,
+              icon: const Icon(Icons.keyboard_arrow_down_rounded),
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: Colors.black87,
+              ),
+              items: [
+                const DropdownMenuItem(
+                  value: 'ALL',
+                  child: Text('All Period'),
+                ),
+                ...availablePeriods.map(
+                  (p) => DropdownMenuItem(
+                    value: p,
+                    child: Text(_formatPeriod(p)),
+                  ),
+                ),
+              ],
+              onChanged: (value) {
+                setState(() {
+                  if (value == 'ALL') {
+                    _isAllPeriod = true;
+                  } else {
+                    _isAllPeriod = false;
+                    _selectedPeriod = value!;
+                  }
+                });
+              },
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+List<String> _extractAvailablePeriods(List<AttendanceDay> days) {
+  final Set<String> uniquePeriods = {};
+
+  for (final day in days) {
+    final month = day.date.month.toString().padLeft(2, '0');
+    uniquePeriods.add('${day.date.year}-$month');
+  }
+
+  final periods = uniquePeriods.toList();
+  periods.sort((a, b) => b.compareTo(a)); // terbaru dulu
+
+  return periods;
+}
+
+Widget _buildMobilePeriodDropdown(List<AttendanceDay> allDays) {
+  final availablePeriods = _extractAvailablePeriods(allDays);
+
+  final currentValue = _isAllPeriod
+      ? 'ALL'
+      : (availablePeriods.contains(_selectedPeriod)
+          ? _selectedPeriod
+          : availablePeriods.isNotEmpty
+              ? availablePeriods.first
+              : null);
+
+  return Container(
+    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+    decoration: BoxDecoration(
+      color: Colors.white.withOpacity(0.9),
+      borderRadius: BorderRadius.circular(16),
+      border: Border.all(
+        color: AppTheme.primaryColor.withOpacity(0.3),
+      ),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.05),
+          blurRadius: 8,
+          offset: const Offset(0, 4),
+        ),
+      ],
+    ),
+    child: Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: AppTheme.primaryColor.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: const Icon(
+            Icons.calendar_month,
+            size: 18,
+            color: AppTheme.primaryColor,
+          ),
+        ),
+        const SizedBox(width: 12),
+
+        Expanded(
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<String>(
+              value: currentValue,
+              isExpanded: true,
+              icon: const Icon(Icons.keyboard_arrow_down_rounded),
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: Colors.black87,
+              ),
+              items: [
+                const DropdownMenuItem(
+                  value: 'ALL',
+                  child: Text('All Period'),
+                ),
+                ...availablePeriods.map(
+                  (p) => DropdownMenuItem(
+                    value: p,
+                    child: Text(_formatPeriod(p)),
+                  ),
+                ),
+              ],
+              onChanged: (value) {
+                setState(() {
+                  if (value == 'ALL') {
+                    _isAllPeriod = true;
+                  } else {
+                    _isAllPeriod = false;
+                    _selectedPeriod = value!;
+                  }
+                });
+              },
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+String _formatPeriod(String period) {
+  if (period == 'ALL') return 'All Period';
+
+  final parts = period.split('-');
+  if (parts.length != 2) return period;
+
+  final year = parts[0];
+  final month = int.tryParse(parts[1]) ?? 1;
+
+  const monthNames = [
+    '',
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
+  ];
+
+  return '${monthNames[month]} $year';
+}
+
 }
 
 // ================= UI HELPERS =================
