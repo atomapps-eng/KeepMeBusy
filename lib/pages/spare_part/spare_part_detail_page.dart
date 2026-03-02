@@ -5,12 +5,24 @@ import '../../core/widgets/draggable_window.dart';
 import '../../models/spare_part.dart';
 import 'edit_spare_part_page.dart';
 import '../../core/services/company_firestore.dart';
+import 'dart:typed_data';
+import 'dart:ui' as ui;
+import 'dart:io';
+import 'dart:async';
+import 'package:http/http.dart' as http;
+import 'package:share_plus/share_plus.dart';
+import 'package:path_provider/path_provider.dart';
 
-class SparePartDetailPage extends StatelessWidget {
+class SparePartDetailPage extends StatefulWidget {
   final SparePart part;
 
   const SparePartDetailPage({super.key, required this.part});
 
+  @override
+  State<SparePartDetailPage> createState() => _SparePartDetailPageState();
+}
+
+class _SparePartDetailPageState extends State<SparePartDetailPage> {
   // =========================
   // ADMIN CHECK
   // =========================
@@ -25,6 +37,148 @@ class SparePartDetailPage extends StatelessWidget {
 
     return doc.exists && doc.data()?['active'] == true;
   }
+
+  // =========================
+  // SHARE IMAGE WITH PART CODE
+  // =========================
+  Future<void> _shareImageWithPartCode() async {
+    if (widget.part.imageUrl.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Tidak ada gambar untuk di-share'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    try {
+      // Tampilkan loading
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+
+      // Download image
+      final response = await http.get(Uri.parse(widget.part.imageUrl));
+      if (response.statusCode != 200) {
+        if (mounted) Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Gagal mengunduh gambar'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      // Simpan ke temporary file
+      final tempDir = await getTemporaryDirectory();
+      final tempFile = File('${tempDir.path}/spare_part_${widget.part.partCode}.jpg');
+      await tempFile.writeAsBytes(response.bodyBytes);
+
+      // Buat gambar dengan overlay part code
+      final image = await _addTextToImage(
+        FileImage(tempFile),
+        'Part Code: ${widget.part.partCode}',
+      );
+
+      // Simpan gambar yang sudah diberi text
+      final finalFile = File('${tempDir.path}/share_${widget.part.partCode}.jpg');
+      await finalFile.writeAsBytes(image);
+
+      if (mounted) Navigator.pop(context); // Tutup loading
+
+      // Share file
+      final xFile = XFile(finalFile.path);
+      await Share.shareXFiles(
+        [xFile],
+        text: 'Spare Part: ${widget.part.partCode} - ${widget.part.name}',
+      );
+
+    } catch (e) {
+      if (mounted) Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  // =========================
+// ADD TEXT TO IMAGE - DIPERBAIKI
+// =========================
+Future<Uint8List> _addTextToImage(ImageProvider imageProvider, String text) async {
+  final Completer<ui.Image> completer = Completer();
+  
+  final ImageStream stream = imageProvider.resolve(ImageConfiguration.empty);
+  stream.addListener(
+    ImageStreamListener(
+      (ImageInfo info, bool _) {
+        completer.complete(info.image);
+      },
+    ),
+  );
+  
+  final ui.Image originalImage = await completer.future;
+
+  final recorder = ui.PictureRecorder();
+  final canvas = Canvas(recorder);
+
+  // Gambar original
+  final paint = Paint();
+  canvas.drawImage(originalImage, Offset.zero, paint);
+
+  // Tambah overlay hitam transparan di bagian bawah
+  final overlayPaint = Paint()
+    ..color = Colors.black.withValues(alpha: 0.6);
+  
+  const overlayHeight = 60.0; // sudah double
+  canvas.drawRect(
+    Rect.fromLTWH(
+      0, 
+      originalImage.height - overlayHeight, 
+      originalImage.width.toDouble(), // Konversi ke double
+      overlayHeight
+    ),
+    overlayPaint,
+  );
+
+  // Tambah text part code
+  final textPainter = TextPainter(
+    text: TextSpan(
+      text: text,
+      style: const TextStyle(
+        color: Colors.white,
+        fontSize: 28,
+        fontWeight: FontWeight.bold,
+      ),
+    ),
+    textDirection: TextDirection.ltr,
+  );
+
+  textPainter.layout();
+  
+  final dx = (originalImage.width - textPainter.width) / 2;
+  final dy = originalImage.height - overlayHeight + (overlayHeight - textPainter.height) / 2;
+  
+  textPainter.paint(canvas, Offset(dx, dy));
+
+  // Convert ke PNG
+  final picture = recorder.endRecording();
+  final img = await picture.toImage(
+    originalImage.width, 
+    originalImage.height
+  );
+  final byteData = await img.toByteData(format: ui.ImageByteFormat.png);
+  
+  return byteData!.buffer.asUint8List();
+}
 
   @override
   Widget build(BuildContext context) {
@@ -65,6 +219,20 @@ class SparePartDetailPage extends StatelessWidget {
                       iconSize: isMobile ? 20 : 24,
                     ),
                   if (!isDesktop) const SizedBox(width: 8),
+                  
+                  const Spacer(),
+                  
+                  // Tombol Share
+                  if (widget.part.imageUrl.isNotEmpty)
+                    IconButton(
+                      icon: Icon(
+                        Icons.share,
+                        size: isMobile ? 20 : 24,
+                        color: Colors.blueGrey,
+                      ),
+                      onPressed: _shareImageWithPartCode,
+                      tooltip: 'Share foto dengan Part Code',
+                    ),
                 ],
               ),
 
@@ -73,11 +241,11 @@ class SparePartDetailPage extends StatelessWidget {
               // ===== HERO IMAGE =====
               Center(
                 child: Hero(
-                  tag: 'spare-part-image-${part.partCode}',
+                  tag: 'spare-part-image-${widget.part.partCode}',
                   child: _DetailImage(
-                    imageUrl: part.imageUrl,
+                    imageUrl: widget.part.imageUrl,
                     isMobile: isMobile,
-                     partCode: part.partCode,
+                    partCode: widget.part.partCode,
                   ),
                 ),
               ),
@@ -87,16 +255,16 @@ class SparePartDetailPage extends StatelessWidget {
               // ===== INFO SECTIONS =====
               _buildInfoSection(
                 children: [
-                  _infoRow('Part Code', part.partCode,
+                  _infoRow('Part Code', widget.part.partCode,
                       labelFontSize: labelFontSize,
                       valueFontSize: valueFontSize),
-                  _infoRow('Name', part.name,
+                  _infoRow('Name', widget.part.name,
                       labelFontSize: labelFontSize,
                       valueFontSize: valueFontSize),
-                  _infoRow('Name (EN)', part.nameEn,
+                  _infoRow('Name (EN)', widget.part.nameEn,
                       labelFontSize: labelFontSize,
                       valueFontSize: valueFontSize),
-                  _infoRow('Location', part.location,
+                  _infoRow('Location', widget.part.location,
                       labelFontSize: labelFontSize,
                       valueFontSize: valueFontSize),
                 ],
@@ -107,13 +275,13 @@ class SparePartDetailPage extends StatelessWidget {
               _buildInfoSection(
                 title: 'STOK',
                 children: [
-                  _infoRow('Initial Stock', part.initialStock.toString(),
+                  _infoRow('Initial Stock', widget.part.initialStock.toString(),
                       labelFontSize: labelFontSize,
                       valueFontSize: valueFontSize),
-                  _infoRow('Current Stock', part.currentStock.toString(),
+                  _infoRow('Current Stock', widget.part.currentStock.toString(),
                       labelFontSize: labelFontSize,
                       valueFontSize: valueFontSize),
-                  _infoRow('Minimum Stock', part.minimumStock.toString(),
+                  _infoRow('Minimum Stock', widget.part.minimumStock.toString(),
                       labelFontSize: labelFontSize,
                       valueFontSize: valueFontSize),
                 ],
@@ -125,10 +293,10 @@ class SparePartDetailPage extends StatelessWidget {
                 title: 'KATEGORI',
                 children: [
                   _infoRow('Category',
-                      part.category.name.replaceAll('_', ' '),
+                      widget.part.category.name.replaceAll('_', ' '),
                       labelFontSize: labelFontSize,
                       valueFontSize: valueFontSize),
-                  _infoRow('Origin', part.origin.name.replaceAll('_', ' '),
+                  _infoRow('Origin', widget.part.origin.name.replaceAll('_', ' '),
                       labelFontSize: labelFontSize,
                       valueFontSize: valueFontSize),
                 ],
@@ -137,9 +305,9 @@ class SparePartDetailPage extends StatelessWidget {
               SizedBox(height: sectionSpacing),
 
               _buildInfoSection(
-                title: 'SPESIFICATION',
+                title: 'SPESIFIKASI',
                 children: [
-                  _infoRow('Weight', '${part.weight} ${part.weightUnit}',
+                  _infoRow('Weight', '${widget.part.weight} ${widget.part.weightUnit}',
                       labelFontSize: labelFontSize,
                       valueFontSize: valueFontSize),
                 ],
@@ -167,29 +335,26 @@ class SparePartDetailPage extends StatelessWidget {
                         ),
                       ),
                       onPressed: () async {
-                        final isDesktop =
-                            MediaQuery.of(context).size.width >= 900;
+                        final isDesktop = MediaQuery.of(context).size.width >= 900;
 
                         if (isDesktop) {
                           final parentContext = context;
 
-                          Navigator.pop(parentContext); // 🔥 TUTUP DETAIL DULU
+                          Navigator.pop(parentContext);
 
-                          await Future.delayed(
-                              const Duration(milliseconds: 200));
+                          await Future.delayed(const Duration(milliseconds: 200));
 
                           showGeneralDialog(
                             context: parentContext,
                             barrierDismissible: false,
                             barrierLabel: "EditSparePart",
                             barrierColor: Colors.black.withValues(alpha: 0.35),
-                            transitionDuration:
-                                const Duration(milliseconds: 200),
+                            transitionDuration: const Duration(milliseconds: 200),
                             pageBuilder: (_, _, _) {
                               return DraggableResizableWindow(
                                 title: "Edit Spare Part",
                                 headerColor: Colors.blueGrey,
-                                child: EditSparePartPage(part: part),
+                                child: EditSparePartPage(part: widget.part),
                               );
                             },
                           );
@@ -197,7 +362,7 @@ class SparePartDetailPage extends StatelessWidget {
                           await Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => EditSparePartPage(part: part),
+                              builder: (_) => EditSparePartPage(part: widget.part),
                             ),
                           );
                         }
@@ -242,20 +407,18 @@ class SparePartDetailPage extends StatelessWidget {
                           builder: (_) => AlertDialog(
                             title: const Text('Hapus Spare Part'),
                             content: Text(
-                              'Yakin ingin menghapus "${part.name}"?',
+                              'Yakin ingin menghapus "${widget.part.name}"?',
                             ),
                             actions: [
                               TextButton(
-                                onPressed: () =>
-                                    Navigator.pop(context, false),
+                                onPressed: () => Navigator.pop(context, false),
                                 child: const Text('Batal'),
                               ),
                               ElevatedButton(
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.red,
                                 ),
-                                onPressed: () =>
-                                    Navigator.pop(context, true),
+                                onPressed: () => Navigator.pop(context, true),
                                 child: const Text('Hapus'),
                               ),
                             ],
@@ -266,7 +429,7 @@ class SparePartDetailPage extends StatelessWidget {
 
                         await CompanyFirestore
                             .collection('spare_parts')
-                            .doc(part.partCode)
+                            .doc(widget.part.partCode)
                             .delete();
 
                         if (context.mounted) {
@@ -349,12 +512,12 @@ class SparePartDetailPage extends StatelessWidget {
 class _DetailImage extends StatelessWidget {
   final String imageUrl;
   final bool isMobile;
-  final String partCode; // Tambahkan parameter partCode
+  final String partCode;
 
   const _DetailImage({
-    required this.imageUrl, 
+    required this.imageUrl,
     required this.isMobile,
-    required this.partCode, // Required partCode
+    required this.partCode,
   });
 
   @override
@@ -363,7 +526,6 @@ class _DetailImage extends StatelessWidget {
 
     return GestureDetector(
       onTap: () {
-        // Tampilkan dialog dengan gambar zoom
         showDialog(
           context: context,
           builder: (BuildContext context) {
@@ -372,7 +534,6 @@ class _DetailImage extends StatelessWidget {
               insetPadding: const EdgeInsets.all(20),
               child: Stack(
                 children: [
-                  // Gambar zoom
                   Container(
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(16),
@@ -457,7 +618,6 @@ class _DetailImage extends StatelessWidget {
                     ),
                   ),
                   
-                  // Tombol close
                   Positioned(
                     top: 8,
                     right: 8,
@@ -474,7 +634,6 @@ class _DetailImage extends StatelessWidget {
                     ),
                   ),
                   
-                  // Part code overlay
                   Positioned(
                     bottom: 16,
                     left: 16,
@@ -524,7 +683,6 @@ class _DetailImage extends StatelessWidget {
             color: const Color.fromARGB(255, 243, 228, 172),
             child: Stack(
               children: [
-                // Gambar
                 AspectRatio(
                   aspectRatio: 1,
                   child: imageUrl.isNotEmpty
@@ -551,7 +709,6 @@ class _DetailImage extends StatelessWidget {
                         ),
                 ),
                 
-                // Overlay zoom indicator
                 Positioned(
                   bottom: 8,
                   right: 8,

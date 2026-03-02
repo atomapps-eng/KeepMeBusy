@@ -5,6 +5,7 @@ import '../core/services/company_firestore.dart';
 import '../pages/spare_part/spare_part_list_page.dart';
 import '../../models/spare_part.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../pages/partners/partner_list_page.dart';
 
 enum QtyDialogMode {
   orderIn,
@@ -810,14 +811,14 @@ Widget build(BuildContext context) {
     child: Scaffold(
       backgroundColor: Colors.transparent,
 
-      floatingActionButton: (!widget.isCompact && !isCreateMode)
-          ? FloatingActionButton(
-              backgroundColor: Colors.blueGrey,
-              foregroundColor: Colors.white,
-              onPressed: () => setState(() => isCreateMode = true),
-              child: const Icon(Icons.add),
-            )
-          : null,
+      floatingActionButton: (!isCreateMode)
+    ? FloatingActionButton(
+        backgroundColor: Colors.blueGrey,
+        foregroundColor: Colors.white,
+        onPressed: () => setState(() => isCreateMode = true),
+        child: const Icon(Icons.add),
+      )
+    : null,
 
       body: Stack(
         children: [
@@ -833,10 +834,8 @@ Widget build(BuildContext context) {
               ),
             ),
           ),
-          SafeArea(
-            child: widget.isCompact
-                ? const _OrderInQuickView()
-                : Column(
+          SafeArea(      
+          child: Column(
                     children: [
                       _buildFullscreenHeader(),
 
@@ -1157,47 +1156,27 @@ Widget _buildDesktopFormPanel() {
 
       const SizedBox(height: 6),
 
-      StreamBuilder<QuerySnapshot>(
-        stream: CompanyFirestore
-            .collection('partners')
-            .orderBy('name')
-            .snapshots(),
-        builder: (context, snapshot) {
-          if (!snapshot.hasData) {
-            return const CircularProgressIndicator();
-          }
-
-          final docs = snapshot.data!.docs;
-
-          final partnerNames = docs
-              .map((doc) =>
-                  (doc.data() as Map<String, dynamic>)['name']
-                      as String)
-              .toList();
-
-          final safeValue =
-              partnerNames.contains(selectedClient)
-                  ? selectedClient
-                  : null;
-
-          return DropdownButtonFormField<String>(
-            initialValue: safeValue,
-            isExpanded: true,
-            items: partnerNames.map((name) {
-              return DropdownMenuItem<String>(
-                value: name,
-                child: Text(name),
-              );
-            }).toList(),
-            onChanged: (v) =>
-                setState(() => selectedClient = v),
-            decoration: const InputDecoration(
-              border: OutlineInputBorder(),
-              isDense: true,
-            ),
-          );
-        },
+     InkWell(
+  onTap: () async {
+    final partner = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const PartnerListPage(
+          selectionMode: true,
+        ),
       ),
+    );
+
+    if (partner != null) {
+      setState(() {
+        selectedClient = partner.name;
+      });
+    }
+  },
+  child: _Box(
+    text: selectedClient ?? 'Select Partner',
+  ),
+),
 
       const SizedBox(height: 16),
 
@@ -1332,39 +1311,6 @@ return StreamBuilder<QuerySnapshot>(
   );
 },
 
-        );
-      },
-    );
-  }
-}
-
-/// =====================================================
-/// QUICK VIEW (FLOATING)
-/// =====================================================
-class _OrderInQuickView extends StatelessWidget {
-  const _OrderInQuickView();
-
-  @override
-  Widget build(BuildContext context) {
-    return StreamBuilder<QuerySnapshot>(
-      stream: CompanyFirestore
-          .collection('order_in')
-          .orderBy('createdAt', descending: true)
-          .limit(10)
-          .snapshots(),
-      builder: (_, snapshot) {
-        if (!snapshot.hasData) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        return ListView.builder(
-          padding: const EdgeInsets.all(16),
-          itemCount: snapshot.data!.docs.length,
-          itemBuilder: (_, i) {
-            final data =
-                snapshot.data!.docs[i].data() as Map<String, dynamic>;
-            return _OrderHistoryCard(data: data);
-          },
         );
       },
     );
@@ -1552,46 +1498,26 @@ class _OrderHeader extends StatelessWidget {
               const SizedBox(height: 8),
 
               // ===== CLIENT =====
-              _HeaderRow(
+             _HeaderRow(
   label: 'Client',
-  child: StreamBuilder<QuerySnapshot>(
-    stream: CompanyFirestore
-        .collection('partners')
-        .orderBy('name')
-        .snapshots(),
-    builder: (context, snapshot) {
-      if (!snapshot.hasData) {
-        return const SizedBox(
-          height: 48,
-          child: Center(child: CircularProgressIndicator()),
-        );
+  child: InkWell(
+    onTap: () async {
+      final partner = await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const PartnerListPage(
+            selectionMode: true,
+          ),
+        ),
+      );
+
+      if (partner != null) {
+        onClientChanged(partner.name);
       }
-
-      final docs = snapshot.data!.docs;
-
-      final partnerNames = docs
-    .map((doc) => (doc.data() as Map<String, dynamic>)['name'] as String)
-    .toList();
-
-final safeValue =
-    partnerNames.contains(selectedClient) ? selectedClient : null;
-
-return DropdownButtonFormField<String>(
-  initialValue: safeValue,
-  items: partnerNames.map((name) {
-    return DropdownMenuItem<String>(
-      value: name,
-      child: Text(name),
-    );
-  }).toList(),
-  onChanged: onClientChanged,
-  decoration: const InputDecoration(
-    border: OutlineInputBorder(),
-    isDense: true,
-  ),
-);
-
     },
+    child: _Box(
+      text: selectedClient ?? 'Select Partner',
+    ),
   ),
 ),
 

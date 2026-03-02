@@ -1276,17 +1276,53 @@ Widget _buildMenuItemCard(_MenuItem item) {
                         });
                       },
                     ),
-                    _desktopMenuCard(
+                     _desktopMenuCard(
                       Icons.input,
                       'Orders In',
                       Colors.green,
-                      _openOrderInForm,
+                      () {
+                        showGeneralDialog(
+                          context: context,
+                          barrierDismissible: true,
+                          barrierLabel: "Orders In",
+                          barrierColor: Colors.black.withOpacity(0.35),
+                          transitionDuration: const Duration(milliseconds: 200),
+                          pageBuilder: (_, _, _) {
+                            return const DraggableResizableWindow(
+                              title: "Orders In",
+                              headerColor: Colors.green,
+                              child: OrderInMobile(),
+                            );
+                          },
+                        );
+                        setState(() {
+                          showLowStockOnly = true;
+                        });
+                      },
                     ),
                     _desktopMenuCard(
-                      Icons.output_outlined,
+                      Icons.output,
                       'Orders Out',
                       Colors.redAccent,
-                      _openOrderOutForm,
+                      () {
+                        showGeneralDialog(
+                          context: context,
+                          barrierDismissible: true,
+                          barrierLabel: "Orders Out",
+                          barrierColor: Colors.black.withOpacity(0.35),
+                          transitionDuration: const Duration(milliseconds: 200),
+                          pageBuilder: (_, _, _) {
+                            return const DraggableResizableWindow(
+                              title: "Orders Out",
+                              headerColor: Colors.redAccent,
+                              child: OrderOutMobile(),
+                            );
+                          },
+                        );
+                        setState(() {
+                          showLowStockOnly = true;
+                        });
+                      },
                     ),
                     _desktopMenuCard(
                       Icons.groups,
@@ -1628,21 +1664,31 @@ Widget _buildMenuItemCard(_MenuItem item) {
     );
   }
 
- Widget _buildContent(UserRole role) {
+Widget _buildContent(UserRole role) {
 
-    switch (selectedSection) {
-      case DesktopSection.dashboard:
-        return _buildDesktopWelcome(role);
-      case DesktopSection.inventory:
-        return _buildInventoryContent();
-      case DesktopSection.machinery:
-        return _buildDesktopMachinery();
-      case DesktopSection.reports:
-        return _buildDesktopReports();
-      case DesktopSection.systems:
-        return _buildDesktopSystems();
-    }
+  // 🔥 AUTO RESET kalau keluar dari inventory
+  if (selectedSection != DesktopSection.inventory &&
+      inventoryView != InventoryView.menu) {
+    inventoryView = InventoryView.menu;
   }
+
+  switch (selectedSection) {
+    case DesktopSection.dashboard:
+      return _buildDesktopWelcome(role);
+
+    case DesktopSection.inventory:
+      return _buildInventoryContent();
+
+    case DesktopSection.machinery:
+      return _buildDesktopMachinery();
+
+    case DesktopSection.reports:
+      return _buildDesktopReports();
+
+    case DesktopSection.systems:
+      return _buildDesktopSystems();
+  }
+}
 
  // === STEP 4: ROLE FUTURE BUILDER START ===
 
@@ -2307,20 +2353,20 @@ final bool canAccessSettings = isAdmin;
     ).then((_) => _loadActivities());
 
     showGeneralDialog(
-      context: context,
-      barrierDismissible: false,
-      barrierLabel: "CreateOrderOut",
-      barrierColor: Colors.black.withOpacity(0.35),
-      transitionDuration: const Duration(milliseconds: 200),
-      pageBuilder: (_, _, _) {
-        return DraggableResizableWindow(
-          title: "Create Order Out",
-          child: const OrderOutMobile(
-            isCompact: false,
-          ),
-        );
-      },
+  context: context,
+  barrierDismissible: false,
+  barrierLabel: "CreateOrderOut",
+  barrierColor: Colors.black.withOpacity(0.35),
+  transitionDuration: const Duration(milliseconds: 200),
+  pageBuilder: (_, _, _) {
+    return DraggableResizableWindow(
+      title: "Create Order Out",
+      child: const OrderOutMobile(
+        autoCreate: true, // kalau mau langsung create
+      ),
     );
+  },
+);
   }
 
   // ==================== COMPANY INFO METHODS ====================

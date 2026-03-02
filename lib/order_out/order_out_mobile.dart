@@ -5,21 +5,22 @@ import '../core/services/company_firestore.dart';
 import '../pages/spare_part/spare_part_list_page.dart';
 import '../../models/spare_part.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../pages/partners/partner_list_page.dart';
 
 
 
 class OrderOutMobile extends StatefulWidget {
-  final bool isCompact;
   final String? searchKeyword;
   final bool autoCreate;
   final Map<String, dynamic>? initialEditData;
+  final bool isAdmin;
 
   const OrderOutMobile({
     super.key,
-    this.isCompact = false,
     this.searchKeyword,
     this.autoCreate = false,
     this.initialEditData,
+    this.isAdmin = false,
   });
 
   @override
@@ -41,6 +42,8 @@ class OrderOutItem {
 }
 
 class _OrderOutPageState extends State<OrderOutMobile> {
+  bool isAdmin = false;
+bool isCheckingAdmin = true;
   // ================= USER LOGIN HELPER =================
   String _getCurrentUsername() {
     final user = FirebaseAuth.instance.currentUser;
@@ -61,6 +64,8 @@ class _OrderOutPageState extends State<OrderOutMobile> {
   @override
 void initState() {
   super.initState();
+
+  _checkAdminAccess();
 
   if (widget.autoCreate) {
     isCreateMode = true;
@@ -494,14 +499,14 @@ Widget build(BuildContext context) {
     child: Scaffold(
       backgroundColor: Colors.transparent,
 
-      floatingActionButton: (!widget.isCompact && !isCreateMode)
-          ? FloatingActionButton(
-              backgroundColor: Colors.blueGrey,
-              foregroundColor: Colors.white,
-              onPressed: () => setState(() => isCreateMode = true),
-              child: const Icon(Icons.add),
-            )
-          : null,
+    floatingActionButton: (!isCreateMode)
+    ? FloatingActionButton(
+        backgroundColor: Colors.blueGrey,
+        foregroundColor: Colors.white,
+        onPressed: () => setState(() => isCreateMode = true),
+        child: const Icon(Icons.add),
+      )
+    : null,
 
       body: Stack(
         children: [
@@ -518,9 +523,7 @@ Widget build(BuildContext context) {
             ),
           ),
           SafeArea(
-            child: widget.isCompact
-                ? const _OrderOutQuickView()
-                : Column(
+            child: Column(
                     children: [
                       _buildFullscreenHeader(),
 
@@ -551,12 +554,13 @@ Widget build(BuildContext context) {
   child: isCreateMode
       ? _buildCreateForm()
       : _OrderOutListView(
+        isAdmin: isAdmin,
           searchKeyword: fullscreenSearchController.text,
           filterDate: fullscreenFilterDate,
           onTap: (context, data) {
   _openEditOrder(data);
 },
-         onDelete: (_, _) {},
+         onDelete: (id, _) => _deleteOrder(id),
           onEdit: (_) {},
         ),
 ),
@@ -857,51 +861,27 @@ Widget _buildDesktopFormPanel() {
         ),
         const SizedBox(height: 6),
 
-        StreamBuilder<QuerySnapshot>(
-          stream: CompanyFirestore
-              .collection('partners')
-              .orderBy('name')
-              .snapshots(),
-          builder: (context, snapshot) {
-
-            if (!snapshot.hasData) {
-              return const CircularProgressIndicator();
-            }
-
-            final partnerNames = snapshot.data!.docs
-                .map((doc) =>
-                    (doc.data() as Map<String, dynamic>)['name'] as String)
-                .toList();
-
-            final safeValue =
-                partnerNames.contains(selectedClient)
-                    ? selectedClient
-                    : null;
-
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                DropdownButtonFormField<String>(
-                  initialValue: safeValue,
-                  isExpanded: true,
-                  items: partnerNames.map((name) {
-                    return DropdownMenuItem<String>(
-                      value: name,
-                      child: Text(name),
-                    );
-                  }).toList(),
-                  onChanged: (v) =>
-                      setState(() => selectedClient = v),
-                  decoration: InputDecoration(
-                    border: const OutlineInputBorder(),
-                    errorText:
-                        isClientInvalid ? 'Required' : null,
-                  ),
-                ),
-              ],
-            );
-          },
+        InkWell(
+  onTap: () async {
+    final partner = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const PartnerListPage(
+          selectionMode: true,
         ),
+      ),
+    );
+
+    if (partner != null) {
+      setState(() {
+        selectedClient = partner.name;
+      });
+    }
+  },
+  child: _Box(
+    text: selectedClient ?? 'Select Partner',
+  ),
+),
 
         const SizedBox(height: 16),
 
@@ -951,6 +931,70 @@ Future<bool> _confirmDeleteItem(BuildContext context) async {
 
   return result == true;
 }
+
+Future<void> _checkAdminAccess() async {
+  final user = FirebaseAuth.instance.currentUser;
+
+  if (user == null || user.email == null) {
+    setState(() {
+      isAdmin = false;
+      isCheckingAdmin = false;
+    });
+    return;
+  }
+
+  final email = user.email!.toLowerCase().trim();
+
+  final doc = await FirebaseFirestore.instance
+      .collection('admin_whitelist')
+      .doc(email)
+      .get();
+
+  setState(() {
+    isAdmin = doc.exists && doc.data()?['active'] == true;
+    isCheckingAdmin = false;
+  });
+}
+
+Future<void> _deleteOrder(String orderId) async {
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (_) => AlertDialog(
+      title: const Text('Hapus Order'),
+      content: const Text(
+          'Order ini akan dihapus dan tidak bisa dikembalikan.\nLanjutkan?'),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, false),
+          child: const Text('Batal'),
+        ),
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.red,
+          ),
+          onPressed: () => Navigator.pop(context, true),
+          child: const Text('Hapus'),
+        ),
+      ],
+    ),
+  );
+
+  if (confirmed != true) return;
+
+  await CompanyFirestore.collection('order_out')
+      .doc(orderId)
+      .delete();
+
+  if (!mounted) return;
+
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(
+      content: Text('Order berhasil dihapus'),
+      backgroundColor: Colors.red,
+    ),
+  );
+}
+
 }
 
 /// =====================================================
@@ -962,6 +1006,7 @@ class _OrderOutListView extends StatelessWidget {
   final void Function(BuildContext, Map<String, dynamic>) onTap;
   final void Function(String orderId, Map<String, dynamic> data)? onDelete;
   final void Function(Map<String, dynamic> data)? onEdit;
+  final bool isAdmin;
 
 
 
@@ -971,6 +1016,7 @@ class _OrderOutListView extends StatelessWidget {
     required this.onTap,
     required this.onDelete,
     required this.onEdit,
+    this.isAdmin = false,
   });
 
   @override
@@ -1028,11 +1074,15 @@ class _OrderOutListView extends StatelessWidget {
   };
 
   return InkWell(
-    onTap: () => onTap(context, data),
-    child: _OrderHistoryCard(
-      data: data,
-    ),
-  );
+  onTap: () => onTap(context, data),
+  child: _OrderHistoryCard(
+    data: data,
+    isAdmin: isAdmin,
+    onDelete: isAdmin
+        ? () => onDelete?.call(doc.id, data)
+        : null,
+  ),
+);
 },
 
 
@@ -1042,54 +1092,22 @@ class _OrderOutListView extends StatelessWidget {
   }
 }
 
-/// =====================================================
-/// QUICK VIEW (FLOATING)
-/// =====================================================
-class _OrderOutQuickView extends StatelessWidget {
-  const _OrderOutQuickView();
-
-  @override
-  Widget build(BuildContext context) {
-    return StreamBuilder<QuerySnapshot>(
-      stream: CompanyFirestore
-          .collection('order_out')
-          .orderBy('createdAt', descending: true)
-          .limit(10)
-          .snapshots(),
-      builder: (_, snapshot) {
-        if (!snapshot.hasData) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        return ListView.builder(
-          padding: const EdgeInsets.all(16),
-          itemCount: snapshot.data!.docs.length,
-          itemBuilder: (_, i) {
-            final data =
-                snapshot.data!.docs[i].data() as Map<String, dynamic>;
-            return _OrderHistoryCard(
-  data: data,
-  isFullscreen: false,
-);
-
-          },
-        );
-      },
-    );
-  }
-}
 
 /// =====================================================
 /// HISTORY CARD
 /// =====================================================
 class _OrderHistoryCard extends StatelessWidget {
   final Map<String, dynamic> data;
+  final bool isAdmin;
+  final VoidCallback? onDelete;
   final bool isFullscreen;
 
   const _OrderHistoryCard({
-  required this.data,
-  this.isFullscreen = false,
-});
+    required this.data,
+    required this.isAdmin,
+    this.onDelete,
+    this.isFullscreen = false,
+  });
 
 
   @override
@@ -1111,39 +1129,45 @@ Widget build(BuildContext context) {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'PO: ${data['poNumber']}',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Text('Client: ${data['client']}'),
-
-                  if (data['createdBy'] != null)
-  Text(
-    'Created By: ${data['createdBy']}',
-    style: const TextStyle(
-      fontSize: 12,
-      color: Colors.black54,
-    ),
-  ),
-
-
-                  if (date != null)
-                    Text(
-                      '${date.day}/${date.month}/${date.year}',
-                      style: const TextStyle(fontSize: 12),
-                    ),
-                ],
+  children: [
+    Expanded(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'PO: ${data['poNumber']}',
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          Text('Client: ${data['client']}'),
+          if (data['createdBy'] != null)
+            Text(
+              'Created By: ${data['createdBy']}',
+              style: const TextStyle(
+                fontSize: 12,
+                color: Colors.black54,
               ),
             ),
-          ],
+          if (date != null)
+            Text(
+              '${date.day}/${date.month}/${date.year}',
+              style: const TextStyle(fontSize: 12),
+            ),
+        ],
+      ),
+    ),
+
+    if (isAdmin && onDelete != null)
+      IconButton(
+        icon: const Icon(
+          Icons.delete,
+          color: Colors.red,
         ),
+        onPressed: onDelete,
+      ),
+  ],
+),
       ],
     ),
   );
@@ -1225,46 +1249,26 @@ class _OrderHeader extends StatelessWidget {
               const SizedBox(height: 8),
 
               // ===== CLIENT =====
-              _HeaderRow(
+     _HeaderRow(
   label: 'Client',
-  child: StreamBuilder<QuerySnapshot>(
-    stream: CompanyFirestore
-        .collection('partners')
-        .orderBy('name')
-        .snapshots(),
-    builder: (context, snapshot) {
-      if (!snapshot.hasData) {
-        return const SizedBox(
-          height: 48,
-          child: Center(child: CircularProgressIndicator()),
-        );
+  child: InkWell(
+    onTap: () async {
+      final partner = await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const PartnerListPage(
+            selectionMode: true,
+          ),
+        ),
+      );
+
+      if (partner != null) {
+        onClientChanged(partner.name);
       }
-
-      final docs = snapshot.data!.docs;
-
-      final partnerNames = docs
-    .map((doc) => (doc.data() as Map<String, dynamic>)['name'] as String)
-    .toList();
-
-final safeValue =
-    partnerNames.contains(selectedClient) ? selectedClient : null;
-
-return DropdownButtonFormField<String>(
-  initialValue: safeValue,
-  items: partnerNames.map((name) {
-    return DropdownMenuItem<String>(
-      value: name,
-      child: Text(name),
-    );
-  }).toList(),
-  onChanged: onClientChanged,
-  decoration: const InputDecoration(
-    border: OutlineInputBorder(),
-    isDense: true,
-  ),
-);
-
     },
+    child: _Box(
+      text: selectedClient ?? 'Select Partner',
+    ),
   ),
 ),
 

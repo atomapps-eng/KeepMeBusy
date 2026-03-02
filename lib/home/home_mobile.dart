@@ -16,6 +16,9 @@ import '../login/login_page.dart';
 import '../core/session/company_session.dart';
 import '../core/services/company_firestore.dart';
 import '../service_report/pages/service_report_list_page.dart';
+import '../pages/spare_part/spare_part_list_page.dart';
+import '../order_in/order_in_mobile.dart';
+import '../order_out/order_out_mobile.dart';
 
 class HomeMobile extends StatefulWidget {
   const HomeMobile({super.key});
@@ -159,40 +162,40 @@ Stream<Map<String, dynamic>> dashboardStatsStream() {
   label: 'Database',
   color: Colors.blueGrey,
   onTap: () {
-  FloatingMenuLauncher.open(
-    context,
-    inventoryMenus.first,
-  );
-},
-
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const SparePartListPage(),
+      ),
+    );
+  },
 ),
 
-    _MenuCard(
-      icon: Icons.input,
-      label: 'Orders In',
-      color: Colors.green,
-      onTap: () {
-  FloatingMenuLauncher.open(
-    context,
-    inventoryMenus.firstWhere(
-      (menu) => menu.label == 'Orders In',
-    ),
-  );
-},
+   _MenuCard(
+  icon: Icons.input,
+  label: 'Orders In',
+  color: Colors.green,
+  onTap: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const OrderInMobile(),
+      ),
+    );
+  },
 ),
-    _MenuCard(
-      icon: Icons.output_outlined,
-      label: 'Orders Out',
-      color: Colors.redAccent,
-      onTap: () {
-  FloatingMenuLauncher.open(
-    context,
-    inventoryMenus.firstWhere(
-      (menu) => menu.label == 'Orders Out',
-    ),
-  );
-},
-
+   _MenuCard(
+  icon: Icons.output_outlined,
+  label: 'Orders Out',
+  color: Colors.redAccent,
+  onTap: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const OrderOutMobile(),
+      ),
+    );
+  },
 ),
     _MenuCard(
       icon: Icons.groups,

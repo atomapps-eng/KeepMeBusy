@@ -6,6 +6,7 @@ import '../pages/order_out/order_out_detail_page.dart';
 
 class OrderOutDesktop extends StatelessWidget {
   const OrderOutDesktop({super.key});
+  
 
   @override
   Widget build(BuildContext context) {
@@ -43,28 +44,19 @@ class OrderOutDesktop extends StatelessWidget {
                   children: [
 
                     _buildMenu(
-                      icon: Icons.add_box_rounded,
-                      title: "Create Order Out",
-                      onTap: () {
-                        showGeneralDialog(
-                          context: context,
-                          barrierDismissible: false,
-                          barrierLabel: "CreateOrderOut",
-                          barrierColor: Colors.black.withValues(alpha: 0.35),
-                          transitionDuration: const Duration(milliseconds: 200),
-                          pageBuilder: (context, anim1, anim2) {
-                            return DraggableResizableWindow(
-                              title: "Create Order Out",
-                              headerColor: Colors.red.shade700,
-                              child: const OrderOutMobile(
-                                isCompact: false,
-                                autoCreate: true,
-                              ),
-                            );
-                          },
-                        );
-                      },
-                    ),
+  icon: Icons.add_box_rounded,
+  title: "Create Order Out",
+  onTap: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const OrderOutMobile(
+          autoCreate: true,
+        ),
+      ),
+    );
+  },
+),
 
                     _buildMenu(
   icon: Icons.list_alt_rounded,
@@ -111,23 +103,22 @@ class OrderOutDesktop extends StatelessWidget {
   
 
   showGeneralDialog(
-    context: context,
-    barrierDismissible: false,
-    barrierLabel: "EditOrderOut",
-    barrierColor: Colors.black.withValues(alpha: 0.35),
-    transitionDuration: const Duration(milliseconds: 200),
-    pageBuilder: (context, anim1, anim2) {
-      return DraggableResizableWindow(
-        title: "Edit Order Out",
-        headerColor: Colors.red.shade700,
-        child: OrderOutMobile(
-          isCompact: false,
-          autoCreate: true,
-          initialEditData: result,   // 🔥 INI KUNCINYA
-        ),
-      );
-    },
-  );
+  context: context,
+  barrierDismissible: false,
+  barrierLabel: "EditOrderOut",
+  barrierColor: Colors.black.withValues(alpha: 0.35),
+  transitionDuration: const Duration(milliseconds: 200),
+  pageBuilder: (context, anim1, anim2) {
+    return DraggableResizableWindow(
+      title: "Edit Order Out",
+      headerColor: Colors.red.shade700,
+      child: OrderOutMobile(
+        autoCreate: true,
+        initialEditData: result,
+      ),
+    );
+  },
+);
 }
             },
           ),

@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../core/services/company_firestore.dart';
+import '../order_out/admin_service.dart';
+import '../order_out/order_out_service.dart';
 
 class OrderOutDesktopHistory extends StatefulWidget {
   final void Function(BuildContext, Map<String, dynamic>) onTap;
+  
 
   const OrderOutDesktopHistory({
     super.key,
@@ -18,10 +21,28 @@ class OrderOutDesktopHistory extends StatefulWidget {
 class _OrderOutDesktopHistoryState
     extends State<OrderOutDesktopHistory> {
 
+      bool _isAdmin = false;
+      bool _loadingAdmin = true;
+
   final TextEditingController _searchController =
       TextEditingController();
 
   DateTime? _filterDate;
+
+  @override
+void initState() {
+  super.initState();
+  _checkAdmin();
+}
+
+Future<void> _checkAdmin() async {
+  final isAdmin = await AdminService.isAdmin();
+  if (!mounted) return;
+  setState(() {
+    _isAdmin = isAdmin;
+    _loadingAdmin = false;
+  });
+}
 
   @override
   void dispose() {
@@ -29,7 +50,7 @@ class _OrderOutDesktopHistoryState
     super.dispose();
   }
 
-  @override
+@override
 Widget build(BuildContext context) {
   return Container(
     decoration: const BoxDecoration(
@@ -69,8 +90,7 @@ Widget build(BuildContext context) {
                 onPressed: () async {
                   final picked = await showDatePicker(
                     context: context,
-                    initialDate:
-                        _filterDate ?? DateTime.now(),
+                    initialDate: _filterDate ?? DateTime.now(),
                     firstDate: DateTime(2020),
                     lastDate: DateTime(2030),
                   );
@@ -91,14 +111,13 @@ Widget build(BuildContext context) {
           ),
         ),
 
-        // ================= LIST =================
         Expanded(
           child: _buildHistoryList(),
         ),
       ],
     ),
-    );
-  }
+  );
+}
 
   Widget _buildHistoryList() {
     return StreamBuilder<QuerySnapshot>(
@@ -155,32 +174,64 @@ Widget build(BuildContext context) {
         }
 
         return ListView.builder(
-          padding: const EdgeInsets.all(16),
-          itemCount: docs.length,
-          itemBuilder: (_, i) {
+  padding: const EdgeInsets.all(16),
+  itemCount: docs.length,
+  itemBuilder: (context, i) {
 
-            final data =
-                docs[i].data() as Map<String, dynamic>;
+    final doc = docs[i];
+    final data = doc.data() as Map<String, dynamic>;
+    final orderId = doc.id;
 
-            final orderId = docs[i].id;
+    return InkWell(
+      onTap: () => widget.onTap(
+        context,
+        {
+          ...data,
+          'id': orderId,
+        },
+      ),
+      child: _OrderHistoryCard(
+        data: {
+          ...data,
+          'id': orderId,
+        },
+        isAdmin: _isAdmin,
+        onDelete: _isAdmin
+            ? () async {
+                final confirm = await showDialog<bool>(
+                  context: context,
+                  builder: (_) => AlertDialog(
+                    title: const Text("Delete Order"),
+                    content: const Text(
+                        "Are you sure you want to delete this order?"),
+                    actions: [
+                      TextButton(
+                        onPressed: () =>
+                            Navigator.pop(context, false),
+                        child: const Text("Cancel"),
+                      ),
+                      TextButton(
+                        onPressed: () =>
+                            Navigator.pop(context, true),
+                        child: const Text(
+                          "Delete",
+                          style:
+                              TextStyle(color: Colors.red),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
 
-            return InkWell(
-              onTap: () => widget.onTap(
-                context,
-                {
-                  ...data,
-                  'id': orderId,
-                },
-              ),
-              child: _OrderHistoryCard(
-                data: {
-                  ...data,
-                  'id': orderId,
-                },
-              ),
-            );
-          },
-        );
+                if (confirm == true) {
+                  await OrderOutService.deleteOrder(orderId);
+                }
+              }
+            : null,
+      ),
+    );
+  },
+);
       },
     );
   }
@@ -188,55 +239,70 @@ Widget build(BuildContext context) {
 
 class _OrderHistoryCard extends StatelessWidget {
   final Map<String, dynamic> data;
+  final bool isAdmin;
+  final VoidCallback? onDelete;
 
   const _OrderHistoryCard({
     required this.data,
+    required this.isAdmin,
+    this.onDelete,
   });
 
   @override
   Widget build(BuildContext context) {
     final date =
-        (data['orderDate'] as Timestamp?)
-            ?.toDate();
+        (data['orderDate'] as Timestamp?)?.toDate();
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.25),
-        borderRadius:
-            BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color:
-              Colors.white.withValues(alpha: 0.35),
+          color: Colors.white.withValues(alpha: 0.35),
         ),
       ),
-      child: Column(
-        crossAxisAlignment:
-            CrossAxisAlignment.start,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'PO: ${data['poNumber']}',
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
+
+          // LEFT CONTENT
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'PO: ${data['poNumber']}',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text('Client: ${data['client']}'),
+
+                if (data['createdBy'] != null)
+                  Text(
+                    'Created By: ${data['createdBy']}',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Colors.black54,
+                    ),
+                  ),
+
+                if (date != null)
+                  Text(
+                    '${date.day}/${date.month}/${date.year}',
+                    style: const TextStyle(fontSize: 12),
+                  ),
+              ],
             ),
           ),
-          Text('Client: ${data['client']}'),
 
-          if (data['createdBy'] != null)
-            Text(
-              'Created By: ${data['createdBy']}',
-              style: const TextStyle(
-                fontSize: 12,
-                color: Colors.black54,
-              ),
-            ),
-
-          if (date != null)
-            Text(
-              '${date.day}/${date.month}/${date.year}',
-              style: const TextStyle(
-                  fontSize: 12),
+          // DELETE BUTTON (ADMIN ONLY)
+          if (isAdmin)
+            IconButton(
+              icon: const Icon(Icons.delete, color: Colors.red),
+              onPressed: onDelete,
             ),
         ],
       ),
