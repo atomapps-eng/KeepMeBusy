@@ -61,124 +61,145 @@ final fontBold = pw.Font.ttf(
       margin: const pw.EdgeInsets.fromLTRB(45, 25, 45, 35),
       theme: pw.ThemeData.withFont(base: fontRegular, bold: fontBold),
       build: (context) {
-  return pw.Column(
-    crossAxisAlignment: pw.CrossAxisAlignment.start,
+  return pw.Stack(
     children: [
 
-      // ================= FLEXIBLE CONTENT =================
-      pw.Expanded(
-        child: pw.Column(
-          crossAxisAlignment: pw.CrossAxisAlignment.start,
-          children: [
-
-            _buildHeader(data, logoBytes, df, fontBold),
-
-            pw.SizedBox(height: 6),
-            _customerCompanyGrid(data),
-
-            pw.SizedBox(height: 6),
-            pw.Divider(thickness: 0.8),
-
-            _machineRow(data),
-
-            pw.SizedBox(height: 6),
-
-            _sectionTitle("Problem Description", fontBold),
-            pw.Text(
-              safeText(data['problemDescription'], maxChars: 350),
-              style: pw.TextStyle(fontSize: 9),
-            ),
-
-            pw.SizedBox(height: 6),
-
-            _sectionTitle("Description of the work carried out", fontBold),
-            pw.Text(
-              safeText(data['activity'], maxChars: 450),
-              style: pw.TextStyle(fontSize: 9),
-            ),
-
-            pw.SizedBox(height: 6),
-
-            _sectionTitle("Spare Parts Used", fontBold),
-            _sparePartTableLimited(limitedParts),
-
-            pw.SizedBox(height: 6),
-
-            _sectionTitle("Note For Customer", fontBold),
-            pw.Text(
-              safeText(data['noteForCustomer'], maxChars: 200),
-              style: pw.TextStyle(fontSize: 9),
-            ),
-          ],
-        ),
-      ),
-
-      // ================= FIXED SIGNATURE AREA =================
-
-      pw.Divider(),
-      pw.SizedBox(height: 6),
-
-      pw.Row(
-        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-        children: [
-          pw.Text(
-            "Created By : ${data['createdByName'] ?? data['createdBy'] ?? '-'}",
-            style: pw.TextStyle(fontSize: 9),
-          ),
-          pw.Text(
-            "Submitted By : ${data['submittedByName'] ?? data['submittedBy'] ?? '-'}",
-            style: pw.TextStyle(fontSize: 9),
-          ),
-        ],
-      ),
-
-      pw.SizedBox(height: 8),
-      pw.Divider(),
-      pw.SizedBox(height: 6),
-
-      pw.Text(
-        "Confirmed that the technician had spent the time and use the parts above indicated",
-        textAlign: pw.TextAlign.center,
-        style: pw.TextStyle(
-          fontSize: 9,
-          fontStyle: pw.FontStyle.italic,
-        ),
-      ),
-
-      pw.SizedBox(height: 10),
-
-      pw.Align(
-        alignment: pw.Alignment.centerRight,
-        child: pw.Container(
-          width: 200,
+      // ================= CONTENT AREA =================
+      pw.Positioned.fill(
+        child: pw.Padding(
+          padding: const pw.EdgeInsets.only(bottom: 150), 
+          // <<< reserve space untuk signature block
           child: pw.Column(
-            crossAxisAlignment: pw.CrossAxisAlignment.center,
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
             children: [
+
+              _buildHeader(data, logoBytes, df, fontBold),
+
+              pw.SizedBox(height: 8),
+              _customerCompanyGrid(data),
+
+              pw.SizedBox(height: 8),
+              pw.Divider(),
+
+              _machineRow(data),
+
+              pw.SizedBox(height: 8),
+
+              _sectionTitle("Problem Description", fontBold),
               pw.Text(
-                "Customer Signature",
-                style: pw.TextStyle(
-                  fontSize: 9,
-                  fontWeight: pw.FontWeight.bold,
+                safeText(data['problemDescription'], maxChars: 400),
+                style: pw.TextStyle(fontSize: 10),
+              ),
+
+              pw.SizedBox(height: 8),
+
+              _sectionTitle("Description of the work carried out", fontBold),
+              pw.Text(
+                safeText(data['activity'], maxChars: 500),
+                style: pw.TextStyle(fontSize: 10),
+              ),
+
+              pw.SizedBox(height: 8),
+
+              _sectionTitle("Spare Parts Used", fontBold),
+              _sparePartTableLimited(limitedParts),
+
+              pw.SizedBox(height: 8),
+
+              _sectionTitle("Note For Customer", fontBold),
+              pw.Text(
+                safeText(data['noteForCustomer'], maxChars: 250),
+                style: pw.TextStyle(fontSize: 10),
+              ),
+            ],
+          ),
+        ),
+      ),
+
+      // ================= FIXED BOTTOM AREA =================
+      pw.Positioned(
+        left: 0,
+        right: 0,
+        bottom: 0,
+        child: pw.Container(
+          padding: const pw.EdgeInsets.only(top: 10),
+          child: pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+
+              pw.Divider(),
+
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  pw.Text(
+                    "Created By : ${data['createdByName'] ?? data['createdBy'] ?? '-'}",
+                    style: pw.TextStyle(fontSize:10),
+                  ),
+                  pw.Text(
+                    "Submitted By : ${data['submittedByName'] ?? data['submittedBy'] ?? '-'}",
+                    style: pw.TextStyle(fontSize: 10),
+                  ),
+                ],
+              ),
+
+              pw.SizedBox(height: 8),
+              pw.Divider(),
+
+              pw.SizedBox(height: 8),
+
+              pw.Align(
+                alignment: pw.Alignment.center,
+                child: pw.Text(
+                  "Confirmed that the technician had spent the time and use the parts above indicated",
+                  textAlign: pw.TextAlign.center,
+                  style: pw.TextStyle(
+                    fontSize: 10,
+                    fontStyle: pw.FontStyle.italic,
+                  ),
                 ),
               ),
-              pw.SizedBox(height: 6),
-              pw.Container(
-                height: 60,
-                decoration: signatureImage == null
-                    ? pw.BoxDecoration(
-                        border: pw.Border.all(color: PdfColors.grey400),
-                      )
-                    : null,
-                child: signatureImage != null
-                    ? pw.Image(signatureImage, fit: pw.BoxFit.contain)
-                    : null,
-              ),
-              pw.SizedBox(height: 6),
-              pw.Text(
-                data['customerName'] ?? '-',
-                style: pw.TextStyle(
-                  fontSize: 9,
-                  fontWeight: pw.FontWeight.bold,
+
+              pw.SizedBox(height: 10),
+
+              pw.Align(
+                alignment: pw.Alignment.centerRight,
+                child: pw.Container(
+                  width: 200,
+                  child: pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.center,
+                    children: [
+                      pw.Text(
+                        "Customer Signature",
+                        style: pw.TextStyle(
+                          fontSize: 10,
+                          fontWeight: pw.FontWeight.bold,
+                        ),
+                      ),
+                      pw.SizedBox(height: 8),
+                      pw.Container(
+                        height: 60,
+                        decoration: signatureImage == null
+                            ? pw.BoxDecoration(
+                                border: pw.Border.all(
+                                    color: PdfColors.grey400),
+                              )
+                            : null,
+                        child: signatureImage != null
+                            ? pw.Image(signatureImage,
+                                fit: pw.BoxFit.contain)
+                            : null,
+                      ),
+                      pw.SizedBox(height: 8),
+                      pw.Text(
+                        data['customerName'] ?? '-',
+                        style: pw.TextStyle(
+                          fontSize: 10,
+                          fontWeight: pw.FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],
@@ -249,30 +270,42 @@ static pw.Widget _sparePartTableLimited(List parts) {
     return pw.Text("-", style: pw.TextStyle(fontSize: 10));
   }
 
-  return pw.Table(
-    border: pw.TableBorder.all(width: 0.5, color: PdfColors.grey600),
-    children: [
-      pw.TableRow(
-  decoration: pw.BoxDecoration(
-    color: PdfColor.fromInt(0xFFFF6A13), // orange corporate
-  ),
+ return pw.Table(
+  border: pw.TableBorder.all(width: 0.5, color: PdfColors.grey600),
+
+  columnWidths: {
+    0: const pw.FixedColumnWidth(65),     // PART CODE lebih sempit
+    1: const pw.FlexColumnWidth(3),       // DESCRIPTION fleksibel & dominan
+    2: const pw.FixedColumnWidth(35),     // QTY kecil
+  },
+
   children: [
-    _tableHeaderCell("PART CODE"),
-    _tableHeaderCell("PART DESCRIPTION"),
-    _tableHeaderCell("QTY"),
-  ],
-),
-      ...parts.map(
-        (p) => pw.TableRow(
-          children: [
-            _tableCell(p['partCode'] ?? "-", false),
-            _tableCell(p['name'] ?? "-", false),
-            _tableCell("${p['qty'] ?? 1}", false),
-          ],
-        ),
+    pw.TableRow(
+      decoration: pw.BoxDecoration(
+        color: PdfColor.fromInt(0xFFFF6A13),
       ),
-    ],
-  );
+      children: [
+        _tableHeaderCell("PART CODE"),
+        _tableHeaderCell("PART DESCRIPTION"),
+        pw.Center(child: _tableHeaderCell("QTY")),
+      ],
+    ),
+
+    ...parts.map(
+      (p) => pw.TableRow(
+        children: [
+          _tableCell(p['partCode'] ?? "-", false),
+          _tableCell(p['name'] ?? "-", false),
+
+          // QTY rata tengah
+          pw.Center(
+            child: _tableCell("${p['qty'] ?? 1}", false),
+          ),
+        ],
+      ),
+    ),
+  ],
+);
 }
 
   // ================= HEADER =================
@@ -284,129 +317,122 @@ static pw.Widget _buildHeader(
   pw.Font bold,
 ) {
   return pw.Column(
-    crossAxisAlignment: pw.CrossAxisAlignment.start,
-    children: [
+  crossAxisAlignment: pw.CrossAxisAlignment.start,
+  children: [
 
-      // ===== ROW 1: LOGO + SHEET ID =====
-      pw.Row(
-        crossAxisAlignment: pw.CrossAxisAlignment.center,
-        children: [
-          pw.Image(
-            pw.MemoryImage(logo),
-            height: 70, // lebih compact tapi tetap proporsional
+    // ===== ROW 1: LOGO + SHEET ID =====
+    pw.Row(
+      crossAxisAlignment: pw.CrossAxisAlignment.center,
+      children: [
+        pw.Image(
+          pw.MemoryImage(logo),
+          height: 55, // logo lebih kecil
+        ),
+        pw.Spacer(),
+        pw.Text(
+          "Sheet Id : ${data['sheetId'] ?? '-'}",
+          style: pw.TextStyle(
+            font: bold,
+            fontSize: 10,
           ),
-          pw.Spacer(),
-          pw.Text(
-            "Sheet Id : ${data['sheetId'] ?? '-'}",
-            style: pw.TextStyle(
-              font: bold,
-              fontSize:11,
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
+    ),
 
-      pw.SizedBox(height: 6),
-      pw.Divider(thickness: 0.8),
-      pw.SizedBox(height: 8),
+    pw.SizedBox(height: 4),   // <<< diperkecil
+    pw.Divider(thickness: 0.8),
+    pw.SizedBox(height: 4),   // <<< diperkecil
 
-      // ===== ROW 2: TITLE + DATES =====
-pw.Container(
-  width: double.infinity, // <<< penting: kasih bounded width
-  child: pw.Row(
-    crossAxisAlignment: pw.CrossAxisAlignment.start,
-    children: [
+    // ===== ROW 2: ON SITE AREA =====
+    pw.Row(
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      children: [
 
-      // Orange Accent Bar
-      pw.Container(
-        width: 4,
-        height: 45,
-        color: PdfColor.fromInt(0xFFFF6A13),
-      ),
+        // Accent bar lebih pendek
+        pw.Container(
+          width: 3,
+          height: 28,
+          color: PdfColor.fromInt(0xFFFF6A13),
+        ),
 
-      pw.SizedBox(width: 12),
+        pw.SizedBox(width: 6),
 
-      // LEFT SIDE (Title + Technician)
-      pw.Column(
-        crossAxisAlignment: pw.CrossAxisAlignment.start,
-        children: [
+        pw.Column(
+          crossAxisAlignment: pw.CrossAxisAlignment.start,
+          children: [
 
-          pw.Text(
-            "ON-SITE SERVICES",
-            style: pw.TextStyle(
-              font: bold,
-              fontSize: 12,
-              color: PdfColor.fromInt(0xFFFF6A13),
-            ),
-          ),
-
-          pw.SizedBox(height: 6),
-
-          pw.Row(
-            children: [
-              pw.Text(
-                "Technician : ",
-                style: pw.TextStyle(font: bold, fontSize: 11),
+            pw.Text(
+              "ON-SITE SERVICES",
+              style: pw.TextStyle(
+                font: bold,
+                fontSize: 10,
+                color: PdfColor.fromInt(0xFFFF6A13),
               ),
-              pw.Text(
-  [
-    data['technician1'],
-    data['technician2'],
-    data['technician3']
-  ]
-      .where((e) => e != null && e.toString().isNotEmpty)
-      .join(", ")
-      .isEmpty
-      ? "-"
-      : [
-          data['technician1'],
-          data['technician2'],
-          data['technician3']
-        ]
-          .where((e) => e != null && e.toString().isNotEmpty)
-          .join(", "),
-  style: pw.TextStyle(fontSize: 11),
-),
-            ],
-          ),
-        ],
-      ),
+            ),
 
-      pw.Spacer(), // <<< sekarang aman karena width sudah bounded
+            pw.SizedBox(height: 2),
 
-      // RIGHT SIDE (Dates)
-      pw.Row(
-        children: [
+            pw.Row(
+              children: [
+                pw.Text(
+                  "Technician : ",
+                  style: pw.TextStyle(font: bold, fontSize: 10),
+                ),
+                pw.Text(
+                  [
+                    data['technician1'],
+                    data['technician2'],
+                    data['technician3']
+                  ]
+                      .where((e) => e != null && e.toString().isNotEmpty)
+                      .join(", ")
+                      .isEmpty
+                      ? "-"
+                      : [
+                          data['technician1'],
+                          data['technician2'],
+                          data['technician3']
+                        ]
+                            .where((e) =>
+                                e != null && e.toString().isNotEmpty)
+                            .join(", "),
+                  style: pw.TextStyle(fontSize: 10),
+                ),
+              ],
+            ),
+          ],
+        ),
 
-          pw.Text(
-            "Start Date : ",
-            style: pw.TextStyle(font: bold, fontSize: 11),
-          ),
-          pw.Text(
-            _formatDate(data['startDate'], df),
-            style: pw.TextStyle(fontSize: 11),
-          ),
+        pw.Spacer(),
 
-          pw.SizedBox(width: 20),
+        pw.Row(
+          children: [
+            pw.Text(
+              "Start : ",
+              style: pw.TextStyle(font: bold, fontSize: 10),
+            ),
+            pw.Text(
+              _formatDate(data['startDate'], df),
+              style: pw.TextStyle(fontSize: 10),
+            ),
+            pw.SizedBox(width: 10),
+            pw.Text(
+              "End : ",
+              style: pw.TextStyle(font: bold, fontSize: 10),
+            ),
+            pw.Text(
+              _formatDate(data['endDate'], df),
+              style: pw.TextStyle(fontSize: 10),
+            ),
+          ],
+        ),
+      ],
+    ),
 
-          pw.Text(
-            "End Date : ",
-            style: pw.TextStyle(font: bold, fontSize: 11),
-          ),
-          pw.Text(
-            _formatDate(data['endDate'], df),
-            style: pw.TextStyle(fontSize:11),
-          ),
-        ],
-      ),
-    ],
-  ),
-),
-
-      pw.SizedBox(height: 8),
-      pw.Divider(thickness: 0.8),
-    ],
-  );
+    pw.SizedBox(height: 4),  // <<< diperkecil
+    pw.Divider(thickness: 0.8),
+  ],
+);
 }
 
   // ================= GRID =================
@@ -433,11 +459,13 @@ pw.Container(
 
   // Row 2
   _gridRow(
-    "Address",
-    data['factoryAddress'],
-    "Address",
-    "Plaza Niaga 1 Blok B No.2, Sentul City, Kel. Citaringgul, Kec. Babakan Madang, Kab. Bogor, West Java, Indonesia 16810",
-  ),
+  "Address",
+  data['factoryAddress'],
+  "Address",
+  "Plaza Niaga 1 Blok B No.2, Sentul City, Kel. Citaringgul, Kec. Babakan Madang, Kab. Bogor, West Java, Indonesia 16810",
+  justifyLeft: true,
+  justifyRight: true,
+),
 
   // Row 3
   _gridRow(
@@ -474,34 +502,44 @@ pw.Container(
 }
 
   static pw.TableRow _gridRow(
-  String l1, String? v1, String l2, String? v2) {
-
+  String l1,
+  String? v1,
+  String l2,
+  String? v2, {
+  bool justifyLeft = false,
+  bool justifyRight = false,
+}) {
   return pw.TableRow(
     children: [
       _gridCell(l1, true),
       _gridCell(":", true),
-      _gridCell(v1 ?? "-", false),
+      _gridCell(v1 ?? "-", false, justify: justifyLeft),
 
       _gridCell(l2, true),
       _gridCell(":", true),
-      _gridCell(v2 ?? "-", false),
+      _gridCell(v2 ?? "-", false, justify: justifyRight),
     ],
   );
 }
 
-  static pw.Widget _gridCell(String text, bool isLabel) {
-    return pw.Padding(
-      padding: const pw.EdgeInsets.symmetric(vertical: 2),
-      child: pw.Text(
-        text,
-        style: pw.TextStyle(
-          fontSize:11,
-          fontWeight:
-              isLabel ? pw.FontWeight.bold : pw.FontWeight.normal,
-        ),
+  static pw.Widget _gridCell(
+  String text,
+  bool isLabel, {
+  bool justify = false,
+}) {
+  return pw.Padding(
+    padding: const pw.EdgeInsets.symmetric(vertical: 2),
+    child: pw.Text(
+      text,
+      textAlign: justify ? pw.TextAlign.justify : pw.TextAlign.left,
+      style: pw.TextStyle(
+        fontSize: 10,
+        fontWeight:
+            isLabel ? pw.FontWeight.bold : pw.FontWeight.normal,
       ),
-    );
-  }
+    ),
+  );
+}
 
   // ================= MACHINE =================
 
@@ -527,13 +565,13 @@ static pw.Widget _machineItem(String label, String? value) {
       pw.Text(
         "$label : ",
         style: pw.TextStyle(
-          fontSize: 11,
+          fontSize: 10,
           fontWeight: pw.FontWeight.bold,
         ),
       ),
       pw.Text(
         value ?? "-",
-        style: pw.TextStyle(fontSize: 11),
+        style: pw.TextStyle(fontSize: 10),
       ),
     ],
   );
@@ -549,7 +587,7 @@ static pw.Widget _machineItem(String label, String? value) {
         decoration: pw.BoxDecoration(
           border: pw.Border.all(color: PdfColors.grey400),
         ),
-        child: pw.Text("-", style: const pw.TextStyle(fontSize: 11)),
+        child: pw.Text("-", style: const pw.TextStyle(fontSize: 10)),
       );
     }
 
@@ -585,7 +623,7 @@ static pw.Widget _machineItem(String label, String? value) {
     child: pw.Text(
       text,
       style: pw.TextStyle(
-        fontSize: 10,
+        fontSize: 9,
         fontWeight: bold ? pw.FontWeight.bold : pw.FontWeight.normal,
       ),
     ),
@@ -598,7 +636,7 @@ static pw.Widget _tableHeaderCell(String text) {
     child: pw.Text(
       text,
       style: pw.TextStyle(
-        fontSize: 10,
+        fontSize: 9,
         fontWeight: pw.FontWeight.bold,
         color: PdfColors.white, // kontras dengan orange
       ),
@@ -613,7 +651,7 @@ static pw.Widget _sectionTitle(String title, pw.Font bold) {
       "$title:",
       style: pw.TextStyle(
         font: bold,
-        fontSize: 11, // <<< sama dengan Customer Name / Company Name
+        fontSize: 10, // <<< sama dengan Customer Name / Company Name
       ),
     ),
   );
@@ -635,32 +673,6 @@ static pw.Widget _sectionTitle(String title, pw.Font bold) {
   }
 
   return "-";
-}
-
-static pw.Widget _orangeCompactCell(
-  String text,
-  pw.Font bold, {
-  bool alignLeft = false,
-}) {
-  return pw.Container(
-    padding: const pw.EdgeInsets.symmetric(
-      vertical: 10,   // <<< DIPERKECIL (TADI 12-14)
-      horizontal: 12,
-    ),
-    color: PdfColor.fromInt(0xFFFF6A13),
-    child: pw.Align(
-      alignment:
-          alignLeft ? pw.Alignment.centerLeft : pw.Alignment.center,
-      child: pw.Text(
-        text,
-        style: pw.TextStyle(
-          font: bold,
-          fontSize: 14,  // <<< DIPERKECIL (TADI 18)
-          color: PdfColors.white,
-        ),
-      ),
-    ),
-  );
 }
 
 }

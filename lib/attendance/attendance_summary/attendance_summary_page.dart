@@ -1040,6 +1040,8 @@ class _AttendanceSummaryPageState extends State<AttendanceSummaryPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          _mobilePeriodSelector(),  // 🔥 TAMBAHKAN INI
+        const SizedBox(height: 20),
           _header(s),
           const SizedBox(height: 20),
           _kpiSection(s),
@@ -1345,6 +1347,71 @@ class _AttendanceSummaryPageState extends State<AttendanceSummaryPage> {
   int _getTotalDays(AttendanceSummaryModel s) {
     return s.present + s.off + s.sickLeave + s.annualLeave + s.traveling + s.joinHoliday;
   }
+
+  Widget _mobilePeriodSelector() {
+  final currentIndex = _availablePeriods.indexOf(_selectedPeriod);
+
+  return _glass(
+    Row(
+      children: [
+        if (currentIndex > 0)
+          IconButton(
+            icon: const Icon(Icons.chevron_left),
+            onPressed: () =>
+                _changePeriod(_availablePeriods[currentIndex - 1]),
+          ),
+
+        Expanded(
+          child: Center(
+            child: PopupMenuButton<String>(
+              onSelected: _changePeriod,
+              itemBuilder: (context) {
+                return _availablePeriods.map((period) {
+                  return PopupMenuItem<String>(
+                    value: period,
+                    child: Text(
+                      period,
+                      style: TextStyle(
+                        fontWeight: period == _selectedPeriod
+                            ? FontWeight.bold
+                            : FontWeight.normal,
+                        color: period == _selectedPeriod
+                            ? AppTheme.primaryColor
+                            : null,
+                      ),
+                    ),
+                  );
+                }).toList();
+              },
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    _selectedPeriod,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  const Icon(Icons.arrow_drop_down),
+                ],
+              ),
+            ),
+          ),
+        ),
+
+        if (currentIndex < _availablePeriods.length - 1)
+          IconButton(
+            icon: const Icon(Icons.chevron_right),
+            onPressed: () =>
+                _changePeriod(_availablePeriods[currentIndex + 1]),
+          ),
+      ],
+    ),
+  );
+}
+
 }
 
 Color _colorForKey(String key) {

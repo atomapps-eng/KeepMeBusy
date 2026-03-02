@@ -98,66 +98,87 @@ class _SparePartListPageState extends State<SparePartListPage> {
   // SEARCH FUNCTION
   // ===============================
   Future<void> _performSearch(String keyword) async {
-    if (keyword.isEmpty) {
-      setState(() {
-        _isSearching = false;
-        _searchResults.clear();
-        _currentSearchKeyword = '';
-      });
-      return;
-    }
-
+  if (keyword.isEmpty) {
     setState(() {
-      _isSearching = true;
-      _isLoading = true;
-      _currentSearchKeyword = keyword;
-      _searchResults.clear(); // Reset hasil pencarian sebelumnya
+      _isSearching = false;
+      _searchResults.clear();
+      _currentSearchKeyword = '';
+      _lastDocument = null;
+      _hasMore = true;
     });
-
-    final service = SparePartService();
-    final results = await service.searchSpareParts(keyword);
-    if (!mounted || _isDisposed) return;
-
-    setState(() {
-      _searchResults = results;
-      _isLoading = false;
-    });
+    return;
   }
+
+  setState(() {
+    _isSearching = true;
+    _isLoading = true;
+    _currentSearchKeyword = keyword;
+    _searchResults.clear();
+    _lastDocument = null;
+    _hasMore = true;
+  });
+
+  final service = SparePartService();
+  final snapshot = await service.searchSpareParts(
+    keyword: keyword,
+  );
+
+  if (!mounted || _isDisposed) return;
+
+  setState(() {
+    _searchResults = snapshot.docs
+        .map((doc) => SparePart.fromFirestore(doc))
+        .toList();
+
+    _lastDocument =
+        snapshot.docs.isNotEmpty ? snapshot.docs.last : null;
+
+    _hasMore = snapshot.docs.length == 50;
+    _isLoading = false;
+  });
+}
 
   // ===============================
   // LOAD MORE SEARCH RESULTS
   // ===============================
   Future<void> _loadMoreSearchResults() async {
-    if (_currentSearchKeyword.isEmpty || _isLoadingMore) return;
+  if (_currentSearchKeyword.isEmpty ||
+      _isLoadingMore ||
+      !_hasMore) return;
 
-    setState(() {
-      _isLoadingMore = true;
-    });
+  setState(() => _isLoadingMore = true);
 
-    try {
-      final service = SparePartService();
-      // Anda perlu mengimplementasikan method search dengan pagination
-      final moreResults = await service.searchSparePartsMore(
-        keyword: _currentSearchKeyword,
-        lastDoc: _lastDocument,
-      );
+  try {
+    final service = SparePartService();
 
-      if (!mounted || _isDisposed) return;
+    final snapshot = await service.searchSpareParts(
+      keyword: _currentSearchKeyword,
+      lastDoc: _lastDocument,
+    );
 
-      if (moreResults.isNotEmpty) {
-        setState(() {
-          _searchResults.addAll(moreResults);
-        });
-      }
-    } catch (e) {
-      print('Error loading more search results: $e');
-    } finally {
-     if (!mounted || _isDisposed) return;
+    if (!mounted || _isDisposed) return;
+
+    if (snapshot.docs.isNotEmpty) {
       setState(() {
-        _isLoadingMore = false;
+        _searchResults.addAll(
+          snapshot.docs.map(
+            (doc) => SparePart.fromFirestore(doc),
+          ),
+        );
+
+        _lastDocument = snapshot.docs.last;
+        _hasMore = snapshot.docs.length == 50;
       });
+    } else {
+      _hasMore = false;
     }
+  } catch (e) {
+    print('Error loading more search results: $e');
+  } finally {
+    if (!mounted || _isDisposed) return;
+    setState(() => _isLoadingMore = false);
   }
+}
 
   // ===============================
   // INITIAL LOAD
@@ -292,7 +313,7 @@ if (!mounted || _isDisposed) return;
     final displayList = _isSearching ? _searchResults : _parts;
     
     // Tentukan apakah masih ada data untuk di-load
-    final hasMoreData = _isSearching ? false : _hasMore; // Sesuaikan dengan kebutuhan
+  final hasMoreData = _hasMore;//  Sesuaikan dengan kebutuhan
 
     if (displayList.isEmpty && _isLoading) {
       return const Center(child: CircularProgressIndicator());

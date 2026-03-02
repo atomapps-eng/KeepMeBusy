@@ -170,142 +170,131 @@ await openPdf(bytes, 'attendance_${widget.employeeId}_${widget.period}.pdf');
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: Row(
+  titleSpacing: 0,
+  centerTitle: false, // 🔥 penting untuk mobile
+  backgroundColor: Colors.transparent,
+  elevation: 0,
+
+  title: Row(
+    mainAxisSize: MainAxisSize.min, // 🔥 jangan max
+    children: [
+      Container(
+        padding: const EdgeInsets.all(6), // sedikit kecil biar aman
+        decoration: BoxDecoration(
+          color: AppTheme.primaryColor.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: const Icon(
+          Icons.calendar_month,
+          color: AppTheme.primaryColor,
+          size: 20, // 🔥 kecilkan sedikit
+        ),
+      ),
+
+      const SizedBox(width: 8),
+
+      Flexible( // 🔥 WAJIB
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: AppTheme.primaryColor.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
+            const Text(
+              'Attendance',
+              style: TextStyle(
+                fontSize: 18, // 🔥 kecilkan sedikit
+                fontWeight: FontWeight.bold,
               ),
-              child: const Icon(
-                Icons.calendar_month,
-                color: AppTheme.primaryColor,
-                size: 24,
-              ),
+              overflow: TextOverflow.ellipsis,
+              maxLines: 1,
             ),
-            const SizedBox(width: 12),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Attendance',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Text(
-                  widget.period,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey.shade600,
-                  ),
-                ),
-              ],
+            Text(
+              widget.period,
+              style: TextStyle(
+                fontSize: 11,
+                color: Colors.grey.shade600,
+              ),
+              overflow: TextOverflow.ellipsis,
+              maxLines: 1,
             ),
           ],
         ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        actions: [
-          // SEARCH BAR (DESKTOP ONLY)
-          if (isDesktop)
-            Container(
-              width: 250,
-              margin: const EdgeInsets.symmetric(vertical: 12),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(30),
-                border: Border.all(
-                  color: Colors.white.withOpacity(0.3),
-                ),
-              ),
-              child: TextField(
-                controller: _searchController,
-                onChanged: (value) => setState(() => _searchQuery = value),
-                decoration: InputDecoration(
-                  hintText: 'Search attendance...',
-                  hintStyle: TextStyle(color: Colors.grey.shade600),
-                  prefixIcon: Icon(Icons.search, color: Colors.grey.shade600),
-                  border: InputBorder.none,
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
-                  ),
-                ),
-              ),
-            ),
-          const SizedBox(width: 8),
-
-          // EXPORT BUTTON
-          Container(
-            margin: const EdgeInsets.only(right: 8),
-            decoration: BoxDecoration(
-              color: Colors.green.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: IconButton(
-              tooltip: 'Export to PDF',
-              icon: const Icon(Icons.picture_as_pdf, color: Colors.green),
-              onPressed: _exportAttendanceToPdf,
-            ),
-          ),
-
-          // SUMMARY BUTTON
-          Container(
-            margin: const EdgeInsets.only(right: 16),
-            decoration: BoxDecoration(
-              color: AppTheme.primaryColor.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: IconButton(
-              tooltip: 'Summary',
-              icon: Icon(
-                Icons.bar_chart,
-                color: AppTheme.primaryColor,
-              ),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => AttendanceSummaryPage(
-                      employeeId: widget.employeeId,
-                      period: widget.period,
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-          // ACTIVITIES BUTTON
-Container(
-  margin: const EdgeInsets.only(right: 16),
-  decoration: BoxDecoration(
-    color: Colors.blue.withOpacity(0.1),
-    borderRadius: BorderRadius.circular(12),
+      ),
+    ],
   ),
-  child: IconButton(
-    tooltip: 'View Activities',
-    icon: const Icon(
-      Icons.bolt,
-      color: Colors.blue,
-    ),
-    onPressed: () {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => ActivityListPage(
-            employeeId: widget.employeeId,
-            period: widget.period,
+
+  actions: [
+    if (isDesktop)
+      Container(
+        width: 250,
+        margin: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.2),
+          borderRadius: BorderRadius.circular(30),
+          border: Border.all(
+            color: Colors.white.withOpacity(0.3),
           ),
         ),
-      );
-    },
-  ),
-),
-        ],
+        child: TextField(
+          controller: _searchController,
+          onChanged: (value) => setState(() => _searchQuery = value),
+          decoration: InputDecoration(
+            hintText: 'Search attendance...',
+            hintStyle: TextStyle(color: Colors.grey.shade600),
+            prefixIcon: Icon(Icons.search, color: Colors.grey.shade600),
+            border: InputBorder.none,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 12,
+            ),
+          ),
+        ),
       ),
+
+    IconButton(
+      tooltip: 'Export to PDF',
+      icon: const Icon(Icons.picture_as_pdf, color: Colors.green),
+      onPressed: _exportAttendanceToPdf,
+    ),
+
+    IconButton(
+      tooltip: 'Summary',
+      icon: Icon(
+        Icons.bar_chart,
+        color: AppTheme.primaryColor,
+      ),
+      onPressed: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => AttendanceSummaryPage(
+              employeeId: widget.employeeId,
+              period: widget.period,
+            ),
+          ),
+        );
+      },
+    ),
+
+    IconButton(
+      tooltip: 'View Activities',
+      icon: const Icon(
+        Icons.bolt,
+        color: Colors.blue,
+      ),
+      onPressed: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ActivityListPage(
+              employeeId: widget.employeeId,
+              period: widget.period,
+            ),
+          ),
+        );
+      },
+    ),
+  ],
+),
       body: AppBackgroundWrapper(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
         child: StreamBuilder<List<AttendanceDay>>(
@@ -1450,23 +1439,27 @@ Widget _buildTableRow(AttendanceDay day) {
                   },
                 ),
                 const SizedBox(height: 12),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: TextButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => ActivityListPage(
-                            employeeId: widget.employeeId,
-                            period: widget.period,
-                          ),
-                        ),
-                      );
-                    },
-                    child: const Text('View Activities'),
-                  ),
-                ),
+                SizedBox(
+  width: double.infinity,
+  child: ElevatedButton(
+    style: ElevatedButton.styleFrom(
+      backgroundColor: Colors.blueGrey.shade100,
+      foregroundColor: Colors.black87,
+    ),
+    onPressed: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => ActivityListPage(
+            employeeId: widget.employeeId,
+            period: widget.period,
+          ),
+        ),
+      );
+    },
+    child: const Text('View Activities'),
+  ),
+),
               ],
             ),
           ),

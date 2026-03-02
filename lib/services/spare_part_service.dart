@@ -10,7 +10,7 @@ class SparePartService {
   }) async {
     Query query = CompanyFirestore
         .collection('spare_parts')
-        .orderBy('partCode')
+        .orderBy('partCode_lower')
         .limit(limit);
 
     if (lastDoc != null) {
@@ -35,78 +35,31 @@ class SparePartService {
   // ==================== SEARCH METHODS ====================
   
   // TAMBAHKAN: Search method utama
-  Future<List<SparePart>> searchSpareParts(String keyword) async {
-    try {
-      if (keyword.isEmpty) return [];
-
-      final keywordLower = keyword.toLowerCase();
-      
-      // Method 1: Search by partCode (prefix match)
-      QuerySnapshot partCodeSnapshot = await CompanyFirestore
-          .collection('spare_parts')
-          .where('partCode', isGreaterThanOrEqualTo: keyword)
-          .where('partCode', isLessThanOrEqualTo: keyword + '\uf8ff')
-          .limit(50)
-          .get();
-
-      // Method 2: Search by searchKeywords jika ada
-      QuerySnapshot keywordSnapshot = await CompanyFirestore
-          .collection('spare_parts')
-          .where('searchKeywords', arrayContains: keywordLower)
-          .limit(50)
-          .get();
-
-      // Gabungkan hasil (hindari duplikat)
-      Map<String, SparePart> uniqueParts = {};
-      
-      for (var doc in partCodeSnapshot.docs) {
-        final data = doc.data() as Map<String, dynamic>;
-        uniqueParts[doc.id] = SparePart.fromMap(data, doc.id);
-      }
-      
-      for (var doc in keywordSnapshot.docs) {
-        final data = doc.data() as Map<String, dynamic>;
-        uniqueParts[doc.id] = SparePart.fromMap(data, doc.id);
-      }
-
-      return uniqueParts.values.toList();
-    } catch (e) {
-      print('Error searching spare parts: $e');
-      return [];
-    }
+ Future<QuerySnapshot> searchSpareParts({
+  required String keyword,
+  DocumentSnapshot? lastDoc,
+  int limit = 50,
+}) async {
+  if (keyword.isEmpty) {
+    throw Exception("Keyword cannot be empty");
   }
 
-  // PERBAIKI: searchSparePartsMore yang sudah ada
-  Future<List<SparePart>> searchSparePartsMore({
-    required String keyword,
-    DocumentSnapshot? lastDoc,
-  }) async {
-    try {
-      if (keyword.isEmpty) return [];
+  final lower = keyword.toLowerCase();
 
-      final keywordLower = keyword.toLowerCase();
-      
-      Query query = CompanyFirestore
-          .collection('spare_parts')
-          .where('searchKeywords', arrayContains: keywordLower)
-          .orderBy('partCode')
-          .limit(50);
+  Query query = CompanyFirestore
+      .collection('spare_parts')
+      .orderBy('partCode_lower')
+      .startAt([lower])
+      .endAt(['$lower\uf8ff'])
+      .limit(limit);
 
-      if (lastDoc != null) {
-        query = query.startAfterDocument(lastDoc);
-      }
-
-      final snapshot = await query.get();
-      
-      return snapshot.docs.map((doc) {
-        final data = doc.data() as Map<String, dynamic>;
-        return SparePart.fromMap(data, doc.id);
-      }).toList();
-    } catch (e) {
-      print('Error searching spare parts with pagination: $e');
-      return [];
-    }
+  if (lastDoc != null) {
+    query = query.startAfterDocument(lastDoc);
   }
+
+  return await query.get();
+}
+
 
   // TAMBAHKAN: Search by location
   Future<List<SparePart>> searchByLocation(String location) async {
@@ -140,40 +93,63 @@ class SparePartService {
   }
 
   Future<void> addSparePart(String id, Map<String, dynamic> data) async {
-    try {
-      // Tambahkan searchKeywords otomatis
-      final completeData = {...data};
-      if (!completeData.containsKey('searchKeywords')) {
-        completeData['searchKeywords'] = _generateSearchKeywords(data);
-      }
-      
-      await CompanyFirestore.doc('spare_parts', id).set(completeData);
-    } catch (e) {
-      print('Error adding spare part: $e');
-      rethrow;
+  try {
+    final docRef = CompanyFirestore.doc('spare_parts', id);
+    final existing = await docRef.get();
+
+    if (existing.exists) {
+      throw Exception('PartCode sudah ada');
     }
+
+    final partCodeLower = id.toLowerCase();
+    final nameLower =
+        (data['nameEn'] ?? '').toString().toLowerCase();
+
+    final completeData = {
+      ...data,
+      'partCode': id,
+      'partCode_lower': partCodeLower,
+      'name_lower': nameLower,
+      'createdAt': FieldValue.serverTimestamp(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    };
+
+    await docRef.set(completeData);
+  } catch (e) {
+    print('Error adding spare part: $e');
+    rethrow;
   }
+}
 
   Future<void> updateSparePart(String id, Map<String, dynamic> data) async {
-    try {
-      // Update searchKeywords jika nama berubah
-      final completeData = {...data};
-      if (data.containsKey('name') || data.containsKey('nameEn')) {
-        // Ambil data existing untuk generate keywords
-        final doc = await CompanyFirestore.doc('spare_parts', id).get();
-        if (doc.exists) {
-          final existingData = doc.data() as Map<String, dynamic>;
-          final mergedData = {...existingData, ...data};
-          completeData['searchKeywords'] = _generateSearchKeywords(mergedData);
-        }
-      }
-      
-      await CompanyFirestore.doc('spare_parts', id).update(completeData);
-    } catch (e) {
-      print('Error updating spare part: $e');
-      rethrow;
+  try {
+    final docRef = CompanyFirestore.doc('spare_parts', id);
+    final snapshot = await docRef.get();
+
+    if (!snapshot.exists) {
+      throw Exception('Spare part tidak ditemukan');
     }
+
+    if (data.containsKey('partCode')) {
+      throw Exception('PartCode tidak boleh diubah');
+    }
+
+    final completeData = {
+      ...data,
+      'updatedAt': FieldValue.serverTimestamp(),
+    };
+
+    if (data.containsKey('nameEn')) {
+      completeData['name_lower'] =
+          data['nameEn'].toString().toLowerCase();
+    }
+
+    await docRef.update(completeData);
+  } catch (e) {
+    print('Error updating spare part: $e');
+    rethrow;
   }
+}
 
   Future<void> deleteSparePart(String partCode, String location) async {
     try {

@@ -29,45 +29,41 @@ class _EditSparePartPageState extends State<EditSparePartPage>
   late SparePartOrigin _selectedOrigin;
   late TextEditingController currentStockController;
 
-
   String formatLocation(String input) {
-  String value = input
-      .toUpperCase()
-      .replaceAll(' ', '')
-      .replaceAll('.', '-');
+    String value = input
+        .toUpperCase()
+        .replaceAll(' ', '')
+        .replaceAll('.', '-');
 
-  // Heuristik: A11 → A1-1
-  final match = RegExp(r'^([A-Z]\d+)(\d+)$').firstMatch(value);
-  if (match != null) {
-    value = '${match.group(1)}-${match.group(2)}';
+    final match = RegExp(r'^([A-Z]\d+)(\d+)$').firstMatch(value);
+    if (match != null) {
+      value = '${match.group(1)}-${match.group(2)}';
+    }
+
+    return value;
   }
 
-  return value;
-}
-
-
   String normalizeLocation(String location) {
-  return location
-      .trim()
-      .toUpperCase()
-      .replaceAll(' ', '')
-      .replaceAll('.', '-');
-}
+    return location
+        .trim()
+        .toUpperCase()
+        .replaceAll(' ', '')
+        .replaceAll('.', '-');
+  }
 
-Future<bool> isLocationAvailable(String location) async {
-  final normalized = normalizeLocation(location);
+  Future<bool> isLocationAvailable(String location) async {
+    final normalized = normalizeLocation(location);
 
-  final snapshot = await CompanyFirestore
-      .collection('spare_parts')
-      .where('locationKey', isEqualTo: normalized)
-      .limit(1)
-      .get();
+    final snapshot = await CompanyFirestore
+        .collection('spare_parts')
+        .where('locationKey', isEqualTo: normalized)
+        .limit(1)
+        .get();
 
-  return snapshot.docs.isEmpty;
-}
+    return snapshot.docs.isEmpty;
+  }
 
   String weightUnit = 'Kg';
-
   File? selectedImage;
   final picker = ImagePicker();
   late String currentImageUrl;
@@ -75,13 +71,10 @@ Future<bool> isLocationAvailable(String location) async {
   // Cloudinary config
   final String cloudName = 'djl2sukor';
   final String uploadPreset = 'spare_parts_images';
-
   final String apiKey = '379534721643839';
   final String apiSecret = 'LzsTB5Cq5ycrkZ2mGEkdyD7y6Ho';
 
-  // ===== UPLOAD ANIMATION STATE =====
   bool isUploadingImage = false;
-  double uploadProgress = 0.0;
   bool imageLoaded = false;
 
   late AnimationController _fadeController;
@@ -95,23 +88,19 @@ Future<bool> isLocationAvailable(String location) async {
     nameController = TextEditingController(text: widget.part.name);
     nameEnController = TextEditingController(text: widget.part.nameEn);
     locationController = TextEditingController(
-  text: formatLocation(widget.part.location),
-);
+      text: formatLocation(widget.part.location),
+    );
 
-    stockController = 
-        TextEditingController(text: widget.part.stock.toString());
-    currentStockController =
-        TextEditingController(text: widget.part.currentStock.toString());
-    weightController =
-        TextEditingController(text: widget.part.weight.toString());
+    stockController = TextEditingController(text: widget.part.stock.toString());
+    currentStockController = TextEditingController(text: widget.part.currentStock.toString());
+    weightController = TextEditingController(text: widget.part.weight.toString());
     weightUnit = widget.part.weightUnit;
     _selectedCategory = widget.part.category;
     _selectedOrigin = widget.part.origin;
 
     currentImageUrl = widget.part.imageUrl;
 
-    _fadeController =
-        AnimationController(vsync: this, duration: const Duration(milliseconds: 400));
+    _fadeController = AnimationController(vsync: this, duration: const Duration(milliseconds: 400));
     _fadeAnimation = CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut);
     _fadeController.forward();
   }
@@ -129,20 +118,16 @@ Future<bool> isLocationAvailable(String location) async {
   }
 
   void showMessage(String message) {
-  if (!mounted) return;
+    if (!mounted) return;
 
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(
-      content: Text(message),
-      backgroundColor: Colors.blueGrey,
-    ),
-  );
-}
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.blueGrey,
+      ),
+    );
+  }
 
-
-  // =========================
-  // FULLSCREEN IMAGE PREVIEW
-  // =========================
   void showFullScreenImage() {
     if (selectedImage == null && currentImageUrl.isEmpty) return;
 
@@ -167,9 +152,6 @@ Future<bool> isLocationAvailable(String location) async {
     );
   }
 
-  // =========================
-  // PICK IMAGE
-  // =========================
   Future<void> pickImage(ImageSource source) async {
     final pickedFile = await picker.pickImage(
       source: source,
@@ -185,9 +167,6 @@ Future<bool> isLocationAvailable(String location) async {
     }
   }
 
-  // =========================
-  // IMAGE SOURCE DIALOG
-  // =========================
   void showImageSourceDialog() {
     showModalBottomSheet(
       context: context,
@@ -216,303 +195,195 @@ Future<bool> isLocationAvailable(String location) async {
     );
   }
 
-  // =========================
-  // UPLOAD TO CLOUDINARY + ANIMATION
-  // =========================
   Future<String> uploadImageToCloudinary(String partCode) async {
-  if (selectedImage == null) return currentImageUrl;
-
-  setState(() {
-    isUploadingImage = true;
-    uploadProgress = 0.0;
-  });
-
-  // Smooth fake progress animation
-  Future.doWhile(() async {
-    await Future.delayed(const Duration(milliseconds: 120));
-    if (!isUploadingImage) return false;
+    if (selectedImage == null) return currentImageUrl;
 
     setState(() {
-      uploadProgress += 0.04;
-      if (uploadProgress > 0.9) uploadProgress = 0.9;
+      isUploadingImage = true;
     });
-
-    return true;
-  });
-
-  final url = Uri.parse(
-    'https://api.cloudinary.com/v1_1/$cloudName/image/upload',
-  );
-
-  final request = http.MultipartRequest('POST', url);
-
-  request.fields['upload_preset'] = uploadPreset;
-  request.fields['folder'] = 'spare_parts';
-  final uniqueId = '${partCode}_${DateTime.now().millisecondsSinceEpoch}';
-  request.fields['public_id'] = uniqueId;
-
-  request.files.add(
-    await http.MultipartFile.fromPath('file', selectedImage!.path),
-  );
-
-  final response = await request.send();
-  final resBody = await response.stream.bytesToString();
-  final data = json.decode(resBody);
-
-  if (mounted) {
-    setState(() {
-      isUploadingImage = false;
-      uploadProgress = 1.0;
-    });
-  }
-
-  if (response.statusCode == 200) {
-    final baseUrl = data['secure_url']; // ✅ untuk Firestore
-    final ts = DateTime.now().millisecondsSinceEpoch;
-    final previewUrl = '$baseUrl?ts=$ts'; // ✅ untuk UI refresh
-
-    // ✅ refresh foto di Edit Page
-    setState(() {
-      currentImageUrl = previewUrl;
-      selectedImage = null;
-    });
-
-    _fadeController.reset();
-    _fadeController.forward();
-
-    return baseUrl; // ⚠️ SIMPAN KE FIRESTORE TANPA timestamp
-  } else {
-    showMessage('Upload image failed');
-    return currentImageUrl;
-  }
-}
-
-Future<void> safeDeleteCloudinaryImage(String oldUrl, String newUrl) async {
-  if (oldUrl.isEmpty) return;
-  if (oldUrl == newUrl) return;
-
-  // ✅ bersihkan query string (?ts=...)
-  final cleanUrl = oldUrl.split('?').first;
-
-  // ✅ pastikan berasal dari folder spare_parts
-  if (!cleanUrl.contains('/spare_parts/')) {
-    debugPrint('Skip delete: not spare_parts image');
-    return;
-  }
-
-  try {
-    // ✅ extract public_id dengan aman
-    final parts = cleanUrl.split('/upload/');
-    if (parts.length < 2) return;
-
-    final path = parts[1];
-
-    // hapus version prefix (v123456789/)
-    final pathWithoutVersion = path.replaceFirst(RegExp(r'^v\d+/'), '');
-
-    // hapus extension (.jpg, .png, dll)
-    final publicId = pathWithoutVersion.replaceAll(RegExp(r'\.[a-zA-Z0-9]+$'), '');
-
-    debugPrint('Deleting Cloudinary public_id: $publicId');
-
-    final timestamp = (DateTime.now().millisecondsSinceEpoch / 1000).round();
-
-    final signatureBase =
-        'public_id=$publicId&timestamp=$timestamp$apiSecret';
-
-    final signature = sha1.convert(utf8.encode(signatureBase)).toString();
 
     final url = Uri.parse(
-      'https://api.cloudinary.com/v1_1/$cloudName/image/destroy',
+      'https://api.cloudinary.com/v1_1/$cloudName/image/upload',
     );
 
-    final response = await http.post(
-      url,
-      body: {
-        'public_id': publicId,
-        'api_key': apiKey,
-        'timestamp': timestamp.toString(),
-        'signature': signature,
-      },
+    final request = http.MultipartRequest('POST', url);
+    request.fields['upload_preset'] = uploadPreset;
+    request.fields['folder'] = 'spare_parts';
+    final uniqueId = '${partCode}_${DateTime.now().millisecondsSinceEpoch}';
+    request.fields['public_id'] = uniqueId;
+
+    request.files.add(
+      await http.MultipartFile.fromPath('file', selectedImage!.path),
     );
 
-    debugPrint('Cloudinary delete response: ${response.body}');
+    final response = await request.send();
+    final resBody = await response.stream.bytesToString();
+    final data = json.decode(resBody);
+
+    if (mounted) {
+      setState(() {
+        isUploadingImage = false;
+      });
+    }
 
     if (response.statusCode == 200) {
-      debugPrint('✅ Old image deleted successfully');
+      final baseUrl = data['secure_url'];
+      final ts = DateTime.now().millisecondsSinceEpoch;
+      final previewUrl = '$baseUrl?ts=$ts';
+
+      setState(() {
+        currentImageUrl = previewUrl;
+        selectedImage = null;
+      });
+
+      _fadeController.reset();
+      _fadeController.forward();
+
+      return baseUrl;
     } else {
-      debugPrint('❌ Delete failed');
+      showMessage('Upload image failed');
+      return currentImageUrl;
     }
-  } catch (e) {
-    debugPrint('❌ Cloudinary delete error: $e');
   }
-}
 
+  Future<void> safeDeleteCloudinaryImage(String oldUrl, String newUrl) async {
+    if (oldUrl.isEmpty) return;
+    if (oldUrl == newUrl) return;
 
-Future<void> deleteCloudinaryImage(String imageUrl) async {
-  if (imageUrl.isEmpty) return;
+    final cleanUrl = oldUrl.split('?').first;
+    if (!cleanUrl.contains('/spare_parts/')) return;
 
-  try {
-    // Ambil public_id dari URL Cloudinary
-    final uriPart = imageUrl.split('/upload/').last;
-    final publicId = uriPart.split('.').first; // tanpa extension
+    try {
+      final parts = cleanUrl.split('/upload/');
+      if (parts.length < 2) return;
 
-    final timestamp = (DateTime.now().millisecondsSinceEpoch / 1000).round();
+      final path = parts[1];
+      final pathWithoutVersion = path.replaceFirst(RegExp(r'^v\d+/'), '');
+      final publicId = pathWithoutVersion.replaceAll(RegExp(r'\.[a-zA-Z0-9]+$'), '');
 
-    final signatureBase =
-        'public_id=$publicId&timestamp=$timestamp$apiSecret';
+      final timestamp = (DateTime.now().millisecondsSinceEpoch / 1000).round();
+      final signatureBase = 'public_id=$publicId&timestamp=$timestamp$apiSecret';
+      final signature = sha1.convert(utf8.encode(signatureBase)).toString();
 
-    final signature = sha1.convert(utf8.encode(signatureBase)).toString();
+      final url = Uri.parse(
+        'https://api.cloudinary.com/v1_1/$cloudName/image/destroy',
+      );
 
-    final url = Uri.parse(
-      'https://api.cloudinary.com/v1_1/$cloudName/image/destroy',
-    );
-
-    final response = await http.post(
-      url,
-      body: {
-        'public_id': publicId,
-        'api_key': apiKey,
-        'timestamp': timestamp.toString(),
-        'signature': signature,
-      },
-    );
-
-    if (response.statusCode == 200) {
-      debugPrint('Old image deleted: $publicId');
-    } else {
-      debugPrint('Failed to delete old image: ${response.body}');
+      await http.post(
+        url,
+        body: {
+          'public_id': publicId,
+          'api_key': apiKey,
+          'timestamp': timestamp.toString(),
+          'signature': signature,
+        },
+      );
+    } catch (e) {
+      debugPrint('Cloudinary delete error: $e');
     }
-  } catch (e) {
-    debugPrint('Cloudinary delete error: $e');
-  }
-}
-
-  // =========================
-  // UPDATE DATA
-  // =========================
-Future<void> updateData() async {
-  final navigator = Navigator.of(context);
-  final messenger = ScaffoldMessenger.of(context);
-
-  final oldImageUrl = widget.part.imageUrl;
-
-  final String name = nameController.text.trim();
-  final String nameEn = nameEnController.text.trim();
-  final String location = locationController.text.trim();
-  final String inputWeight = weightController.text.replaceAll(',', '.');
-
-  if (name.isEmpty) {
-    showMessage('Name wajib diisi');
-    return;
   }
 
-  if (nameEn.isEmpty) {
-    showMessage('Name (English) wajib diisi');
-    return;
-  }
+  Future<void> updateData() async {
+    final navigator = Navigator.of(context);
+    final messenger = ScaffoldMessenger.of(context);
 
-  final oldLocationKey = normalizeLocation(widget.part.location);
-  final newLocationKey = normalizeLocation(location);
+    final oldImageUrl = widget.part.imageUrl;
+    final String name = nameController.text.trim();
+    final String nameEn = nameEnController.text.trim();
+    final String location = locationController.text.trim();
+    final String inputWeight = weightController.text.replaceAll(',', '.');
 
-  if (oldLocationKey != newLocationKey) {
-    final available = await isLocationAvailable(location);
-    if (!available) {
-      showMessage('Location sudah digunakan oleh spare part lain');
+    if (name.isEmpty || nameEn.isEmpty) {
+      showMessage('Name dan Name (English) wajib diisi');
       return;
     }
-  }
 
-  int stock = int.tryParse(stockController.text) ?? 0;
-  double weight = double.tryParse(inputWeight) ?? 0.0;
+    final oldLocationKey = normalizeLocation(widget.part.location);
+    final newLocationKey = normalizeLocation(location);
 
-  final newImageUrl =
-      await uploadImageToCloudinary(widget.part.partCode);
+    if (oldLocationKey != newLocationKey) {
+      final available = await isLocationAvailable(location);
+      if (!available) {
+        showMessage('Location sudah digunakan oleh spare part lain');
+        return;
+      }
+    }
 
-  await safeDeleteCloudinaryImage(oldImageUrl, newImageUrl);
+    int stock = int.tryParse(stockController.text) ?? 0;
+    double weight = double.tryParse(inputWeight) ?? 0.0;
 
-  await CompanyFirestore
-      .collection('spare_parts')
-      .doc(widget.part.partCode)
-      .update({
-    'name': name,
-    'nameEn': nameEn,
-    'location': location,
-    'stock': stock,
-    'weight': weight,
-    'weightUnit': weightUnit,
-    'imageUrl': newImageUrl,
-    'category': _selectedCategory.name.toUpperCase(),
-    'origin': _selectedOrigin.name.toUpperCase(),
-    'updatedAt': Timestamp.now(),
-  });
+    final newImageUrl = await uploadImageToCloudinary(widget.part.partCode);
+    await safeDeleteCloudinaryImage(oldImageUrl, newImageUrl);
 
-  if (oldLocationKey != newLocationKey) {
     await CompanyFirestore
-    .collection('locations')
-    .doc(oldLocationKey)
-    .delete();
+        .collection('spare_parts')
+        .doc(widget.part.partCode)
+        .update({
+      'name': name,
+      'nameEn': nameEn,
+      'location': location,
+      'stock': stock,
+      'weight': weight,
+      'weightUnit': weightUnit,
+      'imageUrl': newImageUrl,
+      'category': _selectedCategory.name.toUpperCase(),
+      'origin': _selectedOrigin.name.toUpperCase(),
+      'updatedAt': Timestamp.now(),
+    });
 
-await CompanyFirestore
-    .collection('locations')
-    .doc(newLocationKey)
-    .set({
-  'partCode': widget.part.partCode,
-  'createdAt': Timestamp.now(),
-});
+    if (oldLocationKey != newLocationKey) {
+      await CompanyFirestore
+          .collection('locations')
+          .doc(oldLocationKey)
+          .delete();
+
+      await CompanyFirestore
+          .collection('locations')
+          .doc(newLocationKey)
+          .set({
+        'partCode': widget.part.partCode,
+        'createdAt': Timestamp.now(),
+      });
+    }
+
+    if (!mounted) return;
+
+    messenger.showSnackBar(
+      const SnackBar(content: Text('Data berhasil diupdate')),
+    );
+
+    await Future.delayed(const Duration(milliseconds: 600));
+    if (!mounted) return;
+    navigator.pop();
   }
 
-  if (!mounted) return;
-
-  messenger.showSnackBar(
-    const SnackBar(content: Text('Data berhasil diupdate')),
-  );
-
-  await Future.delayed(const Duration(milliseconds: 600));
-
-  if (!mounted) return;
-
-  navigator.pop();
-}
-
-
-  // =========================
-  // DELETE DATA
-  // =========================
   Future<void> deleteData() async {
-  final navigator = Navigator.of(context);
-  final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+    final messenger = ScaffoldMessenger.of(context);
 
-  final locationKey = normalizeLocation(widget.part.location);
+    final locationKey = normalizeLocation(widget.part.location);
 
-  await CompanyFirestore
-      .collection('spare_parts')
-      .doc(widget.part.partCode)
-      .delete();
+    await CompanyFirestore
+        .collection('spare_parts')
+        .doc(widget.part.partCode)
+        .delete();
 
- await CompanyFirestore
-      .collection('locations')
-      .doc(locationKey)
-      .delete();
+    await CompanyFirestore
+        .collection('locations')
+        .doc(locationKey)
+        .delete();
 
-  if (!mounted) return;
+    if (!mounted) return;
 
-messenger.showSnackBar(
-  const SnackBar(content: Text('Spare part berhasil dihapus')),
-);
+    messenger.showSnackBar(
+      const SnackBar(content: Text('Spare part berhasil dihapus')),
+    );
 
-await Future.delayed(const Duration(milliseconds: 600));
+    await Future.delayed(const Duration(milliseconds: 600));
+    if (!mounted) return;
+    navigator.pop();
+  }
 
-if (!mounted) return;
-
-navigator.pop();
-// kembali ke list
-}
-
-
-  // =========================
-  // DELETE DIALOG
-  // =========================
   Future<void> showDeleteDialog() async {
     showDialog(
       context: context,
@@ -525,329 +396,572 @@ navigator.pop();
             child: const Text('Batal'),
           ),
           ElevatedButton(
-  style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-  onPressed: () async {
-    Navigator.pop(context); // ✅ TUTUP DIALOG
-    await deleteData();     // ✅ DELETE + POP PAGE
-  },
-  child: const Text('Hapus'),
-),
-
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () async {
+              Navigator.pop(context);
+              await deleteData();
+            },
+            child: const Text('Hapus'),
+          ),
         ],
       ),
     );
   }
 
   // =========================
-  // IMAGE WIDGET (PRO)
-  // =========================
-  Widget _buildImage({bool showCameraButton = true}) {
-  return GestureDetector(
-    onTap: showFullScreenImage,
-    child: Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha:0.36), // shadow tipis
-            blurRadius: 20,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(14),
-        child: Container(
-          color: const Color.fromARGB(255, 243, 228, 172),
-          child: AspectRatio(
-            aspectRatio: 1, // 3/3 → 1:1
-            child: Stack(
-              children: [
-                // ===== IMAGE =====
-                Positioned.fill(
-                  child: FadeTransition(
-                    opacity: _fadeAnimation,
-                    child: selectedImage != null
-                        ? Image.file(
-                            selectedImage!,
-                            fit: BoxFit.contain,
-                          )
-                        : (currentImageUrl.isNotEmpty
-                            ? Image.network(
-                                currentImageUrl,
-                                fit: BoxFit.contain,
-                              )
-                            : const Center(
-                                child: Icon(
-                                  Icons.camera_alt,
-                                  size: 48,
-                                  color: Colors.black45,
-                                ),
-                              )),
-                  ),
-                ),
+// IMPROVED IMAGE SECTION WITH SIDE CAMERA BUTTON
+// =========================
+Widget _buildImageSection() {
+  final isDesktop = MediaQuery.of(context).size.width >= 900;
+  final isMobile = MediaQuery.of(context).size.width < 600;
+  final imageSize = isDesktop ? 180.0 : (isMobile ? 140.0 : 160.0);
 
-                // ===== CAMERA BUTTON =====
-                if (showCameraButton)
-  Positioned(
-    bottom: 12,
-    right: 12,
-    child: GestureDetector(
-                    onTap:
-                        isUploadingImage ? null : showImageSourceDialog,
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha:0.45),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        Icons.camera_alt,
-                        color: isUploadingImage
-                            ? Colors.grey
-                            : Colors.white,
-                        size: 26,
-                      ),
+  return Container(
+    margin: EdgeInsets.only(bottom: isMobile ? 24 : 32),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        // Image
+        GestureDetector(
+          onTap: showFullScreenImage,
+          child: Container(
+            width: imageSize,
+            height: imageSize,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.25),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: Container(
+                color: const Color.fromARGB(255, 243, 228, 172),
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    // Image content
+                    FadeTransition(
+                      opacity: _fadeAnimation,
+                      child: selectedImage != null
+                          ? Image.file(
+                              selectedImage!,
+                              fit: BoxFit.contain,
+                            )
+                          : (currentImageUrl.isNotEmpty
+                              ? Image.network(
+                                  currentImageUrl,
+                                  fit: BoxFit.contain,
+                                  loadingBuilder: (context, child, loadingProgress) {
+                                    if (loadingProgress == null) return child;
+                                    return Center(
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        value: loadingProgress.expectedTotalBytes != null
+                                            ? loadingProgress.cumulativeBytesLoaded /
+                                                loadingProgress.expectedTotalBytes!
+                                            : null,
+                                      ),
+                                    );
+                                  },
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Column(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Icon(
+                                          Icons.broken_image,
+                                          size: isMobile ? 36 : 48,
+                                          color: Colors.grey.shade600,
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          'Gambar error',
+                                          style: TextStyle(
+                                            fontSize: isMobile ? 11 : 12,
+                                            color: Colors.grey.shade700,
+                                          ),
+                                        ),
+                                      ],
+                                    );
+                                  },
+                                )
+                              : Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.inventory,
+                                      size: isMobile ? 48 : 64,
+                                      color: Colors.grey.shade600,
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      'Tidak ada gambar',
+                                      style: TextStyle(
+                                        fontSize: isMobile ? 12 : 13,
+                                        color: Colors.grey.shade700,
+                                      ),
+                                    ),
+                                  ],
+                                )),
                     ),
-                  ),
-                ),
 
-                // ===== UPLOAD OVERLAY =====
-                if (isUploadingImage)
-                  Positioned.fill(
-                    child: Container(
-                      color: Colors.black.withValues(alpha:0.45),
-                      child: const Center(
-                        child: CircularProgressIndicator(
+                    // Zoom indicator
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.5),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.zoom_out_map,
                           color: Colors.white,
-                          strokeWidth: 3,
+                          size: 14,
                         ),
                       ),
                     ),
-                  ),
-              ],
+
+                    // Upload overlay
+                    if (isUploadingImage)
+                      Container(
+                        color: Colors.black.withValues(alpha: 0.5),
+                        child: const Center(
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 3,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
             ),
           ),
         ),
-      ),
+
+        // Camera button beside image
+        const SizedBox(width: 16),
+        
+        Container(
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.2),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: FloatingActionButton(
+            onPressed: isUploadingImage ? null : showImageSourceDialog,
+            backgroundColor: Colors.blueGrey,
+            mini: isMobile,
+            child: Icon(
+              Icons.camera_alt,
+              color: isUploadingImage ? Colors.grey.shade400 : Colors.white,
+            ),
+            tooltip: 'Ganti Foto',
+          ),
+        ),
+      ],
     ),
   );
 }
 
-@override
-Widget build(BuildContext context) {
-  final isDesktop = MediaQuery.of(context).size.width >= 900;
+  // =========================
+  // FORM FIELDS WITH CONSISTENT STYLING
+  // =========================
+  Widget _buildFormFields() {
+    final isMobile = MediaQuery.of(context).size.width < 600;
 
-  final content = GestureDetector(
-    behavior: HitTestBehavior.translucent,
-    onTap: () => FocusScope.of(context).unfocus(),
-    child: Stack(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                Color(0xFFFFE0B2),
-                Color(0xFFFFFFFF),
-              ],
-            ),
-          ),
+        // Part Code (readonly)
+        _buildTextField(
+          controller: partCodeController,
+          label: 'Part Code',
+          enabled: false,
+          isMobile: isMobile,
         ),
-        SafeArea(
-  child: isDesktop
-      ? SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
 
-              // IMAGE TOP (Desktop)
-              Center(
-                child: SizedBox(
-                  width: 180,
-                  height: 180,
-                  child: _buildImage(showCameraButton: true),
-                ),
-              ),
+        const SizedBox(height: 16),
 
-              const SizedBox(height: 24),
+        // Name
+        _buildTextField(
+          controller: nameController,
+          label: 'Name',
+          required: true,
+          isMobile: isMobile,
+        ),
 
-              _buildFormFields(),
+        const SizedBox(height: 16),
 
-            ],
-          ),
-        )
-      : CustomScrollView(
-          slivers: [
-            SliverAppBar(
-              expandedHeight: 280,
-              pinned: true,
-              backgroundColor: Colors.transparent,
-              elevation: 0,
-              leading: IconButton(
-                icon: const Icon(Icons.arrow_back,
-                    color: Colors.blueGrey),
-                onPressed: () => Navigator.pop(context),
-              ),
-              flexibleSpace: FlexibleSpaceBar(
-                background: Padding(
-                  padding: const EdgeInsets.only(
-                    top: 50,
-                    left: 16,
-                    right: 16,
-                    bottom: 16,
-                  ),
-                  child: Center(
-                    child: SizedBox(
-                      width: 160,
-                      height: 160,
-                      child:
-                          _buildImage(showCameraButton: false),
-                    ),
-                  ),
-                ),
+        // Name (English)
+        _buildTextField(
+          controller: nameEnController,
+          label: 'Name (English)',
+          required: true,
+          isMobile: isMobile,
+        ),
+
+        const SizedBox(height: 16),
+
+        // Location
+        _buildTextField(
+          controller: locationController,
+          label: 'Location',
+          helperText: 'Contoh: A1-2 atau C9-8',
+          isMobile: isMobile,
+        ),
+
+        const SizedBox(height: 16),
+
+        // Stock Info Row
+        Row(
+          children: [
+            Expanded(
+              child: _buildTextField(
+                controller: stockController,
+                label: 'Initial Stock',
+                enabled: false,
+                isMobile: isMobile,
               ),
             ),
-            SliverPadding(
-              padding: const EdgeInsets.all(16),
-              sliver: SliverList(
-                delegate: SliverChildListDelegate([
-                  _buildFormFields(),
-                ]),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildTextField(
+                controller: currentStockController,
+                label: 'Current Stock',
+                enabled: false,
+                isMobile: isMobile,
               ),
             ),
           ],
         ),
-),
-      ],
-    ),
-  );
 
-  if (isDesktop) {
-    return content; // TANPA Scaffold
-  } else {
-    return Scaffold(body: content); // Mobile tetap full
+        const SizedBox(height: 16),
+
+        // Weight and Unit
+        Row(
+  crossAxisAlignment: CrossAxisAlignment.start,
+  children: [
+    Expanded(
+      flex: 3,
+      child: _buildTextField(
+        controller: weightController,
+        label: 'Weight',
+        keyboardType: TextInputType.number,
+        isMobile: isMobile,
+      ),
+    ),
+    const SizedBox(width: 12),
+    Expanded(
+      flex: 2,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(
+                'Unit',
+                style: TextStyle(
+                  fontSize: isMobile ? 12 : 13,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.blueGrey.shade700,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Container(
+            height: isMobile ? 48 : 52, // Sama tinggi dengan TextField
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.grey.shade300),
+              borderRadius: BorderRadius.circular(8),
+              color: Colors.white,
+            ),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                value: weightUnit,
+                isExpanded: true,
+                icon: Icon(Icons.arrow_drop_down, color: Colors.blueGrey.shade400),
+                items: ['Kg', 'g', 'lb'].map((unit) {
+                  return DropdownMenuItem(
+                    value: unit,
+                    child: Text(
+                      unit,
+                      style: TextStyle(
+                        fontSize: isMobile ? 14 : 15,
+                      ),
+                    ),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  if (value != null) {
+                    setState(() => weightUnit = value);
+                  }
+                },
+              ),
+            ),
+          ),
+        ],
+      ),
+    ),
+  ],
+),
+
+        const SizedBox(height: 16),
+
+        // Category Dropdown
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.grey.shade300),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<SparePartCategory>(
+              value: _selectedCategory,
+              isExpanded: true,
+              hint: const Text('Pilih Category'),
+              items: SparePartCategory.values.map((e) {
+                return DropdownMenuItem(
+                  value: e,
+                  child: Text(e.name.replaceAll('_', ' ')),
+                );
+              }).toList(),
+              onChanged: (value) {
+                if (value != null) {
+                  setState(() => _selectedCategory = value);
+                }
+              },
+            ),
+          ),
+        ),
+
+        const SizedBox(height: 16),
+
+        // Origin Dropdown
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.grey.shade300),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<SparePartOrigin>(
+              value: _selectedOrigin,
+              isExpanded: true,
+              hint: const Text('Pilih Origin'),
+              items: SparePartOrigin.values.map((e) {
+                return DropdownMenuItem(
+                  value: e,
+                  child: Text(e.name.replaceAll('_', ' ')),
+                );
+              }).toList(),
+              onChanged: (value) {
+                if (value != null) {
+                  setState(() => _selectedOrigin = value);
+                }
+              },
+            ),
+          ),
+        ),
+
+        const SizedBox(height: 24),
+
+        // Action Buttons
+        Row(
+          children: [
+            Expanded(
+              child: ElevatedButton(
+                onPressed: updateData,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blueGrey,
+                  padding: EdgeInsets.symmetric(
+                    vertical: isMobile ? 14 : 16,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: const Text('Update Data'),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: ElevatedButton(
+                onPressed: showDeleteDialog,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red,
+                  padding: EdgeInsets.symmetric(
+                    vertical: isMobile ? 14 : 16,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: const Text('Hapus'),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    bool enabled = true,
+    bool required = false,
+    TextInputType? keyboardType,
+    String? helperText,
+    required bool isMobile,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: isMobile ? 12 : 13,
+                fontWeight: FontWeight.w600,
+                color: Colors.blueGrey.shade700,
+              ),
+            ),
+            if (required)
+              Text(
+                ' *',
+                style: TextStyle(
+                  color: Colors.red.shade400,
+                  fontSize: isMobile ? 12 : 13,
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        TextField(
+          controller: controller,
+          enabled: enabled,
+          keyboardType: keyboardType,
+          decoration: InputDecoration(
+            hintText: 'Masukkan $label',
+            helperText: helperText,
+            helperStyle: TextStyle(
+              fontSize: isMobile ? 10 : 11,
+              color: Colors.grey.shade600,
+            ),
+            contentPadding: EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: isMobile ? 12 : 14,
+            ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: Colors.grey.shade300),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: Colors.grey.shade300),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: Colors.blueGrey.shade400),
+            ),
+            disabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: Colors.grey.shade200),
+            ),
+            filled: !enabled,
+            fillColor: !enabled ? Colors.grey.shade50 : null,
+          ),
+          style: TextStyle(
+            fontSize: isMobile ? 14 : 15,
+          ),
+        ),
+      ],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDesktop = MediaQuery.of(context).size.width >= 900;
+    final isMobile = MediaQuery.of(context).size.width < 600;
+
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color(0xFFFFE0B2),
+              Color(0xFFFFFFFF),
+            ],
+          ),
+        ),
+        child: SafeArea(
+          child: Column(
+            children: [
+              // Custom App Bar
+              Padding(
+                padding: EdgeInsets.all(isMobile ? 12 : 16),
+                child: Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.arrow_back),
+                      onPressed: () => Navigator.pop(context),
+                      iconSize: isMobile ? 20 : 24,
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Edit Spare Part',
+                      style: TextStyle(
+                        fontSize: isMobile ? 16 : 18,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.blueGrey.shade800,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Main Content
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: EdgeInsets.all(isMobile ? 16 : 24),
+                  child: Column(
+                    children: [
+                      // Image Section
+                      _buildImageSection(),
+                      
+                      // Form Fields
+                      _buildFormFields(),
+                      
+                      SizedBox(height: isMobile ? 16 : 24),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
-Widget _buildFormFields() {
-  return Column(
-    children: [
-
-      TextField(
-        controller: partCodeController,
-        decoration:
-            const InputDecoration(labelText: 'Part Code'),
-        enabled: false,
-      ),
-
-      const SizedBox(height: 12),
-
-      TextField(
-        controller: nameController,
-        decoration:
-            const InputDecoration(labelText: 'Name'),
-      ),
-
-      const SizedBox(height: 12),
-
-      TextField(
-        controller: nameEnController,
-        decoration:
-            const InputDecoration(labelText: 'Name (English)'),
-      ),
-
-      const SizedBox(height: 12),
-
-      TextField(
-        controller: locationController,
-        decoration:
-            const InputDecoration(labelText: 'Location'),
-      ),
-
-      const SizedBox(height: 12),
-
-      TextField(
-        controller: stockController,
-        enabled: false,
-        decoration: const InputDecoration(
-          labelText: 'Initial Stock (Auto)',
-        ),
-      ),
-
-      const SizedBox(height: 12),
-
-      TextField(
-        controller: currentStockController,
-        enabled: false,
-        decoration: const InputDecoration(
-          labelText: 'Current Stock',
-        ),
-      ),
-
-      const SizedBox(height: 12),
-
-      TextField(
-        controller: weightController,
-        keyboardType: TextInputType.number,
-        decoration:
-            const InputDecoration(labelText: 'Weight'),
-      ),
-
-      const SizedBox(height: 24),
-
-      DropdownButtonFormField<SparePartCategory>(
-  initialValue: _selectedCategory,
-  decoration: const InputDecoration(labelText: 'Category'),
-  items: SparePartCategory.values.map((e) {
-    return DropdownMenuItem(
-      value: e,
-      child: Text(e.name), // lebih bersih dari toString()
-    );
-  }).toList(),
-  onChanged: (value) {
-    if (value != null) {
-      setState(() => _selectedCategory = value);
-    }
-  },
-),
-const SizedBox(height: 16),
-
-DropdownButtonFormField<SparePartOrigin>(
-  initialValue: _selectedOrigin,
-  decoration: const InputDecoration(labelText: 'Origin'),
-  items: SparePartOrigin.values.map((e) {
-    return DropdownMenuItem(
-      value: e,
-      child: Text(e.name),
-    );
-  }).toList(),
-  onChanged: (value) {
-    if (value != null) {
-      setState(() => _selectedOrigin = value);
-    }
-  },
-),
-
-      SizedBox(
-        width: double.infinity,
-        child: ElevatedButton(
-          onPressed: updateData,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.blueGrey,
-            padding:
-                const EdgeInsets.symmetric(vertical: 16),
-          ),
-          
-          child: const Text('Update'),
-        ),
-      ),
-      const SizedBox(height: 16),
-
-
-    ],
-  );
-}
-}
-

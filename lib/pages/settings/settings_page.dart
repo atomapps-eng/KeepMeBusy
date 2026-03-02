@@ -7,6 +7,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../../core/services/company_firestore.dart';
 import '../../features/admin/pages/admin_analytics_page.dart';
 import '../../../models/read_tracker_service.dart';
+import '../../tools/migrate_spare_part_lowercase.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -72,31 +73,26 @@ class _SettingsPageState extends State<SettingsPage> with TickerProviderStateMix
   // =========================
   // ADMIN CHECK
   // =========================
-  Future<bool> isCurrentUserAdmin() async {
-    final user = FirebaseAuth.instance.currentUser;
-    
-    if (user == null || user.email == null) return false;
-    
-    final userEmail = user.email!.toLowerCase().trim();
-    
-    try {
-      final doc = await FirebaseFirestore.instance
-          .collection('admin_whitelist')
-          .doc(userEmail)
-          .get();
-      
-      if (doc.exists) {
-        final data = doc.data();
-        if (data != null && data.containsKey('active')) {
-          return data['active'] == true;
-        }
-        return true;
-      }
-      return false;
-    } catch (e) {
-      return false;
-    }
+ Future<bool> isCurrentUserAdmin() async {
+  final user = FirebaseAuth.instance.currentUser;
+  if (user == null) return false;
+
+  try {
+    final doc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .get();
+
+    if (!doc.exists) return false;
+
+    final data = doc.data();
+    if (data == null) return false;
+
+    return data['role'] == 'super_admin';
+  } catch (e) {
+    return false;
   }
+}
 
   Future<void> _checkAdmin() async {
     setState(() {
@@ -743,6 +739,16 @@ class _SettingsPageState extends State<SettingsPage> with TickerProviderStateMix
                                   isEnabled: !isImporting && isAdmin,
                                   isLoading: isImporting,
                                 ),
+
+                                const SizedBox(height: 8),
+
+_buildActionButton(
+  label: 'Run Spare Part Lowercase Migration',
+  icon: Icons.build,
+  color: Colors.deepPurple,
+  onPressed: isAdmin ? _handleRunSparePartMigration : null,
+  isEnabled: isAdmin,
+),
                                 
                                 if (isImporting) ...[
                                   const SizedBox(height: 8),
@@ -753,6 +759,7 @@ class _SettingsPageState extends State<SettingsPage> with TickerProviderStateMix
                                     color: Colors.green,
                                   ),
                                 ],
+
                               ],
 
                               const Divider(height: 24),
@@ -920,6 +927,44 @@ class _SettingsPageState extends State<SettingsPage> with TickerProviderStateMix
       ),
     );
   }
+
+  Future<void> _handleRunSparePartMigration() async {
+  if (!isAdmin) {
+    _showStyledSnackbar('Anda tidak memiliki hak akses', isWarning: true);
+    return;
+  }
+
+  final confirm = await showDialog<bool>(
+    context: context,
+    builder: (_) => AlertDialog(
+      title: const Text('Run Spare Part Migration'),
+      content: const Text(
+        'Ini akan menambahkan field partCode_lower dan name_lower ke semua spare part.\n\nLanjutkan?',
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, false),
+          child: const Text('BATAL'),
+        ),
+        ElevatedButton(
+          onPressed: () => Navigator.pop(context, true),
+          child: const Text('JALANKAN'),
+        ),
+      ],
+    ),
+  );
+
+  if (confirm != true) return;
+
+  try {
+    _showStyledSnackbar('Migration started...');
+    await SparePartMigration.addLowercaseFields();
+    _showStyledSnackbar('Migration selesai');
+  } catch (e) {
+    _showStyledSnackbar('Migration gagal: $e', isError: true);
+  }
+}
+  
 }
 
 // =========================
