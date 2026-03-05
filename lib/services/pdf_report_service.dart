@@ -219,93 +219,59 @@ pw.SizedBox(height: 10),
 
           pw.SizedBox(height: 10),
 
-          pw.Table(
+         pw.TableHelper.fromTextArray(
   border: pw.TableBorder.all(color: PdfColors.grey300),
+  headerStyle: pw.TextStyle(
+    fontWeight: pw.FontWeight.bold,
+    fontSize: 10,
+  ),
+  headerDecoration: const pw.BoxDecoration(
+    color: PdfColors.grey300,
+  ),
+  cellStyle: const pw.TextStyle(
+    fontSize: 9,
+  ),
   columnWidths: {
-  0: const pw.FlexColumnWidth(1.5),
-  1: const pw.FlexColumnWidth(1.5),
-  2: const pw.FlexColumnWidth(1.1),
-  3: const pw.FlexColumnWidth(1.8), // Client
-  4: const pw.FlexColumnWidth(1.2),
-  5: const pw.FlexColumnWidth(1.2),
-  6: const pw.FlexColumnWidth(1),
-},
-  children: [
-    /// HEADER
-    pw.TableRow(
-      decoration: const pw.BoxDecoration(
-        color: PdfColors.grey300,
-      ),
-      children: [
-        _headerCell("Date"),
-        _headerCell("Status"),
-        _headerCell("Location"),
-        _headerCell("Client"),
-        _headerCell("Check In"),
-        _headerCell("Check Out"),
-        _headerCell("Overtime"),
-      ],
-    ),
+    0: const pw.FlexColumnWidth(1.5),
+    1: const pw.FlexColumnWidth(1.5),
+    2: const pw.FlexColumnWidth(1.1),
+    3: const pw.FlexColumnWidth(1.8),
+    4: const pw.FlexColumnWidth(1.2),
+    5: const pw.FlexColumnWidth(1.2),
+    6: const pw.FlexColumnWidth(1),
+  },
 
-    /// DATA
-    ...attendanceDays
-        .where((d) => d.period == period)
-        .map((d) {
-      final checkIn = _formatTime(d.checkInHour, d.checkInMinute);
-      final checkOut = _formatTime(d.checkOutHour, d.checkOutMinute);
-      final isOvertime = AttendanceSummaryHelper.isOvertimeDay(d);
+  headers: [
+    "Date",
+    "Status",
+    "Location",
+    "Client",
+    "Check In",
+    "Check Out",
+    "Overtime",
+  ],
 
-      return pw.TableRow(
-  children: [
-    _cell(dateFormat.format(d.date)),
-    _cell(d.status.label),
+  data: attendanceDays
+      .where((d) => d.period == period)
+      .map((d) {
+    final checkIn = _formatTime(d.checkInHour, d.checkInMinute);
+    final checkOut = _formatTime(d.checkOutHour, d.checkOutMinute);
+    final isOvertime = AttendanceSummaryHelper.isOvertimeDay(d);
 
-    // LOCATION
-    _cell(
+    return [
+      dateFormat.format(d.date),
+      d.status.label,
       d.location.name.toLowerCase() == "outstation"
           ? "Outstation"
           : "Office",
-    ),
-
-    // CLIENT
-    _cell(
       d.location.name.toLowerCase() == "outstation"
           ? (d.customerName ?? "-")
           : "-",
-    ),
-
-    _cell(checkIn),
-    _cell(checkOut),
-
-    pw.Container(
-      padding: const pw.EdgeInsets.all(6),
-      alignment: pw.Alignment.center,
-      child: isOvertime
-          ? pw.Container(
-              padding: const pw.EdgeInsets.symmetric(
-                  horizontal: 6, vertical: 3),
-              decoration: pw.BoxDecoration(
-                color: PdfColors.red100,
-                borderRadius: pw.BorderRadius.circular(6),
-              ),
-              child: pw.Text(
-                "YES",
-                style: pw.TextStyle(
-                  color: PdfColors.red800,
-                  font: fontBold,
-                  fontSize: 9,
-                ),
-              ),
-            )
-          : pw.Text(
-              "-",
-              style: const pw.TextStyle(fontSize: 9),
-            ),
-    ),
-  ],
-);
-    }),
-  ],
+      checkIn,
+      checkOut,
+      isOvertime ? "YES" : "-",
+    ];
+  }).toList(),
 ),
 
 pw.SizedBox(height: 30),
@@ -373,7 +339,7 @@ summary.overnights.isEmpty
                     color: PdfColors.grey600,
                   ),
                   pw.SizedBox(height: 5),
-                  pw.Text("HR Manager Signature"),
+                  pw.Text("General Admin"),
                 ],
               )
             ],

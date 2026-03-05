@@ -22,6 +22,7 @@ import '../order_in/order_in_mobile.dart';
 import '../order_out/order_out_mobile.dart';
 import '../services/role_service.dart';
 import '../service_report/pages/service_report_list_page.dart';
+import '../attendance/pages/attendance_user_list_page.dart';
 
 enum DesktopSection {
   dashboard,
@@ -2260,30 +2261,43 @@ final bool canAccessSettings = isAdmin;
     );
   }
 
-  void _openAttendance() async {
-    await ActivityService.addActivity(
-      icon: Icons.event_available,
-      title: 'Opened attendance page',
-      color: Colors.blue,
-    );
-    
-    await _loadActivities();
-    
-    final user = FirebaseAuth.instance.currentUser!;
-    final employeeId = user.displayName ?? user.uid;
-    final now = DateTime.now();
-    final period = AttendancePeriodHelper.resolvePeriod(now);
+ void _openAttendance() async {
+  await ActivityService.addActivity(
+    icon: Icons.event_available,
+    title: 'Opened attendance page',
+    color: Colors.blue,
+  );
 
+  await _loadActivities();
+
+  final now = DateTime.now();
+  final period = AttendancePeriodHelper.resolvePeriod(now);
+
+  // 🔥 ADMIN membuka employee list
+  if (_currentRole == UserRole.admin || _currentRole == UserRole.superAdmin) {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => AttendancePage(
-          employeeId: employeeId,
-          period: period,
-        ),
+        builder: (_) => const AttendanceUserListPage(),
       ),
     );
+    return;
   }
+
+  // 🔥 USER membuka attendance sendiri
+  final user = FirebaseAuth.instance.currentUser!;
+  final employeeId = user.displayName ?? user.uid;
+
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (_) => AttendancePage(
+        employeeId: employeeId,
+        period: period,
+      ),
+    ),
+  );
+}
 
   void _openPartners() async {
     await ActivityService.addActivity(

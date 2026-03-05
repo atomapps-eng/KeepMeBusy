@@ -44,6 +44,7 @@ class _AttendancePageState extends State<AttendancePage> {
 void initState() {
   super.initState();
   _selectedPeriod = widget.period;
+  _isAllPeriod = false;
 }
 
   @override
@@ -59,38 +60,40 @@ Future<void> _exportAttendanceToPdf() async {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (_) => const Center(
-        child: CircularProgressIndicator(),
-      ),
+      builder: (_) => const Center(child: CircularProgressIndicator()),
     );
 
     final service = AttendanceService();
 
     List<AttendanceDay> days = [];
-    await for (var snapshot
-        in service.streamAttendanceDays(widget.employeeId)) {
+    await for (var snapshot in service.streamAttendanceDays(widget.employeeId)) {
       days = snapshot;
       break;
     }
 
+    // 🔥 APPLY PERIOD FILTER
+    final filteredDays = _applyPeriodFilter(days);
+
+    // 🔥 PERIOD YANG DIPILIH USER
+    final period = _isAllPeriod ? 'ALL' : _selectedPeriod;
+
+    // 🔥 SUMMARY DARI DATA YANG SUDAH DIFILTER
     final summary = await AttendanceSummaryCalculator.calculate(
-      employeeId: widget.employeeId,
-      period: widget.period,
-    );
+  employeeId: widget.employeeId,
+  period: _isAllPeriod ? 'ALL' : _selectedPeriod,
+);
 
     if (mounted) Navigator.pop(context);
 
-   final bytes = await PdfReportService.generatePdf(
+    final bytes = await PdfReportService.generatePdf(
       employeeId: widget.employeeId,
       employeeName: 'Employee ${widget.employeeId}',
-      period: widget.period,
-      attendanceDays: days,
+      period: period,
+      attendanceDays: filteredDays,
       summary: summary,
     );
 
-     print("PDF GENERATED, size: ${bytes.length}");
-
-await openPdf(bytes, 'attendance_${widget.employeeId}_${widget.period}.pdf');
+    await openPdf(bytes, 'attendance_${widget.employeeId}_$period.pdf');
 
   } catch (e) {
     if (mounted) {
@@ -366,6 +369,8 @@ await openPdf(bytes, 'attendance_${widget.employeeId}_${widget.period}.pdf');
             }
 
             final allDays = (snapshot.data ?? []);
+            print("EMPLOYEE ID = ${widget.employeeId}");
+print("ATTENDANCE COUNT = ${allDays.length}");
 allDays.sort((a, b) => b.date.compareTo(a.date));
 
 // 🔥 APPLY PERIOD FILTER DI SINI
@@ -1616,14 +1621,21 @@ List<AttendanceDay> _applyPeriodFilter(List<AttendanceDay> days) {
 
 Widget _buildDesktopPeriodFilter(List<AttendanceDay> allDays) {
   final availablePeriods = _extractAvailablePeriods(allDays);
+  print("ALL DAYS COUNT = ${allDays.length}");
+print("AVAILABLE PERIODS = $availablePeriods");
+print("SELECTED PERIOD = $_selectedPeriod");
 
-  final currentValue = _isAllPeriod
-      ? 'ALL'
-      : (availablePeriods.contains(_selectedPeriod)
-          ? _selectedPeriod
-          : availablePeriods.isNotEmpty
-              ? availablePeriods.first
-              : null);
+String? currentValue;
+
+if (_isAllPeriod) {
+  currentValue = 'ALL';
+} else if (availablePeriods.contains(_selectedPeriod)) {
+  currentValue = _selectedPeriod;
+} else if (availablePeriods.isNotEmpty) {
+  currentValue = availablePeriods.first;
+} else {
+  currentValue = 'ALL';
+}
 
   return _glass(
     Column(
@@ -1677,15 +1689,17 @@ Widget _buildDesktopPeriodFilter(List<AttendanceDay> allDays) {
                 ),
               ],
               onChanged: (value) {
-                setState(() {
-                  if (value == 'ALL') {
-                    _isAllPeriod = true;
-                  } else {
-                    _isAllPeriod = false;
-                    _selectedPeriod = value!;
-                  }
-                });
-              },
+  if (value == null) return;
+
+  setState(() {
+    if (value == 'ALL') {
+      _isAllPeriod = true;
+    } else {
+      _isAllPeriod = false;
+      _selectedPeriod = value;
+    }
+  });
+},
             ),
           ),
         ),
@@ -1702,22 +1716,36 @@ List<String> _extractAvailablePeriods(List<AttendanceDay> days) {
     uniquePeriods.add('${day.date.year}-$month');
   }
 
+  // 🔥 jika tidak ada attendance, pakai bulan sekarang
+  if (uniquePeriods.isEmpty) {
+    final now = DateTime.now();
+    final month = now.month.toString().padLeft(2, '0');
+    uniquePeriods.add('${now.year}-$month');
+  }
+
   final periods = uniquePeriods.toList();
-  periods.sort((a, b) => b.compareTo(a)); // terbaru dulu
+  periods.sort((a, b) => b.compareTo(a));
 
   return periods;
 }
 
 Widget _buildMobilePeriodDropdown(List<AttendanceDay> allDays) {
   final availablePeriods = _extractAvailablePeriods(allDays);
+  print("AVAILABLE PERIODS = $availablePeriods");
+print("IS ALL PERIOD = $_isAllPeriod");
+print("SELECTED PERIOD = $_selectedPeriod");
 
-  final currentValue = _isAllPeriod
-      ? 'ALL'
-      : (availablePeriods.contains(_selectedPeriod)
-          ? _selectedPeriod
-          : availablePeriods.isNotEmpty
-              ? availablePeriods.first
-              : null);
+String? currentValue;
+
+if (_isAllPeriod) {
+  currentValue = 'ALL';
+} else if (availablePeriods.contains(_selectedPeriod)) {
+  currentValue = _selectedPeriod;
+} else if (availablePeriods.isNotEmpty) {
+  currentValue = availablePeriods.first;
+} else {
+  currentValue = 'ALL';
+}
 
   return Container(
     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
@@ -1775,15 +1803,17 @@ Widget _buildMobilePeriodDropdown(List<AttendanceDay> allDays) {
                 ),
               ],
               onChanged: (value) {
-                setState(() {
-                  if (value == 'ALL') {
-                    _isAllPeriod = true;
-                  } else {
-                    _isAllPeriod = false;
-                    _selectedPeriod = value!;
-                  }
-                });
-              },
+  if (value == null) return;
+
+  setState(() {
+    if (value == 'ALL') {
+      _isAllPeriod = true;
+    } else {
+      _isAllPeriod = false;
+      _selectedPeriod = value;
+    }
+  });
+},
             ),
           ),
         ),

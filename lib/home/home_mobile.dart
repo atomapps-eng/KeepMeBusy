@@ -19,6 +19,7 @@ import '../service_report/pages/service_report_list_page.dart';
 import '../pages/spare_part/spare_part_list_page.dart';
 import '../order_in/order_in_mobile.dart';
 import '../order_out/order_out_mobile.dart';
+import '../attendance/pages/attendance_user_list_page.dart';
 
 class HomeMobile extends StatefulWidget {
   const HomeMobile({super.key});
@@ -307,23 +308,49 @@ Stream<Map<String, dynamic>> dashboardStatsStream() {
       icon: Icons.event_available,
       label: 'Daily Attendance',
       color: Colors.blue,
-      onTap: () {
-  final user = FirebaseAuth.instance.currentUser!;
-  final employeeId = user.displayName!; // ⬅️ INI FIX-NYA
+      onTap: () async {
+
+  final userProfile = await _getUserProfile();
+
+  if (userProfile == null) {
+    print("USER PROFILE NULL");
+    return;
+  }
+
+  final accessLevel = userProfile['accessLevel'];
+
+  print("ACCESS LEVEL = $accessLevel");
 
   final now = DateTime.now();
   final period = AttendancePeriodHelper.resolvePeriod(now);
 
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (_) => AttendancePage(
-        employeeId: FirebaseAuth.instance.currentUser!.uid,
-        period: period,
+  if (accessLevel == 'admin_countries') {
+
+    print("OPEN ADMIN PAGE");
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const AttendanceUserListPage(),
       ),
-    ),
-  );
-},
+    );
+
+  } else {
+
+    print("OPEN NORMAL ATTENDANCE");
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AttendancePage(
+          employeeId: FirebaseAuth.instance.currentUser!.uid,
+          period: period,
+        ),
+      ),
+    );
+
+  }
+}
 ),
 
    _MenuCard(
