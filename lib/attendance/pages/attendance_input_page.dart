@@ -10,6 +10,8 @@ import '../../core/session/company_session.dart';
 // ⬇️ TAMBAHAN (WAJIB)
 import '../../services/partner_service.dart';
 import '../../models/partner.dart';
+import '../models/activity_entry.dart';
+import '../models/factory_visit.dart';
 
 class AttendanceInputPage extends StatefulWidget {
   final String employeeId;
@@ -41,7 +43,7 @@ class _AttendanceInputPageState extends State<AttendanceInputPage> {
   String? selectedCustomerName;
   final noteController = TextEditingController();
 
-  final List<ActivityEntry> activities = [];
+ final List<FactoryVisit> factories = [];
 
   TimeOfDay checkIn = const TimeOfDay(hour: 8, minute: 0);
   TimeOfDay checkOut = const TimeOfDay(hour: 17, minute: 0);
@@ -117,37 +119,52 @@ class _AttendanceInputPageState extends State<AttendanceInputPage> {
       _isPresent && location == AttendanceLocation.outstation;
 
 Future<void> _loadExistingActivities() async {
+
   final date = _selectedDate;
+
   final dateKey =
       '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
 
-  final snap = await CompanyFirestore
+  final dayRef = CompanyFirestore
       .collection('attendance')
       .doc(widget.employeeId)
       .collection('days')
-      .doc(dateKey)
-      .collection('activities')
-      .orderBy('createdAt')
-      .get();
+      .doc(dateKey);
 
-  final loaded = snap.docs.map((d) {
-  final data = d.data();
-  return ActivityEntry(
-    date: (data['date'] as Timestamp).toDate(),
-    factoryClient: data['factoryClient'] ?? '',
-    customerId: data['customerId'] ?? '', // 🔥 TAMBAHAN
-    machine: data['machine'] ?? '',
-    serialNumber: data['serialNumber'] ?? '',
-    activityType: data['activityType'] ?? '',
-    description: data['description'] ?? '',
-    status: data['status'] ?? '',
-    note: data['note'] ?? '',
-  );
-}).toList();
+  final factorySnap = await dayRef.collection('factories').get();
 
-  setState(() {
-    activities.addAll(loaded);
-  });
+  for (final factoryDoc in factorySnap.docs) {
+
+    final factoryId = factoryDoc.id;
+    final factoryName = factoryDoc['factoryName'] ?? '';
+
+    final actSnap = await factoryDoc.reference
+        .collection('activities')
+        .orderBy('createdAt')
+        .get();
+
+    for (final actDoc in actSnap.docs) {
+
+      final data = actDoc.data();
+
+      final activity = ActivityEntry(
+  date: (data['date'] as Timestamp).toDate(),
+  factoryId: factoryId,
+  factoryClient: data['factoryClient'] ?? factoryName,
+  customerId: data['customerId'] ?? '',
+  machine: data['machine'] ?? '',
+  serialNumber: data['serialNumber'] ?? '',
+  activityType: data['activityType'] ?? '',
+  description: data['description'] ?? '',
+  status: data['status'] ?? '',
+  note: data['note'] ?? '',
+);
+
+      _addActivity(activity);
+    }
+  }
+
+  setState(() {});
 }
 
  Future<void> _deleteAttendance() async {
@@ -162,13 +179,18 @@ Future<void> _loadExistingActivities() async {
       .doc(dateKey);
 
   // 1️⃣ Ambil semua activities
-  final activitiesSnap =
-      await dayRef.collection('activities').get();
+  final factorySnap = await dayRef.collection('factories').get();
 
-  // 2️⃣ Hapus satu per satu activity
-  for (final doc in activitiesSnap.docs) {
-    await doc.reference.delete();
+for (final f in factorySnap.docs) {
+
+  final actSnap = await f.reference.collection('activities').get();
+
+  for (final a in actSnap.docs) {
+    await a.reference.delete();
   }
+
+  await f.reference.delete();
+}
 
   // 3️⃣ Hapus attendance day
   await dayRef.delete();
@@ -224,30 +246,56 @@ Future<void> _loadExistingActivities() async {
     await dayRef.set(attendanceData, SetOptions(merge: true));
 
     // 🔹 Hapus activities lama supaya tidak duplicate saat edit
-    final existingActs = await dayRef.collection('activities').get();
-    for (final doc in existingActs.docs) {
-      await doc.reference.delete();
-    }
+    final factorySnap = await dayRef.collection('factories').get();
+
+for (final f in factorySnap.docs) {
+
+  final actSnap = await f.reference.collection('activities').get();
+
+  for (final a in actSnap.docs) {
+    await a.reference.delete();
+  }
+
+  await f.reference.delete();
+}
 
     // 🔹 Save activities baru
 
-for (final a in activities) {
-  await dayRef.collection('activities').add({
-    'companyId': companyId,
-    'employeeId': widget.employeeId,
-    'period': period, // 🔥 TAMBAHKAN INI
-    'createdBy': FirebaseAuth.instance.currentUser!.uid,
-    'createdAt': FieldValue.serverTimestamp(),
-    'customerId': a.customerId,
-    'date': a.date,
-    'factoryClient': a.factoryClient,
-    'machine': a.machine,
-    'serialNumber': a.serialNumber,
-    'activityType': a.activityType,
-    'description': a.description,
-    'status': a.status,
-    'note': a.note,
+for (final factory in factories) {
+
+  final factoryRef = dayRef
+      .collection('factories')
+      .doc(factory.factoryId);
+
+  await factoryRef.set({
+    'factoryId': factory.factoryId,
+    'factoryName': factory.factoryName,
   });
+
+  for (final a in factory.activities) {
+
+    await factoryRef
+        .collection('activities')
+        .add({
+
+      'companyId': companyId,
+      'employeeId': widget.employeeId,
+      'period': period,
+      'createdBy': FirebaseAuth.instance.currentUser!.uid,
+      'createdAt': FieldValue.serverTimestamp(),
+
+      'customerId': a.customerId,
+      'date': a.date,
+      'factoryClient': a.factoryClient,
+      'machine': a.machine,
+      'serialNumber': a.serialNumber,
+      'activityType': a.activityType,
+      'description': a.description,
+      'status': a.status,
+      'note': a.note,
+    });
+
+  }
 }
 
     if (!mounted) return;
@@ -276,7 +324,8 @@ for (final a in activities) {
       body: AppBackgroundWrapper(
         child: Padding(
           padding: const EdgeInsets.all(16),
-          child: Column(
+          child: SingleChildScrollView(
+  child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
@@ -301,7 +350,7 @@ for (final a in activities) {
                     if (!_isPresent) {
                       location = null;
                       selectedCustomerId = null;
-                      activities.clear();
+                      factories.clear();
                     }
                   });
                 },
@@ -316,12 +365,12 @@ for (final a in activities) {
                       label: const Text('Office'),
                       selected: location == AttendanceLocation.office,
                       onSelected: (_) {
-                        setState(() {
-                          location = AttendanceLocation.office;
-                          selectedCustomerId = null;
-                          activities.clear();
-                        });
-                      },
+  setState(() {
+    location = AttendanceLocation.office;
+    selectedCustomerId = null;
+    factories.clear();
+  });
+}
                     ),
                     ChoiceChip(
                       label: const Text('Outstation'),
@@ -400,11 +449,11 @@ for (final a in activities) {
   ),
 );
 
-  if (result is ActivityEntry) {
-    setState(() {
-      activities.add(result);
-    });
-  }
+print("FORM RESULT = $result");
+
+ if (result is ActivityEntry) {
+  _addActivity(result);
+}
 },
                   ),
                 ),
@@ -500,7 +549,7 @@ Row(
   ],
 ),
 // ===== ACTIVITIES PREVIEW =====
-if (_isOutstation && activities.isNotEmpty) ...[
+if (_isOutstation && _allActivities.isNotEmpty) ...[
   const Divider(height: 24),
   const Text(
     'Activities',
@@ -511,62 +560,145 @@ if (_isOutstation && activities.isNotEmpty) ...[
   ),
   const SizedBox(height: 8),
 
-  ...activities.asMap().entries.map((entry) {
-  final index = entry.key;
-  final a = entry.value;
+ ...factories.map((factory) {
 
-  return ListTile(
-    dense: true,
-    title: Text(a.activityType),
-    subtitle: Text('${a.factoryClient} • ${a.machine}'),
-    trailing: Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
 
-        // EDIT
-        IconButton(
-          icon: const Icon(Icons.edit, size: 18, color: Colors.blue),
-          onPressed: () async {
-            final result = await Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => ActivityFormPage(
-                  attendanceDate: _selectedDate,
-                  factoryClientName: a.factoryClient,
-                  customerId: a.customerId,
-                  existingActivity: a, // 🔥 kirim activity lama
-                ),
+      // FACTORY HEADER
+      Padding(
+        padding: const EdgeInsets.only(top: 8, bottom: 4),
+        child: Text(
+          factory.factoryName,
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 13,
+          ),
+        ),
+      ),
+
+      // ACTIVITIES
+      ...factory.activities.asMap().entries.map((entry) {
+
+        final index = entry.key;
+        final a = entry.value;
+
+        return ListTile(
+          dense: true,
+          title: Text(a.activityType),
+          subtitle: Text('${a.machine} • ${a.serialNumber}'),
+
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+
+              // EDIT
+              IconButton(
+                icon: const Icon(Icons.edit, size: 18, color: Colors.blue),
+                onPressed: () async {
+
+                  final result = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => ActivityFormPage(
+                        attendanceDate: _selectedDate,
+                        factoryClientName: a.factoryClient,
+                        customerId: a.customerId,
+                        existingActivity: a,
+                      ),
+                    ),
+                  );
+
+                 if (result is ActivityEntry) {
+
+  setState(() {
+
+    // hapus activity lama
+    factory.activities.removeAt(index);
+
+    // tambahkan activity baru ke factory yang sesuai
+    _cleanupFactories();
+    _addActivity(result);
+
+  });
+
+}
+                },
               ),
-            );
 
-            if (result is ActivityEntry) {
-              setState(() {
-                activities[index] = result;
-              });
-            }
-          },
-        ),
+              // DELETE
+              IconButton(
+                icon: const Icon(Icons.delete, size: 18, color: Colors.red),
+                onPressed: () {
 
-        // DELETE
-        IconButton(
-          icon: const Icon(Icons.delete, size: 18, color: Colors.red),
-          onPressed: () {
-            setState(() {
-              activities.removeAt(index);
-            });
-          },
-        ),
-      ],
-    ),
+                  setState(() {
+                    factory.activities.removeAt(index);
+                    _cleanupFactories();
+                  });
+
+                },
+              ),
+
+            ],
+          ),
+        );
+
+      }),
+
+    ],
   );
+
 }),
 ],
-
-              const Spacer(),              
+         
             ],
           ),
         ),
       ),
+      )
     );
   }
+
+  FactoryVisit _getOrCreateFactory(String factoryId, String factoryName) {
+  final existing = factories.where((f) => f.factoryId == factoryId);
+
+  if (existing.isNotEmpty) {
+    return existing.first;
+  }
+
+  final newFactory = FactoryVisit(
+    factoryId: factoryId,
+    factoryName: factoryName,
+    activities: [],
+  );
+
+  factories.add(newFactory);
+
+  return newFactory;
+}
+
+void _addActivity(ActivityEntry activity) {
+
+  final factory = _getOrCreateFactory(
+    activity.factoryId,
+    activity.factoryId,
+  );
+
+  setState(() {
+    factory.activities.add(activity);
+  });
+
+}
+
+void _cleanupFactories() {
+
+  factories.removeWhere((f) => f.activities.isEmpty);
+
+}
+
+List<ActivityEntry> get _allActivities {
+  return factories.expand((f) => f.activities).toList();
+}
+
 }

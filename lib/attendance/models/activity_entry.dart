@@ -1,6 +1,7 @@
 class ActivityEntry {
 
   final DateTime date;
+  final String factoryId;
   final String factoryClient;
   final String customerId;
 
@@ -15,6 +16,7 @@ class ActivityEntry {
 
   ActivityEntry({
     required this.date,
+    required this.factoryId,
     required this.factoryClient,
     required this.customerId,
     required this.machine,

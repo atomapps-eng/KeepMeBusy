@@ -32,7 +32,8 @@ class ActivityListPage extends StatelessWidget {
           return snapshot.docs.map((doc) {
             final data = doc.data();
             data['activityId'] = doc.id;
-            data['dayDocId'] = doc.reference.parent.parent?.id;
+            data['factoryId'] = doc.reference.parent.parent?.id;
+data['dayDocId'] = doc.reference.parent.parent?.parent?.parent?.id;
             return data;
           }).toList();
         });
@@ -517,6 +518,7 @@ class ActivityListPage extends StatelessWidget {
               builder: (_) => ActivityDetailPage(
                 employeeId: employeeId,
                 dayDocId: activity['dayDocId'],
+                factoryId: activity['factoryId'],
                 activityId: activity['activityId'],
                 activity: activity,
               ),
@@ -672,6 +674,7 @@ class ActivityListPage extends StatelessWidget {
                 builder: (_) => ActivityDetailPage(
                   employeeId: employeeId,
                   dayDocId: a['dayDocId'],
+                  factoryId: a['factoryId'],
                   activityId: a['activityId'],
                   activity: a,
                 ),

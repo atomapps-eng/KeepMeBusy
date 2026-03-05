@@ -11,6 +11,7 @@ import '../../models/partner.dart';
 class ActivityDetailPage extends StatelessWidget {
   final String employeeId;
   final String dayDocId;
+  final String factoryId;
   final String activityId;
   final Map<String, dynamic> activity;
 
@@ -18,6 +19,7 @@ class ActivityDetailPage extends StatelessWidget {
     super.key,
     required this.employeeId,
     required this.dayDocId,
+    required this.factoryId,
     required this.activityId,
     required this.activity,
   });
@@ -51,6 +53,8 @@ class ActivityDetailPage extends StatelessWidget {
           .doc(employeeId)
           .collection('days')
           .doc(dayDocId)
+          .collection('factories')
+          .doc(factoryId)
           .collection('activities')
           .doc(activityId)
           .delete();
@@ -909,6 +913,8 @@ class ActivityDetailPage extends StatelessWidget {
           .doc(employeeId)
           .collection('days')
           .doc(dayDocId)
+          .collection('factories')
+          .doc(factoryId)
           .collection('activities')
           .doc(activityId)
           .set(result, SetOptions(merge: true));

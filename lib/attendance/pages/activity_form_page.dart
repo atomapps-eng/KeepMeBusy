@@ -1,29 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../pages/common/app_background_wrapper.dart';
-
-class ActivityEntry {
-  final DateTime date;
-  final String factoryClient;
-  final String customerId; // 🔥 TAMBAHAN
-  final String machine;
-  final String serialNumber;
-  final String activityType;
-  final String description;
-  final String status;
-  final String note;
-
-  ActivityEntry({
-    required this.date,
-    required this.factoryClient,
-    required this.customerId, // 🔥 TAMBAHAN
-    required this.machine,
-    required this.serialNumber,
-    required this.activityType,
-    required this.description,
-    required this.status,
-    required this.note,
-  });
-}
+import '../models/activity_entry.dart';
+import '../../services/partner_service.dart';
+import '../../models/partner.dart';
 
 class ActivityFormPage extends StatefulWidget {
   final DateTime attendanceDate;      // ✅ dari attendance
@@ -45,6 +24,7 @@ class ActivityFormPage extends StatefulWidget {
 
 class _ActivityFormPageState extends State<ActivityFormPage> {
   late DateTime date;
+  late String factoryName;
 
   String activityType = 'service';
   String status = 'paid';
@@ -59,6 +39,7 @@ class _ActivityFormPageState extends State<ActivityFormPage> {
     super.initState();
 
     date = widget.attendanceDate;
+    factoryName = widget.factoryClientName;
 
     if (widget.existingActivity != null) {
       final a = widget.existingActivity!;
@@ -127,13 +108,37 @@ class _ActivityFormPageState extends State<ActivityFormPage> {
                   },
                 ),
 
-                TextFormField(
-                  initialValue: widget.factoryClientName,
-                  readOnly: true,
-                  decoration: const InputDecoration(
-                    labelText: 'Factory / Client',
-                  ),
-                ),
+                StreamBuilder<List<Partner>>(
+  stream: PartnerService().getPartners(),
+  builder: (context, snapshot) {
+
+    if (!snapshot.hasData) {
+      return const LinearProgressIndicator();
+    }
+
+    final partners = snapshot.data!;
+
+    return DropdownButtonFormField<String>(
+      value: factoryName,
+      decoration: const InputDecoration(
+        labelText: 'Factory / Client',
+      ),
+      items: partners.map((p) {
+        return DropdownMenuItem(
+          value: p.name,
+          child: Text(p.name),
+        );
+      }).toList(),
+      onChanged: (v) {
+
+        setState(() {
+          factoryName = v!;
+        });
+
+      },
+    );
+  },
+),
 
                 const SizedBox(height: 16),
 
@@ -218,7 +223,8 @@ class _ActivityFormPageState extends State<ActivityFormPage> {
 
   final activity = ActivityEntry(
     date: date,
-    factoryClient: widget.factoryClientName,
+    factoryId: factoryName,
+    factoryClient: factoryName,
     customerId: widget.customerId,
     machine: machineCtrl.text,
     serialNumber: serialCtrl.text,

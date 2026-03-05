@@ -106,16 +106,19 @@ Future<void> _exportAttendanceToPdf() async {
   }
 }
 
-  Stream<List<Map<String, dynamic>>> _activityPreviewStream() {
+Stream<List<Map<String, dynamic>>> _activityPreviewStream() {
+
   return CompanyFirestore
       .collection('attendance')
       .doc(widget.employeeId)
       .collection('days')
       .snapshots()
       .asyncMap((daySnap) async {
+
     final List<Map<String, dynamic>> activities = [];
 
     for (final day in daySnap.docs) {
+
       final dateParts = day.id.split('-');
       if (dateParts.length != 3) continue;
 
@@ -126,25 +129,34 @@ Future<void> _exportAttendanceToPdf() async {
 
       if (!_isAllPeriod && period != _selectedPeriod) continue;
 
-      final actSnap = await day.reference
-          .collection('activities')
-          .orderBy('createdAt', descending: true)
-          .get();
+      final factorySnap = await day.reference.collection('factories').get();
 
-      for (final a in actSnap.docs) {
-        activities.add(a.data());
+      for (final factory in factorySnap.docs) {
+
+        final actSnap = await factory.reference
+            .collection('activities')
+            .orderBy('createdAt', descending: true)
+            .get();
+
+        for (final a in actSnap.docs) {
+          activities.add(a.data());
+        }
+
       }
     }
 
     activities.sort((a, b) {
       final aTime = a['createdAt'] as Timestamp?;
       final bTime = b['createdAt'] as Timestamp?;
+
       return (bTime?.millisecondsSinceEpoch ?? 0)
           .compareTo(aTime?.millisecondsSinceEpoch ?? 0);
     });
 
     return activities.take(3).toList();
+
   });
+
 }
 
  Stream<List<Map<String, dynamic>>> _overnightPreviewStream() {
@@ -1582,17 +1594,31 @@ _buildMobilePeriodDropdown(allDays),
     });
   }
 
-Stream<bool> _hasActivities(DateTime date) {
-  final dateStr = '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
-  
-  return CompanyFirestore
+Stream<bool> _hasActivities(DateTime date) async* {
+
+  final dateStr =
+      '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+
+  final dayRef = CompanyFirestore
       .collection('attendance')
       .doc(widget.employeeId)
       .collection('days')
-      .doc(dateStr)
-      .collection('activities')
-      .snapshots()
-      .map((snapshot) => snapshot.docs.isNotEmpty);
+      .doc(dateStr);
+
+  final factorySnap = await dayRef.collection('factories').get();
+
+  for (final factory in factorySnap.docs) {
+
+    final actSnap =
+        await factory.reference.collection('activities').limit(1).get();
+
+    if (actSnap.docs.isNotEmpty) {
+      yield true;
+      return;
+    }
+  }
+
+  yield false;
 }
 void _openActivityDetail(DateTime date) {
   // Navigasi ke ActivityListPage dan setelah kembali, refresh jika perlu
