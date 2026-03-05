@@ -28,7 +28,6 @@ class ActivityListPage extends StatelessWidget {
         .orderBy('createdAt', descending: true)
         .snapshots()
         .map((snapshot) {
-          print("Activity docs: ${snapshot.docs.length}");
           return snapshot.docs.map((doc) {
             final data = doc.data();
             data['activityId'] = doc.id;

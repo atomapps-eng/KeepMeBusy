@@ -119,29 +119,26 @@ Stream<List<Map<String, dynamic>>> _activityPreviewStream() {
 
     for (final day in daySnap.docs) {
 
-      final dateParts = day.id.split('-');
-      if (dateParts.length != 3) continue;
+      final parts = day.id.split('-');
+if (parts.length != 3) continue;
 
-      final year = dateParts[0];
-      final month = dateParts[1];
+final date = DateTime(
+  int.parse(parts[0]),
+  int.parse(parts[1]),
+  int.parse(parts[2]),
+);
 
-      final period = '$year-$month';
+final period = AttendancePeriodHelper.resolvePeriod(date);
 
       if (!_isAllPeriod && period != _selectedPeriod) continue;
 
-      final factorySnap = await day.reference.collection('factories').get();
+      final actSnap = await day.reference
+          .collection('activities')
+          .orderBy('createdAt', descending: true)
+          .get();
 
-      for (final factory in factorySnap.docs) {
-
-        final actSnap = await factory.reference
-            .collection('activities')
-            .orderBy('createdAt', descending: true)
-            .get();
-
-        for (final a in actSnap.docs) {
-          activities.add(a.data());
-        }
-
+      for (final a in actSnap.docs) {
+        activities.add(a.data());
       }
     }
 
@@ -154,9 +151,7 @@ Stream<List<Map<String, dynamic>>> _activityPreviewStream() {
     });
 
     return activities.take(3).toList();
-
   });
-
 }
 
  Stream<List<Map<String, dynamic>>> _overnightPreviewStream() {
