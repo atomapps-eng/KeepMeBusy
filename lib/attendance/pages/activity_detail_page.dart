@@ -7,6 +7,7 @@ import '../../core/services/company_firestore.dart';
 import '../../theme/app_theme.dart';
 import '../../services/partner_service.dart';
 import '../../models/partner.dart';
+import '../models/activity_entry.dart';
 
 class ActivityDetailPage extends StatelessWidget {
   final String employeeId;
@@ -896,12 +897,23 @@ class ActivityDetailPage extends StatelessWidget {
 
     final result = await navigator.push(
       MaterialPageRoute(
-        builder: (_) => ActivityFormPage(
-          attendanceDate: (activity['date'] as Timestamp).toDate(),
-          factoryClientName: activity['factoryClient'] ?? '',
-          customerId: activity['customerId'] ?? '',
-        ),
-      ),
+  builder: (_) => ActivityFormPage(
+    attendanceDate: (activity['date'] as Timestamp).toDate(),
+    customerId: activity['customerId'] ?? '',
+    existingActivity: ActivityEntry(
+      date: (activity['date'] as Timestamp).toDate(),
+      factoryId: activity['factoryId'] ?? '',
+      factoryClient: activity['factoryClient'] ?? '',
+      customerId: activity['customerId'] ?? '',
+      machine: activity['machine'] ?? '',
+      serialNumber: activity['serialNumber'] ?? '',
+      activityType: activity['activityType'] ?? '',
+      description: activity['description'] ?? '',
+      status: activity['status'] ?? '',
+      note: activity['note'] ?? '',
+    ),
+  ),
+),
     );
 
     if (result == null) return;

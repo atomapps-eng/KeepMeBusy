@@ -12,6 +12,7 @@ import '../../services/partner_service.dart';
 import '../../models/partner.dart';
 import '../models/activity_entry.dart';
 import '../models/factory_visit.dart';
+import '../../pages/partners/partner_list_page.dart';
 
 class AttendanceInputPage extends StatefulWidget {
   final String employeeId;
@@ -146,8 +147,7 @@ Future<void> _loadExistingActivities() async {
     for (final actDoc in actSnap.docs) {
 
       final data = actDoc.data();
-
-      final activity = ActivityEntry(
+final activity = ActivityEntry(
   date: (data['date'] as Timestamp).toDate(),
   factoryId: factoryId,
   factoryClient: data['factoryClient'] ?? factoryName,
@@ -387,40 +387,32 @@ for (final factory in factories) {
 
               if (_isOutstation) ...[
                 const SizedBox(height: 12),
-                StreamBuilder<List<Partner>>(
-                  stream: PartnerService().getPartners(),
-                  builder: (context, snapshot) {
-                    if (!snapshot.hasData) {
-                      return const LinearProgressIndicator();
-                    }
+                ListTile(
+  title: const Text('Customer / Client'),
+  subtitle: Text(
+    selectedCustomerName ?? 'Select Customer',
+    style: const TextStyle(fontWeight: FontWeight.bold),
+  ),
+  trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+  onTap: () async {
 
-                    final partners = snapshot.data!;
-                    return DropdownButtonFormField<String>(
-                      initialValue: selectedCustomerId,
-                      decoration:
-                          const InputDecoration(labelText: 'Customer / Client'),
-                      items: partners
-                          .map(
-                            (p) => DropdownMenuItem(
-                              value: p.id,
-                              child: Text(p.name),
-                            ),
-                          )
-                          .toList(),
-                      onChanged: (partnerId) {
-  final partner = partners.firstWhere(
-    (p) => p.id == partnerId,
-  );
+    final partner = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const PartnerListPage(
+          selectionMode: true,
+        ),
+      ),
+    );
 
-  setState(() {
-    selectedCustomerId = partner.id;
-    selectedCustomerName = partner.name;
-  });
-},
-
-                    );
-                  },
-                ),
+    if (partner != null && partner is Partner) {
+      setState(() {
+        selectedCustomerId = partner.id;
+        selectedCustomerName = partner.name;
+      });
+    }
+  },
+),
                 const SizedBox(height: 8),
                 Align(
                   alignment: Alignment.centerRight,
@@ -441,11 +433,9 @@ for (final factory in factories) {
   context,
   MaterialPageRoute(
     builder: (_) => ActivityFormPage(
-      attendanceDate: _selectedDate,
-      factoryClientName: selectedCustomerName ?? '',
-      customerId: selectedCustomerId!,
-      existingActivity: null, // 🔥 pastikan kosong
-    ),
+  attendanceDate: _selectedDate,
+  customerId: selectedCustomerId!,
+)
   ),
 );
 
@@ -602,11 +592,10 @@ if (_isOutstation && _allActivities.isNotEmpty) ...[
                     context,
                     MaterialPageRoute(
                       builder: (_) => ActivityFormPage(
-                        attendanceDate: _selectedDate,
-                        factoryClientName: a.factoryClient,
-                        customerId: a.customerId,
-                        existingActivity: a,
-                      ),
+  attendanceDate: _selectedDate,
+  customerId: a.customerId,
+  existingActivity: a,
+)
                     ),
                   );
 
@@ -681,9 +670,9 @@ if (_isOutstation && _allActivities.isNotEmpty) ...[
 void _addActivity(ActivityEntry activity) {
 
   final factory = _getOrCreateFactory(
-    activity.factoryId,
-    activity.factoryId,
-  );
+  activity.factoryId,
+  activity.factoryClient,
+);
 
   setState(() {
     factory.activities.add(activity);

@@ -1,19 +1,17 @@
 import 'package:flutter/material.dart';
 import '../../pages/common/app_background_wrapper.dart';
 import '../models/activity_entry.dart';
-import '../../services/partner_service.dart';
 import '../../models/partner.dart';
+import '../../pages/partners/partner_list_page.dart';
 
 class ActivityFormPage extends StatefulWidget {
-  final DateTime attendanceDate;      // ✅ dari attendance
-  final String factoryClientName; 
-  final String customerId;    // ✅ NAMA customer
-    final ActivityEntry? existingActivity;
+  final DateTime attendanceDate;
+  final String customerId;
+  final ActivityEntry? existingActivity;
 
   const ActivityFormPage({
     super.key,
     required this.attendanceDate,
-    required this.factoryClientName,
     required this.customerId,
     this.existingActivity,
   });
@@ -23,8 +21,11 @@ class ActivityFormPage extends StatefulWidget {
 }
 
 class _ActivityFormPageState extends State<ActivityFormPage> {
+
   late DateTime date;
-  late String factoryName;
+
+  String? factoryId;
+  String? factoryName;
 
   String activityType = 'service';
   String status = 'paid';
@@ -39,12 +40,14 @@ class _ActivityFormPageState extends State<ActivityFormPage> {
     super.initState();
 
     date = widget.attendanceDate;
-    factoryName = widget.factoryClientName;
 
     if (widget.existingActivity != null) {
+
       final a = widget.existingActivity!;
 
       date = a.date;
+      factoryId = a.factoryId;
+      factoryName = a.factoryClient;
 
       machineCtrl.text = a.machine;
       serialCtrl.text = a.serialNumber;
@@ -65,19 +68,64 @@ class _ActivityFormPageState extends State<ActivityFormPage> {
     super.dispose();
   }
 
+  Future<void> _selectFactory() async {
+
+    final partner = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const PartnerListPage(
+          selectionMode: true,
+        ),
+      ),
+    );
+
+    if (partner != null && partner is Partner) {
+      setState(() {
+        factoryId = partner.id;
+        factoryName = partner.name;
+      });
+    }
+  }
+
+  void _save() {
+
+    if (factoryId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select factory'),
+        ),
+      );
+      return;
+    }
+
+    final activity = ActivityEntry(
+      date: date,
+      factoryId: factoryId!,
+      factoryClient: factoryName ?? '',
+      customerId: widget.customerId,
+      machine: machineCtrl.text,
+      serialNumber: serialCtrl.text,
+      activityType: activityType,
+      description: descCtrl.text,
+      status: status,
+      note: noteCtrl.text,
+    );
+
+    Navigator.pop(context, activity);
+  }
+
   @override
   Widget build(BuildContext context) {
+
     return GestureDetector(
       behavior: HitTestBehavior.translucent,
       onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
         appBar: AppBar(
           title: Text(
-            widget.existingActivity == null ? 'Add Activity' : 'Edit Activity',
-          ),
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back),
-            onPressed: () => Navigator.pop(context),
+            widget.existingActivity == null
+                ? 'Add Activity'
+                : 'Edit Activity',
           ),
           backgroundColor: Colors.transparent,
           elevation: 0,
@@ -85,14 +133,17 @@ class _ActivityFormPageState extends State<ActivityFormPage> {
         extendBodyBehindAppBar: true,
         body: AppBackgroundWrapper(
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+            padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+
+                // DATE
                 ListTile(
                   title: Text(date.toString().split(' ').first),
                   trailing: const Icon(Icons.date_range),
                   onTap: () async {
+
                     final picked = await showDatePicker(
                       context: context,
                       firstDate: DateTime(2020),
@@ -108,37 +159,18 @@ class _ActivityFormPageState extends State<ActivityFormPage> {
                   },
                 ),
 
-                StreamBuilder<List<Partner>>(
-  stream: PartnerService().getPartners(),
-  builder: (context, snapshot) {
-
-    if (!snapshot.hasData) {
-      return const LinearProgressIndicator();
-    }
-
-    final partners = snapshot.data!;
-
-    return DropdownButtonFormField<String>(
-      value: factoryName,
-      decoration: const InputDecoration(
-        labelText: 'Factory / Client',
-      ),
-      items: partners.map((p) {
-        return DropdownMenuItem(
-          value: p.name,
-          child: Text(p.name),
-        );
-      }).toList(),
-      onChanged: (v) {
-
-        setState(() {
-          factoryName = v!;
-        });
-
-      },
-    );
-  },
-),
+                // FACTORY SELECTOR
+                ListTile(
+                  title: const Text('Factory'),
+                  subtitle: Text(
+                    factoryName ?? 'Select Factory',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                  onTap: _selectFactory,
+                ),
 
                 const SizedBox(height: 16),
 
@@ -152,7 +184,9 @@ class _ActivityFormPageState extends State<ActivityFormPage> {
 
                 DropdownButtonFormField<String>(
                   value: activityType,
-                  decoration: const InputDecoration(labelText: 'Activity'),
+                  decoration: const InputDecoration(
+                    labelText: 'Activity',
+                  ),
                   items: const [
                     'service',
                     'maintenance',
@@ -161,14 +195,10 @@ class _ActivityFormPageState extends State<ActivityFormPage> {
                     'training',
                     'general visit',
                     'meeting',
-                  ]
-                      .map(
-                        (e) => DropdownMenuItem(
-                          value: e,
-                          child: Text(e),
-                        ),
-                      )
-                      .toList(),
+                  ].map((e) => DropdownMenuItem(
+                        value: e,
+                        child: Text(e),
+                      )).toList(),
                   onChanged: (v) {
                     setState(() {
                       activityType = v!;
@@ -186,8 +216,14 @@ class _ActivityFormPageState extends State<ActivityFormPage> {
                   value: status,
                   decoration: const InputDecoration(labelText: 'Status'),
                   items: const [
-                    DropdownMenuItem(value: 'paid', child: Text('Paid')),
-                    DropdownMenuItem(value: 'warranty', child: Text('Warranty')),
+                    DropdownMenuItem(
+                      value: 'paid',
+                      child: Text('Paid'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'warranty',
+                      child: Text('Warranty'),
+                    ),
                   ],
                   onChanged: (v) {
                     setState(() {
@@ -204,38 +240,23 @@ class _ActivityFormPageState extends State<ActivityFormPage> {
 
                 Row(
                   children: [
+
                     Expanded(
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.red,
                         ),
-                        onPressed: () {
-                          Navigator.pop(context);
-                        },
+                        onPressed: () => Navigator.pop(context),
                         child: const Text('Cancel'),
                       ),
                     ),
+
                     const SizedBox(width: 12),
+
                     Expanded(
                       child: ElevatedButton(
+                        onPressed: _save,
                         child: const Text('Save Activity'),
-                        onPressed: () {
-
-  final activity = ActivityEntry(
-    date: date,
-    factoryId: factoryName,
-    factoryClient: factoryName,
-    customerId: widget.customerId,
-    machine: machineCtrl.text,
-    serialNumber: serialCtrl.text,
-    activityType: activityType,
-    description: descCtrl.text,
-    status: status,
-    note: noteCtrl.text,
-  );
-
-  Navigator.pop(context, activity);
-}
                       ),
                     ),
                   ],
