@@ -6,6 +6,7 @@ import '../pages/spare_part/spare_part_list_page.dart';
 import '../../models/spare_part.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../pages/partners/partner_list_page.dart';
+import '../pages/order_in/order_in_detail_page.dart';
 
 enum QtyDialogMode {
   orderIn,
@@ -868,26 +869,48 @@ Widget build(BuildContext context) {
                             : _OrderInListView(
   searchKeyword: fullscreenSearchController.text,
   filterDate: fullscreenFilterDate,
-  onTap: _showOrderDetail,
+
+  onTap: (context, data) async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => OrderInDetailPage(data: data),
+      ),
+    );
+
+    if (result != null && context.mounted) {
+      _openEditOrder(result);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Mode edit diaktifkan'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
+  },
+
   onDelete: (orderId, data) {
     _deleteOrder(context, orderId, data);
   },
+
   onEdit: (data) async {
-  final confirm = await _confirmEditOrder(context);
-  if (!confirm) return;
+    final confirm = await _confirmEditOrder(context);
+    if (!confirm) return;
 
-  _openEditOrder(data);
-  if (!context.mounted) return;
+    _openEditOrder(data);
 
-  ScaffoldMessenger.of(context).showSnackBar(
-    const SnackBar(
-      content: Text('Mode edit diaktifkan'),
-      duration: Duration(seconds: 2),
-    ),
-  );
-},
-),
-                      ),
+    if (!context.mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Mode edit diaktifkan'),
+        duration: Duration(seconds: 2),
+      ),
+    );
+  },
+)
+                      )
                     ],
                   ),
           ),
