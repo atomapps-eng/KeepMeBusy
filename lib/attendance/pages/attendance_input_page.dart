@@ -389,15 +389,16 @@ for (final a in activities) {
   }
 
   final result = await Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (_) => ActivityFormPage(
-        attendanceDate: _selectedDate,
-        factoryClientName: selectedCustomerName ?? '',
-        customerId: selectedCustomerId!, // 🔥 ini dari AttendanceInputPage
-      ),
+  context,
+  MaterialPageRoute(
+    builder: (_) => ActivityFormPage(
+      attendanceDate: _selectedDate,
+      factoryClientName: selectedCustomerName ?? '',
+      customerId: selectedCustomerId!,
+      existingActivity: null, // 🔥 pastikan kosong
     ),
-  );
+  ),
+);
 
   if (result is ActivityEntry) {
     setState(() {
@@ -510,14 +511,55 @@ if (_isOutstation && activities.isNotEmpty) ...[
   ),
   const SizedBox(height: 8),
 
-  ...activities.map((a) {
-    return ListTile(
-      dense: true,
-      title: Text(a.activityType),
-      subtitle: Text('${a.factoryClient} • ${a.machine}'),
-      trailing: const Icon(Icons.check, size: 16),
-    );
-  }),
+  ...activities.asMap().entries.map((entry) {
+  final index = entry.key;
+  final a = entry.value;
+
+  return ListTile(
+    dense: true,
+    title: Text(a.activityType),
+    subtitle: Text('${a.factoryClient} • ${a.machine}'),
+    trailing: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+
+        // EDIT
+        IconButton(
+          icon: const Icon(Icons.edit, size: 18, color: Colors.blue),
+          onPressed: () async {
+            final result = await Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => ActivityFormPage(
+                  attendanceDate: _selectedDate,
+                  factoryClientName: a.factoryClient,
+                  customerId: a.customerId,
+                  existingActivity: a, // 🔥 kirim activity lama
+                ),
+              ),
+            );
+
+            if (result is ActivityEntry) {
+              setState(() {
+                activities[index] = result;
+              });
+            }
+          },
+        ),
+
+        // DELETE
+        IconButton(
+          icon: const Icon(Icons.delete, size: 18, color: Colors.red),
+          onPressed: () {
+            setState(() {
+              activities.removeAt(index);
+            });
+          },
+        ),
+      ],
+    ),
+  );
+}),
 ],
 
               const Spacer(),              

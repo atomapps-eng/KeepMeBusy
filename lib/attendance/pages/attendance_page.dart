@@ -16,6 +16,7 @@ import '../../theme/app_theme.dart';
 import '../../services/pdf_report_service.dart';
 import '../../services/pdf_action_service.dart';
 import '../../attendance/attendance_summary/attendance_summary_calculator.dart';
+import '../services/attendance_period_helper.dart';
 
 
 
@@ -1613,8 +1614,7 @@ List<AttendanceDay> _applyPeriodFilter(List<AttendanceDay> days) {
   if (_isAllPeriod) return days;
 
   return days.where((day) {
-    final month = day.date.month.toString().padLeft(2, '0');
-    final period = '${day.date.year}-$month';
+    final period = AttendancePeriodHelper.resolvePeriod(day.date);
     return period == _selectedPeriod;
   }).toList();
 }
@@ -1712,15 +1712,16 @@ List<String> _extractAvailablePeriods(List<AttendanceDay> days) {
   final Set<String> uniquePeriods = {};
 
   for (final day in days) {
-    final month = day.date.month.toString().padLeft(2, '0');
-    uniquePeriods.add('${day.date.year}-$month');
+    uniquePeriods.add(
+      AttendancePeriodHelper.resolvePeriod(day.date),
+    );
   }
 
-  // 🔥 jika tidak ada attendance, pakai bulan sekarang
+  // jika tidak ada attendance, pakai period sekarang
   if (uniquePeriods.isEmpty) {
-    final now = DateTime.now();
-    final month = now.month.toString().padLeft(2, '0');
-    uniquePeriods.add('${now.year}-$month');
+    uniquePeriods.add(
+      AttendancePeriodHelper.resolvePeriod(DateTime.now()),
+    );
   }
 
   final periods = uniquePeriods.toList();

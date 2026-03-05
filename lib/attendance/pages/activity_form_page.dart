@@ -29,12 +29,14 @@ class ActivityFormPage extends StatefulWidget {
   final DateTime attendanceDate;      // ✅ dari attendance
   final String factoryClientName; 
   final String customerId;    // ✅ NAMA customer
+    final ActivityEntry? existingActivity;
 
   const ActivityFormPage({
     super.key,
     required this.attendanceDate,
     required this.factoryClientName,
     required this.customerId,
+    this.existingActivity,
   });
 
   @override
@@ -42,7 +44,7 @@ class ActivityFormPage extends StatefulWidget {
 }
 
 class _ActivityFormPageState extends State<ActivityFormPage> {
-  late DateTime date; // ✅ langsung terisi
+  late DateTime date;
 
   String activityType = 'service';
   String status = 'paid';
@@ -55,8 +57,31 @@ class _ActivityFormPageState extends State<ActivityFormPage> {
   @override
   void initState() {
     super.initState();
-    // ✅ FIX POINT 1
+
     date = widget.attendanceDate;
+
+    if (widget.existingActivity != null) {
+      final a = widget.existingActivity!;
+
+      date = a.date;
+
+      machineCtrl.text = a.machine;
+      serialCtrl.text = a.serialNumber;
+      descCtrl.text = a.description;
+      noteCtrl.text = a.note;
+
+      activityType = a.activityType;
+      status = a.status;
+    }
+  }
+
+  @override
+  void dispose() {
+    machineCtrl.dispose();
+    serialCtrl.dispose();
+    descCtrl.dispose();
+    noteCtrl.dispose();
+    super.dispose();
   }
 
   @override
@@ -66,7 +91,9 @@ class _ActivityFormPageState extends State<ActivityFormPage> {
       onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Add Activity'),
+          title: Text(
+            widget.existingActivity == null ? 'Add Activity' : 'Edit Activity',
+          ),
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
             onPressed: () => Navigator.pop(context),
@@ -77,20 +104,12 @@ class _ActivityFormPageState extends State<ActivityFormPage> {
         extendBodyBehindAppBar: true,
         body: AppBackgroundWrapper(
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(
-              16,
-              16,
-              16,
-              16,
-            ),
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // ================= DATE =================
                 ListTile(
-                  title: Text(
-                    date.toString().split(' ').first,
-                  ),
+                  title: Text(date.toString().split(' ').first),
                   trailing: const Icon(Icons.date_range),
                   onTap: () async {
                     final picked = await showDatePicker(
@@ -99,6 +118,7 @@ class _ActivityFormPageState extends State<ActivityFormPage> {
                       lastDate: DateTime(2030),
                       initialDate: date,
                     );
+
                     if (picked != null) {
                       setState(() {
                         date = picked;
@@ -107,56 +127,73 @@ class _ActivityFormPageState extends State<ActivityFormPage> {
                   },
                 ),
 
-                // ================= FACTORY / CLIENT (NAME) =================
                 TextFormField(
                   initialValue: widget.factoryClientName,
                   readOnly: true,
+                  decoration: const InputDecoration(
+                    labelText: 'Factory / Client',
+                  ),
                 ),
+
                 const SizedBox(height: 16),
 
                 _field(machineCtrl, 'Machine'),
-const SizedBox(height: 12),
 
-_field(serialCtrl, 'Serial Number'),
-const SizedBox(height: 16),
+                const SizedBox(height: 12),
 
-DropdownButtonFormField<String>(
-  initialValue: activityType,
-  decoration: const InputDecoration(labelText: 'Activity'),
-  items: const [
-    'service',
-    'maintenance',
-    'remote',
-    'installation',
-    'training',
-    'general visit',
-    'meeting',
-  ]
-      .map(
-        (e) => DropdownMenuItem(value: e, child: Text(e)),
-      )
-      .toList(),
-  onChanged: (v) => setState(() => activityType = v!),
-),
+                _field(serialCtrl, 'Serial Number'),
 
-const SizedBox(height: 16),
+                const SizedBox(height: 16),
 
-_field(descCtrl, 'Activity Description', lines: 2),
-const SizedBox(height: 16),
+                DropdownButtonFormField<String>(
+                  value: activityType,
+                  decoration: const InputDecoration(labelText: 'Activity'),
+                  items: const [
+                    'service',
+                    'maintenance',
+                    'remote',
+                    'installation',
+                    'training',
+                    'general visit',
+                    'meeting',
+                  ]
+                      .map(
+                        (e) => DropdownMenuItem(
+                          value: e,
+                          child: Text(e),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (v) {
+                    setState(() {
+                      activityType = v!;
+                    });
+                  },
+                ),
 
-DropdownButtonFormField<String>(
-  initialValue: status,
-  decoration: const InputDecoration(labelText: 'Status'),
-  items: const [
-    DropdownMenuItem(value: 'paid', child: Text('Paid')),
-    DropdownMenuItem(value: 'warranty', child: Text('Warranty')),
-  ],
-  onChanged: (v) => setState(() => status = v!),
-),
+                const SizedBox(height: 16),
 
-const SizedBox(height: 16),
+                _field(descCtrl, 'Activity Description', lines: 2),
 
-_field(noteCtrl, 'Note', lines: 2),
+                const SizedBox(height: 16),
+
+                DropdownButtonFormField<String>(
+                  value: status,
+                  decoration: const InputDecoration(labelText: 'Status'),
+                  items: const [
+                    DropdownMenuItem(value: 'paid', child: Text('Paid')),
+                    DropdownMenuItem(value: 'warranty', child: Text('Warranty')),
+                  ],
+                  onChanged: (v) {
+                    setState(() {
+                      status = v!;
+                    });
+                  },
+                ),
+
+                const SizedBox(height: 16),
+
+                _field(noteCtrl, 'Note', lines: 2),
 
                 const Spacer(),
 
@@ -167,7 +204,9 @@ _field(noteCtrl, 'Note', lines: 2),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.red,
                         ),
-                        onPressed: () => Navigator.pop(context),
+                        onPressed: () {
+                          Navigator.pop(context);
+                        },
                         child: const Text('Cancel'),
                       ),
                     ),
@@ -176,22 +215,21 @@ _field(noteCtrl, 'Note', lines: 2),
                       child: ElevatedButton(
                         child: const Text('Save Activity'),
                         onPressed: () {
-                          Navigator.pop(
-                            context,
-                            ActivityEntry(
-                              date: date,
-                              factoryClient:
-                              widget.factoryClientName,
-                              customerId: widget.customerId, // ✅ NAME
-                              machine: machineCtrl.text,
-                              serialNumber: serialCtrl.text,
-                              activityType: activityType,
-                              description: descCtrl.text,
-                              status: status,
-                              note: noteCtrl.text,
-                            ),
-                          );
-                        },
+
+  final activity = ActivityEntry(
+    date: date,
+    factoryClient: widget.factoryClientName,
+    customerId: widget.customerId,
+    machine: machineCtrl.text,
+    serialNumber: serialCtrl.text,
+    activityType: activityType,
+    description: descCtrl.text,
+    status: status,
+    note: noteCtrl.text,
+  );
+
+  Navigator.pop(context, activity);
+}
                       ),
                     ),
                   ],
@@ -205,12 +243,12 @@ _field(noteCtrl, 'Note', lines: 2),
   }
 
   Widget _field(
-    TextEditingController c,
+    TextEditingController controller,
     String label, {
     int lines = 1,
   }) {
     return TextField(
-      controller: c,
+      controller: controller,
       maxLines: lines,
       decoration: InputDecoration(labelText: label),
     );
