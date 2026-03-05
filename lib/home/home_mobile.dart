@@ -134,6 +134,25 @@ Stream<Map<String, dynamic>> dashboardStatsStream() {
             ),
           ),
 
+           // ===== WATERMARK LOGO =====
+    Positioned.fill(
+      child: IgnorePointer(
+        child: Center(
+          child: Align(
+      alignment: const Alignment(0, 0.15),
+          child: Opacity(
+            opacity: 0.08, // transparansi watermark
+            child: Image.asset(
+              'assets/images/Atom.png',
+              width: 320,
+              fit: BoxFit.contain,
+            ),
+          ),
+          ),
+        ),
+      ),
+    ),
+
           SafeArea(
             child: SingleChildScrollView(
               padding: const EdgeInsets.only(bottom: 8),
@@ -299,7 +318,7 @@ Stream<Map<String, dynamic>> dashboardStatsStream() {
     context,
     MaterialPageRoute(
       builder: (_) => AttendancePage(
-        employeeId: employeeId,
+        employeeId: FirebaseAuth.instance.currentUser!.uid,
         period: period,
       ),
     ),
@@ -481,7 +500,7 @@ Widget _buildDashboardCards() {
                   context,
                   MaterialPageRoute(
                     builder: (_) => AttendancePage(
-                      employeeId: employeeId,
+                      employeeId: FirebaseAuth.instance.currentUser!.uid,
                       period: period,
                     ),
                   ),
@@ -542,7 +561,20 @@ Future<void> _switchCompany(BuildContext context) async {
   }
 }
 
+Future<Map<String, dynamic>?> _getUserProfile() async {
+  final uid = FirebaseAuth.instance.currentUser!.uid;
+
+  final doc = await FirebaseFirestore.instance
+      .collection('users')
+      .doc(uid)
+      .get();
+
+  return doc.data();
 }
+
+}
+
+
 
 // ================= CATEGORY SECTION =================
 class _CategorySection extends StatelessWidget {
