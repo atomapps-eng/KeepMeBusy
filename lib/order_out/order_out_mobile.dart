@@ -396,60 +396,110 @@ Future<void> _editItemAtIndex(int index) async {
 
   // ================= QTY DIALOG =================
   Future<int?> _showQtyDialog(SparePart part) async {
-    final controller = TextEditingController();
-    String? error;
+  int qty = 1;
+  final controller = TextEditingController(text: '1');
+  String? error;
 
-    return showDialog<int>(
-      context: context,
-      builder: (ctx) {
-        return StatefulBuilder(
-          builder: (ctx, setLocal) {
-            return AlertDialog(
-              title: Text(part.partCode),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(part.nameEn),
-                  const SizedBox(height: 8),
-                  Text('Stock tersedia: ${part.currentStock}'),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: controller,
-                    keyboardType: TextInputType.number,
-                    decoration: InputDecoration(
-                      labelText: 'Qty',
-                      errorText: error,
+  return showDialog<int>(
+    context: context,
+    builder: (ctx) {
+      return StatefulBuilder(
+        builder: (ctx, setLocal) {
+          void increase() {
+            if (qty < part.currentStock) {
+              setLocal(() {
+                qty++;
+                controller.text = qty.toString();
+                error = null;
+              });
+            }
+          }
+
+          void decrease() {
+            if (qty > 1) {
+              setLocal(() {
+                qty--;
+                controller.text = qty.toString();
+                error = null;
+              });
+            }
+          }
+
+          return AlertDialog(
+            title: Text(part.partCode),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(part.nameEn),
+                const SizedBox(height: 8),
+                Text('Stock tersedia: ${part.currentStock}'),
+                const SizedBox(height: 16),
+
+                /// ===== QTY STEPPER =====
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.remove_circle_outline),
+                      onPressed: decrease,
                     ),
-                  ),
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(ctx),
-                  child: const Text('Cancel'),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    final qty = int.tryParse(controller.text) ?? 0;
-                    if (qty <= 0) {
-                      setLocal(() => error = 'Qty tidak valid');
-                      return;
-                    }
-                    if (qty > part.currentStock) {
-                      setLocal(() => error = 'Qty melebihi stock');
-                      return;
-                    }
-                    Navigator.pop(ctx, qty);
-                  },
-                  child: const Text('Add'),
+
+                    SizedBox(
+                      width: 70,
+                      child: TextField(
+                        controller: controller,
+                        textAlign: TextAlign.center,
+                        keyboardType: TextInputType.number,
+                        onChanged: (v) {
+                          final value = int.tryParse(v) ?? 0;
+                          setLocal(() {
+                            qty = value;
+                          });
+                        },
+                        decoration: InputDecoration(
+                          errorText: error,
+                          isDense: true,
+                          border: const OutlineInputBorder(),
+                        ),
+                      ),
+                    ),
+
+                    IconButton(
+                      icon: const Icon(Icons.add_circle_outline),
+                      onPressed: increase,
+                    ),
+                  ],
                 ),
               ],
-            );
-          },
-        );
-      },
-    );
-  }
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  if (qty <= 0) {
+                    setLocal(() => error = 'Qty tidak valid');
+                    return;
+                  }
+
+                  if (qty > part.currentStock) {
+                    setLocal(() => error = 'Qty melebihi stock');
+                    return;
+                  }
+
+                  Navigator.pop(ctx, qty);
+                },
+                child: const Text('Add'),
+              ),
+            ],
+          );
+        },
+      );
+    },
+  );
+}
 
   // ================= COMMIT FIRESTORE =================
 Future<void> _commitOrderOut() async {

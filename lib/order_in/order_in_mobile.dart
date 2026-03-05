@@ -503,7 +503,9 @@ final partForEdit = SparePart(
   required QtyDialogMode mode,
   required int firestoreStock,
 }) async {
-  final controller = TextEditingController();
+
+  int qty = 1;
+  final controller = TextEditingController(text: '1');
   String? error;
 
   return showDialog<int>(
@@ -511,6 +513,25 @@ final partForEdit = SparePart(
     builder: (ctx) {
       return StatefulBuilder(
         builder: (ctx, setLocal) {
+
+          void increase() {
+            setLocal(() {
+              qty++;
+              controller.text = qty.toString();
+              error = null;
+            });
+          }
+
+          void decrease() {
+            if (qty > 1) {
+              setLocal(() {
+                qty--;
+                controller.text = qty.toString();
+                error = null;
+              });
+            }
+          }
+
           return AlertDialog(
             title: Text(part.partCode),
             content: Column(
@@ -519,17 +540,46 @@ final partForEdit = SparePart(
                 Text(part.nameEn),
                 const SizedBox(height: 8),
 
-                // INFO STOCK (HANYA INFORMASI)
-               Text('Stock saat ini: $firestoreStock'),
+                /// INFO STOCK (hanya info)
+                Text('Stock saat ini: $firestoreStock'),
 
-                const SizedBox(height: 12),
-                TextField(
-                  controller: controller,
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(
-                    labelText: 'Qty',
-                    errorText: error,
-                  ),
+                const SizedBox(height: 16),
+
+                /// ===== QTY STEPPER =====
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+
+                    IconButton(
+                      icon: const Icon(Icons.remove_circle_outline),
+                      onPressed: decrease,
+                    ),
+
+                    SizedBox(
+                      width: 70,
+                      child: TextField(
+                        controller: controller,
+                        textAlign: TextAlign.center,
+                        keyboardType: TextInputType.number,
+                        onChanged: (v) {
+                          final value = int.tryParse(v) ?? 0;
+                          setLocal(() {
+                            qty = value;
+                          });
+                        },
+                        decoration: InputDecoration(
+                          isDense: true,
+                          border: const OutlineInputBorder(),
+                          errorText: error,
+                        ),
+                      ),
+                    ),
+
+                    IconButton(
+                      icon: const Icon(Icons.add_circle_outline),
+                      onPressed: increase,
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -540,22 +590,19 @@ final partForEdit = SparePart(
               ),
               ElevatedButton(
                 onPressed: () {
-                  final qty = int.tryParse(controller.text) ?? 0;
 
-                  // ===== VALIDASI UMUM =====
                   if (qty <= 0) {
                     setLocal(() => error = 'Qty tidak valid');
                     return;
                   }
 
-                  // ===== VALIDASI KHUSUS ORDER OUT =====
+                  /// VALIDASI KHUSUS ORDER OUT
                   if (mode == QtyDialogMode.orderOut &&
                       qty > part.currentStock) {
                     setLocal(() => error = 'Qty melebihi stock');
                     return;
                   }
 
-                  // ===== ORDER IN TIDAK PUNYA VALIDASI STOCK =====
                   Navigator.pop(ctx, qty);
                 },
                 child: const Text('Simpan'),
