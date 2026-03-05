@@ -33,6 +33,8 @@ class _OrderOutDetailPageState extends State<OrderOutDetailPage> {
       0,
       (total, item) => total + (item['qty'] as int),
     );
+    final totalWeight =
+    (data['totalWeight'] ?? 0).toDouble();
 
     return Scaffold(
       appBar: AppBar(
@@ -163,8 +165,12 @@ class _OrderOutDetailPageState extends State<OrderOutDetailPage> {
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 6),
-                    Text('Total Item : $totalItem'),
-                    Text('Total Qty  : $totalQty'),
+                    _summaryRow('Total Item', totalItem.toString()),
+_summaryRow('Total Qty', totalQty.toString()),
+_summaryRow(
+  'Total Weight',
+  '${totalWeight.toStringAsFixed(2)} kg',
+),
 
                     const SizedBox(height: 16),
 
@@ -253,6 +259,27 @@ class _OrderOutDetailPageState extends State<OrderOutDetailPage> {
       ),
     );
   }
+}
+
+Widget _summaryRow(String label, String value) {
+  return Padding(
+    padding: const EdgeInsets.only(bottom: 2),
+    child: Row(
+      children: [
+
+        SizedBox(
+          width: 100,
+          child: Text(label),
+        ),
+
+        const Text(':'),
+
+        const SizedBox(width: 6),
+
+        Text(value),
+      ],
+    ),
+  );
 }
 
 /// ================= DELETE ORDER (SAFE TRANSACTION) =================

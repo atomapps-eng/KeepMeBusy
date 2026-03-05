@@ -47,11 +47,13 @@ class _AttendanceListPageState extends State<AttendanceListPage> {
       case AttendanceStatus.off:
         return '❌';
       case AttendanceStatus.sickLeave:
-        return '🤒';
+        return '🤮';
       case AttendanceStatus.annualLeave:
         return '🏖️';
       case AttendanceStatus.traveling:
-        return '🏠';
+        return '✈️';
+        case AttendanceStatus.joinHoliday:
+        return '🧑‍🎄';
       default:
         return '📝';
     }

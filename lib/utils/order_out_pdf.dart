@@ -22,6 +22,8 @@ class OrderOutPdfGenerator {
       0,
       (sum, item) => sum + (item['qty'] as int),
     );
+    final totalWeight =
+    (data['totalWeight'] ?? 0).toDouble();
 
     pdf.addPage(
       pw.MultiPage(
@@ -152,14 +154,29 @@ class OrderOutPdfGenerator {
           // SUMMARY
           // ==================================================
           pw.Text(
-            'Summary',
-            style: pw.TextStyle(
-              fontWeight: pw.FontWeight.bold,
-            ),
-          ),
-          pw.SizedBox(height: 6),
-          pw.Text('Total Item : $totalItem'),
-          pw.Text('Total Qty  : $totalQty'),
+  'Summary',
+  style: pw.TextStyle(
+    fontWeight: pw.FontWeight.bold,
+  ),
+),
+
+pw.SizedBox(height: 6),
+
+pw.Table(
+  columnWidths: const {
+    0: pw.FixedColumnWidth(90),
+    1: pw.FixedColumnWidth(10),
+    2: pw.FlexColumnWidth(),
+  },
+  children: [
+    _infoRow('Total Item', totalItem),
+    _infoRow('Total Qty', totalQty),
+    _infoRow(
+      'Total Weight',
+      '${totalWeight.toStringAsFixed(2)} kg',
+    ),
+  ],
+),
         ],
       ),
     );

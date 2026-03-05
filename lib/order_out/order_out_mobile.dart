@@ -6,6 +6,7 @@ import '../pages/spare_part/spare_part_list_page.dart';
 import '../../models/spare_part.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../pages/partners/partner_list_page.dart';
+import '../pages/order_out/order_out_detail_page.dart';
 
 
 
@@ -44,6 +45,18 @@ class OrderOutItem {
 class _OrderOutPageState extends State<OrderOutMobile> {
   bool isAdmin = false;
 bool isCheckingAdmin = true;
+
+int get totalItem => items.length;
+
+int get totalQty =>
+    items.fold<int>(0, (sum, item) => sum + item.qty);
+
+double get totalWeight =>
+    items.fold<double>(
+      0,
+      (sum, item) => sum + (item.part.weight * item.qty),
+    );
+
   // ================= USER LOGIN HELPER =================
   String _getCurrentUsername() {
     final user = FirebaseAuth.instance.currentUser;
@@ -231,6 +244,14 @@ Future<void> _applyOrderOutTransaction({
     // ===============================
     // 6️⃣ SAVE ORDER
     // ===============================
+    int totalItem = newItems.length;
+int totalQty = 0;
+double totalWeight = 0;
+
+for (final item in newItems) {
+  totalQty += item.qty;
+  totalWeight += item.part.weight * item.qty;
+}
     tx.set(orderRef, {
       'orderDate': Timestamp.fromDate(orderDate!),
       'client': selectedClient,
@@ -242,6 +263,9 @@ Future<void> _applyOrderOutTransaction({
             'qty': e.qty,
             'location': e.part.location,
           }).toList(),
+          'totalItem': totalItem,
+  'totalQty': totalQty,
+  'totalWeight': totalWeight,
       if (!isEdit)
         'createdAt': FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),
@@ -554,16 +578,28 @@ Widget build(BuildContext context) {
   child: isCreateMode
       ? _buildCreateForm()
       : _OrderOutListView(
-        isAdmin: isAdmin,
-          searchKeyword: fullscreenSearchController.text,
-          filterDate: fullscreenFilterDate,
-          onTap: (context, data) {
-  _openEditOrder(data);
-},
-         onDelete: (id, _) => _deleteOrder(id),
-          onEdit: (_) {},
-        ),
-),
+  isAdmin: isAdmin,
+  searchKeyword: fullscreenSearchController.text,
+  filterDate: fullscreenFilterDate,
+
+  onTap: (context, data) async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => OrderOutDetailPage(data: data),
+      ),
+    );
+
+    if (result != null && result is Map<String, dynamic>) {
+      _openEditOrder(result);
+    }
+  },
+
+  onDelete: (id, _) => _deleteOrder(id),
+
+  onEdit: (_) {},
+)
+                      )
 
                     ],
                   ),
@@ -604,7 +640,41 @@ Widget build(BuildContext context) {
               ),
             ),
             Expanded(
-              child: items.isEmpty
+      child: Column(
+        children: [
+
+    if (items.isNotEmpty)
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Row(
+          children: [
+
+            _summaryChip(
+              Icons.list_alt,
+              '$totalItem Item',
+            ),
+
+            const SizedBox(width: 8),
+
+            _summaryChip(
+              Icons.inventory_2,
+              '$totalQty Qty',
+            ),
+
+            const SizedBox(width: 8),
+
+            _summaryChip(
+              Icons.scale,
+              '${totalWeight.toStringAsFixed(2)} kg',
+            ),
+          ],
+        ),
+      ),
+
+    const SizedBox(height: 8),
+
+    Expanded(
+      child: items.isEmpty
                   ? const Center(child: Text('Belum ada item'))
                   : ListView.builder(
                       padding: const EdgeInsets.all(16),
@@ -632,6 +702,9 @@ Widget build(BuildContext context) {
               ),
             ),
           ],
+            ),
+            ),
+          ]
         );
       }
 
@@ -639,9 +712,9 @@ Widget build(BuildContext context) {
       // DESKTOP STRUCTURE (IDENTIK ORDER IN)
       // ===============================
 
-      final desktopTotalItem = items.length;
-      final desktopTotalQty =
-          items.fold<int>(0, (total, e) => total + e.qty);
+      final desktopTotalItem = totalItem;
+final desktopTotalQty = totalQty;
+final desktopTotalWeight = totalWeight;
 
       return Column(
         children: [
@@ -763,6 +836,13 @@ Widget build(BuildContext context) {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
+
+                Text(
+  'Total Weight: ${desktopTotalWeight.toStringAsFixed(2)} kg',
+  style: const TextStyle(
+    fontWeight: FontWeight.w600,
+  ),
+),
 
                 const Spacer(),
 
@@ -995,6 +1075,35 @@ Future<void> _deleteOrder(String orderId) async {
   );
 }
 
+Widget _summaryChip(IconData icon, String text) {
+  return Container(
+    padding: const EdgeInsets.symmetric(
+      horizontal: 10,
+      vertical: 6,
+    ),
+    decoration: BoxDecoration(
+      color: Colors.white.withValues(alpha: 0.4),
+      borderRadius: BorderRadius.circular(10),
+      border: Border.all(
+        color: Colors.white.withValues(alpha: 0.5),
+      ),
+    ),
+    child: Row(
+      children: [
+        Icon(icon, size: 14),
+        const SizedBox(width: 6),
+        Text(
+          text,
+          style: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
 }
 
 /// =====================================================
@@ -1115,6 +1224,18 @@ Widget build(BuildContext context) {
   final date =
       (data['orderDate'] as Timestamp?)?.toDate();
 
+      final items = (data['items'] ?? []) as List;
+
+int totalItem = data['totalItem'] ?? items.length;
+
+int totalQty = data['totalQty'] ??
+    items.fold<int>(
+      0,
+      (sum, item) => sum + (item['qty'] as int),
+    );
+
+double totalWeight = (data['totalWeight'] ?? 0).toDouble();
+
   return Container(
     margin: const EdgeInsets.only(bottom: 12),
     padding: const EdgeInsets.all(12),
@@ -1154,6 +1275,27 @@ Widget build(BuildContext context) {
               '${date.day}/${date.month}/${date.year}',
               style: const TextStyle(fontSize: 12),
             ),
+            const SizedBox(height: 8),
+
+Row(
+  children: [
+
+    _summaryChip(
+  Icons.list_alt,
+  '$totalItem Item',
+),
+
+_summaryChip(
+  Icons.inventory_2,
+  '$totalQty Qty',
+),
+
+_summaryChip(
+  Icons.scale,
+  '${totalWeight.toStringAsFixed(2)} kg',
+),
+  ],
+),
         ],
       ),
     ),
@@ -1168,6 +1310,29 @@ Widget build(BuildContext context) {
       ),
   ],
 ),
+      ],
+    ),
+  );
+}
+
+Widget _summaryChip(IconData icon, String text) {
+  return Container(
+    padding: const EdgeInsets.symmetric(
+      horizontal: 8,
+      vertical: 4,
+    ),
+    decoration: BoxDecoration(
+      color: Colors.white.withValues(alpha: 0.35),
+      borderRadius: BorderRadius.circular(8),
+    ),
+    child: Row(
+      children: [
+        Icon(icon, size: 14),
+        const SizedBox(width: 4),
+        Text(
+          text,
+          style: const TextStyle(fontSize: 12),
+        ),
       ],
     ),
   );
