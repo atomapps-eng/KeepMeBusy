@@ -63,6 +63,18 @@ class _OrderInPageState extends State<OrderInMobile> {
       });
     }
   }
+
+  int get totalItem => items.length;
+
+int get totalQty =>
+    items.fold<int>(0, (sum, item) => sum + item.qty);
+
+double get totalWeight =>
+    items.fold<double>(
+      0,
+      (sum, item) => sum + (item.part.weight * item.qty),
+    );
+
   // ================= USER LOGIN HELPER =================
   String _getCurrentUsername() {
     final user = FirebaseAuth.instance.currentUser;
@@ -689,22 +701,36 @@ for (final entry in qtyMap.entries) {
   });
 }
 
+int totalItem = items.length;
+int totalQty = 0;
+double totalWeight = 0;
+
+for (final item in items) {
+  totalQty += item.qty;
+  totalWeight += item.part.weight * item.qty;
+}
+
 
       // 2. SIMPAN ORDER BARU
       tx.set(orderRef, {
-        'orderDate': Timestamp.fromDate(orderDate!),
-        'client': selectedClient,
-        'poNumber': poNormalized,
-        'createdAt': FieldValue.serverTimestamp(),
-        'createdBy': _getCurrentUsername(),
-        'items': items.map((e) => {
-          'partId': e.part.id,
-          'partCode': e.part.partCode,
-          'nameEn': e.part.nameEn,
-          'qty': e.qty,
-          'location': e.part.location,
-        }).toList(),
-      });
+  'orderDate': Timestamp.fromDate(orderDate!),
+  'client': selectedClient,
+  'poNumber': poNormalized,
+  'createdAt': FieldValue.serverTimestamp(),
+  'createdBy': _getCurrentUsername(),
+
+  'totalItem': totalItem,
+  'totalQty': totalQty,
+  'totalWeight': totalWeight,
+
+  'items': items.map((e) => {
+    'partId': e.part.id,
+    'partCode': e.part.partCode,
+    'nameEn': e.part.nameEn,
+    'qty': e.qty,
+    'location': e.part.location,
+  }).toList(),
+});
     });
 
     if (!mounted) return;
@@ -1004,27 +1030,46 @@ Widget build(BuildContext context) {
           ),
         ),
             Padding(
-              padding: const EdgeInsets.all(16),
-              child: _OrderHeader(
-  orderDate: orderDate,
-  onPickDate: _selectOrderDate,
-  selectedClient: selectedClient,
-  onClientChanged: (v) =>
-      setState(() => selectedClient = v),
-  poController: poController,
-  onSave: _commitOrderIn,
-  onBack: () => setState(() {
-  isCreateMode = false;
-  isEditMode = false;
-  editingOrderId = null;
-}),
-  isSaving: _isSaving,
-  isFormValid: isFormValid,
-  isEditMode: isEditMode,
-),
+  padding: const EdgeInsets.all(16),
+  child: Column(
+    children: [
 
+      _OrderHeader(
+        orderDate: orderDate,
+        onPickDate: _selectOrderDate,
+        selectedClient: selectedClient,
+        onClientChanged: (v) =>
+            setState(() => selectedClient = v),
+        poController: poController,
+        onSave: _commitOrderIn,
+        onBack: () => setState(() {
+          isCreateMode = false;
+          isEditMode = false;
+          editingOrderId = null;
+        }),
+        isSaving: _isSaving,
+        isFormValid: isFormValid,
+        isEditMode: isEditMode,
+      ),
 
+      const SizedBox(height: 10),
+
+      if (items.isNotEmpty)
+        Row(
+          children: [
+            _summaryChip(Icons.list_alt, '$totalItem Item'),
+            const SizedBox(width: 8),
+            _summaryChip(Icons.inventory_2, '$totalQty Qty'),
+            const SizedBox(width: 8),
+            _summaryChip(
+              Icons.scale,
+              '${totalWeight.toStringAsFixed(2)} kg',
             ),
+          ],
+        ),
+    ],
+  ),
+),
             Expanded(
               child: items.isEmpty
                   ? const Center(child: Text('Belum ada item'))
@@ -1284,6 +1329,35 @@ void _handleError(Object e) {
   }
 }
 
+Widget _summaryChip(IconData icon, String text) {
+  return Container(
+    padding: const EdgeInsets.symmetric(
+      horizontal: 10,
+      vertical: 6,
+    ),
+    decoration: BoxDecoration(
+      color: Colors.white.withValues(alpha: 0.4),
+      borderRadius: BorderRadius.circular(10),
+      border: Border.all(
+        color: Colors.white.withValues(alpha: 0.5),
+      ),
+    ),
+    child: Row(
+      children: [
+        Icon(icon, size: 14),
+        const SizedBox(width: 6),
+        Text(
+          text,
+          style: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
 }
 
 /// =====================================================
@@ -1408,6 +1482,17 @@ class _OrderHistoryCard extends StatelessWidget {
 Widget build(BuildContext context) {
   final date =
       (data['orderDate'] as Timestamp?)?.toDate();
+      final items = (data['items'] ?? []) as List;
+
+int totalItem = data['totalItem'] ?? items.length;
+
+int totalQty = data['totalQty'] ??
+    items.fold<int>(
+      0,
+      (sum, item) => sum + (item['qty'] as int),
+    );
+
+double totalWeight = (data['totalWeight'] ?? 0).toDouble();
 
   return Container(
     margin: const EdgeInsets.only(bottom: 12),
@@ -1447,10 +1532,36 @@ Widget build(BuildContext context) {
 
 
                   if (date != null)
-                    Text(
-                      '${date.day}/${date.month}/${date.year}',
-                      style: const TextStyle(fontSize: 12),
-                    ),
+  Text(
+    '${date.day}/${date.month}/${date.year}',
+    style: const TextStyle(fontSize: 12),
+  ),
+
+const SizedBox(height: 8),
+
+Row(
+  children: [
+
+    _summaryChip(
+      Icons.list_alt,
+      '$totalItem Item',
+    ),
+
+    const SizedBox(width: 8),
+
+    _summaryChip(
+      Icons.inventory_2,
+      '$totalQty Qty',
+    ),
+
+    const SizedBox(width: 8),
+
+    _summaryChip(
+      Icons.scale,
+      '${totalWeight.toStringAsFixed(2)} kg',
+    ),
+  ],
+),
                 ],
               ),
             ),
@@ -1478,6 +1589,29 @@ Widget build(BuildContext context) {
 ],
 
           ],
+        ),
+      ],
+    ),
+  );
+}
+
+Widget _summaryChip(IconData icon, String text) {
+  return Container(
+    padding: const EdgeInsets.symmetric(
+      horizontal: 8,
+      vertical: 4,
+    ),
+    decoration: BoxDecoration(
+      color: Colors.white.withValues(alpha: 0.35),
+      borderRadius: BorderRadius.circular(8),
+    ),
+    child: Row(
+      children: [
+        Icon(icon, size: 14),
+        const SizedBox(width: 4),
+        Text(
+          text,
+          style: const TextStyle(fontSize: 12),
         ),
       ],
     ),
