@@ -510,52 +510,54 @@ Widget _buildDashboardCards() {
   final period = AttendancePeriodHelper.resolvePeriod(now);
 
   return Column(
-    children: [
-      Row(
-        children: [
-          Expanded(
-            child: _DashboardCard(
-              title: 'Today Activity',
-              subtitle: period,
-              icon: Icons.event_available,
-              color: Colors.blue,
-              onTap: () {
-                final user = FirebaseAuth.instance.currentUser!;
-                final employeeId = user.displayName ?? user.uid;
+  children: [
+    Row(
+      children: [
+        Expanded(
+          child: _DashboardCard(
+            title: 'Today Activity',
+            subtitle: period,
+            icon: Icons.event_available,
+            color: Colors.blue,
+            onTap: () {
 
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => AttendancePage(
-                      employeeId: FirebaseAuth.instance.currentUser!.uid,
-                      period: period,
-                    ),
+              final user = FirebaseAuth.instance.currentUser!;
+              final employeeId = user.displayName ?? user.uid;
+
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => AttendancePage(
+                    employeeId: employeeId,
+                    period: period,
                   ),
-                );
-              },
-            ),
+                ),
+              );
+
+            },
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: _DashboardCard(
-              title: 'Service Report',
-              subtitle: 'Create or View',
-              icon: Icons.build_circle,
-              color: Colors.green,
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const ServiceReportListPage(),
-                  ),
-                );
-              },
-            ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _DashboardCard(
+            title: 'Service Report',
+            subtitle: 'Create or View',
+            icon: Icons.build_circle,
+            color: Colors.green,
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const ServiceReportListPage(),
+                ),
+              );
+            },
           ),
-        ],
-      ),
-    ],
-  );
+        ),
+      ],
+    ),
+  ],
+);
 }
 // Tambahkan method ini di dalam class _HomeMobileState
 Future<void> _switchCompany(BuildContext context) async {

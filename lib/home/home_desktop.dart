@@ -2336,28 +2336,29 @@ final bool canAccessSettings = isAdmin;
   }
 
   void _openOrderInForm() {
-    ActivityService.addActivity(
-      icon: Icons.input,
-      title: 'Opened Order In Form',
-      color: Colors.green,
-    ).then((_) => _loadActivities());
+  ActivityService.addActivity(
+    icon: Icons.input,
+    title: 'Opened Order In Form',
+    color: Colors.green,
+  ).then((_) => _loadActivities());
 
-    showGeneralDialog(
-      context: context,
-      barrierDismissible: false,
-      barrierLabel: "CreateOrderIn",
-      barrierColor: Colors.black.withOpacity(0.35),
-      transitionDuration: const Duration(milliseconds: 200),
-      pageBuilder: (_, _, _) {
-        return DraggableResizableWindow(
-          title: "Create Order In",
-          child: const OrderInMobile(
-            isCompact: false,
-          ),
-        );
-      },
-    );
-  }
+  showGeneralDialog(
+    context: context,
+    barrierDismissible: false,
+    barrierLabel: "CreateOrderIn",
+    barrierColor: Colors.black.withOpacity(0.35),
+    transitionDuration: const Duration(milliseconds: 200),
+    pageBuilder: (_, _, _) {
+      return DraggableResizableWindow(
+        title: "Create Order In",
+        child: const OrderInMobile(
+          isCompact: false,
+          autoCreate: true,   // 🔥 ini yang penting
+        ),
+      );
+    },
+  );
+}
 
   void _openOrderOutForm() {
     ActivityService.addActivity(

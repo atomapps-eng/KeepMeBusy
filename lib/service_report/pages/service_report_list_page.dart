@@ -9,6 +9,7 @@ import '../../core/session/company_session.dart';
 import '../pages/service_report_detail_page.dart';
 import '../../theme/app_theme.dart';
 import '../../pages/common/app_background_wrapper.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class ServiceReportListPage extends StatefulWidget {
   
@@ -37,22 +38,29 @@ class _ServiceReportListPageState extends State<ServiceReportListPage> {
     super.dispose();
   }
 
-  Future<void> _loadCurrentUser() async {
-    await Future.delayed(const Duration(milliseconds: 500));
-    
-    setState(() {
-      _currentUser = UserModel(
-        uid: 'test-uid',
-        name: 'Test User',
-        email: 'test@test.com',
-        role: 'super_admin',
-        position: 'technician',
-        companyIds: ['atomIndonesia', 'atomVietnam'],
-        active: true,
-      );
-      _isLoadingUser = false;
-    });
+ Future<void> _loadCurrentUser() async {
+  final firebaseUser = FirebaseAuth.instance.currentUser;
+
+  if (firebaseUser == null) {
+    throw Exception("User not logged in");
   }
+
+  final doc = await FirebaseFirestore.instance
+      .collection('users')
+      .doc(firebaseUser.uid)
+      .get();
+
+  final data = doc.data();
+
+  print("===== USER DATA FROM FIRESTORE =====");
+  print(data);
+  print("=====================================");
+  
+  setState(() {
+    _currentUser = UserModel.fromFirestore(doc);
+    _isLoadingUser = false;
+  });
+}
 
   List<QueryDocumentSnapshot<Map<String, dynamic>>> _filterSuperAdminReports(
     QuerySnapshot<Map<String, dynamic>> snapshot,

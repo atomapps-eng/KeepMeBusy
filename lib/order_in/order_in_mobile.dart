@@ -1565,29 +1565,6 @@ Row(
                 ],
               ),
             ),
-
-            // ===== ACTIONS (FULLSCREEN ONLY) =====
-            if (isFullscreen) ...[
-  IconButton(
-    icon: const Icon(
-      Icons.edit,
-      size: 20,
-      color: Colors.blueGrey,
-    ),
-    tooltip: 'Edit Order',
-    onPressed: onEdit,
-  ),
-  IconButton(
-    icon: const Icon(
-      Icons.delete,
-      size: 20,
-      color: Colors.redAccent,
-    ),
-    tooltip: 'Delete Order',
-    onPressed: onDelete,
-  ),
-],
-
           ],
         ),
       ],

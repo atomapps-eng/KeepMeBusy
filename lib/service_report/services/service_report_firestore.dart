@@ -43,16 +43,25 @@ class ServiceReportFirestore {
 
   // Method utama - dipanggil UI
   static Stream<QuerySnapshot<Map<String, dynamic>>> streamReports({
-    required UserModel user,
-  }) {
-    if (user.role == 'super_admin') {
-      // SUPER ADMIN: Gunakan collectionGroup dengan filter companyIds
-      return streamAllCompaniesReports(companyIds: user.companyIds);
-    } else {
-      // REGULAR USER: Hanya bisa lihat company yang dipilih
-      return streamCompanyReports();
-    }
+  required UserModel user,
+}) {
+
+  final firebaseUser = FirebaseAuth.instance.currentUser;
+
+  print("========== SERVICE REPORT STREAM ==========");
+  print("Firebase UID: ${firebaseUser?.uid}");
+  print("Firebase Email: ${firebaseUser?.email}");
+  print("UserModel role: ${user.role}");
+  print("UserModel companyIds: ${user.companyIds}");
+  print("Selected company session: ${CompanySession.selectedCompanyId}");
+  print("===========================================");
+
+  if (user.role == 'super_admin') {
+    return streamAllCompaniesReports(companyIds: user.companyIds);
+  } else {
+    return streamCompanyReports();
   }
+}
 
   // CREATE
 static Future<String> createServiceReport({

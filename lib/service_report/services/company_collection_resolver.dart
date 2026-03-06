@@ -43,9 +43,15 @@ class CompanyCollectionResolver {
   static CollectionReference<Map<String, dynamic>> serviceReports() {
     final companyId = _getCompanyId();
 
-    if (companyId == 'atomIndonesia') {
-      return _firestore.collection('service_reports');
-    }
+     print("===== SERVICE REPORT PATH =====");
+  print("Selected CompanyId: $companyId");
+
+  final path = companyId == 'atomIndonesia'
+      ? "service_reports"
+      : "companies/$companyId/service_reports";
+
+  print("Firestore Path: $path");
+  print("================================");
 
     return _firestore
         .collection('companies')

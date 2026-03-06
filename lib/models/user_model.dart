@@ -24,7 +24,7 @@ class UserModel {
     final data = doc.data() as Map<String, dynamic>;
     return UserModel(
       uid: doc.id,
-      name: data['name'] ?? '',
+      name: data['username'] ?? '',
       email: data['email'] ?? '',
       role: data['role'] ?? 'user',
       position: data['position'] ?? '',
