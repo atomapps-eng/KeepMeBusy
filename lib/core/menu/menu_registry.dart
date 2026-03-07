@@ -6,7 +6,7 @@ import '../../pages/common/placeholder_page.dart';
 import '../../pages/order_out/order_out_page.dart';
 import '../../pages/order_in/order_in_page.dart';
 import '../../service_report/pages/service_report_list_page.dart';
-
+import '../../modules/trip/pages/trip_mobile_page.dart';
 
 import 'menu_config.dart';
 
@@ -190,18 +190,17 @@ final List<MenuConfig> reportsMenus = [
 
   // ===== BUSINESS TRIP REPORT =====
   MenuConfig(
-    label: 'Business Trip Report',
-    icon: Icons.flight_takeoff,
-    color: Colors.purple,
-    category: MenuCategory.reports,
-    enableFloating: true,
-    enableFullscreen: true,
-    pageBuilder: ({
-      required bool isCompact,
-      String? searchKeyword,
-    }) {
-      return const PlaceholderPage(
-          title: 'Business Trip Report');
-    },
-  ),
+  label: 'Business Trip Report',
+  icon: Icons.flight_takeoff,
+  color: Colors.purple,
+  category: MenuCategory.reports,
+  enableFloating: true,
+  enableFullscreen: true,
+  pageBuilder: ({
+    required bool isCompact,
+    String? searchKeyword,
+  }) {
+    return const TripMobilePage();
+  },
+),
 ];

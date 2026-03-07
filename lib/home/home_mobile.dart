@@ -20,6 +20,8 @@ import '../pages/spare_part/spare_part_list_page.dart';
 import '../order_in/order_in_mobile.dart';
 import '../order_out/order_out_mobile.dart';
 import '../attendance/pages/attendance_user_list_page.dart';
+import '../modules/trip/pages/trip_test_page.dart';
+import '../modules/trip/pages/trip_mobile_page.dart';
 
 class HomeMobile extends StatefulWidget {
   const HomeMobile({super.key});
@@ -375,7 +377,7 @@ Stream<Map<String, dynamic>> dashboardStatsStream() {
           context,
           MaterialPageRoute(
             builder: (_) =>
-                const PlaceholderPage(title: 'Buss. Trip Report'),
+                 const TripMobilePage()
           ),
         );
       },
