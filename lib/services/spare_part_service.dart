@@ -40,24 +40,53 @@ class SparePartService {
   DocumentSnapshot? lastDoc,
   int limit = 50,
 }) async {
+
   if (keyword.isEmpty) {
     throw Exception("Keyword cannot be empty");
   }
 
   final lower = keyword.toLowerCase();
+  final end = '$lower\uf8ff';
 
-  Query query = CompanyFirestore
-      .collection('spare_parts')
-      .orderBy('partCode_lower')
-      .startAt([lower])
-      .endAt(['$lower\uf8ff'])
-      .limit(limit);
+  final collection = CompanyFirestore.collection('spare_parts');
 
-  if (lastDoc != null) {
-    query = query.startAfterDocument(lastDoc);
+  // jalankan 3 query paralel
+  final results = await Future.wait([
+    collection
+        .orderBy('partCode_lower')
+        .startAt([lower])
+        .endAt([end])
+        .limit(limit)
+        .get(),
+
+    collection
+        .orderBy('name_lower')
+        .startAt([lower])
+        .endAt([end])
+        .limit(limit)
+        .get(),
+
+    collection
+        .orderBy('nameEn')
+        .startAt([keyword])
+        .endAt(['$keyword\uf8ff'])
+        .limit(limit)
+        .get(),
+  ]);
+
+  // deduplicate hasil
+  final Map<String, QueryDocumentSnapshot> uniqueDocs = {};
+
+  for (var snap in results) {
+    for (var doc in snap.docs) {
+      uniqueDocs[doc.id] = doc;
+    }
   }
 
-  return await query.get();
+  final docs = uniqueDocs.values.toList();
+
+  // kita buat QuerySnapshot fake sederhana
+  return _CombinedQuerySnapshot(docs);
 }
 
 
@@ -234,4 +263,16 @@ class SparePartService {
       return null;
     }
   }
+}
+
+class _CombinedQuerySnapshot implements QuerySnapshot {
+  final List<QueryDocumentSnapshot> _docs;
+
+  _CombinedQuerySnapshot(this._docs);
+
+  @override
+  List<QueryDocumentSnapshot> get docs => _docs;
+
+  @override
+  noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }

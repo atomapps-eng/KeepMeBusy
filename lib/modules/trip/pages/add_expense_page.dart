@@ -8,7 +8,6 @@ import 'dart:io';
 import 'dart:convert';
 import '../services/trip_service.dart';
 import 'package:http/http.dart' as http;
-import '../../../services/receipt_scanner_service.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../pages/common/app_background_wrapper.dart';
 
@@ -29,7 +28,6 @@ class AddExpensePage extends StatefulWidget {
 class _AddExpensePageState extends State<AddExpensePage> {
   final amountController = TextEditingController();
   final descController = TextEditingController();
-  final scannerService = ReceiptScannerService();
   final tripService = TripService();
   TripExpense? existingExpense;
   DateTime date = DateTime.now();

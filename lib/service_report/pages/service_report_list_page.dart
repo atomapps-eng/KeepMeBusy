@@ -51,10 +51,6 @@ class _ServiceReportListPageState extends State<ServiceReportListPage> {
       .get();
 
   final data = doc.data();
-
-  print("===== USER DATA FROM FIRESTORE =====");
-  print(data);
-  print("=====================================");
   
   setState(() {
     _currentUser = UserModel.fromFirestore(doc);
@@ -285,7 +281,6 @@ class _ServiceReportListPageState extends State<ServiceReportListPage> {
   stream: ServiceReportFirestore.streamReports(user: _currentUser!),
   builder: (context, snapshot) {
     if (snapshot.hasError) {
-      print('Stream error: ${snapshot.error}'); // Debug
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -746,8 +741,6 @@ class _ServiceReportListPageState extends State<ServiceReportListPage> {
                           itemBuilder: (context, index) {
                             final doc = filteredDocs[index];
                             final data = doc.data();
-
-                              print("Report ID: ${doc.id}, Company ID: ${data['companyId']}");
                             
                             // 👇 DEFINISIKAN DI SINI, di dalam itemBuilder
                             String factoryMachine = data['factory'] ?? '-';
@@ -895,106 +888,103 @@ Widget _buildTableRow(
 
   // ================= MOBILE LAYOUT =================
   Widget _buildMobileLayout(
-    List<QueryDocumentSnapshot<Map<String, dynamic>>> filteredDocs,
-    Map<String, int> summary,
-  ) {
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Reports Section
-          _glass(
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Service Reports',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                _buildMobileStatusChips(summary),
-                const Divider(height: 24),
-                
-                // Search Bar (Mobile)
-                Container(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(30),
-                    border: Border.all(color: Colors.grey.shade300),
-                  ),
-                  child: TextField(
-                    controller: _searchController,
-                    onChanged: (value) => setState(() => _searchQuery = value),
-                    decoration: InputDecoration(
-                      hintText: 'Search reports...',
-                      hintStyle: TextStyle(color: Colors.grey.shade600),
-                      prefixIcon: Icon(Icons.search, color: Colors.grey.shade600),
-                      border: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
-                      ),
-                    ),
-                  ),
-                ),
-                
-                if (filteredDocs.isEmpty)
-                  const Text(
-                    'No reports found',
-                    style: TextStyle(color: Colors.black54),
-                  ),
-                for (final doc in filteredDocs.take(5))
-                  _buildMobileReportTile(doc),
-                
-                if (filteredDocs.length > 5)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8),
-                    child: Center(
-                      child: Text(
-                        '${filteredDocs.length - 5} more reports...',
-                        style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
-                      ),
-                    ),
-                  ),
-                  
-                const SizedBox(height: 12),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    icon: const Icon(Icons.add),
-                    label: const Text('Create Report'),
-                    onPressed: () {
-                      if (_currentUser!.role != 'super_admin' && 
-                          CompanySession.selectedCompanyId == null) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Please select a company first'),
-                            backgroundColor: Colors.orange,
-                          ),
-                        );
-                        return;
-                      }
-                      
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const ServiceReportFormPage(),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ],
+  List<QueryDocumentSnapshot<Map<String, dynamic>>> filteredDocs,
+  Map<String, int> summary,
+) {
+  return _glass(
+    Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+
+        const Text(
+          'Service Reports',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+
+        const SizedBox(height: 12),
+
+        _buildMobileStatusChips(summary),
+
+        const Divider(height: 24),
+
+        // SEARCH
+        Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.2),
+            borderRadius: BorderRadius.circular(30),
+            border: Border.all(color: Colors.grey.shade300),
+          ),
+          child: TextField(
+            controller: _searchController,
+            onChanged: (value) => setState(() => _searchQuery = value),
+            decoration: InputDecoration(
+              hintText: 'Search reports...',
+              hintStyle: TextStyle(color: Colors.grey.shade600),
+              prefixIcon: Icon(Icons.search, color: Colors.grey.shade600),
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 12,
+              ),
             ),
           ),
-        ],
-      ),
-    );
-  }
+        ),
+
+        // ================= SCROLLABLE REPORT LIST =================
+        Expanded(
+          child: filteredDocs.isEmpty
+              ? Center(
+                  child: Text(
+                    'No reports found',
+                    style: TextStyle(color: Colors.grey.shade600),
+                  ),
+                )
+              : ListView.builder(
+                  itemCount: filteredDocs.length,
+                  itemBuilder: (context, index) {
+                    final doc = filteredDocs[index];
+                    return _buildMobileReportTile(doc);
+                  },
+                ),
+        ),
+
+        const SizedBox(height: 12),
+
+        // CREATE BUTTON (FIXED)
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton.icon(
+            icon: const Icon(Icons.add),
+            label: const Text('Create Report'),
+            onPressed: () {
+              if (_currentUser!.role != 'super_admin' &&
+                  CompanySession.selectedCompanyId == null) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Please select a company first'),
+                    backgroundColor: Colors.orange,
+                  ),
+                );
+                return;
+              }
+
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const ServiceReportFormPage(),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    ),
+  );
+}
 
   Widget _buildMobileStatusChips(Map<String, int> summary) {
     return Wrap(
@@ -1111,8 +1101,6 @@ Widget _buildTableRow(
           );
           return;
         }
-
-        print("Navigating to detail - Report ID: ${doc.id}, Company ID: $companyId");
 
         Navigator.push(
           context,
