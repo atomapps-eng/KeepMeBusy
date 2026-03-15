@@ -5,9 +5,7 @@ import '../models/trip_expense_model.dart';
 import '../services/trip_expense_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:io';
-import 'dart:convert';
 import '../services/trip_service.dart';
-import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import '../../../pages/common/app_background_wrapper.dart';
 import 'package:file_picker/file_picker.dart';
@@ -129,7 +127,7 @@ class _AddExpensePageState extends State<AddExpensePage> {
     isUploading = true;
   });
 
-  String receiptUrl = '';
+  String receiptUrl = existingExpense?.receiptUrl ?? '';
 
   try {
 
@@ -186,6 +184,7 @@ class _AddExpensePageState extends State<AddExpensePage> {
     /// ===============================
     /// CREATE EXPENSE MODEL
     /// ===============================
+print("DESC SAVE: ${descController.text}");
 
     final expense = TripExpense(
       id: '',

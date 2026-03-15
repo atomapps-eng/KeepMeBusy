@@ -98,4 +98,23 @@ Future<void> updateTransfer(
 
 }
 
+Future<List<TripTransfer>> getTransfers(String tripId) async {
+
+  final companyId = await tripService.getCompanyId();
+
+  final snapshot = await _firestore
+      .collection('companies')
+      .doc(companyId)
+      .collection('trips')
+      .doc(tripId)
+      .collection('transfers')
+      .orderBy('date', descending: true)
+      .get();
+
+  return snapshot.docs.map((doc) {
+    return TripTransfer.fromMap(doc.id, doc.data());
+  }).toList();
+
+}
+
 }

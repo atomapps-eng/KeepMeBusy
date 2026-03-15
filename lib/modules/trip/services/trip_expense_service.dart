@@ -6,6 +6,7 @@ class TripExpenseService {
 
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final TripService tripService = TripService();
+  final firestore = FirebaseFirestore.instance;
 
   Future<void> createExpense(
     String tripId,
@@ -57,19 +58,6 @@ Future<void> deleteExpense(String tripId, String expenseId) async {
 
 }
 
-Future<void> deleteTransfer(String tripId, String transferId) async {
-
-  await FirebaseFirestore.instance
-      .collection('companies')
-      .doc('atomIndonesia')
-      .collection('trips')
-      .doc(tripId)
-      .collection('transfers')
-      .doc(transferId)
-      .delete();
-
-}
-
 Future<void> updateExpense(
   String tripId,
   String expenseId,
@@ -86,6 +74,25 @@ Future<void> updateExpense(
       .collection('expenses')
       .doc(expenseId)
       .update(expense.toMap());
+
+}
+
+Future<List<TripExpense>> getExpenses(String tripId) async {
+
+  final companyId = await tripService.getCompanyId();
+
+  final snapshot = await _firestore
+      .collection('companies')
+      .doc(companyId)
+      .collection('trips')
+      .doc(tripId)
+      .collection('expenses')
+      .orderBy('date', descending: true)
+      .get();
+
+  return snapshot.docs.map((doc) {
+    return TripExpense.fromMap(doc.id, doc.data());
+  }).toList();
 
 }
 

@@ -15,6 +15,14 @@ import '../../../pages/common/app_background_wrapper.dart';
 import 'package:intl/intl.dart';
 import 'expense_detail_page.dart';
 import 'transaction_list_page.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:pdf/pdf.dart';
+import 'package:dio/dio.dart';
+import 'dart:typed_data';
+import 'dart:io';
+import 'package:path_provider/path_provider.dart';
+import 'package:open_filex/open_filex.dart';
+import 'package:flutter/services.dart';
 
 
 class TripDetailPage extends StatelessWidget {
@@ -41,153 +49,179 @@ class TripDetailPage extends StatelessWidget {
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Colors.blue.withOpacity(0.2),
-                    Colors.blue.withOpacity(0.1),
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: Colors.blue.withOpacity(0.3),
-                  width: 1,
-                ),
-              ),
-              child: const Icon(
-                Icons.flight_takeoff,
-                color: Colors.blue,
-                size: 24,
-              ),
-            ),
-            const SizedBox(width: 12),
-            const Text(
-              'Trip Detail',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+  title: Row(
+    children: [
+      Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Colors.blue.withOpacity(0.2),
+              Colors.blue.withOpacity(0.1),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: Colors.blue.withOpacity(0.3),
+            width: 1,
+          ),
+        ),
+        child: const Icon(
+          Icons.flight_takeoff,
+          color: Colors.blue,
+          size: 24,
+        ),
+      ),
+      const SizedBox(width: 12),
+      const Text(
+        'Trip Detail',
+        style: TextStyle(
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    ],
+  ),
+  backgroundColor: Colors.transparent,
+  elevation: 0,
+
+  leading: Container(
+    margin: const EdgeInsets.only(left: 8),
+    decoration: BoxDecoration(
+      gradient: LinearGradient(
+        colors: [
+          Colors.white.withOpacity(0.2),
+          Colors.white.withOpacity(0.1),
+        ],
+      ),
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(color: Colors.white.withOpacity(0.3)),
+    ),
+    child: IconButton(
+      icon: const Icon(Icons.arrow_back),
+      onPressed: () => Navigator.pop(context),
+    ),
+  ),
+
+  actions: [
+
+    /// BUTTON EXPORT PDF
+    Container(
+      margin: const EdgeInsets.only(right: 8),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Colors.red.withOpacity(0.2),
+            Colors.red.withOpacity(0.1),
           ],
         ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: Container(
-          margin: const EdgeInsets.only(left: 8),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                Colors.white.withOpacity(0.2),
-                Colors.white.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: Colors.red.withOpacity(0.3),
+        ),
+      ),
+      child: IconButton(
+        icon: const Icon(Icons.picture_as_pdf, color: Colors.red),
+        onPressed: () => _generateEnterprisePdf(context),
+      ),
+    ),
+
+    /// MENU 3 DOT
+    Container(
+      margin: const EdgeInsets.only(right: 8),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Colors.blue.withOpacity(0.2),
+            Colors.blue.withOpacity(0.1),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: Colors.blue.withOpacity(0.3),
+        ),
+      ),
+      child: PopupMenuButton<String>(
+        icon: const Icon(Icons.more_vert, color: Colors.blue),
+        onSelected: (value) async {
+
+          if (value == 'edit') {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => CreateTripPage(trip: trip),
+              ),
+            );
+          }
+
+          if (value == 'delete') {
+            final confirm = await showDialog(
+              context: context,
+              builder: (context) {
+                return AlertDialog(
+                  title: const Text('Delete Trip'),
+                  content: const Text(
+                    'Are you sure you want to delete this trip?',
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () {
+                        Navigator.pop(context, false);
+                      },
+                      child: const Text('Cancel'),
+                    ),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        foregroundColor: Colors.white,
+                      ),
+                      onPressed: () {
+                        Navigator.pop(context, true);
+                      },
+                      child: const Text('Delete'),
+                    ),
+                  ],
+                );
+              },
+            );
+
+            if (confirm == true) {
+              await tripService.deleteTrip(trip.id);
+              if (context.mounted) Navigator.pop(context);
+            }
+          }
+
+        },
+        itemBuilder: (context) => const [
+          PopupMenuItem(
+            value: 'edit',
+            child: Row(
+              children: [
+                Icon(Icons.edit, size: 18, color: Colors.blue),
+                SizedBox(width: 8),
+                Text('Edit Trip'),
               ],
             ),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.white.withOpacity(0.3)),
           ),
-          child: IconButton(
-            icon: const Icon(Icons.arrow_back),
-            onPressed: () => Navigator.pop(context),
-          ),
-        ),
-        actions: [
-          Container(
-            margin: const EdgeInsets.only(right: 8),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Colors.blue.withOpacity(0.2),
-                  Colors.blue.withOpacity(0.1),
-                ],
-              ),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: Colors.blue.withOpacity(0.3),
-              ),
-            ),
-            child: PopupMenuButton<String>(
-              icon: const Icon(Icons.more_vert, color: Colors.blue),
-              onSelected: (value) async {
-                if (value == 'edit') {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => CreateTripPage(
-                        trip: trip,
-                      ),
-                    ),
-                  );
-                }
-
-                if (value == 'delete') {
-                  final confirm = await showDialog(
-                    context: context,
-                    builder: (context) {
-                      return AlertDialog(
-                        title: const Text('Delete Trip'),
-                        content: const Text(
-                          'Are you sure you want to delete this trip?',
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        actions: [
-                          TextButton(
-                            onPressed: () {
-                              Navigator.pop(context, false);
-                            },
-                            child: const Text('Cancel'),
-                          ),
-                          ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.red,
-                              foregroundColor: Colors.white,
-                            ),
-                            onPressed: () {
-                              Navigator.pop(context, true);
-                            },
-                            child: const Text('Delete'),
-                          ),
-                        ],
-                      );
-                    },
-                  );
-
-                  if (confirm == true) {
-                    await tripService.deleteTrip(trip.id);
-                    if (context.mounted) Navigator.pop(context);
-                  }
-                }
-              },
-              itemBuilder: (context) => const [
-                PopupMenuItem(
-                  value: 'edit',
-                  child: Row(
-                    children: [
-                      Icon(Icons.edit, size: 18, color: Colors.blue),
-                      SizedBox(width: 8),
-                      Text('Edit Trip'),
-                    ],
-                  ),
-                ),
-                PopupMenuItem(
-                  value: 'delete',
-                  child: Row(
-                    children: [
-                      Icon(Icons.delete, size: 18, color: Colors.red),
-                      SizedBox(width: 8),
-                      Text('Delete Trip'),
-                    ],
-                  ),
-                ),
+          PopupMenuItem(
+            value: 'delete',
+            child: Row(
+              children: [
+                Icon(Icons.delete, size: 18, color: Colors.red),
+                SizedBox(width: 8),
+                Text('Delete Trip'),
               ],
             ),
           ),
         ],
       ),
+    ),
+
+  ],
+),
       body: AppBackgroundWrapper(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -1090,6 +1124,7 @@ Widget _buildTransactionItem(BuildContext context, TripLedgerItem item) {
             type: 'transfer',
             date: t.date,
             title: 'Admin Transfer',
+             description: t.note ?? '',
             amount: (item['amount'] as num).toDouble(),
             currency: item['currency'],
             isDebit: true,
@@ -1118,6 +1153,225 @@ Widget _buildTransactionItem(BuildContext context, TripLedgerItem item) {
     ledger.sort((a, b) => b.date.compareTo(a.date));
     return ledger;
   }
+
+  Future<void> _generateEnterprisePdf(BuildContext context) async {
+  try {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+
+    final transfers = await transferService.getTransfers(trip.id);
+    final expenses = await expenseService.getExpenses(trip.id);
+
+    for (var e in expenses) {
+  print("DESC: ${e.description}");
+}
+
+    final ledger = buildLedger(transfers, expenses);
+    final balances = calculateBalance(transfers, expenses);
+
+    final pdf = pw.Document();
+    final dio = Dio();
+    final currencyFormat =
+        NumberFormat.currency(locale: 'id_ID', symbol: '', decimalDigits: 2);
+
+    // Cache thumbnail receipts
+    final Map<String, pw.MemoryImage> receiptThumbs = {};
+    for (var item in ledger) {
+      if (item.receiptUrl != null &&
+          item.receiptUrl!.isNotEmpty &&
+          !item.receiptUrl!.toLowerCase().endsWith(".pdf")) {
+        try {
+          final res = await dio.get(
+            item.receiptUrl!,
+            options: Options(responseType: ResponseType.bytes),
+          );
+          receiptThumbs[item.id] =
+              pw.MemoryImage(Uint8List.fromList(res.data));
+        } catch (_) {}
+      }
+    }
+
+    final logoBytes = await rootBundle.load('assets/images/ATOM_INDO.png');
+    final logo = pw.MemoryImage(logoBytes.buffer.asUint8List());
+
+    pdf.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.all(32),
+        build: (context) => [
+          /// HEADER
+          pw.Row(
+  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+  children: [
+
+    pw.Row(
+      children: [
+        pw.Image(logo, height: 40),
+        pw.SizedBox(width: 12),
+        pw.Text(
+          "TRIP EXPENSE REPORT",
+          style: pw.TextStyle(
+            fontSize: 24,
+            fontWeight: pw.FontWeight.bold,
+          ),
+        ),
+      ],
+    ),
+
+    pw.Text(
+      DateFormat("dd MMM yyyy").format(DateTime.now()),
+    ),
+
+  ],
+),
+
+          pw.Divider(),
+
+          /// TRIP INFO
+          pw.SizedBox(height: 10),
+
+          pw.Container(
+            padding: const pw.EdgeInsets.all(10),
+            decoration: pw.BoxDecoration(
+              border: pw.Border.all(color: PdfColors.grey300),
+              borderRadius: pw.BorderRadius.circular(6),
+            ),
+            child: pw.Table(
+              columnWidths: {0: const pw.FixedColumnWidth(120)},
+              children: [
+                _row("Title", trip.title),
+                _row("Partner", trip.partnerName),
+                _row("Country", trip.country),
+                _row("Status", trip.status),
+                _row("Created By", trip.createdByName),
+                _row(
+                  "Trip Date",
+                  "${_formatDate(trip.startDate)} - ${_formatDate(trip.endDate)}",
+                ),
+              ],
+            ),
+          ),
+
+          pw.SizedBox(height: 20),
+
+          /// BALANCE SUMMARY
+          pw.Text(
+            "Balance Summary",
+            style:
+                pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
+          ),
+
+          pw.SizedBox(height: 8),
+
+          pw.Table.fromTextArray(
+            headers: ["Currency", "Balance"],
+            headerStyle:
+                pw.TextStyle(fontWeight: pw.FontWeight.bold),
+            headerDecoration:
+                const pw.BoxDecoration(color: PdfColors.grey200),
+            data: balances.entries.map((e) {
+              return [
+                e.key,
+                currencyFormat.format(e.value),
+              ];
+            }).toList(),
+          ),
+
+          pw.SizedBox(height: 25),
+
+          /// TRANSACTION TABLE
+          pw.Text(
+            "Transactions",
+            style:
+                pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
+          ),
+
+          pw.SizedBox(height: 10),
+
+          pw.Table(
+            border: pw.TableBorder.all(color: PdfColors.grey300),
+            columnWidths: {
+              0: const pw.FixedColumnWidth(60),
+              1: const pw.FixedColumnWidth(50),
+              2: const pw.FixedColumnWidth(120),
+              3: const pw.FixedColumnWidth(120),
+              4: const pw.FixedColumnWidth(80),
+              5: const pw.FixedColumnWidth(60),
+              6: const pw.FixedColumnWidth(60),
+            },
+            children: [
+              /// HEADER
+              pw.TableRow(
+                decoration:
+                    const pw.BoxDecoration(color: PdfColors.grey200),
+                children: [
+                  _cell("Date", bold: true),
+                  _cell("Type", bold: true),
+                  _cell("Title", bold: true),
+                  _cell("Description", bold: true),
+                  _cell("Amount", bold: true),
+                  _cell("Currency", bold: true),
+                  _cell("Receipt", bold: true),
+                ],
+              ),
+
+              /// DATA
+              ...ledger.map((e) {
+                final color =
+                    e.isDebit ? PdfColors.green700 : PdfColors.red700;
+
+                return pw.TableRow(
+                  children: [
+                    _cell(_formatDate(e.date)),
+                    _cell(e.type),
+                    _cell(e.title),
+                    _cell(e.description ?? "-"),
+                    _cell(
+                      "${e.isDebit ? "+" : "-"}${currencyFormat.format(e.amount)}",
+                      color: color,
+                    ),
+                    _cell(e.currency),
+                    pw.Padding(
+                      padding: const pw.EdgeInsets.all(4),
+                      child: receiptThumbs.containsKey(e.id)
+                          ? pw.Image(receiptThumbs[e.id]!, height: 40)
+                          : pw.Text(
+                              e.receiptUrl != null &&
+                                      e.receiptUrl!.endsWith(".pdf")
+                                  ? "PDF"
+                                  : "-",
+                              style: const pw.TextStyle(fontSize: 8),
+                            ),
+                    ),
+                  ],
+                );
+              })
+            ],
+          ),
+        ],
+      ),
+    );
+
+    final dir = await getTemporaryDirectory();
+    final file = File("${dir.path}/trip_report_${trip.id}.pdf");
+
+    await file.writeAsBytes(await pdf.save());
+
+    Navigator.pop(context);
+
+    await OpenFilex.open(file.path);
+  } catch (e) {
+    Navigator.pop(context);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("PDF error: $e")),
+    );
+  }
+}
+
 }
 
 // =======================================================
@@ -1144,6 +1398,34 @@ Widget _glass(Widget child) {
           border: Border.all(color: Colors.white.withOpacity(0.4)),
         ),
         child: child,
+      ),
+    ),
+  );
+}
+
+pw.TableRow _row(String title, String value) {
+  return pw.TableRow(children: [
+    pw.Padding(
+      padding: const pw.EdgeInsets.symmetric(vertical: 4),
+      child: pw.Text(title,
+          style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+    ),
+    pw.Padding(
+      padding: const pw.EdgeInsets.symmetric(vertical: 4),
+      child: pw.Text(value),
+    ),
+  ]);
+}
+
+pw.Widget _cell(String text, {bool bold = false, PdfColor? color}) {
+  return pw.Padding(
+    padding: const pw.EdgeInsets.all(4),
+    child: pw.Text(
+      text,
+      style: pw.TextStyle(
+        fontSize: 9,
+        fontWeight: bold ? pw.FontWeight.bold : pw.FontWeight.normal,
+        color: color,
       ),
     ),
   );
