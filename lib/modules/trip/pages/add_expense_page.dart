@@ -14,9 +14,10 @@ import '../../../utils/receipt_confidence_calculator.dart';
 import '../../../utils/receipt_currency_detector.dart';
 import '../../../utils/receipt_duplicete_detector.dart';
 import '../../../utils/receipt_image_processor.dart';
-import 'package:image_picker/image_picker.dart';
 import '../../../utils/receipt_layout_analyzer.dart';
 import '../../../utils/receipt_fingerprint.dart';
+import 'package:image_picker/image_picker.dart';
+import '../../../utils/receipt_edge_detector.dart';
 
 
 class AddExpensePage extends StatefulWidget {
@@ -98,62 +99,43 @@ Future<void> scanReceipt() async {
 
   if (photo == null) return;
 
-  /// raw image
   final rawFile = File(photo.path);
 
-  /// enhance image sebelum OCR
+  /// edge crop sederhana
+  final croppedFile =
+      await ReceiptEdgeDetector.autoCrop(rawFile);
+
+  /// preprocessing
   final processedFile =
-      await ReceiptImageProcessor.enhance(rawFile);
-  
+      await ReceiptImageProcessor.enhance(croppedFile);
+
+  /// layout detection
   final recognized =
-    await scannerService.recognizeLayout(processedFile);
+      await scannerService.recognizeLayout(processedFile);
 
-final layout =
-    ReceiptLayoutAnalyzer.analyze(recognized);
+  final layout =
+      ReceiptLayoutAnalyzer.analyze(recognized);
 
-final merchant =
-    layout.header.isNotEmpty ? layout.header.first : '';
+  final merchant =
+      layout.header.isNotEmpty ? layout.header.first : '';
 
   setState(() {
     receiptImage = processedFile;
   });
 
-  /// OCR
+  /// OCR text
   final text =
       await scannerService.recognizeText(processedFile);
 
-  /// DETECT DATA FROM RECEIPT
+  /// extract values
   final amount =
       ReceiptAmountExtractor.extractAmount(text);
+
   final detectedCurrency =
       ReceiptCurrencyDetector.detectCurrency(text);
 
   final detectedCategory =
       ReceiptCategoryDetector.detectCategory(text);
-  
-  if (amount != null) {
-
-  fingerprint = ReceiptFingerprint.generate(
-    merchant: merchant,
-    amount: amount,
-    currency: detectedCurrency,
-    date: DateTime.now(),
-  );
-
-}
-
-if (amount != null) {
-
-  fingerprint = ReceiptFingerprint.generate(
-    merchant: merchant,
-    amount: amount,
-    currency: detectedCurrency,
-    date: DateTime.now(),
-  );
-
-}
-
-  
 
   final confidence =
       ReceiptConfidenceCalculator.calculate(
@@ -162,6 +144,35 @@ if (amount != null) {
         text: text,
       );
 
+  /// generate fingerprint
+  if (amount != null) {
+
+    fingerprint = ReceiptFingerprint.generate(
+      merchant: merchant,
+      amount: amount,
+      currency: detectedCurrency,
+      date: DateTime.now(),
+    );
+
+    if (confidence < 0.5) {
+
+      if (!mounted) return;
+
+      showDialog(
+        context: context,
+        builder: (_) => const AlertDialog(
+          title: Text('Low OCR Confidence'),
+          content: Text(
+            'The receipt might not be read correctly. Please verify the amount.',
+          ),
+        ),
+      );
+
+    }
+
+  }
+
+  /// duplicate detection
   if (amount != null) {
 
     final user = FirebaseAuth.instance.currentUser!;
@@ -174,30 +185,32 @@ if (amount != null) {
         .collection('trips')
         .doc(widget.tripId)
         .collection('expenses');
-    
+
+    /// fingerprint duplicate detection
     final isDuplicateFingerprint =
-    await expenseCollection
-        .where('fingerprint', isEqualTo: fingerprint)
-        .limit(1)
-        .get();
+        await expenseCollection
+            .where('fingerprint', isEqualTo: fingerprint)
+            .limit(1)
+            .get();
 
-if (isDuplicateFingerprint.docs.isNotEmpty) {
+    if (isDuplicateFingerprint.docs.isNotEmpty) {
 
-  if (!mounted) return;
+      if (!mounted) return;
 
-  showDialog(
-    context: context,
-    builder: (_) => const AlertDialog(
-      title: Text('Duplicate Receipt'),
-      content: Text(
-        'This receipt was already scanned before.',
-      ),
-    ),
-  );
+      showDialog(
+        context: context,
+        builder: (_) => const AlertDialog(
+          title: Text('Duplicate Receipt'),
+          content: Text(
+            'This receipt was already scanned before.',
+          ),
+        ),
+      );
 
-  return;
-}
+      return;
+    }
 
+    /// legacy duplicate detection
     final isDuplicate =
         await ReceiptDuplicateDetector.isDuplicate(
       expenseCollection: expenseCollection,
@@ -212,21 +225,19 @@ if (isDuplicateFingerprint.docs.isNotEmpty) {
 
       showDialog(
         context: context,
-        builder: (_) => AlertDialog(
-          title: const Text('Duplicate Expense'),
-          content: const Text(
-              'Possible duplicate expense detected. Please verify before saving.'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('OK'),
-            )
-          ],
+        builder: (_) => const AlertDialog(
+          title: Text('Possible Duplicate Expense'),
+          content: Text(
+            'A similar expense already exists.',
+          ),
         ),
       );
+
     }
+
   }
 
+  /// autofill form
   setState(() {
 
     if (amount != null) {
