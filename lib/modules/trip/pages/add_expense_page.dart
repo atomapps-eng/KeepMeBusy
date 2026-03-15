@@ -23,11 +23,13 @@ import '../../../utils/receipt_edge_detector.dart';
 class AddExpensePage extends StatefulWidget {
 
   final String tripId;
-  
+  final String? expenseId;
+
 
   const AddExpensePage({
     super.key,
     required this.tripId,
+    this.expenseId,
   });
 
   @override
@@ -40,6 +42,8 @@ class _AddExpensePageState extends State<AddExpensePage> {
   final descController = TextEditingController();
   final scannerService = ReceiptScannerService();
   final tripService = TripService();
+  TripExpense? existingExpense;
+  DateTime date = DateTime.now();
   
 
   String currency = 'AUD';
@@ -49,6 +53,47 @@ class _AddExpensePageState extends State<AddExpensePage> {
   File? receiptImage;
 
   final expenseService = TripExpenseService();
+
+  @override
+void initState() {
+  super.initState();
+
+  if (widget.expenseId != null) {
+    loadExpense();
+  }
+}
+
+Future<void> loadExpense() async {
+
+  final companyId = await tripService.getCompanyId();
+
+  final doc = await FirebaseFirestore.instance
+      .collection('companies')
+      .doc(companyId)
+      .collection('trips')
+      .doc(widget.tripId)
+      .collection('expenses')
+      .doc(widget.expenseId)
+      .get();
+
+  if (!doc.exists) return;
+
+  final expense = TripExpense.fromMap(doc.id, doc.data()!);
+
+  setState(() {
+
+    existingExpense = expense;
+
+    amountController.text = expense.amount.toString();
+    currency = expense.currency;
+    category = expense.category;
+    descController.text = expense.description;
+    fingerprint = expense.fingerprint;
+    date = expense.date;
+
+  });
+
+}
 
   /// CLOUDINARY CONFIG
   final String cloudName = 'djl2sukor';
@@ -69,7 +114,7 @@ class _AddExpensePageState extends State<AddExpensePage> {
 
     final expense = TripExpense(
       id: '',
-      date: DateTime.now(),
+      date: date,
       employeeId: user.uid,
       amount: double.tryParse(amountController.text) ?? 0,
       currency: currency,
@@ -79,10 +124,22 @@ class _AddExpensePageState extends State<AddExpensePage> {
       fingerprint: fingerprint,
     );
 
-    await expenseService.createExpense(
-      widget.tripId,
-      expense,
-    );
+   if (widget.expenseId == null) {
+
+  await expenseService.createExpense(
+    widget.tripId,
+    expense,
+  );
+
+} else {
+
+  await expenseService.updateExpense(
+    widget.tripId,
+    widget.expenseId!,
+    expense,
+  );
+
+}
 
     Navigator.pop(context);
   }
@@ -308,13 +365,45 @@ Future<void> scanReceipt() async {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Add Expense'),
+        title: Text(
+  widget.expenseId == null
+      ? 'Add Expense'
+      : 'Edit Expense',
+),
       ),
       body: SingleChildScrollView(
   child: Padding(
     padding: const EdgeInsets.all(16),
     child: Column(
           children: [
+
+            /// DATE PICKER
+ListTile(
+  contentPadding: EdgeInsets.zero,
+  title: Text(
+    "${date.year}-${date.month}-${date.day}",
+  ),
+  subtitle: const Text("Date"),
+  trailing: const Icon(Icons.calendar_today),
+  onTap: () async {
+
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: date,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2100),
+    );
+
+    if (picked != null) {
+      setState(() {
+        date = picked;
+      });
+    }
+
+  },
+),
+
+const SizedBox(height: 20),
 
             TextField(
               controller: amountController,

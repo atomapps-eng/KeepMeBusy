@@ -207,7 +207,7 @@ class TripDetailPage extends StatelessWidget {
 
                     final item = ledger[index];
 
-                    return ListTile(
+ return ListTile(
 
   onTap: () {
 
@@ -239,18 +239,158 @@ class TripDetailPage extends StatelessWidget {
 
   title: Text(item.title),
 
-  subtitle: item.description != null
-      ? Text(item.description!)
-      : null,
+  subtitle: Column(
+  crossAxisAlignment: CrossAxisAlignment.start,
+  children: [
 
-  trailing: Text(
-    '${item.isDebit ? '+' : '-'} ${item.amount} ${item.currency}',
-    style: TextStyle(
-      color: item.isDebit
-          ? Colors.green
-          : Colors.red,
-      fontWeight: FontWeight.bold,
+    Text(
+      "${item.date.year}-${item.date.month.toString().padLeft(2,'0')}-${item.date.day.toString().padLeft(2,'0')}",
+      style: const TextStyle(
+        fontSize: 12,
+        color: Colors.grey,
+      ),
     ),
+
+    if (item.description != null && item.description!.isNotEmpty)
+      Text(item.description!),
+
+  ],
+),
+
+  trailing: Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+
+      Text(
+        '${item.isDebit ? '+' : '-'} ${item.amount} ${item.currency}',
+        style: TextStyle(
+          color: item.isDebit ? Colors.green : Colors.red,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+
+PopupMenuButton<String>(
+  onSelected: (value) async {
+
+    if (value == 'delete') {
+
+      final confirm = await showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: const Text('Delete Transaction'),
+          content: const Text(
+            'Are you sure you want to delete this transaction?',
+          ),
+          actions: [
+
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel'),
+            ),
+
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text(
+                'Delete',
+                style: TextStyle(color: Colors.red),
+              ),
+            ),
+
+          ],
+        ),
+      );
+
+      if (confirm == true) {
+
+        if (item.type == 'expense') {
+          await expenseService.deleteExpense(trip.id, item.id);
+        }
+
+        if (item.type == 'transfer') {
+          await transferService.deleteTransfer(trip.id, item.id);
+        }
+
+      }
+
+    }
+
+    if (value == 'edit') {
+
+      final confirm = await showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: const Text('Edit Transaction'),
+          content: const Text(
+            'Do you want to edit this transaction?',
+          ),
+          actions: [
+
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel'),
+            ),
+
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Edit'),
+            ),
+
+          ],
+        ),
+      );
+
+      if (confirm == true) {
+
+        if (item.type == 'expense') {
+
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => AddExpensePage(
+                tripId: trip.id,
+                expenseId: item.id,
+              ),
+            ),
+          );
+
+        }
+
+        if (item.type == 'transfer') {
+
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => AddTransferPage(
+                tripId: trip.id,
+                transferId: item.id,
+              ),
+            ),
+          );
+
+        }
+
+      }
+
+    }
+
+  },
+
+  itemBuilder: (context) => const [
+
+    PopupMenuItem(
+      value: 'edit',
+      child: Text('Edit'),
+    ),
+
+    PopupMenuItem(
+      value: 'delete',
+      child: Text('Delete'),
+    ),
+
+  ],
+)
+
+    ],
   ),
 );
 
@@ -383,11 +523,13 @@ List<TripLedgerItem> buildLedger(
 
       ledger.add(
         TripLedgerItem(
-          date: t.date,
-          title: 'Admin Transfer',
-          amount: (item['amount'] as num).toDouble(),
-          currency: item['currency'],
-          isDebit: true,
+        id: t.id,
+        type: 'transfer',
+        date: t.date,
+        title: 'Admin Transfer',
+        amount: (item['amount'] as num).toDouble(),
+        currency: item['currency'],
+        isDebit: true,
         ),
       );
 
@@ -399,6 +541,8 @@ List<TripLedgerItem> buildLedger(
 
   ledger.add(
     TripLedgerItem(
+      id: e.id,
+      type: 'expense',
       date: e.date,
       title: e.category,
       description: e.description,

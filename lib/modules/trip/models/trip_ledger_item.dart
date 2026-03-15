@@ -1,5 +1,7 @@
 class TripLedgerItem {
 
+  final String id;
+  final String type;
   final DateTime date;
   final String title;
   final String? description;
@@ -9,6 +11,8 @@ class TripLedgerItem {
   final String? receiptUrl;
 
   TripLedgerItem({
+    required this.id,
+    required this.type,
     required this.date,
     required this.title,
     this.description,

@@ -44,4 +44,58 @@ class TripTransferService {
   });
 }
 
+Future<void> deleteTransfer(String tripId, String transferId) async {
+
+  await FirebaseFirestore.instance
+      .collection('companies')
+      .doc('atomIndonesia')
+      .collection('trips')
+      .doc(tripId)
+      .collection('transfers')
+      .doc(transferId)
+      .delete();
+
+}
+
+Future<TripTransfer?> getTransfer(
+  String tripId,
+  String transferId,
+) async {
+
+  final companyId = await TripService().getCompanyId();
+
+  final doc = await FirebaseFirestore.instance
+      .collection('companies')
+      .doc(companyId)
+      .collection('trips')
+      .doc(tripId)
+      .collection('transfers')
+      .doc(transferId)
+      .get();
+
+  if (!doc.exists) return null;
+
+  return TripTransfer.fromMap(doc.id, doc.data()!);
+
+}
+
+Future<void> updateTransfer(
+  String tripId,
+  String transferId,
+  TripTransfer transfer,
+) async {
+
+  final companyId = await TripService().getCompanyId();
+
+  await FirebaseFirestore.instance
+      .collection('companies')
+      .doc(companyId)
+      .collection('trips')
+      .doc(tripId)
+      .collection('transfers')
+      .doc(transferId)
+      .update(transfer.toMap());
+
+}
+
 }

@@ -44,4 +44,49 @@ class TripExpenseService {
   });
 }
 
+Future<void> deleteExpense(String tripId, String expenseId) async {
+
+  await FirebaseFirestore.instance
+      .collection('companies')
+      .doc('atomIndonesia')
+      .collection('trips')
+      .doc(tripId)
+      .collection('expenses')
+      .doc(expenseId)
+      .delete();
+
+}
+
+Future<void> deleteTransfer(String tripId, String transferId) async {
+
+  await FirebaseFirestore.instance
+      .collection('companies')
+      .doc('atomIndonesia')
+      .collection('trips')
+      .doc(tripId)
+      .collection('transfers')
+      .doc(transferId)
+      .delete();
+
+}
+
+Future<void> updateExpense(
+  String tripId,
+  String expenseId,
+  TripExpense expense,
+) async {
+
+  final companyId = await TripService().getCompanyId();
+
+  await FirebaseFirestore.instance
+      .collection('companies')
+      .doc(companyId)
+      .collection('trips')
+      .doc(tripId)
+      .collection('expenses')
+      .doc(expenseId)
+      .update(expense.toMap());
+
+}
+
 }
