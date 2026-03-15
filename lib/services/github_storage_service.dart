@@ -1,12 +1,13 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:dio/dio.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class GithubStorageService {
 
-  static const owner = "atomapps-eng";
-  static const repo = "receipt-storage";
-  static const token = "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"; // ganti dengan token github
+  static String owner = dotenv.env['GITHUB_OWNER']!;
+  static String repo = dotenv.env['GITHUB_REPO']!;
+  static String token = dotenv.env['GITHUB_TOKEN']!;
 
   static Future<String?> uploadFile(File file) async {
 

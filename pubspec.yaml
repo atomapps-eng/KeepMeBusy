@@ -14,7 +14,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-    
+
   shared_preferences: ^2.2.2
   firebase_core: ^2.25.4
   firebase_auth: ^4.17.4
@@ -48,6 +48,7 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
   crypto: ^3.0.7
+  flutter_dotenv: ^6.0.0
 
 dev_dependencies:
   flutter_test:
