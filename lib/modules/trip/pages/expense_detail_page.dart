@@ -1,13 +1,9 @@
 import 'package:flutter/material.dart';
 import 'dart:ui';
 import '../models/trip_expense_model.dart';
-import 'dart:io';
 import 'package:url_launcher/url_launcher.dart';
-import '../../../theme/app_theme.dart';
 import '../../../pages/common/app_background_wrapper.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:dio/dio.dart';
-import '../../../services/github_storage_service.dart';
+
 
 class ExpenseDetailPage extends StatelessWidget {
   final TripExpense expense;

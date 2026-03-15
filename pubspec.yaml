@@ -75,6 +75,7 @@ flutter:
     - assets/icon/app_icon.png
     - assets/data/spare_parts.json
     - assets/images/ATOM_INDO.png
+    - .env
   uses-material-design: true
 
   fonts:

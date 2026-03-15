@@ -25,10 +25,11 @@ class AddExpensePage extends StatefulWidget {
 
   @override
   State<AddExpensePage> createState() => _AddExpensePageState();
-}
+} 
 
 class _AddExpensePageState extends State<AddExpensePage> {
   bool isUploading = false;
+  double uploadProgress = 0;
   final amountController = TextEditingController();
   final descController = TextEditingController();
   final tripService = TripService();
@@ -90,32 +91,107 @@ class _AddExpensePageState extends State<AddExpensePage> {
   /// SAVE EXPENSE
   Future<void> saveExpense() async {
 
+  if (amountController.text.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("Amount cannot be empty"),
+        backgroundColor: Colors.orange,
+      ),
+    );
+    return;
+  }
+
+  final amount = double.tryParse(amountController.text);
+
+  if (amount == null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("Invalid amount format"),
+        backgroundColor: Colors.orange,
+      ),
+    );
+    return;
+  }
+
+  final user = FirebaseAuth.instance.currentUser;
+
+  if (user == null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("User not authenticated"),
+        backgroundColor: Colors.red,
+      ),
+    );
+    return;
+  }
+
   setState(() {
     isUploading = true;
   });
-
-  final user = FirebaseAuth.instance.currentUser!;
 
   String receiptUrl = '';
 
   try {
 
+    /// ===============================
+    /// UPLOAD FILE
+    /// ===============================
+
     if (receiptImage != null) {
 
-  receiptUrl = await GithubStorageService.uploadFile(receiptImage!) ?? '';
+      final url = await GithubStorageService.uploadFile(
+  receiptImage!,
+  onProgress: (progress) {
+    if (mounted) {
+      setState(() {
+        uploadProgress = progress;
+      });
+    }
+  },
+);
 
-} 
-else if (receiptPdf != null) {
+      if (url == null || url.isEmpty) {
+        throw Exception("Image upload failed");
+      }
 
-  receiptUrl = await GithubStorageService.uploadFile(receiptPdf!) ?? '';
+      receiptUrl = url;
 
-}
+    } else if (receiptPdf != null) {
+
+      final fileSize = await receiptPdf!.length();
+
+      /// limit 10MB
+      if (fileSize > 10 * 1024 * 1024) {
+        throw Exception("PDF file too large (max 10MB)");
+      }
+
+      final url = await GithubStorageService.uploadFile(
+  receiptPdf!,
+  onProgress: (progress) {
+    if (mounted) {
+      setState(() {
+        uploadProgress = progress;
+      });
+    }
+  },
+);
+
+      if (url == null || url.isEmpty) {
+        throw Exception("PDF upload failed");
+      }
+
+      receiptUrl = url;
+    }
+
+    /// ===============================
+    /// CREATE EXPENSE MODEL
+    /// ===============================
 
     final expense = TripExpense(
       id: '',
       date: date,
       employeeId: user.uid,
-      amount: double.tryParse(amountController.text) ?? 0,
+      amount: amount,
       currency: currency,
       category: category,
       description: descController.text,
@@ -123,10 +199,18 @@ else if (receiptPdf != null) {
       fingerprint: fingerprint,
     );
 
+    /// ===============================
+    /// SAVE FIRESTORE
+    /// ===============================
+
     if (widget.expenseId == null) {
       await expenseService.createExpense(widget.tripId, expense);
     } else {
-      await expenseService.updateExpense(widget.tripId, widget.expenseId!, expense);
+      await expenseService.updateExpense(
+        widget.tripId,
+        widget.expenseId!,
+        expense,
+      );
     }
 
     if (!mounted) return;
@@ -140,16 +224,50 @@ else if (receiptPdf != null) {
 
     Navigator.pop(context);
 
-  } catch (e) {
+  }
+
+  /// ===============================
+  /// NETWORK ERROR
+  /// ===============================
+
+  on SocketException {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("No internet connection"),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
+
+  /// ===============================
+  /// FIRESTORE ERROR
+  /// ===============================
+
+  on FirebaseException catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text("Database error: ${e.message}"),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
+
+  /// ===============================
+  /// GENERIC ERROR
+  /// ===============================
+
+  catch (e) {
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text("Upload failed: $e"),
+        content: Text("Failed to save expense: $e"),
         backgroundColor: Colors.red,
       ),
     );
 
-  } finally {
+  }
+
+  finally {
 
     if (mounted) {
       setState(() {
@@ -158,6 +276,7 @@ else if (receiptPdf != null) {
     }
 
   }
+
 }
 
   /// PICK RECEIPT IMAGE
@@ -296,22 +415,46 @@ Future<void> scanReceipt() async {
     ),
 
     if (isUploading)
-      Container(
-        color: Colors.black.withOpacity(0.4),
-        child: const Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              CircularProgressIndicator(),
-              SizedBox(height: 16),
-              Text(
-                "Uploading receipt...",
-                style: TextStyle(color: Colors.white),
+  Container(
+    color: Colors.black.withOpacity(0.4),
+    child: Center(
+      child: Container(
+        width: 300,
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+
+            const Text(
+              "Uploading Receipt",
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
               ),
-            ],
-          ),
+            ),
+
+            const SizedBox(height: 20),
+
+            LinearProgressIndicator(
+              value: uploadProgress,
+            ),
+
+            const SizedBox(height: 12),
+
+            Text(
+              "${(uploadProgress * 100).toStringAsFixed(0)} %",
+              style: const TextStyle(fontSize: 14),
+            ),
+
+          ],
         ),
       ),
+    ),
+  ),
 
   ],
 ),
@@ -626,7 +769,7 @@ Future<void> scanReceipt() async {
                             ),
                             elevation: 0,
                           ),
-                          onPressed: saveExpense,
+                          onPressed: isUploading ? null : saveExpense,
                           child: Text(isEditing ? 'UPDATE' : 'SAVE'),
                         ),
                       ),
@@ -1190,7 +1333,7 @@ Future<void> scanReceipt() async {
                       ),
                       elevation: 0,
                     ),
-                    onPressed: saveExpense,
+                    onPressed: isUploading ? null : saveExpense,
                     child: Text(isEditing ? 'UPDATE' : 'SAVE'),
                   ),
                 ),

@@ -9,7 +9,10 @@ class GithubStorageService {
   static String repo = dotenv.env['GITHUB_REPO']!;
   static String token = dotenv.env['GITHUB_TOKEN']!;
 
-  static Future<String?> uploadFile(File file) async {
+  static Future<String?> uploadFile(
+  File file, {
+  Function(double progress)? onProgress,
+}) async {
 
     final bytes = await file.readAsBytes();
     final base64File = base64Encode(bytes);
@@ -25,18 +28,26 @@ final fileName =
     final dio = Dio();
 
     final response = await dio.put(
-      url,
-      options: Options(
-        headers: {
-          "Authorization": "token $token",
-          "Content-Type": "application/json",
-        },
-      ),
-      data: {
-        "message": "upload receipt",
-        "content": base64File,
-      },
-    );
+  url,
+  options: Options(
+    headers: {
+      "Authorization": "token $token",
+      "Content-Type": "application/json",
+    },
+  ),
+  data: {
+    "message": "upload receipt",
+    "content": base64File,
+  },
+
+  onSendProgress: (sent, total) {
+
+    if (onProgress != null && total != 0) {
+      onProgress(sent / total);
+    }
+
+  },
+);
 
     if (response.statusCode == 201) {
 
