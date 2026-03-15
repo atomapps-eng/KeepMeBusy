@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'dart:ui';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/trip_transfer_model.dart';
 import '../services/trip_transfer_service.dart';
+import '../../../theme/app_theme.dart';
+import '../../../pages/common/app_background_wrapper.dart';
 
 class AddTransferPage extends StatefulWidget {
-
   final String tripId;
   final String? transferId;
 
@@ -19,7 +21,6 @@ class AddTransferPage extends StatefulWidget {
 }
 
 class _AddTransferPageState extends State<AddTransferPage> {
-  
   TripTransfer? existingTransfer;
   DateTime date = DateTime.now();
   final amountController = TextEditingController();
@@ -30,40 +31,35 @@ class _AddTransferPageState extends State<AddTransferPage> {
   final transferService = TripTransferService();
 
   @override
-void initState() {
-  super.initState();
+  void initState() {
+    super.initState();
 
-  if (widget.transferId != null) {
-    loadTransfer();
+    if (widget.transferId != null) {
+      loadTransfer();
+    }
   }
-}
 
-Future<void> loadTransfer() async {
+  Future<void> loadTransfer() async {
+    final doc = await transferService.getTransfer(
+      widget.tripId,
+      widget.transferId!,
+    );
 
-  final doc = await transferService.getTransfer(
-    widget.tripId,
-    widget.transferId!,
-  );
+    if (doc == null) return;
 
-  if (doc == null) return;
+    setState(() {
+      existingTransfer = doc;
 
-  setState(() {
+      final transfer = doc.transfers.first;
 
-    existingTransfer = doc;
-
-    final transfer = doc.transfers.first;
-
-    amountController.text = transfer['amount'].toString();
-    currency = transfer['currency'];
-    noteController.text = doc.note;
-    date = doc.date;
-
-  });
-
-}
+      amountController.text = transfer['amount'].toString();
+      currency = transfer['currency'];
+      noteController.text = doc.note;
+      date = doc.date;
+    });
+  }
 
   Future<void> saveTransfer() async {
-
     final user = FirebaseAuth.instance.currentUser!;
 
     final transfer = TripTransfer(
@@ -81,117 +77,947 @@ Future<void> loadTransfer() async {
     );
 
     if (widget.transferId == null) {
-
-  await transferService.createTransfer(
-    widget.tripId,
-    transfer,
-  );
-
-} else {
-
-  await transferService.updateTransfer(
-    widget.tripId,
-    widget.transferId!,
-    transfer,
-  );
-
-}
+      await transferService.createTransfer(
+        widget.tripId,
+        transfer,
+      );
+    } else {
+      await transferService.updateTransfer(
+        widget.tripId,
+        widget.transferId!,
+        transfer,
+      );
+    }
 
     Navigator.pop(context);
   }
 
+  String _formatDate(DateTime date) {
+    return '${date.day}/${date.month}/${date.year}';
+  }
+
   @override
   Widget build(BuildContext context) {
+    final isEditing = widget.transferId != null;
+    final isDesktop = MediaQuery.of(context).size.width >= 900;
 
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: Text(
-  widget.transferId == null
-      ? 'Add Transfer'
-      : 'Edit Transfer',
-),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
+        title: Row(
           children: [
-
-            /// DATE PICKER
-ListTile(
-  contentPadding: EdgeInsets.zero,
-  title: Text(
-    "${date.year}-${date.month}-${date.day}",
-  ),
-  subtitle: const Text("Date"),
-  trailing: const Icon(Icons.calendar_today),
-  onTap: () async {
-
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: date,
-      firstDate: DateTime(2020),
-      lastDate: DateTime(2100),
-    );
-
-    if (picked != null) {
-      setState(() {
-        date = picked;
-      });
-    }
-
-  },
-),
-
-const SizedBox(height: 20),
-
-            TextField(
-              controller: amountController,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'Amount',
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Colors.green.withOpacity(0.2),
+                    Colors.green.withOpacity(0.1),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: Colors.green.withOpacity(0.3),
+                  width: 1,
+                ),
+              ),
+              child: const Icon(
+                Icons.arrow_downward,
+                color: Colors.green,
+                size: 24,
               ),
             ),
-
-            const SizedBox(height: 20),
-
-            DropdownButtonFormField(
-              value: currency,
-              items: const [
-                DropdownMenuItem(value: 'AUD', child: Text('AUD')),
-                DropdownMenuItem(value: 'JPY', child: Text('JPY')),
-                DropdownMenuItem(value: 'MYR', child: Text('MYR')),
-                DropdownMenuItem(value: 'SGD', child: Text('SGD')),
-                DropdownMenuItem(value: 'IDR', child: Text('IDR')),
+            const SizedBox(width: 12),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  isEditing ? 'Edit Transfer' : 'Add Transfer',
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: Colors.green.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    isEditing ? 'Update transfer' : 'New transfer',
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: Colors.green.shade700,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
               ],
-              onChanged: (v){
-                setState(() {
-                  currency = v!;
-                });
-              },
-              decoration: const InputDecoration(
-                labelText: 'Currency',
+            ),
+          ],
+        ),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: Container(
+          margin: const EdgeInsets.only(left: 8),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Colors.white.withOpacity(0.2),
+                Colors.white.withOpacity(0.1),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.white.withOpacity(0.3)),
+          ),
+          child: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => Navigator.pop(context),
+          ),
+        ),
+      ),
+      body: AppBackgroundWrapper(
+        padding: const EdgeInsets.all(16),
+        child: isDesktop
+            ? _buildDesktopLayout(isEditing)
+            : _buildMobileLayout(isEditing),
+      ),
+    );
+  }
+
+  Widget _buildDesktopLayout(bool isEditing) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // LEFT SIDEBAR - FORM
+        Container(
+          width: 450,
+          margin: const EdgeInsets.only(right: 16),
+          child: SingleChildScrollView(
+            child: _glass(
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              Colors.green.withOpacity(0.2),
+                              Colors.green.withOpacity(0.1),
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(
+                          Icons.info_outline,
+                          color: Colors.green,
+                          size: 18,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      const Text(
+                        'Transfer Information',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Date Picker
+                  _buildDesktopDateField(
+                    label: 'Date',
+                    value: date,
+                    icon: Icons.calendar_today,
+                    color: Colors.blue,
+                    onTap: () async {
+                      final picked = await showDatePicker(
+                        context: context,
+                        initialDate: date,
+                        firstDate: DateTime(2020),
+                        lastDate: DateTime(2100),
+                        builder: (context, child) {
+                          return Theme(
+                            data: Theme.of(context).copyWith(
+                              colorScheme: const ColorScheme.light(
+                                primary: Colors.blue,
+                                onPrimary: Colors.white,
+                              ),
+                            ),
+                            child: child!,
+                          );
+                        },
+                      );
+                      if (picked != null) {
+                        setState(() => date = picked);
+                      }
+                    },
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Amount
+                  _buildDesktopTextField(
+                    label: 'Amount',
+                    icon: Icons.attach_money,
+                    controller: amountController,
+                    keyboardType: TextInputType.number,
+                    hint: '0.00',
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Currency
+                  _buildDesktopDropdown(
+                    label: 'Currency',
+                    value: currency,
+                    icon: Icons.currency_exchange,
+                    items: const [
+                      'AUD', 'JPY', 'MYR', 'SGD', 'IDR'
+                    ],
+                    itemBuilder: (value) => value,
+                    onChanged: (v) {
+                      if (v != null) {
+                        setState(() => currency = v);
+                      }
+                    },
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Note
+                  _buildDesktopTextField(
+                    label: 'Note',
+                    icon: Icons.note,
+                    controller: noteController,
+                    hint: 'Enter note (optional)',
+                    maxLines: 3,
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // Action Buttons
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.grey,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            side: BorderSide(color: Colors.grey.shade400),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          onPressed: () => Navigator.pop(context),
+                          child: const Text('Cancel'),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.green,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            elevation: 0,
+                          ),
+                          onPressed: saveTransfer,
+                          child: Text(isEditing ? 'UPDATE' : 'SAVE'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
+          ),
+        ),
 
-            const SizedBox(height: 20),
+        // RIGHT CONTENT - PREVIEW
+        Expanded(
+          child: _glass(
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            Colors.purple.withOpacity(0.2),
+                            Colors.purple.withOpacity(0.1),
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(
+                        Icons.visibility,
+                        color: Colors.purple,
+                        size: 18,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    const Text(
+                      'Transfer Preview',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
 
-            TextField(
-              controller: noteController,
-              decoration: const InputDecoration(
-                labelText: 'Note',
+                Expanded(
+                  child: Center(
+                    child: Container(
+                      width: 350,
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            Colors.green.withOpacity(0.1),
+                            Colors.green.withOpacity(0.05),
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(
+                          color: Colors.green.withOpacity(0.3),
+                          width: 2,
+                        ),
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // Icon
+                          Container(
+                            padding: const EdgeInsets.all(20),
+                            decoration: BoxDecoration(
+                              color: Colors.green.withOpacity(0.15),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.arrow_downward,
+                              size: 48,
+                              color: Colors.green,
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+
+                          // Date
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: Colors.blue.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              _formatDate(date),
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.blue.shade700,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+
+                          const SizedBox(height: 16),
+
+                          // Amount
+                          Text(
+                            amountController.text.isEmpty
+                                ? '0.00'
+                                : amountController.text,
+                            style: TextStyle(
+                              fontSize: 36,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.green.shade700,
+                            ),
+                          ),
+
+                          const SizedBox(height: 8),
+
+                          // Currency
+                          Text(
+                            currency,
+                            style: TextStyle(
+                              fontSize: 18,
+                              color: Colors.grey.shade600,
+                            ),
+                          ),
+
+                          const SizedBox(height: 16),
+
+                          // Note
+                          if (noteController.text.isNotEmpty)
+                            Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: Colors.grey.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                noteController.text,
+                                style: const TextStyle(fontSize: 14),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMobileLayout(bool isEditing) {
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          // Form Card
+          _glass(
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            Colors.green.withOpacity(0.2),
+                            Colors.green.withOpacity(0.1),
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(
+                        Icons.info_outline,
+                        color: Colors.green,
+                        size: 18,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    const Text(
+                      'Transfer Information',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+
+                // Date Picker
+                InkWell(
+                  onTap: () async {
+                    final picked = await showDatePicker(
+                      context: context,
+                      initialDate: date,
+                      firstDate: DateTime(2020),
+                      lastDate: DateTime(2100),
+                    );
+                    if (picked != null) {
+                      setState(() => date = picked);
+                    }
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          Colors.blue.withOpacity(0.1),
+                          Colors.blue.withOpacity(0.05),
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: Colors.blue.withOpacity(0.3),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.calendar_today, color: Colors.blue, size: 20),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Date',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.blue,
+                                ),
+                              ),
+                              Text(
+                                _formatDate(date),
+                                style: const TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const Icon(
+                          Icons.keyboard_arrow_down,
+                          color: Colors.blue,
+                          size: 18,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                // Amount
+                TextField(
+                  controller: amountController,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    labelText: 'Amount',
+                    prefixIcon: const Icon(Icons.attach_money, size: 20),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    hintText: '0.00',
+                  ),
+                ),
+
+                const SizedBox(height: 12),
+
+                // Currency
+                DropdownButtonFormField<String>(
+                  value: currency,
+                  decoration: InputDecoration(
+                    labelText: 'Currency',
+                    prefixIcon: const Icon(Icons.currency_exchange, size: 20),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  items: const [
+                    'AUD', 'JPY', 'MYR', 'SGD', 'IDR'
+                  ].map((c) {
+                    return DropdownMenuItem(
+                      value: c,
+                      child: Text(c),
+                    );
+                  }).toList(),
+                  onChanged: (v) {
+                    if (v != null) {
+                      setState(() => currency = v);
+                    }
+                  },
+                ),
+
+                const SizedBox(height: 12),
+
+                // Note
+                TextField(
+                  controller: noteController,
+                  maxLines: 3,
+                  decoration: InputDecoration(
+                    labelText: 'Note',
+                    prefixIcon: const Icon(Icons.note, size: 20),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    hintText: 'Enter note (optional)',
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // Action Buttons
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Colors.white.withOpacity(0.2),
+                  Colors.white.withOpacity(0.1),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Colors.white.withOpacity(0.3)),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.grey,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      side: BorderSide(color: Colors.grey.shade400),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Cancel'),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 0,
+                    ),
+                    onPressed: saveTransfer,
+                    child: Text(isEditing ? 'UPDATE' : 'SAVE'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Preview Card (Mobile)
+          if (amountController.text.isNotEmpty || noteController.text.isNotEmpty)
+            const SizedBox(height: 16),
+
+          if (amountController.text.isNotEmpty || noteController.text.isNotEmpty)
+            _glass(
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              Colors.purple.withOpacity(0.2),
+                              Colors.purple.withOpacity(0.1),
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(
+                          Icons.visibility,
+                          color: Colors.purple,
+                          size: 18,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      const Text(
+                        'Preview',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          Colors.green.withOpacity(0.1),
+                          Colors.green.withOpacity(0.05),
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: Colors.green.withOpacity(0.3),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.green.withOpacity(0.15),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.arrow_downward,
+                            size: 24,
+                            color: Colors.green,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                amountController.text.isEmpty
+                                    ? '0.00'
+                                    : '${amountController.text} $currency',
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.green.shade700,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                _formatDate(date),
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey.shade600,
+                                ),
+                              ),
+                              if (noteController.text.isNotEmpty) ...[
+                                const SizedBox(height: 4),
+                                Text(
+                                  noteController.text,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey.shade600,
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
+        ],
+      ),
+    );
+  }
 
-            const SizedBox(height: 30),
+  Widget _buildDesktopTextField({
+    required String label,
+    required IconData icon,
+    required TextEditingController controller,
+    TextInputType? keyboardType,
+    String? hint,
+    int maxLines = 1,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.grey.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade300),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 14, color: Colors.grey.shade600),
+              const SizedBox(width: 4),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey.shade600,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: controller,
+            keyboardType: keyboardType,
+            maxLines: maxLines,
+            decoration: InputDecoration(
+              hintText: hint,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
-            ElevatedButton(
-              onPressed: saveTransfer,
-              child: const Text('SAVE TRANSFER'),
-            )
-
+  Widget _buildDesktopDateField({
+    required String label,
+    required DateTime value,
+    required IconData icon,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              color.withOpacity(0.1),
+              color.withOpacity(0.05),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: color.withOpacity(0.3),
+            width: 1.5,
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, color: color, size: 20),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: color,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    _formatDate(value),
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(
+              Icons.keyboard_arrow_down,
+              color: Colors.grey,
+              size: 18,
+            ),
           ],
         ),
       ),
     );
   }
+
+  Widget _buildDesktopDropdown({
+    required String label,
+    required String value,
+    required IconData icon,
+    required List<String> items,
+    required String Function(String) itemBuilder,
+    required void Function(String?) onChanged,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.grey.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade300),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 14, color: Colors.grey.shade600),
+              const SizedBox(width: 4),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey.shade600,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          DropdownButtonFormField<String>(
+            value: value,
+            decoration: const InputDecoration(
+              border: OutlineInputBorder(),
+              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            ),
+            items: items.map((item) {
+              return DropdownMenuItem<String>(
+                value: item,
+                child: Text(itemBuilder(item)),
+              );
+            }).toList(),
+            onChanged: onChanged,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// =======================================================
+// UI HELPERS
+// =======================================================
+Widget _glass(Widget child) {
+  return ClipRRect(
+    borderRadius: BorderRadius.circular(20),
+    child: BackdropFilter(
+      filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Colors.white.withOpacity(0.3),
+              Colors.white.withOpacity(0.15),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: Colors.white.withOpacity(0.4)),
+        ),
+        child: child,
+      ),
+    ),
+  );
 }

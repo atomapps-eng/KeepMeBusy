@@ -3,62 +3,44 @@ import 'package:image/image.dart' as img;
 
 class ReceiptImageProcessor {
 
-  static Future<File> enhance(File file) async {
+  static Future<File> enhanceForOCR(File originalFile) async {
 
-    final bytes = await file.readAsBytes();
+    final bytes = await originalFile.readAsBytes();
 
     img.Image? image = img.decodeImage(bytes);
 
-    if (image == null) return file;
+    if (image == null) return originalFile;
 
     /// resize supaya OCR lebih stabil
     image = img.copyResize(image, width: 1400);
 
-    /// grayscale
+    /// grayscale untuk OCR saja
     image = img.grayscale(image);
 
-    /// increase contrast
-    image = img.adjustColor(image, contrast: 1.5);
+    /// contrast
+    image = img.adjustColor(
+      image,
+      contrast: 1.8,
+      brightness: 0.05,
+    );
 
+    /// sharpen
+    image = img.convolution(image, filter: [
+      0,-1,0,
+     -1,5,-1,
+      0,-1,0
+    ]);
+
+    /// blur ringan
     image = img.gaussianBlur(image, radius: 1);
-
-    /// threshold manual
-    image = _applyThreshold(image, 140);
 
     final processedBytes = img.encodeJpg(image, quality: 90);
 
     final processedFile =
-        File(file.path.replaceAll('.jpg', '_processed.jpg'));
+        File(originalFile.path.replaceAll('.jpg', '_ocr.jpg'));
 
     await processedFile.writeAsBytes(processedBytes);
 
     return processedFile;
-  }
-
-  static img.Image _applyThreshold(img.Image src, int threshold) {
-
-    for (final pixel in src) {
-
-      final luminance =
-          (pixel.r + pixel.g + pixel.b) ~/ 3;
-
-      if (luminance < threshold) {
-
-        pixel
-          ..r = 0
-          ..g = 0
-          ..b = 0;
-
-      } else {
-
-        pixel
-          ..r = 255
-          ..g = 255
-          ..b = 255;
-
-      }
-    }
-
-    return src;
   }
 }
