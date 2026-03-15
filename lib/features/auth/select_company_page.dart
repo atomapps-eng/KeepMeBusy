@@ -80,7 +80,7 @@ class SelectCompanyPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          'Pilih Perusahaan',
+          'Select Company',
           style: TextStyle(
             fontWeight: FontWeight.bold,
             color: AppTheme.textPrimary,
@@ -214,7 +214,7 @@ class SelectCompanyPage extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.only(bottom: 16),
                 child: Text(
-                  'Choose a country to continue',
+                  'Choose a company to continue',
                   style: TextStyle(
                     fontSize: 14,
                     color: AppTheme.textSecondary,

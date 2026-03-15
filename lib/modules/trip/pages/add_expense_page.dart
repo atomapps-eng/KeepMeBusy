@@ -10,6 +10,7 @@ import '../services/trip_service.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import '../../../pages/common/app_background_wrapper.dart';
+import 'package:file_picker/file_picker.dart';
 
 class AddExpensePage extends StatefulWidget {
   final String tripId;
@@ -37,6 +38,9 @@ class _AddExpensePageState extends State<AddExpensePage> {
   String fingerprint = '';
 
   File? receiptImage;
+
+  File? receiptPdf;
+  String? pdfName;
 
   final expenseService = TripExpenseService();
 
@@ -90,6 +94,10 @@ class _AddExpensePageState extends State<AddExpensePage> {
     /// upload image jika ada
     if (receiptImage != null) {
       receiptUrl = await uploadImageToCloudinary();
+    }
+
+    if (receiptPdf != null) {
+    receiptUrl = await uploadPdfToCloudinary();
     }
 
     final expense = TripExpense(
@@ -173,6 +181,42 @@ Future<void> scanReceipt() async {
       return '';
     }
   }
+
+  Future<String> uploadPdfToCloudinary() async {
+  if (receiptPdf == null) return '';
+
+  final url = Uri.parse(
+    'https://api.cloudinary.com/v1_1/$cloudName/raw/upload',
+  );
+
+  final request = http.MultipartRequest('POST', url);
+
+  request.fields['upload_preset'] = uploadPreset;
+  request.fields['folder'] = 'Receipt';
+
+  final uniqueId = 'receipt_pdf_${DateTime.now().millisecondsSinceEpoch}';
+
+  request.fields['public_id'] = uniqueId;
+
+  request.files.add(
+    await http.MultipartFile.fromPath(
+      'file',
+      receiptPdf!.path,
+    ),
+  );
+
+  final response = await request.send();
+
+  final resBody = await response.stream.bytesToString();
+  final data = json.decode(resBody);
+
+  if (response.statusCode == 200) {
+    return data['secure_url'];
+  } else {
+    debugPrint('PDF upload failed');
+    return '';
+  }
+}
 
   void removePhoto() {
     setState(() {
@@ -471,6 +515,15 @@ Future<void> scanReceipt() async {
               },
             ),
 
+            ListTile(
+  leading: const Icon(Icons.picture_as_pdf),
+  title: const Text('Upload PDF'),
+  onTap: () {
+    Navigator.pop(context);
+    pickPdf();
+  },
+),
+
           ],
         ),
       );
@@ -526,6 +579,39 @@ Future<void> scanReceipt() async {
                       ),
                     ),
                   ],
+
+                  if (receiptPdf != null) ...[
+  const SizedBox(height: 16),
+  Container(
+    padding: const EdgeInsets.all(12),
+    decoration: BoxDecoration(
+      color: Colors.red.withOpacity(0.05),
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(color: Colors.red.withOpacity(0.3)),
+    ),
+    child: Row(
+      children: [
+        const Icon(Icons.picture_as_pdf, color: Colors.red),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(
+            pdfName ?? 'PDF File',
+            style: const TextStyle(fontWeight: FontWeight.w600),
+          ),
+        ),
+        IconButton(
+          icon: const Icon(Icons.delete, color: Colors.red),
+          onPressed: () {
+            setState(() {
+              receiptPdf = null;
+              pdfName = null;
+            });
+          },
+        ),
+      ],
+    ),
+  ),
+],
 
                   const SizedBox(height: 24),
 
@@ -939,7 +1025,7 @@ Future<void> scanReceipt() async {
                 const SizedBox(height: 20),
 
                 // Scan Receipt Button
-                Row(
+               Row(
   children: [
 
     Expanded(
@@ -954,11 +1040,11 @@ Future<void> scanReceipt() async {
         ),
         onPressed: scanReceipt,
         icon: const Icon(Icons.camera_alt),
-        label: const Text('Take Photo'),
+        label: const Text('Camera'),
       ),
     ),
 
-    const SizedBox(width: 12),
+    const SizedBox(width: 8),
 
     Expanded(
       child: OutlinedButton.icon(
@@ -976,9 +1062,25 @@ Future<void> scanReceipt() async {
       ),
     ),
 
+    const SizedBox(width: 8),
+
+    Expanded(
+      child: OutlinedButton.icon(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: Colors.red,
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          side: BorderSide(color: Colors.red.withOpacity(0.5)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+        onPressed: pickPdf,
+        icon: const Icon(Icons.picture_as_pdf),
+        label: const Text('PDF'),
+      ),
+    ),
   ],
 ),
-
                 // Receipt Preview
                 if (receiptImage != null) ...[
                   const SizedBox(height: 16),
@@ -1023,6 +1125,42 @@ Future<void> scanReceipt() async {
                     ),
                   ),
                 ],
+                if (receiptPdf != null) ...[
+  const SizedBox(height: 16),
+  Container(
+    padding: const EdgeInsets.all(12),
+    decoration: BoxDecoration(
+      color: Colors.red.withOpacity(0.05),
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(color: Colors.red.withOpacity(0.3)),
+    ),
+    child: Row(
+      children: [
+        const Icon(Icons.picture_as_pdf, color: Colors.red),
+        const SizedBox(width: 10),
+
+        Expanded(
+          child: Text(
+            pdfName ?? 'PDF File',
+            style: const TextStyle(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+
+        IconButton(
+          icon: const Icon(Icons.delete, color: Colors.red),
+          onPressed: () {
+            setState(() {
+              receiptPdf = null;
+              pdfName = null;
+            });
+          },
+        ),
+      ],
+    ),
+  ),
+],
               ],
             ),
           ),
@@ -1265,6 +1403,21 @@ Future<void> scanReceipt() async {
 
   setState(() {
     receiptImage = File(photo.path);
+  });
+}
+
+Future<void> pickPdf() async {
+  final result = await FilePicker.platform.pickFiles(
+    type: FileType.custom,
+    allowedExtensions: ['pdf'],
+  );
+
+  if (result == null) return;
+
+  setState(() {
+    receiptPdf = File(result.files.single.path!);
+    pdfName = result.files.single.name;
+    receiptImage = null;
   });
 }
 
