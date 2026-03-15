@@ -5,6 +5,7 @@ class TripTransfer {
   final String createdBy;
   final List<Map<String, dynamic>> transfers;
   final String note;
+  final String receiptUrl;
 
   TripTransfer({
     required this.id,
@@ -12,6 +13,7 @@ class TripTransfer {
     required this.createdBy,
     required this.transfers,
     required this.note,
+    required this.receiptUrl,
   });
 
   Map<String, dynamic> toMap() {
@@ -20,6 +22,7 @@ class TripTransfer {
       'createdBy': createdBy,
       'transfers': transfers,
       'note': note,
+      'receiptUrl': receiptUrl,
     };
   }
 
@@ -30,6 +33,7 @@ class TripTransfer {
       createdBy: map['createdBy'] ?? '',
       transfers: List<Map<String, dynamic>>.from(map['transfers'] ?? []),
       note: map['note'] ?? '',
+      receiptUrl: map['receiptUrl'] ?? '',
     );
   }
 }

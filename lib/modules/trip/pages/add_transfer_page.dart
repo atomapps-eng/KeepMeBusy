@@ -5,6 +5,10 @@ import '../models/trip_transfer_model.dart';
 import '../services/trip_transfer_service.dart';
 import '../../../theme/app_theme.dart';
 import '../../../pages/common/app_background_wrapper.dart';
+import 'dart:io';
+import 'dart:convert';
+import 'package:image_picker/image_picker.dart';
+import 'package:http/http.dart' as http;
 
 class AddTransferPage extends StatefulWidget {
   final String tripId;
@@ -25,6 +29,10 @@ class _AddTransferPageState extends State<AddTransferPage> {
   DateTime date = DateTime.now();
   final amountController = TextEditingController();
   final noteController = TextEditingController();
+  File? transferImage;
+
+final String cloudName = 'djl2sukor';
+final String uploadPreset = 'Receipt';
 
   String currency = 'AUD';
 
@@ -59,38 +67,45 @@ class _AddTransferPageState extends State<AddTransferPage> {
     });
   }
 
-  Future<void> saveTransfer() async {
-    final user = FirebaseAuth.instance.currentUser!;
+    Future<void> saveTransfer() async {
+  final user = FirebaseAuth.instance.currentUser!;
 
-    final transfer = TripTransfer(
-      id: '',
-      date: date,
-      createdBy: user.uid,
-      transfers: [
-        {
-          'employeeId': user.uid,
-          'amount': double.tryParse(amountController.text) ?? 0,
-          'currency': currency,
-        }
-      ],
-      note: noteController.text,
-    );
+  String photoUrl = '';
 
-    if (widget.transferId == null) {
-      await transferService.createTransfer(
-        widget.tripId,
-        transfer,
-      );
-    } else {
-      await transferService.updateTransfer(
-        widget.tripId,
-        widget.transferId!,
-        transfer,
-      );
-    }
-
-    Navigator.pop(context);
+  if (transferImage != null) {
+    photoUrl = await uploadImageToCloudinary();
   }
+
+  final transfer = TripTransfer(
+    id: '',
+    date: date,
+    createdBy: user.uid,
+    transfers: [
+      {
+        'employeeId': user.uid,
+        'amount': double.tryParse(amountController.text) ?? 0,
+        'currency': currency,
+      }
+    ],
+    note: noteController.text,
+    receiptUrl: photoUrl, // tambahkan field ini di model
+  );
+
+  if (widget.transferId == null) {
+    await transferService.createTransfer(
+      widget.tripId,
+      transfer,
+    );
+  } else {
+    await transferService.updateTransfer(
+      widget.tripId,
+      widget.transferId!,
+      transfer,
+    );
+  }
+
+  Navigator.pop(context);
+}
 
   String _formatDate(DateTime date) {
     return '${date.day}/${date.month}/${date.year}';
@@ -299,6 +314,70 @@ class _AddTransferPageState extends State<AddTransferPage> {
                     hint: 'Enter note (optional)',
                     maxLines: 3,
                   ),
+const SizedBox(height: 20),
+
+// PHOTO BUTTONS
+Row(
+  children: [
+
+    Expanded(
+      child: OutlinedButton.icon(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: Colors.blue,
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          side: BorderSide(color: Colors.blue.withOpacity(0.5)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+        onPressed: takePhoto,
+        icon: const Icon(Icons.camera_alt),
+        label: const Text('Take Photo'),
+      ),
+    ),
+
+    const SizedBox(width: 12),
+
+   Expanded(
+      child: OutlinedButton.icon(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: Colors.green,
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          side: BorderSide(color: Colors.green.withOpacity(0.5)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+        onPressed: pickFromGallery,
+        icon: const Icon(Icons.photo_library),
+        label: const Text('Gallery'),
+      ),
+    ),
+
+  ],
+),
+
+// PHOTO PREVIEW
+if (transferImage != null) ...[
+  const SizedBox(height: 16),
+
+  Container(
+    padding: const EdgeInsets.all(12),
+    decoration: BoxDecoration(
+      color: Colors.grey.withOpacity(0.05),
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(color: Colors.grey.shade300),
+    ),
+    child: ClipRRect(
+      borderRadius: BorderRadius.circular(8),
+      child: Image.file(
+        transferImage!,
+        height: 120,
+        fit: BoxFit.cover,
+      ),
+    ),
+  ),
+],
 
                   const SizedBox(height: 24),
 
@@ -637,18 +716,83 @@ class _AddTransferPageState extends State<AddTransferPage> {
                 const SizedBox(height: 12),
 
                 // Note
-                TextField(
-                  controller: noteController,
-                  maxLines: 3,
-                  decoration: InputDecoration(
-                    labelText: 'Note',
-                    prefixIcon: const Icon(Icons.note, size: 20),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    hintText: 'Enter note (optional)',
-                  ),
-                ),
+               // Note
+TextField(
+  controller: noteController,
+  maxLines: 3,
+  decoration: InputDecoration(
+    labelText: 'Note',
+    prefixIcon: const Icon(Icons.note, size: 20),
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+    ),
+    hintText: 'Enter note (optional)',
+  ),
+),
+
+const SizedBox(height: 20),
+
+// PHOTO BUTTONS
+Row(
+  children: [
+
+    Expanded(
+      child: OutlinedButton.icon(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: Colors.blue,
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          side: BorderSide(color: Colors.blue.withOpacity(0.5)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+        onPressed: takePhoto,
+        icon: const Icon(Icons.camera_alt),
+        label: const Text('Take Photo'),
+      ),
+    ),
+    const SizedBox(width: 12),
+
+    Expanded(
+      child: OutlinedButton.icon(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: Colors.green,
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          side: BorderSide(color: Colors.green.withOpacity(0.5)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+        onPressed: pickFromGallery,
+        icon: const Icon(Icons.photo_library),
+        label: const Text('Gallery'),
+      ),
+    ),
+
+  ],
+),
+
+// PHOTO PREVIEW
+if (transferImage != null) ...[
+  const SizedBox(height: 16),
+
+  Container(
+    padding: const EdgeInsets.all(12),
+    decoration: BoxDecoration(
+      color: Colors.grey.withOpacity(0.05),
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(color: Colors.grey.shade300),
+    ),
+    child: ClipRRect(
+      borderRadius: BorderRadius.circular(8),
+      child: Image.file(
+        transferImage!,
+        height: 120,
+        fit: BoxFit.cover,
+      ),
+    ),
+  ),
+],
               ],
             ),
           ),
@@ -991,6 +1135,73 @@ class _AddTransferPageState extends State<AddTransferPage> {
       ),
     );
   }
+
+ Future<void> takePhoto() async {
+  final picker = ImagePicker();
+
+  final photo = await picker.pickImage(
+    source: ImageSource.camera,
+    imageQuality: 85,
+  );
+
+  if (photo == null) return;
+
+  setState(() {
+    transferImage = File(photo.path);
+  });
+}
+
+Future<void> pickFromGallery() async {
+  final picker = ImagePicker();
+
+  final photo = await picker.pickImage(
+    source: ImageSource.gallery,
+    imageQuality: 85,
+  );
+
+  if (photo == null) return;
+
+  setState(() {
+    transferImage = File(photo.path);
+  });
+}
+
+Future<String> uploadImageToCloudinary() async {
+  if (transferImage == null) return '';
+
+  final url = Uri.parse(
+    'https://api.cloudinary.com/v1_1/$cloudName/image/upload',
+  );
+
+  final request = http.MultipartRequest('POST', url);
+
+  request.fields['upload_preset'] = uploadPreset;
+  request.fields['folder'] = 'Transfer';
+
+  final uniqueId = 'transfer_${DateTime.now().millisecondsSinceEpoch}';
+
+  request.fields['public_id'] = uniqueId;
+
+  request.files.add(
+    await http.MultipartFile.fromPath(
+      'file',
+      transferImage!.path,
+    ),
+  );
+
+  final response = await request.send();
+
+  final resBody = await response.stream.bytesToString();
+  final data = json.decode(resBody);
+
+  if (response.statusCode == 200) {
+    return data['secure_url'];
+  } else {
+    debugPrint('Upload failed');
+    return '';
+  }
+}
+
 }
 
 // =======================================================

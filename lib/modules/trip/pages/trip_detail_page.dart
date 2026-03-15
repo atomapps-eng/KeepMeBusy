@@ -332,8 +332,6 @@ class TripDetailPage extends StatelessWidget {
               ),
             ),
 
-            const SizedBox(height: 16),
-
             // Balance Card
             _glass(
               Column(
@@ -483,8 +481,6 @@ class TripDetailPage extends StatelessWidget {
                 ],
               ),
             ),
-
-            const SizedBox(height: 16),
 
             // Transactions Section
             Expanded(
