@@ -11,6 +11,7 @@ import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import '../../../pages/common/app_background_wrapper.dart';
 import 'package:file_picker/file_picker.dart';
+import '../../../services/github_storage_service.dart';
 
 class AddExpensePage extends StatefulWidget {
   final String tripId;
@@ -27,6 +28,7 @@ class AddExpensePage extends StatefulWidget {
 }
 
 class _AddExpensePageState extends State<AddExpensePage> {
+  bool isUploading = false;
   final amountController = TextEditingController();
   final descController = TextEditingController();
   final tripService = TripService();
@@ -87,18 +89,27 @@ class _AddExpensePageState extends State<AddExpensePage> {
 
   /// SAVE EXPENSE
   Future<void> saveExpense() async {
-    final user = FirebaseAuth.instance.currentUser!;
 
-    String receiptUrl = '';
+  setState(() {
+    isUploading = true;
+  });
 
-    /// upload image jika ada
+  final user = FirebaseAuth.instance.currentUser!;
+
+  String receiptUrl = '';
+
+  try {
+
     if (receiptImage != null) {
-      receiptUrl = await uploadImageToCloudinary();
-    }
 
-    if (receiptPdf != null) {
-    receiptUrl = await uploadPdfToCloudinary();
-    }
+  receiptUrl = await GithubStorageService.uploadFile(receiptImage!) ?? '';
+
+} 
+else if (receiptPdf != null) {
+
+  receiptUrl = await GithubStorageService.uploadFile(receiptPdf!) ?? '';
+
+}
 
     final expense = TripExpense(
       id: '',
@@ -113,20 +124,41 @@ class _AddExpensePageState extends State<AddExpensePage> {
     );
 
     if (widget.expenseId == null) {
-      await expenseService.createExpense(
-        widget.tripId,
-        expense,
-      );
+      await expenseService.createExpense(widget.tripId, expense);
     } else {
-      await expenseService.updateExpense(
-        widget.tripId,
-        widget.expenseId!,
-        expense,
-      );
+      await expenseService.updateExpense(widget.tripId, widget.expenseId!, expense);
     }
 
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("Expense saved successfully"),
+        backgroundColor: Colors.green,
+      ),
+    );
+
     Navigator.pop(context);
+
+  } catch (e) {
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text("Upload failed: $e"),
+        backgroundColor: Colors.red,
+      ),
+    );
+
+  } finally {
+
+    if (mounted) {
+      setState(() {
+        isUploading = false;
+      });
+    }
+
   }
+}
 
   /// PICK RECEIPT IMAGE
 Future<void> scanReceipt() async {
@@ -142,80 +174,6 @@ Future<void> scanReceipt() async {
   setState(() {
     receiptImage = File(photo.path);
   });
-}
-
-  /// UPLOAD IMAGE TO CLOUDINARY
-  Future<String> uploadImageToCloudinary() async {
-    if (receiptImage == null) return '';
-
-    final url = Uri.parse(
-      'https://api.cloudinary.com/v1_1/$cloudName/image/upload',
-    );
-
-    final request = http.MultipartRequest('POST', url);
-
-    request.fields['upload_preset'] = uploadPreset;
-    request.fields['folder'] = 'Receipt';
-
-    final uniqueId = 'receipt_${DateTime.now().millisecondsSinceEpoch}';
-
-    request.fields['public_id'] = uniqueId;
-
-    request.files.add(
-      await http.MultipartFile.fromPath(
-        'file',
-        receiptImage!.path,
-      ),
-    );
-
-    final response = await request.send();
-
-    final resBody = await response.stream.bytesToString();
-
-    final data = json.decode(resBody);
-
-    if (response.statusCode == 200) {
-      return data['secure_url'];
-    } else {
-      debugPrint('Upload failed');
-      return '';
-    }
-  }
-
-  Future<String> uploadPdfToCloudinary() async {
-  if (receiptPdf == null) return '';
-
-  final url = Uri.parse(
-    'https://api.cloudinary.com/v1_1/$cloudName/raw/upload',
-  );
-
-  final request = http.MultipartRequest('POST', url);
-
-  request.fields['upload_preset'] = uploadPreset;
-  request.fields['folder'] = 'Receipt';
-
-  final uniqueId = 'receipt_pdf_${DateTime.now().millisecondsSinceEpoch}';
-
-  request.fields['public_id'] = uniqueId;
-
-  request.files.add(
-    await http.MultipartFile.fromPath(
-      'file',
-      receiptPdf!.path,
-    ),
-  );
-
-  final response = await request.send();
-
-  final resBody = await response.stream.bytesToString();
-  final data = json.decode(resBody);
-
-  if (response.statusCode == 200) {
-    return data['secure_url'];
-  } else {
-    debugPrint('PDF upload failed');
-    return '';
-  }
 }
 
   void removePhoto() {
@@ -327,12 +285,36 @@ Future<void> scanReceipt() async {
           ),
         ),
       ),
-      body: AppBackgroundWrapper(
-        padding: const EdgeInsets.all(16),
-        child: isDesktop
-            ? _buildDesktopLayout(isEditing, categoryColor)
-            : _buildMobileLayout(isEditing, categoryColor),
+      body: Stack(
+  children: [
+
+    AppBackgroundWrapper(
+      padding: const EdgeInsets.all(16),
+      child: isDesktop
+          ? _buildDesktopLayout(isEditing, categoryColor)
+          : _buildMobileLayout(isEditing, categoryColor),
+    ),
+
+    if (isUploading)
+      Container(
+        color: Colors.black.withOpacity(0.4),
+        child: const Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 16),
+              Text(
+                "Uploading receipt...",
+                style: TextStyle(color: Colors.white),
+              ),
+            ],
+          ),
+        ),
       ),
+
+  ],
+),
     );
   }
 

@@ -11,9 +11,11 @@ import '../models/trip_ledger_item.dart';
 import 'receipt_viewer_page.dart';
 import '../services/trip_service.dart';
 import 'create_trip_page.dart';
-import '../../../theme/app_theme.dart';
 import '../../../pages/common/app_background_wrapper.dart';
 import 'package:intl/intl.dart';
+import 'expense_detail_page.dart';
+import 'transaction_list_page.dart';
+
 
 class TripDetailPage extends StatelessWidget {
   final TripTransferService transferService = TripTransferService();
@@ -489,34 +491,51 @@ class TripDetailPage extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [
-                                Colors.purple.withOpacity(0.2),
-                                Colors.purple.withOpacity(0.1),
-                              ],
-                            ),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: const Icon(
-                            Icons.receipt,
-                            color: Colors.purple,
-                            size: 18,
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        const Text(
-                          'Transactions',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
+  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  children: [
+    Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Colors.purple.withOpacity(0.2),
+                Colors.purple.withOpacity(0.1),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: const Icon(
+            Icons.receipt,
+            color: Colors.purple,
+            size: 18,
+          ),
+        ),
+        const SizedBox(width: 10),
+        const Text(
+          'Transactions',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ],
+    ),
+
+    TextButton(
+      onPressed: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => TransactionListPage(trip: trip),
+          ),
+        );
+      },
+      child: const Text("View All"),
+    ),
+  ],
+),
                     const SizedBox(height: 16),
 
                     Expanded(
@@ -606,108 +625,108 @@ class TripDetailPage extends StatelessWidget {
         ),
       ),
 
-      floatingActionButton: Container(
-        margin: const EdgeInsets.all(16),
-        child: FloatingActionButton.extended(
-          onPressed: () {
-            showModalBottomSheet(
-              context: context,
-              shape: const RoundedRectangleBorder(
-                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-              ),
-              builder: (context) {
-                return Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        Colors.white.withOpacity(0.95),
-                        Colors.white.withOpacity(0.9),
-                      ],
-                    ),
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        width: 40,
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade300,
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      ListTile(
-                        leading: Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: Colors.green.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: const Icon(Icons.arrow_downward, color: Colors.green),
-                        ),
-                        title: const Text(
-                          'Add Transfer',
-                          style: TextStyle(fontWeight: FontWeight.w600),
-                        ),
-                        subtitle: const Text('Add money received'),
-                        onTap: () {
-                          Navigator.pop(context);
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => AddTransferPage(
-                                tripId: trip.id,
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                      ListTile(
-                        leading: Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: Colors.red.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: const Icon(Icons.arrow_upward, color: Colors.red),
-                        ),
-                        title: const Text(
-                          'Add Expense',
-                          style: TextStyle(fontWeight: FontWeight.w600),
-                        ),
-                        subtitle: const Text('Add money spent'),
-                        onTap: () {
-                          Navigator.pop(context);
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => AddExpensePage(
-                                tripId: trip.id,
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                );
-              },
-            );
-          },
-          icon: const Icon(Icons.add),
-          label: const Text('Add Transaction'),
-          backgroundColor: Colors.blue,
-        ),
+      floatingActionButton: FloatingActionButton(
+  backgroundColor: Colors.blue,
+  child: const Icon(Icons.add),
+  onPressed: () {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+
+              ListTile(
+                leading: const Icon(Icons.arrow_downward, color: Colors.green),
+                title: const Text('Add Transfer'),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => AddTransferPage(
+                        tripId: trip.id,
+                      ),
+                    ),
+                  );
+                },
+              ),
+
+              ListTile(
+                leading: const Icon(Icons.arrow_upward, color: Colors.red),
+                title: const Text('Add Expense'),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => AddExpensePage(
+                        tripId: trip.id,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  },
+),
+
+floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
 
 Widget _buildTransactionItem(BuildContext context, TripLedgerItem item) {
-  return Container(
+ return InkWell(
+  onTap: () {
+
+  if (item.type == 'expense') {
+
+    final expense = TripExpense(
+      id: item.id,
+      date: item.date,
+      employeeId: '',
+      amount: item.amount,
+      currency: item.currency,
+      category: item.title,
+      description: item.description ?? '',
+      receiptUrl: item.receiptUrl ?? '',
+      fingerprint: '',
+    );
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ExpenseDetailPage(
+          tripId: trip.id,
+          expense: expense,
+        ),
+      ),
+    );
+  }
+
+  if (item.type == 'transfer') {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AddTransferPage(
+          tripId: trip.id,
+          transferId: item.id,
+        ),
+      ),
+    );
+  }
+},
+
+  child: Container(
     margin: const EdgeInsets.only(bottom: 8),
     padding: const EdgeInsets.all(12),
     decoration: BoxDecoration(
@@ -792,29 +811,39 @@ Widget _buildTransactionItem(BuildContext context, TripLedgerItem item) {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  if (!item.isDebit && item.receiptUrl != null && item.receiptUrl!.isNotEmpty)
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: Colors.blue.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.receipt, size: 10, color: Colors.blue),
-                          SizedBox(width: 2),
-                          Text(
-                            'Receipt',
-                            style: TextStyle(
-                              fontSize: 8,
-                              color: Colors.blue,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                 if (!item.isDebit && item.receiptUrl != null && item.receiptUrl!.isNotEmpty)
+  Row(
+    children: [
+      Container(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+        decoration: BoxDecoration(
+          color: Colors.blue.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.receipt, size: 10, color: Colors.blue),
+            SizedBox(width: 2),
+            Text(
+              'Receipt',
+              style: TextStyle(
+                fontSize: 8,
+                color: Colors.blue,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
+      const SizedBox(width: 4),
+      const Icon(
+        Icons.download,
+        size: 12,
+        color: Colors.blue,
+      ),
+    ],
+  ),
                 ],
               ),
               const SizedBox(height: 4),
@@ -1018,6 +1047,7 @@ Widget _buildTransactionItem(BuildContext context, TripLedgerItem item) {
         ),
       ],
     ),
+  ),
   );
 }
 
@@ -1080,6 +1110,7 @@ Widget _buildTransactionItem(BuildContext context, TripLedgerItem item) {
           currency: e.currency,
           isDebit: false,
           receiptUrl: e.receiptUrl,
+          expense: e,
         ),
       );
     }

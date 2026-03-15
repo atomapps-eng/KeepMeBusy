@@ -1,3 +1,5 @@
+import 'trip_expense_model.dart';
+
 class TripLedgerItem {
 
   final String id;
@@ -9,6 +11,7 @@ class TripLedgerItem {
   final String currency;
   final bool isDebit;
   final String? receiptUrl;
+  final TripExpense? expense;
 
   TripLedgerItem({
     required this.id,
@@ -20,6 +23,7 @@ class TripLedgerItem {
     required this.currency,
     required this.isDebit,
     this.receiptUrl,
+    this.expense,
   });
 
 }
