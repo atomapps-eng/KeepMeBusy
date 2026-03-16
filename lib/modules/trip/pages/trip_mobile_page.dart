@@ -619,6 +619,7 @@ class TripMobilePage extends StatelessWidget {
     Trip trip,
     TripService tripService,
   ) {
+    print("BUILD ROW: ${trip.title}");
     final statusColor = _getStatusColor(trip.status ?? 'draft');
     final flag = _getCountryFlag(trip.country);
 
@@ -629,9 +630,13 @@ class TripMobilePage extends StatelessWidget {
         final userData = userSnapshot.data ?? {};
         final accessLevel = userData['accessLevel'];
         final List countryIds = userData['countryIds'] ?? [];
+
+        print("ACCESS LEVEL: $accessLevel");
+print("USER COUNTRIES: $countryIds");
+print("TRIP COUNTRY: ${trip.country}");
         
-        bool canOpen = trip.createdBy == uid ||
-            (accessLevel == 'admin_countries' && countryIds.contains(trip.country));
+       bool canOpen = trip.createdBy == uid ||
+    accessLevel == 'admin_countries';
 
         return Container(
           decoration: BoxDecoration(
@@ -833,7 +838,7 @@ class TripMobilePage extends StatelessWidget {
             final List countryIds = userData['countryIds'] ?? [];
             
             bool canOpen = trip.createdBy == uid ||
-                (accessLevel == 'admin_countries' && countryIds.contains(trip.country));
+    accessLevel == 'admin_countries';
 
             return _buildMobileTripCard(context, trip, canOpen);
           },
