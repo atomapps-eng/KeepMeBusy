@@ -227,350 +227,321 @@ class TripDetailPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Trip Info Card
+            // Trip Info Card - Compact version
             _glass(
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              Row(
                 children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [
-                              Colors.blue.withOpacity(0.2),
-                              Colors.blue.withOpacity(0.1),
-                            ],
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          trip.title,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
                           ),
-                          borderRadius: BorderRadius.circular(10),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        child: const Icon(
-                          Icons.info_outline,
-                          color: Colors.blue,
-                          size: 18,
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      const Text(
-                        'Trip Information',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Title',
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: Colors.grey,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              trip.title,
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [
-                              Colors.green.withOpacity(0.15),
-                              Colors.green.withOpacity(0.05),
-                            ],
-                          ),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: Colors.green.withOpacity(0.3)),
-                        ),
-                        child: Text(
-                          trip.status,
+                        const SizedBox(height: 4),
+                        Text(
+                          '${trip.partnerName} • ${trip.country}',
                           style: TextStyle(
                             fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.green.shade700,
+                            color: Colors.grey.shade600,
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 12),
-
-                  Row(
-                    children: [
-                      Icon(Icons.business, size: 14, color: Colors.grey.shade600),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          trip.partnerName,
-                          style: const TextStyle(fontSize: 14),
+                        const SizedBox(height: 4),
+                        Text(
+                          '${_formatDate(trip.startDate)} - ${_formatDate(trip.endDate)}',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.grey.shade500,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-
-                  const SizedBox(height: 8),
-
-                  Row(
-                    children: [
-                      Icon(Icons.public, size: 14, color: Colors.grey.shade600),
-                      const SizedBox(width: 8),
-                      Text(
-                        trip.country,
-                        style: const TextStyle(fontSize: 14),
+                  const SizedBox(width: 12),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          Colors.green.withOpacity(0.15),
+                          Colors.green.withOpacity(0.05),
+                        ],
                       ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 8),
-
-                  Row(
-                    children: [
-                      Icon(Icons.date_range, size: 14, color: Colors.grey.shade600),
-                      const SizedBox(width: 8),
-                      Text(
-                        '${_formatDate(trip.startDate)} - ${_formatDate(trip.endDate)}',
-                        style: const TextStyle(fontSize: 14),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: Colors.green.withOpacity(0.3)),
+                    ),
+                    child: Text(
+                      trip.status,
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.green.shade700,
                       ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 8),
-
-                  Row(
-                    children: [
-                      Icon(Icons.person, size: 14, color: Colors.grey.shade600),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Created by: ${trip.createdByName}',
-                        style: const TextStyle(fontSize: 14),
-                      ),
-                    ],
+                    ),
                   ),
                 ],
               ),
             ),
 
-            // Balance Card
-            _glass(
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [
-                              Colors.green.withOpacity(0.2),
-                              Colors.green.withOpacity(0.1),
-                            ],
-                          ),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: const Icon(
-                          Icons.account_balance_wallet,
-                          color: Colors.green,
-                          size: 18,
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      const Text(
-                        'Balance',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-
-                  StreamBuilder<List<TripTransfer>>(
-                    stream: transferService.streamTransfers(trip.id),
-                    builder: (context, transferSnapshot) {
-                      if (!transferSnapshot.hasData) {
-                        return const Center(
-                          child: Padding(
-                            padding: EdgeInsets.all(16),
-                            child: CircularProgressIndicator(),
-                          ),
-                        );
-                      }
-
-                      final transfers = transferSnapshot.data!;
-
-                      return StreamBuilder<List<TripExpense>>(
-                        stream: expenseService.streamExpenses(trip.id),
-                        builder: (context, expenseSnapshot) {
-                          if (!expenseSnapshot.hasData) {
-                            return const Center(
-                              child: Padding(
-                                padding: EdgeInsets.all(16),
-                                child: CircularProgressIndicator(),
-                              ),
-                            );
-                          }
-
-                          final expenses = expenseSnapshot.data!;
-                          final balances = calculateBalance(transfers, expenses);
-
-                          if (balances.isEmpty) {
-                            return const Padding(
-                              padding: EdgeInsets.all(16),
-                              child: Center(
-                                child: Text('No balance data'),
-                              ),
-                            );
-                          }
-
-                          return Column(
-                            children: balances.entries.map((entry) {
-                              final isPositive = entry.value >= 0;
-                              return Container(
-                                margin: const EdgeInsets.only(bottom: 8),
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    colors: [
-                                      isPositive
-                                          ? Colors.green.withOpacity(0.1)
-                                          : Colors.red.withOpacity(0.1),
-                                      isPositive
-                                          ? Colors.green.withOpacity(0.05)
-                                          : Colors.red.withOpacity(0.05),
-                                    ],
-                                  ),
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color: isPositive
-                                        ? Colors.green.withOpacity(0.3)
-                                        : Colors.red.withOpacity(0.3),
-                                  ),
-                                ),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        Container(
-                                          padding: const EdgeInsets.all(6),
-                                          decoration: BoxDecoration(
-                                            color: isPositive
-                                                ? Colors.green.withOpacity(0.2)
-                                                : Colors.red.withOpacity(0.2),
-                                            shape: BoxShape.circle,
-                                          ),
-                                          child: Icon(
-                                            isPositive
-                                                ? Icons.arrow_upward
-                                                : Icons.arrow_downward,
-                                            color: isPositive ? Colors.green : Colors.red,
-                                            size: 12,
-                                          ),
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Text(
-                                          entry.key,
-                                          style: const TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    Text(
-                                      '${isPositive ? '' : '-'}${_currencyFormatter.format(entry.value.abs())}',
-                                      style: TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
-                                        color: isPositive ? Colors.green : Colors.red,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            }).toList(),
-                          );
-                        },
-                      );
-                    },
-                  ),
+            // Balance Card - Compact horizontal layout
+            // Balance Card - Compact horizontal layout with label
+_glass(
+  Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Colors.green.withOpacity(0.2),
+                  Colors.green.withOpacity(0.1),
                 ],
               ),
+              borderRadius: BorderRadius.circular(8),
             ),
+            child: const Icon(
+              Icons.account_balance_wallet,
+              color: Colors.deepOrange,
+              size: 16,
+            ),
+          ),
+          const SizedBox(width: 8),
+          const Text(
+            'Current Balance',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+      const SizedBox(height: 10),
+      StreamBuilder<List<TripTransfer>>(
+        stream: transferService.streamTransfers(trip.id),
+        builder: (context, transferSnapshot) {
+          if (!transferSnapshot.hasData) {
+            return const SizedBox(
+              height: 40,
+              child: Center(child: CircularProgressIndicator()),
+            );
+          }
 
-            // Transactions Section
+          final transfers = transferSnapshot.data!;
+
+          return StreamBuilder<List<TripExpense>>(
+            stream: expenseService.streamExpenses(trip.id),
+            builder: (context, expenseSnapshot) {
+              if (!expenseSnapshot.hasData) {
+                return const SizedBox(
+                  height: 40,
+                  child: Center(child: CircularProgressIndicator()),
+                );
+              }
+
+              final expenses = expenseSnapshot.data!;
+              final balances = calculateBalance(transfers, expenses);
+
+              if (balances.isEmpty) {
+                return Container(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Text(
+                    'No balance data',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey.shade600,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                );
+              }
+
+              return SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: balances.entries.map((entry) {
+                    final isPositive = entry.value >= 0;
+                    return Container(
+                      margin: const EdgeInsets.only(right: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            isPositive
+                                ? Colors.green.withOpacity(0.1)
+                                : Colors.red.withOpacity(0.1),
+                            isPositive
+                                ? Colors.green.withOpacity(0.05)
+                                : Colors.red.withOpacity(0.05),
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: isPositive
+                              ? Colors.green.withOpacity(0.3)
+                              : Colors.red.withOpacity(0.3),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: isPositive
+                                  ? Colors.green.withOpacity(0.2)
+                                  : Colors.red.withOpacity(0.2),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              isPositive
+                                  ? Icons.arrow_upward
+                                  : Icons.arrow_downward,
+                              color: isPositive ? Colors.green : Colors.red,
+                              size: 10,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            entry.key,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: isPositive
+                                  ? Colors.green.withOpacity(0.1)
+                                  : Colors.red.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Text(
+                              '${isPositive ? '' : '-'}${_currencyFormatter.format(entry.value.abs())}',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                                color: isPositive ? Colors.green : Colors.red,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                ),
+              );
+            },
+          );
+        },
+      ),
+    ],
+  ),
+),
+
+            // Transactions Section - Takes most of the space
             Expanded(
               child: _glass(
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
-  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-  children: [
-    Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                Colors.purple.withOpacity(0.2),
-                Colors.purple.withOpacity(0.1),
-              ],
-            ),
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: const Icon(
-            Icons.receipt,
-            color: Colors.purple,
-            size: 18,
-          ),
-        ),
-        const SizedBox(width: 10),
-        const Text(
-          'Transactions',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ],
-    ),
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [
+                                    Colors.purple.withOpacity(0.2),
+                                    Colors.purple.withOpacity(0.1),
+                                  ],
+                                ),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: const Icon(
+                                Icons.receipt,
+                                color: Colors.purple,
+                                size: 18,
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            const Text(
+                              'Transactions',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: Colors.purple.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: StreamBuilder<List<TripTransfer>>(
+                                stream: transferService.streamTransfers(trip.id),
+                                builder: (context, transferSnapshot) {
+                                  if (!transferSnapshot.hasData) return const Text('0');
+                                  final transfers = transferSnapshot.data!;
+                                  return StreamBuilder<List<TripExpense>>(
+                                    stream: expenseService.streamExpenses(trip.id),
+                                    builder: (context, expenseSnapshot) {
+                                      if (!expenseSnapshot.hasData) return Text('${transfers.length}');
+                                      final expenses = expenseSnapshot.data!;
+                                      final total = transfers.length + expenses.length;
+                                      return Text(
+                                        '$total',
+                                        style: const TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.purple,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      );
+                                    },
+                                  );
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
 
-    TextButton(
-      onPressed: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => TransactionListPage(trip: trip),
-          ),
-        );
-      },
-      child: const Text("View All"),
-    ),
-  ],
-),
-                    const SizedBox(height: 16),
+                        TextButton(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => TransactionListPage(trip: trip),
+                              ),
+                            );
+                          },
+                          style: TextButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          ),
+                          child: Row(
+                            children: const [
+                              Text("View All"),
+                              SizedBox(width: 4),
+                              Icon(Icons.arrow_forward, size: 16),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
 
                     Expanded(
                       child: StreamBuilder<List<TripTransfer>>(
@@ -640,7 +611,7 @@ class TripDetailPage extends StatelessWidget {
                               }
 
                               return ListView.builder(
-                                itemCount: ledger.length,
+                                itemCount: ledger.length > 5 ? 5 : ledger.length,
                                 itemBuilder: (context, index) {
                                   final item = ledger[index];
                                   return _buildTransactionItem(context, item);
@@ -660,428 +631,395 @@ class TripDetailPage extends StatelessWidget {
       ),
 
       floatingActionButton: FloatingActionButton(
-  backgroundColor: Colors.blue,
-  child: const Icon(Icons.add),
-  onPressed: () {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        backgroundColor: Colors.blue,
+        child: const Icon(Icons.add),
+        onPressed: () {
+          showModalBottomSheet(
+            context: context,
+            shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+            ),
+            builder: (context) {
+              return Container(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    ListTile(
+                      leading: const Icon(Icons.arrow_downward, color: Colors.green),
+                      title: const Text('Add Transfer'),
+                      onTap: () {
+                        Navigator.pop(context);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => AddTransferPage(
+                              tripId: trip.id,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.arrow_upward, color: Colors.red),
+                      title: const Text('Add Expense'),
+                      onTap: () {
+                        Navigator.pop(context);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => AddExpensePage(
+                              tripId: trip.id,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              );
+            },
+          );
+        },
       ),
-      builder: (context) {
-        return Container(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-
-              ListTile(
-                leading: const Icon(Icons.arrow_downward, color: Colors.green),
-                title: const Text('Add Transfer'),
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => AddTransferPage(
-                        tripId: trip.id,
-                      ),
-                    ),
-                  );
-                },
-              ),
-
-              ListTile(
-                leading: const Icon(Icons.arrow_upward, color: Colors.red),
-                title: const Text('Add Expense'),
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => AddExpensePage(
-                        tripId: trip.id,
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  },
-),
-
-floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
 
 Widget _buildTransactionItem(BuildContext context, TripLedgerItem item) {
- return InkWell(
-  onTap: () {
+  return InkWell(
+    onTap: () {
+      if (item.type == 'expense') {
+        final expense = TripExpense(
+          id: item.id,
+          date: item.date,
+          employeeId: '',
+          amount: item.amount,
+          currency: item.currency,
+          category: item.title,
+          description: item.description ?? '',
+          receiptUrl: item.receiptUrl ?? '',
+          fingerprint: '',
+        );
 
-  if (item.type == 'expense') {
-
-    final expense = TripExpense(
-      id: item.id,
-      date: item.date,
-      employeeId: '',
-      amount: item.amount,
-      currency: item.currency,
-      category: item.title,
-      description: item.description ?? '',
-      receiptUrl: item.receiptUrl ?? '',
-      fingerprint: '',
-    );
-
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => ExpenseDetailPage(
-          tripId: trip.id,
-          expense: expense,
-        ),
-      ),
-    );
-  }
-
-  if (item.type == 'transfer') {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => AddTransferPage(
-          tripId: trip.id,
-          transferId: item.id,
-        ),
-      ),
-    );
-  }
-},
-
-  child: Container(
-    margin: const EdgeInsets.only(bottom: 8),
-    padding: const EdgeInsets.all(12),
-    decoration: BoxDecoration(
-      gradient: LinearGradient(
-        colors: [
-          Colors.white.withOpacity(0.1),
-          Colors.white.withOpacity(0.05),
-        ],
-      ),
-      borderRadius: BorderRadius.circular(16),
-      border: Border.all(
-        color: item.isDebit
-            ? Colors.green.withOpacity(0.3)
-            : Colors.red.withOpacity(0.3),
-      ),
-    ),
-    child: Row(
-      children: [
-        // Icon
-        GestureDetector(
-          onTap: () {
-            if (!item.isDebit &&
-                item.receiptUrl != null &&
-                item.receiptUrl!.isNotEmpty) {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => ReceiptViewerPage(
-                    imageUrl: item.receiptUrl!,
-                  ),
-                ),
-              );
-            }
-          },
-          child: Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  item.isDebit
-                      ? Colors.green.withOpacity(0.2)
-                      : Colors.red.withOpacity(0.2),
-                  item.isDebit
-                      ? Colors.green.withOpacity(0.1)
-                      : Colors.red.withOpacity(0.1),
-                ],
-              ),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: item.isDebit
-                    ? Colors.green.withOpacity(0.3)
-                    : Colors.red.withOpacity(0.3),
-              ),
-            ),
-            child: Icon(
-              item.isDebit ? Icons.arrow_downward : Icons.arrow_upward,
-              color: item.isDebit ? Colors.green : Colors.red,
-              size: 20,
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ExpenseDetailPage(
+              tripId: trip.id,
+              expense: expense,
             ),
           ),
-        ),
-        const SizedBox(width: 12),
+        );
+      }
 
-        // Content - EXPANDED
-        Expanded(
-          flex: 3,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      item.title,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                 if (!item.isDebit && item.receiptUrl != null && item.receiptUrl!.isNotEmpty)
-  Row(
-    children: [
-      Container(
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-        decoration: BoxDecoration(
-          color: Colors.blue.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: const Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.receipt, size: 10, color: Colors.blue),
-            SizedBox(width: 2),
-            Text(
-              'Receipt',
-              style: TextStyle(
-                fontSize: 8,
-                color: Colors.blue,
-                fontWeight: FontWeight.w600,
-              ),
+      if (item.type == 'transfer') {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => AddTransferPage(
+              tripId: trip.id,
+              transferId: item.id,
             ),
+          ),
+        );
+      }
+    },
+    child: Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Colors.white.withOpacity(0.1),
+            Colors.white.withOpacity(0.05),
           ],
         ),
-      ),
-      const SizedBox(width: 4),
-      const Icon(
-        Icons.download,
-        size: 12,
-        color: Colors.blue,
-      ),
-    ],
-  ),
-                ],
-              ),
-              const SizedBox(height: 4),
-              Row(
-                children: [
-                  Icon(
-                    Icons.access_time,
-                    size: 10,
-                    color: Colors.grey.shade500,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    _formatDate(item.date),
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: Colors.grey.shade600,
-                    ),
-                  ),
-                  if (item.description != null && item.description!.isNotEmpty) ...[
-                    const SizedBox(width: 8),
-                    Container(
-                      width: 3,
-                      height: 3,
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade400,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        item.description!,
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: Colors.grey.shade600,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ],
-          ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: item.isDebit
+              ? Colors.green.withOpacity(0.3)
+              : Colors.red.withOpacity(0.3),
         ),
-
-        const SizedBox(width: 8),
-
-        // Amount and Menu - FIXED WITH FLEX
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Amount Container
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      ),
+      child: Row(
+        children: [
+          // Icon with receipt tap
+          GestureDetector(
+            onTap: () {
+              if (!item.isDebit &&
+                  item.receiptUrl != null &&
+                  item.receiptUrl!.isNotEmpty) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ReceiptViewerPage(
+                      imageUrl: item.receiptUrl!,
+                    ),
+                  ),
+                );
+              }
+            },
+            child: Container(
+              width: 45,
+              height: 45,
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
                     item.isDebit
-                        ? Colors.green.withOpacity(0.15)
-                        : Colors.red.withOpacity(0.15),
+                        ? Colors.green.withOpacity(0.2)
+                        : Colors.red.withOpacity(0.2),
                     item.isDebit
-                        ? Colors.green.withOpacity(0.05)
-                        : Colors.red.withOpacity(0.05),
+                        ? Colors.green.withOpacity(0.1)
+                        : Colors.red.withOpacity(0.1),
                   ],
                 ),
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(12),
                 border: Border.all(
                   color: item.isDebit
                       ? Colors.green.withOpacity(0.3)
                       : Colors.red.withOpacity(0.3),
                 ),
               ),
-              child: Text(
-                '${item.isDebit ? '+' : '-'} ${_currencyFormatter.format(item.amount)}',
-                style: TextStyle(
-                  color: item.isDebit ? Colors.green : Colors.red,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 12,
-                ),
+              child: Icon(
+                item.isDebit ? Icons.arrow_downward : Icons.arrow_upward,
+                color: item.isDebit ? Colors.green : Colors.red,
+                size: 22,
               ),
             ),
-            const SizedBox(width: 4),
-            
-            // Menu Button
-            PopupMenuButton<String>(
-              onSelected: (value) async {
-                if (value == 'delete') {
-                  final confirm = await showDialog(
-                    context: context,
-                    builder: (_) => AlertDialog(
-                      title: const Text('Delete Transaction'),
-                      content: const Text(
-                        'Are you sure you want to delete this transaction?',
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(context, false),
-                          child: const Text('Cancel'),
+          ),
+          const SizedBox(width: 12),
+
+          // Content - Takes remaining space
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        item.title,
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
                         ),
-                        TextButton(
-                          onPressed: () => Navigator.pop(context, true),
-                          child: const Text(
-                            'Delete',
-                            style: TextStyle(color: Colors.red),
-                          ),
-                        ),
-                      ],
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
-                  );
-
-                  if (confirm == true) {
-                    if (item.type == 'expense') {
-                      await expenseService.deleteExpense(trip.id, item.id);
-                    }
-                    if (item.type == 'transfer') {
-                      await transferService.deleteTransfer(trip.id, item.id);
-                    }
-                  }
-                }
-
-                if (value == 'edit') {
-                  final confirm = await showDialog(
-                    context: context,
-                    builder: (_) => AlertDialog(
-                      title: const Text('Edit Transaction'),
-                      content: const Text(
-                        'Do you want to edit this transaction?',
+                    if (!item.isDebit && item.receiptUrl != null && item.receiptUrl!.isNotEmpty)
+                      Container(
+                        margin: const EdgeInsets.only(left: 4),
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.receipt, size: 10, color: Colors.blue),
+                            SizedBox(width: 2),
+                            Text(
+                              'Receipt',
+                              style: TextStyle(
+                                fontSize: 8,
+                                color: Colors.blue,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(context, false),
-                          child: const Text('Cancel'),
-                        ),
-                        TextButton(
-                          onPressed: () => Navigator.pop(context, true),
-                          child: const Text('Edit'),
-                        ),
-                      ],
-                    ),
-                  );
-
-                  if (confirm == true) {
-                    if (item.type == 'expense') {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => AddExpensePage(
-                            tripId: trip.id,
-                            expenseId: item.id,
-                          ),
-                        ),
-                      );
-                    }
-                    if (item.type == 'transfer') {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => AddTransferPage(
-                            tripId: trip.id,
-                            transferId: item.id,
-                          ),
-                        ),
-                      );
-                    }
-                  }
-                }
-              },
-              icon: const Icon(Icons.more_vert, size: 18),
-              itemBuilder: (context) => const [
-                PopupMenuItem(
-                  value: 'edit',
-                  child: Row(
-                    children: [
-                      Icon(Icons.edit, size: 16, color: Colors.blue),
-                      SizedBox(width: 8),
-                      Text('Edit'),
-                    ],
-                  ),
+                  ],
                 ),
-                PopupMenuItem(
-                  value: 'delete',
-                  child: Row(
-                    children: [
-                      Icon(Icons.delete, size: 16, color: Colors.red),
-                      SizedBox(width: 8),
-                      Text('Delete'),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.access_time,
+                      size: 11,
+                      color: Colors.grey.shade500,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      _formatDate(item.date),
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                    if (item.description != null && item.description!.isNotEmpty) ...[
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          '• ${item.description!}',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.grey.shade600,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
                     ],
-                  ),
+                  ],
                 ),
               ],
             ),
-          ],
-        ),
-      ],
+          ),
+
+          const SizedBox(width: 12),
+
+          // Amount
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  item.isDebit
+                      ? Colors.green.withOpacity(0.15)
+                      : Colors.red.withOpacity(0.15),
+                  item.isDebit
+                      ? Colors.green.withOpacity(0.05)
+                      : Colors.red.withOpacity(0.05),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: item.isDebit
+                    ? Colors.green.withOpacity(0.3)
+                    : Colors.red.withOpacity(0.3),
+              ),
+            ),
+            child: Text(
+              '${item.isDebit ? '+' : '-'} ${_currencyFormatter.format(item.amount)}',
+              style: TextStyle(
+                color: item.isDebit ? Colors.green : Colors.red,
+                fontWeight: FontWeight.w600,
+                fontSize: 13,
+              ),
+            ),
+          ),
+
+          // Menu Button
+          PopupMenuButton<String>(
+            onSelected: (value) async {
+              if (value == 'delete') {
+                final confirm = await showDialog(
+                  context: context,
+                  builder: (_) => AlertDialog(
+                    title: const Text('Delete Transaction'),
+                    content: const Text(
+                      'Are you sure you want to delete this transaction?',
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        child: const Text('Cancel'),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, true),
+                        child: const Text(
+                          'Delete',
+                          style: TextStyle(color: Colors.red),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+
+                if (confirm == true) {
+                  if (item.type == 'expense') {
+                    await expenseService.deleteExpense(trip.id, item.id);
+                  }
+                  if (item.type == 'transfer') {
+                    await transferService.deleteTransfer(trip.id, item.id);
+                  }
+                }
+              }
+
+              if (value == 'edit') {
+                final confirm = await showDialog(
+                  context: context,
+                  builder: (_) => AlertDialog(
+                    title: const Text('Edit Transaction'),
+                    content: const Text(
+                      'Do you want to edit this transaction?',
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        child: const Text('Cancel'),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, true),
+                        child: const Text('Edit'),
+                      ),
+                    ],
+                  ),
+                );
+
+                if (confirm == true) {
+                  if (item.type == 'expense') {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => AddExpensePage(
+                          tripId: trip.id,
+                          expenseId: item.id,
+                        ),
+                      ),
+                    );
+                  }
+                  if (item.type == 'transfer') {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => AddTransferPage(
+                          tripId: trip.id,
+                          transferId: item.id,
+                        ),
+                      ),
+                    );
+                  }
+                }
+              }
+            },
+            icon: const Icon(Icons.more_vert, size: 20),
+            itemBuilder: (context) => const [
+              PopupMenuItem(
+                value: 'edit',
+                child: Row(
+                  children: [
+                    Icon(Icons.edit, size: 16, color: Colors.blue),
+                    SizedBox(width: 8),
+                    Text('Edit'),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'delete',
+                child: Row(
+                  children: [
+                    Icon(Icons.delete, size: 16, color: Colors.red),
+                    SizedBox(width: 8),
+                    Text('Delete'),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     ),
-  ),
   );
 }
 
