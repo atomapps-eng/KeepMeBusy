@@ -254,6 +254,8 @@ final doc = await ServiceReportFirestore.getReport(
         _videoUrl = data['video'];
         _signatureUrl = data['signature'];
 
+        print("SIGNATURE URL: $_signatureUrl");
+
         _photo1 = null;
         _photo2 = null;
         _photo3 = null;

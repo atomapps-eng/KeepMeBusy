@@ -1103,10 +1103,6 @@ Widget _buildTransactionItem(BuildContext context, TripLedgerItem item) {
     final transfers = await transferService.getTransfers(trip.id);
     final expenses = await expenseService.getExpenses(trip.id);
 
-    for (var e in expenses) {
-      print("DESC: ${e.description}");
-    }
-
     final ledger = buildLedger(transfers, expenses);
     final balances = calculateBalance(transfers, expenses);
 
@@ -1678,18 +1674,4 @@ pw.TableRow _row(String title, String value) {
       child: pw.Text(value),
     ),
   ]);
-}
-
-pw.Widget _cell(String text, {bool bold = false, PdfColor? color}) {
-  return pw.Padding(
-    padding: const pw.EdgeInsets.all(4),
-    child: pw.Text(
-      text,
-      style: pw.TextStyle(
-        fontSize: 9,
-        fontWeight: bold ? pw.FontWeight.bold : pw.FontWeight.normal,
-        color: color,
-      ),
-    ),
-  );
 }
