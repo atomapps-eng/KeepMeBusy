@@ -8,6 +8,7 @@ import '../../core/services/company_firestore.dart';
 import '../../features/admin/pages/admin_analytics_page.dart';
 import '../../../models/read_tracker_service.dart';
 import '../../tools/migrate_spare_part_lowercase.dart';
+import '../../theme/app_theme.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -501,16 +502,8 @@ class _SettingsPageState extends State<SettingsPage> with TickerProviderStateMix
           // Background Gradient
           Container(
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  const Color(0xFFFFE0B2),
-                  const Color(0xFFFFF3E0),
-                  const Color(0xFFFFFFFF),
-                ],
-              ),
-            ),
+  gradient: AppTheme.backgroundGradient,
+),
           ),
           
           // Background Pattern

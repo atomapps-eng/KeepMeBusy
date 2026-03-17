@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../core/services/company_firestore.dart';
+import '../../theme/app_theme.dart';
 
 class OrderInDetailPage extends StatelessWidget {
   final Map<String, dynamic> data;
@@ -22,37 +23,29 @@ class OrderInDetailPage extends StatelessWidget {
     );
 
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        backgroundColor: const Color(0xFFFFE0B2),
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Color(0xFF607D8B)),
-        titleTextStyle: const TextStyle(
-          color: Color(0xFF607D8B),
-          fontSize: 18,
-          fontWeight: FontWeight.w600,
-        ),
-        title: const Text('Order In Detail'),
-      ),
+  backgroundColor: Colors.transparent,
+  elevation: 0,
+  title: const Text('Order In Detail'),
+),
       body: Stack(
         children: [
           // ===== BACKGROUND =====
           Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Color(0xFFFFE0B2),
-                  Color(0xFFFFFFFF),
-                ],
-              ),
-            ),
+            decoration: BoxDecoration(
+  gradient: AppTheme.backgroundGradient,
+),
           ),
 
           // ===== CONTENT =====
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+         Padding(
+  padding: EdgeInsets.only(
+    top: MediaQuery.of(context).padding.top + kToolbarHeight,
+  ),
+  child: Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
               // ================= HEADER =================
               Padding(
                 padding: const EdgeInsets.all(16),
@@ -252,6 +245,7 @@ class OrderInDetailPage extends StatelessWidget {
               ),
             ],
           ),
+         ),
         ],
       ),
     );

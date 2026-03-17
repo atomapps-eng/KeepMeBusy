@@ -6,6 +6,7 @@ import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:open_filex/open_filex.dart';
 import '../../core/services/company_firestore.dart';
+import '../../theme/app_theme.dart';
 
 
 
@@ -37,38 +38,30 @@ class _OrderOutDetailPageState extends State<OrderOutDetailPage> {
     (data['totalWeight'] ?? 0).toDouble();
 
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        backgroundColor: const Color(0xFFFFE0B2),
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Color(0xFF607D8B)),
-        titleTextStyle: const TextStyle(
-          color: Color(0xFF607D8B),
-          fontSize: 18,
-          fontWeight: FontWeight.w600,
-        ),
-        title: const Text('Order Out Detail'),
-      ),
+  backgroundColor: Colors.transparent,
+  elevation: 0,
+  title: const Text('Order In Detail'),
+),
 
       body: Stack(
         children: [
           // ===== BACKGROUND =====
           Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Color(0xFFFFE0B2),
-                  Color(0xFFFFFFFF),
-                ],
-              ),
-            ),
+            decoration: BoxDecoration(
+  gradient: AppTheme.backgroundGradient,
+),
           ),
 
           // ===== CONTENT =====
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+          Padding(
+  padding: EdgeInsets.only(
+    top: MediaQuery.of(context).padding.top + kToolbarHeight,
+  ),
+  child: Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
               // ================= HEADER & INFO =================
               Padding(
                 padding: const EdgeInsets.all(16),
@@ -254,6 +247,7 @@ _summaryRow(
                 ),
               ),
             ],
+          ),
           ),
         ],
       ),

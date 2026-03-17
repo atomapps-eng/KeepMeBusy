@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../theme/app_theme.dart';
 
 class AppBackgroundWrapper extends StatelessWidget {
   final Widget child;
@@ -17,16 +18,9 @@ class AppBackgroundWrapper extends StatelessWidget {
         children: [
           // ===== BACKGROUND GRADIENT (SAMA DENGAN HOME) =====
           Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Color(0xFFFFE0B2),
-                  Color(0xFFFFFFFF),
-                ],
-              ),
-            ),
+            decoration: BoxDecoration(
+  gradient: AppTheme.backgroundGradient,
+),
           ),
 
           SafeArea(

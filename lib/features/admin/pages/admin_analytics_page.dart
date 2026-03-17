@@ -26,16 +26,9 @@ class _AdminAnalyticsPageState extends State<AdminAnalyticsPage> {
         children: [
           // Background
           Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Color(0xFFFFE0B2),
-                  Color(0xFFFFFFFF),
-                ],
-              ),
-            ),
+            decoration: BoxDecoration(
+  gradient: AppTheme.backgroundGradient,
+),
           ),
           
           SafeArea(

@@ -6,9 +6,13 @@ import '../../core/session/company_session.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../services/cloudinary_service.dart';
 import 'dart:io';
+import 'dart:io' show Platform, File;
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:typed_data';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as p;
 import 'signature_page.dart';
 import '../../main.dart';
 import '../../theme/app_theme.dart';
@@ -92,6 +96,7 @@ class _ServiceReportFormPageState extends State<ServiceReportFormPage> {
   String? _photo3Url;
   String? _videoUrl;
   bool _isUploading = false;
+  double _uploadProgress = 0;
   
 
   @override
@@ -883,10 +888,19 @@ Text(
           const SizedBox(height: 12),
           _buildMediaItem('Video', _video, _videoUrl, _pickVideo, _clearVideo, isVideo: true),
           if (_isUploading)
-            const Padding(
-              padding: EdgeInsets.only(top: 16),
-              child: LinearProgressIndicator(),
-            ),
+  Padding(
+    padding: const EdgeInsets.only(top: 16),
+    child: Column(
+      children: [
+        LinearProgressIndicator(value: _uploadProgress),
+        const SizedBox(height: 6),
+        Text(
+          "${(_uploadProgress * 100).toStringAsFixed(0)} %",
+          style: const TextStyle(fontSize: 12),
+        ),
+      ],
+    ),
+  ),
         ],
       ),
     );
@@ -966,7 +980,7 @@ Text(
             )
           else ...[
             ElevatedButton.icon(
-              onPressed: _saveDraft,
+               onPressed: _isUploading ? null : _saveDraft,
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.grey.shade200,
                 foregroundColor: Colors.black87,
@@ -977,7 +991,7 @@ Text(
             ),
             const SizedBox(width: 16),
             ElevatedButton.icon(
-              onPressed: _submitReport,
+              onPressed: _isUploading ? null : _submitReport,
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.blue,
                 foregroundColor: Colors.white,
@@ -1289,11 +1303,20 @@ const SizedBox(height: 12),
                 _buildMobileMediaItem('Photo 3', _photo3, _photo3Url, () => _pickImage(3), () => _clearImage(3)),
                 const SizedBox(height: 8),
                 _buildMobileMediaItem('Video', _video, _videoUrl, _pickVideo, _clearVideo, isVideo: true),
-                if (_isUploading)
-                  const Padding(
-                    padding: EdgeInsets.only(top: 16),
-                    child: LinearProgressIndicator(),
-                  ),
+               if (_isUploading)
+  Padding(
+    padding: const EdgeInsets.only(top: 16),
+    child: Column(
+      children: [
+        LinearProgressIndicator(value: _uploadProgress),
+        const SizedBox(height: 6),
+        Text(
+          "${(_uploadProgress * 100).toStringAsFixed(0)} %",
+          style: const TextStyle(fontSize: 12),
+        ),
+      ],
+    ),
+  ),
               ],
             ),
           ),
@@ -1309,7 +1332,7 @@ const SizedBox(height: 12),
                   
                   width: double.infinity,
                   child: ElevatedButton.icon(
-                    onPressed: _saveDraft,
+                    onPressed: _isUploading ? null : _saveDraft,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.grey.shade200,
                       foregroundColor: Colors.black87,
@@ -1323,7 +1346,7 @@ const SizedBox(height: 12),
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton.icon(
-                    onPressed: _submitReport,
+                    onPressed: _isUploading ? null : _submitReport,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.blue,
                       foregroundColor: Colors.white,
@@ -1600,15 +1623,18 @@ const SizedBox(height: 12),
 
   Widget _buildPreview(XFile? file, String? url, bool isVideo) {
     if (url != null) {
-      return ClipRRect(
-        borderRadius: const BorderRadius.horizontal(left: Radius.circular(8)),
-        child: Image.network(
-          url,
-          fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => const Icon(Icons.broken_image),
-        ),
-      );
-    }
+  return GestureDetector(
+    onTap: () => _openImagePreview(url),
+    child: ClipRRect(
+      borderRadius: const BorderRadius.horizontal(left: Radius.circular(8)),
+      child: Image.network(
+        url,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => const Icon(Icons.broken_image),
+      ),
+    ),
+  );
+}
     
     if (file != null) {
       if (kIsWeb) {
@@ -1635,7 +1661,13 @@ const SizedBox(height: 12),
       } else {
         return ClipRRect(
           borderRadius: const BorderRadius.horizontal(left: Radius.circular(8)),
-          child: Image.file(File(file.path), fit: BoxFit.cover),
+          child: GestureDetector(
+  onTap: () => _openImagePreview(file.path),
+  child: Image.file(
+    File(file.path),
+    fit: BoxFit.cover,
+  ),
+),
         );
       }
     }
@@ -1847,18 +1879,21 @@ void _showQtyDialog(SparePart part) {
         : await CloudinaryService.pickImageFromGallery();
     
     if (pickedFile != null) {
-      setState(() {
+
+  final compressed = await _compressImage(pickedFile);
+
+  setState(() {
         switch (number) {
           case 1:
-            _photo1 = pickedFile;
+            _photo1 = compressed;
             _photo1Url = null;
             break;
           case 2:
-            _photo2 = pickedFile;
+            _photo2 = compressed;
             _photo2Url = null;
             break;
           case 3:
-            _photo3 = pickedFile;
+            _photo3 = compressed;
             _photo3Url = null;
             break;
         }
@@ -1934,25 +1969,36 @@ print("AUTH EMAIL: ${FirebaseAuth.instance.currentUser?.email}");
 
     try {
       if (_photo1 != null) {
-        setState(() => _isUploading = true);
-        _photo1Url = await CloudinaryService.uploadFile(
-          file: _photo1!,
-          folder: 'service_reports/$companyId',
-        );
+  setState(() {
+    _isUploading = true;
+    _uploadProgress = 0.1;
+  });
+        _photo1Url = await _safeUploadFile(
+  _photo1!,
+  'service_reports/$companyId',
+);
       }
 
       if (_photo2 != null) {
-        _photo2Url = await CloudinaryService.uploadFile(
-          file: _photo2!,
-          folder: 'service_reports/$companyId',
-        );
+  setState(() {
+    _isUploading = true;
+    _uploadProgress = 0.1;
+  });
+        _photo2Url = await _safeUploadFile(
+  _photo2!,
+  'service_reports/$companyId',
+);
       }
 
       if (_photo3 != null) {
-        _photo3Url = await CloudinaryService.uploadFile(
-          file: _photo3!,
-          folder: 'service_reports/$companyId',
-        );
+  setState(() {
+    _isUploading = true;
+    _uploadProgress = 0.1;
+  });
+        _photo3Url = await _safeUploadFile(
+  _photo3!,
+  'service_reports/$companyId',
+);
       }
 
       if (_video != null) {
@@ -2047,6 +2093,24 @@ final reportData = Map<String, dynamic>.from(rawData)
   }
 
   Future<void> _submitReport() async {
+
+    if (!await _validateRequiredFields()) {
+  return;
+}
+
+if (!await _checkPhotoWarning()) {
+  return;
+}
+
+    if (_isUploading) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(
+      content: Text("Please wait, media upload still in progress"),
+      backgroundColor: Colors.orange,
+    ),
+  );
+  return;
+}
     final companyId = CompanySession.selectedCompanyId;
     if (companyId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -2125,6 +2189,9 @@ final reportData = Map<String, dynamic>.from(rawData)
           file: _photo1!,
           folder: 'service_reports/$companyId',
         );
+        setState(() {
+  _uploadProgress = 0.4;
+});
       }
 
       if (_photo2 != null) {
@@ -2132,6 +2199,9 @@ final reportData = Map<String, dynamic>.from(rawData)
           file: _photo2!,
           folder: 'service_reports/$companyId',
         );
+        setState(() {
+  _uploadProgress = 0.4;
+});
       }
 
       if (_photo3 != null) {
@@ -2139,16 +2209,29 @@ final reportData = Map<String, dynamic>.from(rawData)
           file: _photo3!,
           folder: 'service_reports/$companyId',
         );
+        setState(() {
+  _uploadProgress = 0.4;
+});
       }
 
       if (_video != null) {
-        _videoUrl = await CloudinaryService.uploadFile(
-          file: _video!,
-          folder: 'service_reports/$companyId',
-        );
+  setState(() {
+    _isUploading = true;
+    _uploadProgress = 0.1;
+  });
+       _videoUrl = await _safeUploadFile(
+  _video!,
+  'service_reports/$companyId',
+);
+        setState(() {
+  _uploadProgress = 0.4;
+});
       }
 
-      setState(() => _isUploading = false);
+     setState(() {
+  _uploadProgress = 1;
+  _isUploading = false;
+});
 
       final rawData = {
   "startDate": startDate != null ? Timestamp.fromDate(startDate!) : null,
@@ -2231,6 +2314,10 @@ await ServiceReportFirestore.submitServiceReport(
       });
     }
   }
+
+
+
+
   void _addOrUpdateSparePart(ServiceReportSparePart newPart) {
   final index = spareParts.indexWhere(
     (sp) => sp.partCode == newPart.partCode,
@@ -2273,6 +2360,233 @@ await ServiceReportFirestore.submitServiceReport(
   }
 
   setState(() {});
+}
+
+Future<bool> _checkPhotoWarning() async {
+
+  final hasPhoto =
+      _photo1 != null ||
+      _photo2 != null ||
+      _photo3 != null ||
+      _photo1Url != null ||
+      _photo2Url != null ||
+      _photo3Url != null;
+
+  if (hasPhoto) {
+    return true;
+  }
+
+  final proceed = await showDialog<bool>(
+    context: context,
+    builder: (context) {
+      return AlertDialog(
+        title: const Text("No Photo Attached"),
+        content: const Text(
+          "No photo has been attached to this report.\n\n"
+          "Photos help document machine condition and defects.\n\n"
+          "Do you want to submit the report anyway?"
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text("Add Photo"),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text("Submit Anyway"),
+          ),
+        ],
+      );
+    },
+  );
+
+  return proceed ?? false;
+}
+
+Future<bool> _validateRequiredFields() async {
+  final missingFields = <String>[];
+
+  if (startDate == null) {
+    missingFields.add("Start Date");
+  }
+
+  if (startDate == null) {
+    missingFields.add("End Date");
+  }
+
+  if (factory == null || factory!.isEmpty) {
+    missingFields.add("Factory");
+  }
+
+  if (machineController.text.trim().isEmpty) {
+    missingFields.add("Machine");
+  }
+
+  if (tech1 == null || tech1!.isEmpty) {
+    missingFields.add("Technician 1");
+  }
+
+  if (problemController.text.trim().isEmpty) {
+    missingFields.add("Problem Description");
+  }
+
+  if (activityController.text.trim().isEmpty) {
+    missingFields.add("Activity");
+  }
+
+  if (customerNameController.text.trim().isEmpty) {
+    missingFields.add("Customer Name");
+  }
+
+  if (missingFields.isEmpty) {
+    return true;
+  }
+
+  final proceed = await showDialog<bool>(
+    context: context,
+    builder: (context) {
+      return AlertDialog(
+        title: const Text("Incomplete Form"),
+        content: Text(
+          "The following fields are empty:\n\n"
+          "${missingFields.join(", ")}\n\n"
+          "You can still submit the report, but it is recommended to complete them.",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text("Go Back"),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text("Submit Anyway"),
+          ),
+        ],
+      );
+    },
+  );
+
+  return proceed ?? false;
+}
+
+void _openImagePreview(String imageUrl) {
+  showDialog(
+    context: context,
+    builder: (context) {
+      return Dialog(
+        backgroundColor: Colors.black,
+        insetPadding: const EdgeInsets.all(10),
+        child: Stack(
+          children: [
+            InteractiveViewer(
+              minScale: 0.5,
+              maxScale: 5,
+              child: Center(
+                child: imageUrl.startsWith('http')
+    ? Image.network(imageUrl, fit: BoxFit.contain)
+    : Image.file(File(imageUrl), fit: BoxFit.contain),
+              ),
+            ),
+            Positioned(
+              right: 10,
+              top: 10,
+              child: IconButton(
+                icon: const Icon(Icons.close, color: Colors.white, size: 28),
+                onPressed: () => Navigator.pop(context),
+              ),
+            )
+          ],
+        ),
+      );
+    },
+  );
+}
+
+Future<String?> _safeUploadFile(XFile file, String folder) async {
+  try {
+    final url = await CloudinaryService.uploadFile(
+      file: file,
+      folder: folder,
+    );
+
+    if (url == null) {
+      throw Exception("Upload returned null");
+    }
+
+    return url;
+
+  } catch (e) {
+
+    if (!mounted) return null;
+
+    final retry = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Upload Failed"),
+        content: Text(
+          "Failed to upload media.\n\nError:\n$e\n\nRetry upload?"
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text("Cancel"),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text("Retry"),
+          ),
+        ],
+      ),
+    );
+
+    if (retry == true) {
+      return await _safeUploadFile(file, folder);
+    }
+
+    return null;
+  }
+}
+
+Future<XFile> _compressImage(XFile file) async {
+
+  // Skip compression for Windows / Web
+  if (kIsWeb || Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+    return file;
+  }
+
+  final dir = await getTemporaryDirectory();
+
+  final targetPath = p.join(
+    dir.path,
+    "compressed_${DateTime.now().millisecondsSinceEpoch}.jpg",
+  );
+
+  int quality = 90;
+  XFile? compressedFile;
+
+  do {
+    compressedFile = await FlutterImageCompress.compressAndGetFile(
+  file.path,
+  targetPath,
+  quality: quality,
+  minWidth: 1920,
+  minHeight: 1920,
+  keepExif: true,
+);
+
+    if (compressedFile == null) break;
+
+    final size = await File(compressedFile.path).length();
+
+    if (size <= 500 * 1024) {
+      return compressedFile;
+    }
+
+    quality -= 10;
+
+  } while (quality > 20);
+
+  return compressedFile ?? file;
 }
 
 // Tambahkan method ini di dalam class _ServiceReportFormPageState

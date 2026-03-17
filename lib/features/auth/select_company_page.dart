@@ -78,59 +78,63 @@ class SelectCompanyPage extends StatelessWidget {
     final userName = _getUserDisplayName();
 
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text(
-          'Select Company',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: AppTheme.textPrimary,
-          ),
-        ),
-        centerTitle: true,
-        elevation: 0,
-        backgroundColor: Colors.transparent,
-        flexibleSpace: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                AppTheme.backgroundColor,
-                Colors.white,
-              ],
-            ),
-            borderRadius: const BorderRadius.only(
-              bottomLeft: Radius.circular(30),
-              bottomRight: Radius.circular(30),
-            ),
-          ),
-        ),
-        actions: [
-          Container(
-            margin: const EdgeInsets.only(right: 8),
-            decoration: BoxDecoration(
-              color: AppTheme.primaryColor.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: IconButton(
-              icon: const Icon(Icons.logout, color: AppTheme.primaryColor),
-              onPressed: () => globalLogout(context),
-              tooltip: 'Logout',
-            ),
-          ),
-        ],
+  title: const Text(
+    'Select Company',
+    style: TextStyle(
+      fontWeight: FontWeight.bold,
+    ),
+  ),
+  centerTitle: true,
+  elevation: 0,
+  backgroundColor: Colors.transparent,
+  foregroundColor: AppTheme.textPrimary, // 👈 ini penting
+
+  actions: [
+    Container(
+      margin: const EdgeInsets.only(right: 8),
+      decoration: BoxDecoration(
+        color: AppTheme.errorColor.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
       ),
+      child: IconButton(
+       icon: const Icon(Icons.logout, color: AppTheme.errorColor),
+        onPressed: () async {
+  final confirm = await showDialog<bool>(
+    context: context,
+    builder: (_) => AlertDialog(
+      title: const Text('Logout'),
+      content: const Text('Are you sure you want to log out?'),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, false),
+          child: const Text('Cancel'),
+        ),
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppTheme.errorColor,
+          ),
+          onPressed: () => Navigator.pop(context, true),
+          child: const Text('Logout'),
+        ),
+      ],
+    ),
+  );
+
+  if (confirm == true) {
+    globalLogout(context);
+  }
+},
+        tooltip: 'Logout',
+      ),
+    ),
+  ],
+),
       body: Container(
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              AppTheme.backgroundColor,
-              Colors.white,
-            ],
-          ),
-        ),
+  gradient: AppTheme.backgroundGradient,
+),
         child: SafeArea(
           child: Column(
             children: [
@@ -290,23 +294,24 @@ Widget _buildCompanyCard(
         borderRadius: BorderRadius.circular(24),
         child: Container(
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Colors.white,
-                companyColor.withOpacity(0.05),
-              ],
-            ),
-            borderRadius: BorderRadius.circular(24),
-            boxShadow: [
-              BoxShadow(
-                color: companyColor.withOpacity(0.1),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
+  gradient: LinearGradient(
+    colors: [
+      AppTheme.surfaceColor,
+      AppTheme.surfaceColor.withOpacity(0.9),
+    ],
+  ),
+  borderRadius: BorderRadius.circular(24),
+  border: Border.all(
+    color: AppTheme.primaryColor.withOpacity(0.1),
+  ),
+  boxShadow: [
+    BoxShadow(
+      color: Colors.black.withOpacity(0.05),
+      blurRadius: 12,
+      offset: const Offset(0, 4),
+    ),
+  ],
+),
           child: Padding(
             padding: const EdgeInsets.all(20),
             child: Row(

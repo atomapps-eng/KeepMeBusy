@@ -5,6 +5,7 @@ import '../../models/partner.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'add_partner_page.dart';
 import 'edit_partner_page.dart';
+import '../../theme/app_theme.dart';
 
 class PartnerListPage extends StatefulWidget {
   final bool selectionMode;
@@ -87,19 +88,9 @@ class _PartnerListPageState extends State<PartnerListPage> with TickerProviderSt
               duration: const Duration(milliseconds: 500),
               curve: Curves.easeInOut,
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    const Color(0xFFFFE0B2).withOpacity(0.8),
-                    const Color(0xFFFFFFFF),
-                  ],
-                ),
-              ),
+  gradient: AppTheme.backgroundGradient,
+),
             ),
-
-            // ===== DECORATIVE CIRCLES =====
-            ..._buildDecorativeCircles(),
 
             SafeArea(
               child: Column(
@@ -191,36 +182,7 @@ class _PartnerListPageState extends State<PartnerListPage> with TickerProviderSt
       ),
     );
   }
-
-  // ================= DECORATIVE ELEMENTS =================
-  List<Widget> _buildDecorativeCircles() {
-    return [
-      Positioned(
-        top: -50,
-        right: -30,
-        child: Container(
-          width: 200,
-          height: 200,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: Colors.orange.withOpacity(0.1),
-          ),
-        ),
-      ),
-      Positioned(
-        bottom: -30,
-        left: -20,
-        child: Container(
-          width: 150,
-          height: 150,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: Colors.blue.withOpacity(0.1),
-          ),
-        ),
-      ),
-    ];
-  }
+ 
 
   // ================= STATISTICS CARD =================
   Widget _buildStatisticsCard() {

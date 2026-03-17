@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
 import '../../core/services/company_firestore.dart';
+import '../../theme/app_theme.dart';
 
 class EditSparePartPage extends StatefulWidget {
   final SparePart part;
@@ -903,16 +904,9 @@ Widget _buildImageSection() {
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFFFFE0B2),
-              Color(0xFFFFFFFF),
-            ],
-          ),
-        ),
+        decoration: BoxDecoration(
+  gradient: AppTheme.backgroundGradient,
+),
         child: SafeArea(
           child: Column(
             children: [

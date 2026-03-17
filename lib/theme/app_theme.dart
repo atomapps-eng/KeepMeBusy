@@ -64,4 +64,14 @@ class AppTheme {
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
     ),
   );
+
+  static LinearGradient backgroundGradient = const LinearGradient(
+  begin: Alignment.topCenter,
+  end: Alignment.bottomCenter,
+  colors: [
+   Color(0xFFE3F2FD), // biru sangat muda
+    Color(0xFFFFFFFF), // putih
+  ],
+);
+
 }

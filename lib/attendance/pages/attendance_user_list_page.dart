@@ -816,16 +816,9 @@ class AppBackgroundWrapper extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            const Color(0xFFFFE0B2), // Warna oranye muda dari sidebar home
-            Colors.white,
-          ],
-        ),
-      ),
+     decoration: BoxDecoration(
+  gradient: AppTheme.backgroundGradient,
+),
       child: SafeArea(
         child: Padding(
           padding: padding,

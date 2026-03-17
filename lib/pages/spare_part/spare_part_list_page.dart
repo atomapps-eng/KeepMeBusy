@@ -10,6 +10,7 @@ import 'spare_part_detail_page.dart';
 import '../../core/widgets/draggable_window.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../core/session/company_session.dart';
+import '../../theme/app_theme.dart';
 
 
 class SparePartListPage extends StatefulWidget {
@@ -271,16 +272,9 @@ if (!mounted || _isDisposed) return;
         body: Stack(
           children: [
             Container(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Color(0xFFFFE0B2),
-                    Color(0xFFFFFFFF),
-                  ],
-                ),
-              ),
+              decoration: BoxDecoration(
+  gradient: AppTheme.backgroundGradient,
+),
             ),
             SafeArea(
               child: Column(

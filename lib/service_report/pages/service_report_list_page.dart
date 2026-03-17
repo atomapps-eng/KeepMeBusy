@@ -192,7 +192,7 @@ class _ServiceReportListPageState extends State<ServiceReportListPage> {
                   'Super Admin: Viewing all companies',
                   style: TextStyle(
                     fontSize: 12,
-                    color: Colors.blue.shade600,
+                    color: AppTheme.primaryColor
                   ),
                   overflow: TextOverflow.ellipsis,
                 )
@@ -221,7 +221,7 @@ class _ServiceReportListPageState extends State<ServiceReportListPage> {
           color: Colors.white.withOpacity(0.2),
           borderRadius: BorderRadius.circular(30),
           border: Border.all(
-            color: Colors.white.withOpacity(0.3),
+            color: AppTheme.surfaceColor.withOpacity(0.3),
           ),
         ),
         child: TextField(
@@ -251,7 +251,7 @@ class _ServiceReportListPageState extends State<ServiceReportListPage> {
       ),
       child: IconButton(
         tooltip: 'Add Report',
-        icon: const Icon(Icons.add, color: Colors.green),
+        icon: const Icon(Icons.add, color: AppTheme.successColor),
         onPressed: () {
           if (_currentUser!.role != 'super_admin' &&
               CompanySession.selectedCompanyId == null) {
@@ -610,7 +610,7 @@ class _ServiceReportListPageState extends State<ServiceReportListPage> {
           ),
           const ListTile(
             dense: true,
-            leading: Icon(Icons.circle, size: 8, color: Colors.green),
+            leading: Icon(Icons.circle, size: 8, color: AppTheme.successColor),
             title: Text('Submitted: Finalized reports'),
           ),
         ],
@@ -699,7 +699,7 @@ class _ServiceReportListPageState extends State<ServiceReportListPage> {
           decoration: BoxDecoration(
             border: Border.all(color: Colors.grey.shade300),
             borderRadius: BorderRadius.circular(8),
-            color: Colors.white.withOpacity(0.3),
+            color: AppTheme.surfaceColor.withOpacity(0.3),
           ),
           height: 500,
           child: ClipRRect(
@@ -1137,9 +1137,11 @@ Widget _glass(Widget child) {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.3),
+          color: AppTheme.surfaceColor.withOpacity(0.3),
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.white.withOpacity(0.4)),
+          border: Border.all(
+  color: AppTheme.primaryColor.withOpacity(0.2),
+),
         ),
         child: child,
       ),

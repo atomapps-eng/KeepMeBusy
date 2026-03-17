@@ -7,7 +7,7 @@ import '../../models/spare_part.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../pages/partners/partner_list_page.dart';
 import '../pages/order_out/order_out_detail_page.dart';
-
+import '../theme/app_theme.dart';
 
 
 class OrderOutMobile extends StatefulWidget {
@@ -585,16 +585,9 @@ Widget build(BuildContext context) {
       body: Stack(
         children: [
           Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Color(0xFFFFE0B2),
-                  Color(0xFFFFFFFF),
-                ],
-              ),
-            ),
+            decoration: BoxDecoration(
+  gradient: AppTheme.backgroundGradient,
+),
           ),
           SafeArea(
             child: Column(

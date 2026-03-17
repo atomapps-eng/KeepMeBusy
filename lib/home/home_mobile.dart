@@ -5,10 +5,7 @@ import '../pages/common/placeholder_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../theme/app_theme.dart';
 import '../pages/settings/settings_page.dart';
-import '../core/menu/floating_menu_launcher.dart';
-import '../core/menu/menu_registry.dart';
 import '../pages/partners/partner_list_page.dart';
-import '../pages/spare_part/low_stock_page.dart';
 import '../features/auth/select_company_page.dart';
 import '../attendance/pages/attendance_page.dart';
 import '../attendance/services/attendance_period_helper.dart';
@@ -20,7 +17,6 @@ import '../pages/spare_part/spare_part_list_page.dart';
 import '../order_in/order_in_mobile.dart';
 import '../order_out/order_out_mobile.dart';
 import '../attendance/pages/attendance_user_list_page.dart';
-import '../modules/trip/pages/trip_test_page.dart';
 import '../modules/trip/pages/trip_mobile_page.dart';
 
 class HomeMobile extends StatefulWidget {
@@ -37,6 +33,9 @@ class _HomeMobileState extends State<HomeMobile> {
     context: context,
     barrierColor: Colors.black.withValues(alpha: 0.4),
     builder: (context) => AlertDialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
       title: const Text('Logout'),
       content: const Text('Are you sure you want to log out?'),
       actions: [
@@ -45,6 +44,10 @@ class _HomeMobileState extends State<HomeMobile> {
           child: const Text('Cancel'),
         ),
         ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppTheme.errorColor, // 🔴 merah
+            foregroundColor: Colors.white,
+          ),
           onPressed: () => Navigator.pop(context, true),
           child: const Text('Logout'),
         ),
@@ -53,21 +56,17 @@ class _HomeMobileState extends State<HomeMobile> {
   );
 
   if (result == true) {
-  CompanySession.selectedCompanyId = null;
-  await FirebaseAuth.instance.signOut();
+    CompanySession.selectedCompanyId = null;
+    await FirebaseAuth.instance.signOut();
 
-  if (!mounted) return;
+    if (!mounted) return;
 
-  Navigator.pushAndRemoveUntil(
-    context,
-    MaterialPageRoute(builder: (_) => const LoginPage()),
-    (route) => false,
-  );
-}
-  if (result == true) {
-  print("LOGOUT PRESSED");
-  await FirebaseAuth.instance.signOut();
-}
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (_) => const LoginPage()),
+      (route) => false,
+    );
+  }
 }
 
 // Di dalam _HomeMobileState
@@ -125,15 +124,8 @@ Stream<Map<String, dynamic>> dashboardStatsStream() {
         children: [
           // ===== BACKGROUND =====
           Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Color(0xFFFFE0B2),
-                  Color(0xFFFFFFFF),
-                ],
-              ),
+            decoration: BoxDecoration(
+              gradient: AppTheme.backgroundGradient,
             ),
           ),
 
@@ -496,7 +488,7 @@ StreamBuilder<String>(
             ),
 
               IconButton(
-                icon: const Icon(Icons.logout),
+                icon: const Icon(Icons.logout, color: AppTheme.errorColor),
                 onPressed: () => _confirmLogout(context),
               ),
             ],

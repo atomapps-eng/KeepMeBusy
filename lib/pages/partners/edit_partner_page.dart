@@ -5,6 +5,7 @@ import '../../models/partner.dart';
 import '../../services/partner_service.dart';
 import '../../services/cloudinary_service.dart';
 import 'package:image_picker/image_picker.dart';
+import '../../theme/app_theme.dart';
 
 class EditPartnerPage extends StatefulWidget {
   final Partner partner;
@@ -300,19 +301,9 @@ countryController.dispose();
             // ===== MODERN BACKGROUND =====
             Container(
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    const Color(0xFFFFE0B2).withOpacity(0.8),
-                    const Color(0xFFF5F5F5),
-                  ],
-                ),
-              ),
+  gradient: AppTheme.backgroundGradient,
+),
             ),
-
-            // ===== DECORATIVE ELEMENTS =====
-            ..._buildDecorativeElements(),
 
             SafeArea(
               child: Column(
@@ -368,35 +359,6 @@ countryController.dispose();
         ),
       ),
     );
-  }
-
-  List<Widget> _buildDecorativeElements() {
-    return [
-      Positioned(
-        top: -100,
-        right: -50,
-        child: Container(
-          width: 200,
-          height: 200,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: Colors.orange.withOpacity(0.1),
-          ),
-        ),
-      ),
-      Positioned(
-        bottom: -50,
-        left: -30,
-        child: Container(
-          width: 150,
-          height: 150,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: Colors.blue.withOpacity(0.1),
-          ),
-        ),
-      ),
-    ];
   }
 
   Widget _buildModernHeader() {

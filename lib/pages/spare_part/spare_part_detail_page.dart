@@ -12,6 +12,7 @@ import 'dart:async';
 import 'package:http/http.dart' as http;
 import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
+import '../../theme/app_theme.dart';
 
 class SparePartDetailPage extends StatefulWidget {
   final SparePart part;
@@ -191,16 +192,9 @@ Future<Uint8List> _addTextToImage(ImageProvider imageProvider, String text) asyn
     final sectionSpacing = isMobile ? 20.0 : 24.0;
 
     return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            Color(0xFFFFE0B2),
-            Color(0xFFFFFFFF),
-          ],
-        ),
-      ),
+      decoration: BoxDecoration(
+  gradient: AppTheme.backgroundGradient,
+),
       child: SafeArea(
         child: SingleChildScrollView(
           padding: EdgeInsets.all(isMobile ? 12 : 16),
