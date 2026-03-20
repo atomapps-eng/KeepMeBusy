@@ -18,6 +18,7 @@ import '../../services/pdf_action_service.dart';
 import '../../attendance/attendance_summary/attendance_summary_calculator.dart';
 import '../services/attendance_period_helper.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../models/activity_entry.dart';
 
 class AttendancePage extends StatefulWidget {
   final String employeeId;
@@ -40,6 +41,8 @@ class _AttendancePageState extends State<AttendancePage> {
   late String _selectedPeriod;
   bool _isAllPeriod = false;
   String? _companyId;
+  double _progress = 0.0;
+  String _progressText = "Preparing...";
 
   @override
   void initState() {
@@ -55,66 +58,76 @@ class _AttendancePageState extends State<AttendancePage> {
     super.dispose();
   }
 
-  Future<void> _exportAttendanceToPdf() async {
-    try {
-      if (!mounted) return;
+ Future<void> _exportAttendanceToPdf() async {
+  try {
+    if (!mounted) return;
 
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (_) => const Center(child: CircularProgressIndicator()),
+    _progress = 0;
+    _progressText = "Preparing...";
+    _showProgressDialog();
+
+    final service = AttendanceService();
+
+    _updateProgress(0.1, "Loading attendance data...");
+
+    List<AttendanceDay> days = [];
+    await for (var snapshot in service.streamAttendanceDays(widget.employeeId)) {
+      days = snapshot;
+      break;
+    }
+
+    _updateProgress(0.25, "Filtering data...");
+
+    final filteredDays = _applyPeriodFilter(days);
+
+    final period = _isAllPeriod ? 'ALL' : _selectedPeriod;
+
+    _updateProgress(0.4, "Calculating summary...");
+
+    final summary = await AttendanceSummaryCalculator.calculate(
+      employeeId: widget.employeeId,
+      period: period,
+    );
+
+    _updateProgress(0.55, "Loading activities...");
+
+    final activities = await _getActivitiesForPeriod();
+
+    _updateProgress(0.7, "Preparing employee data...");
+
+    final doc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(widget.employeeId)
+        .get();
+
+    final employeeName = doc.data()?['name'] ?? widget.employeeId;
+
+    _updateProgress(0.85, "Generating PDF...");
+
+    final bytes = await PdfReportService.generatePdf(
+      employeeId: widget.employeeId,
+      employeeName: employeeName,
+      period: period,
+      attendanceDays: filteredDays,
+      summary: summary,
+      activities: activities,
+    );
+
+    _updateProgress(1.0, "Opening PDF...");
+
+    if (mounted) Navigator.pop(context);
+
+    await openPdf(bytes, 'attendance_${widget.employeeId}_$period.pdf');
+
+  } catch (e) {
+    if (mounted) {
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error generating PDF: $e')),
       );
-
-      final service = AttendanceService();
-
-      List<AttendanceDay> days = [];
-      await for (var snapshot in service.streamAttendanceDays(widget.employeeId)) {
-        days = snapshot;
-        break;
-      }
-
-      // 🔥 APPLY PERIOD FILTER
-      final filteredDays = _applyPeriodFilter(days);
-
-      // 🔥 PERIOD YANG DIPILIH USER
-      final period = _isAllPeriod ? 'ALL' : _selectedPeriod;
-
-      // 🔥 SUMMARY DARI DATA YANG SUDAH DIFILTER
-      final summary = await AttendanceSummaryCalculator.calculate(
-        employeeId: widget.employeeId,
-        period: _isAllPeriod ? 'ALL' : _selectedPeriod,
-      );
-
-      final activities = await _getActivitiesForPeriod();
-
-      if (mounted) Navigator.pop(context);
-
-      final doc = await FirebaseFirestore.instance
-    .collection('users')
-    .doc(widget.employeeId)
-    .get();
-
-final employeeName = doc.data()?['name'] ?? widget.employeeId;
-
-     final bytes = await PdfReportService.generatePdf(
-  employeeId: widget.employeeId,
-  employeeName: employeeName,
-  period: period,
-  attendanceDays: filteredDays,
-  summary: summary,
-  activities: activities,
-);
-
-      await openPdf(bytes, 'attendance_${widget.employeeId}_$period.pdf');
-    } catch (e) {
-      if (mounted) {
-        Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error generating PDF: $e')),
-        );
-      }
     }
   }
+}
 
   Stream<List<Map<String, dynamic>>> _activityPreviewStream() {
     return CompanyFirestore
@@ -438,7 +451,7 @@ final employeeName = doc.data()?['name'] ?? widget.employeeId;
       : (_companyId == 'fallback')
           ? const Center(child: Text('Company tidak ditemukan'))
           : StreamBuilder<List<AttendanceDay>>(
-              stream: service.streamCompanyAttendance(_companyId!),
+              stream: service.streamAttendanceDays(widget.employeeId),
               builder: (context, snapshot) {
             if (snapshot.hasError) {
               return Center(
@@ -498,6 +511,8 @@ final employeeName = doc.data()?['name'] ?? widget.employeeId;
               }
               return true;
             }).toList();
+
+            filtered.sort((a, b) => b.date.compareTo(a.date));
 
             if (isDesktop) {
               return _buildDesktopLayout(filtered, summary, allDays);
@@ -2368,8 +2383,8 @@ final employeeName = doc.data()?['name'] ?? widget.employeeId;
   });
 }
 
-Future<List<Map<String, dynamic>>> _getActivitiesForPeriod() async {
-  final List<Map<String, dynamic>> activities = [];
+Future<List<ActivityEntry>> _getActivitiesForPeriod() async {
+  final List<ActivityEntry> activities = [];
 
   final daySnap = await CompanyFirestore
       .collection('attendance')
@@ -2389,10 +2404,8 @@ Future<List<Map<String, dynamic>>> _getActivitiesForPeriod() async {
 
     final period = AttendancePeriodHelper.resolvePeriod(date);
 
-    // 🔥 filter period (INI KUNCI)
     if (!_isAllPeriod && period != _selectedPeriod) continue;
 
-    // 🔥 masuk ke factories
     final factorySnap = await day.reference.collection('factories').get();
 
     for (final factory in factorySnap.docs) {
@@ -2404,26 +2417,53 @@ Future<List<Map<String, dynamic>>> _getActivitiesForPeriod() async {
       for (final act in actSnap.docs) {
         final data = act.data();
 
-        // simpan date biar bisa dipakai di PDF
-        data['date'] = date;
+        final activity = ActivityEntry.fromMap(data, date);
 
-        activities.add(data);
+        activities.add(activity); // ✅ sekarang benar
       }
     }
   }
 
-  // sorting by createdAt
-  activities.sort((a, b) {
-    final aTime = a['createdAt'] as Timestamp?;
-    final bTime = b['createdAt'] as Timestamp?;
-    return (aTime?.millisecondsSinceEpoch ?? 0)
-        .compareTo(bTime?.millisecondsSinceEpoch ?? 0);
-  });
+  // sorting pakai model
+  activities.sort((a, b) => a.date.compareTo(b.date));
 
   return activities;
 }
 
+void _showProgressDialog() {
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (_) {
+      return StatefulBuilder(
+        builder: (context, setStateDialog) {
+          return AlertDialog(
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                LinearProgressIndicator(value: _progress),
+                const SizedBox(height: 16),
+                Text(_progressText),
+              ],
+            ),
+          );
+        },
+      );
+    },
+  );
 }
+
+void _updateProgress(double value, String text) {
+  if (!mounted) return;
+
+  setState(() {
+    _progress = value;
+    _progressText = text;
+  });
+}
+
+}
+
 
 // ================= UI HELPERS =================
 Widget _glass(Widget child) {

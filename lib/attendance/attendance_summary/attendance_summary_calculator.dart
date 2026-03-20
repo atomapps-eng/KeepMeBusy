@@ -29,11 +29,13 @@ class AttendanceSummaryCalculator {
     int overtime = 0;
     int office = 0;
     int outstation = 0;
+    int effectivePresent = 0;
 
     for (final d in days) {
       switch (d.status) {
         case AttendanceStatus.present:
           present++;
+          effectivePresent++;
           if (d.location == AttendanceLocation.office) office++;
           if (d.location == AttendanceLocation.outstation) outstation++;
           if (_isOvertime(d)) overtime++;
@@ -49,6 +51,7 @@ class AttendanceSummaryCalculator {
           break;
         case AttendanceStatus.traveling:
           traveling++;
+          effectivePresent++;
           break;
         case AttendanceStatus.joinHoliday:
           joinHoliday++;

@@ -116,6 +116,7 @@ class ActivityDetailPage extends StatelessWidget {
     final isDesktop = MediaQuery.of(context).size.width >= 900;
     final activityType = activity['activityType'] ?? '-';
     final color = _getActivityTypeColor(activityType);
+    final activityDate = activity['date'] as Timestamp?;
     final createdAt = activity['createdAt'] as Timestamp?;
 
     return Scaffold(
@@ -210,6 +211,8 @@ class ActivityDetailPage extends StatelessWidget {
   }
 
  Widget _buildDesktopLayout(BuildContext context, Color color, Timestamp? createdAt) {
+  final activityDate = activity['date'] as Timestamp?;
+  final createdAt = activity['createdAt'] as Timestamp?;
   return Row(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
@@ -292,28 +295,39 @@ class ActivityDetailPage extends StatelessWidget {
                   ],
                 ),
 
-                if (createdAt != null) ...[
-                  const SizedBox(height: 16),
-                  const Divider(),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.access_time,
-                        size: 14,
-                        color: Colors.grey.shade600,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        'Created: ${_formatDate(createdAt)} at ${_formatTime(createdAt)}',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: Colors.grey.shade600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+                
+
+                if (activityDate != null || createdAt != null) ...[
+  const SizedBox(height: 16),
+  const Divider(),
+  const SizedBox(height: 8),
+
+  if (activityDate != null)
+    Row(
+      children: [
+        Icon(Icons.calendar_today, size: 14, color: Colors.blue),
+        const SizedBox(width: 4),
+        Text(
+          'Activity: ${_formatDate(activityDate)}',
+          style: const TextStyle(fontSize: 11),
+        ),
+      ],
+    ),
+
+  const SizedBox(height: 6),
+
+  if (createdAt != null)
+    Row(
+      children: [
+        Icon(Icons.access_time, size: 14, color: Colors.grey),
+        const SizedBox(width: 4),
+        Text(
+          'Created: ${_formatDate(createdAt)} ${_formatTime(createdAt)}',
+          style: const TextStyle(fontSize: 11),
+        ),
+      ],
+    ),
+]
               ],
             ),
           ),
@@ -562,6 +576,7 @@ class ActivityDetailPage extends StatelessWidget {
 }
 
   Widget _buildMobileLayout(BuildContext context, Color color, Timestamp? createdAt) {
+    final activityDate = activity['date'] as Timestamp?;
     return SingleChildScrollView(
       child: Column(
         children: [
@@ -595,14 +610,24 @@ class ActivityDetailPage extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 4),
-                      if (createdAt != null)
-                        Text(
-                          '${_formatDate(createdAt)} • ${_formatTime(createdAt)}',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey.shade600,
-                          ),
-                        ),
+                      
+                      if (activityDate != null)
+  Text(
+    _formatDate(activityDate),
+    style: TextStyle(
+      fontSize: 12,
+      color: Colors.grey.shade600,
+    ),
+  ),
+
+if (createdAt != null)
+  Text(
+    'Created ${_formatTime(createdAt)}',
+    style: TextStyle(
+      fontSize: 11,
+      color: Colors.grey.shade500,
+    ),
+  ),
                     ],
                   ),
                 ),
@@ -929,7 +954,7 @@ class ActivityDetailPage extends StatelessWidget {
           .doc(factoryId)
           .collection('activities')
           .doc(activityId)
-          .set(result, SetOptions(merge: true));
+          .set(result.toMap(), SetOptions(merge: true));
 
       if (!context.mounted) return;
 

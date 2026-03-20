@@ -25,7 +25,7 @@ class ActivityListPage extends StatelessWidget {
         .collectionGroup('activities')
         .where('companyId', isEqualTo: companyId)
         .where('employeeId', isEqualTo: employeeId)
-        .orderBy('createdAt', descending: true)
+       .orderBy('date', descending: true)
         .snapshots()
         .map((snapshot) {
           return snapshot.docs.map((doc) {
@@ -499,7 +499,7 @@ data['dayDocId'] = doc.reference.parent.parent?.parent?.parent?.id;
     final activityType = activity['activityType'] ?? '-';
     final factoryClient = activity['factoryClient'] ?? '-';
     final machine = activity['machine'] ?? '-';
-    final createdAt = activity['createdAt'] as Timestamp?;
+    final activityDate = activity['date'] as Timestamp?;
     final hours = activity['hours'] ?? 0;
     final color = _getActivityTypeColor(activityType);
 
@@ -606,7 +606,7 @@ data['dayDocId'] = doc.reference.parent.parent?.parent?.parent?.id;
                   child: Column(
                     children: [
                       Text(
-                        _formatDate(createdAt),
+                        _formatDate(activityDate),
                         style: const TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w500,
@@ -614,7 +614,7 @@ data['dayDocId'] = doc.reference.parent.parent?.parent?.parent?.id;
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        _formatTime(createdAt),
+                        _formatTime(activityDate),
                         style: TextStyle(
                           fontSize: 11,
                           color: Colors.grey.shade600,
@@ -661,9 +661,9 @@ data['dayDocId'] = doc.reference.parent.parent?.parent?.parent?.id;
       itemCount: activities.length,
       itemBuilder: (context, index) {
         final a = activities[index];
-        print("Activity data: $a"); 
         final createdAt = a['createdAt'] as Timestamp?;
         final color = _getActivityTypeColor(a['activityType'] ?? '');
+        final activityDate = a['date'] as Timestamp?;
 
         return GestureDetector(
           onTap: () {
@@ -728,9 +728,9 @@ data['dayDocId'] = doc.reference.parent.parent?.parent?.parent?.id;
                             ),
                           ),
                           const SizedBox(width: 8),
-                          if (createdAt != null)
+                         if (activityDate != null)
                             Text(
-                              _formatTime(createdAt),
+                              _formatTime(activityDate),
                               style: TextStyle(
                                 fontSize: 11,
                                 color: Colors.grey.shade600,
@@ -783,10 +783,10 @@ data['dayDocId'] = doc.reference.parent.parent?.parent?.parent?.id;
                         ],
                       ),
 
-                      if (createdAt != null) ...[
+                      if (activityDate != null) ...[
                         const SizedBox(height: 4),
                         Text(
-                          _formatDate(createdAt),
+                          _formatDate(activityDate),
                           style: TextStyle(
                             fontSize: 10,
                             color: Colors.grey.shade500,

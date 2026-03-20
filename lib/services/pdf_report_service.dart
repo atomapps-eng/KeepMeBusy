@@ -6,6 +6,7 @@ import '../attendance/models/attendance_day.dart';
 import '../attendance/attendance_summary/attendance_summary_model.dart';
 import '../attendance/services/attendance_summary_helper.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../attendance/models/activity_entry.dart';
 
 class PdfReportService {
   static Future<Uint8List> generatePdf({
@@ -14,7 +15,7 @@ class PdfReportService {
     required String period,
     required List<AttendanceDay> attendanceDays,
     required AttendanceSummaryModel summary,
-    required List<Map<String, dynamic>> activities,
+    required List<ActivityEntry> activities,
   }) async {
 
     final pdf = pw.Document();
@@ -31,9 +32,11 @@ class PdfReportService {
         summary.annualLeave +
         summary.traveling +
         summary.joinHoliday;
+    
+    final effectivePresent = summary.present + summary.traveling;
 
-    final attendanceRate =
-        totalDays == 0 ? 0 : ((summary.present / totalDays) * 100).round();
+final attendanceRate =
+    totalDays == 0 ? 0 : ((effectivePresent / totalDays) * 100).round();
 
     final dateFormat = DateFormat('dd MMM yyyy');
     final exportTime = DateFormat('dd MMM yyyy HH:mm')
@@ -440,7 +443,7 @@ static pw.Widget _headerCell(String text) {
   );
 }
 
-static List<pw.Widget> _buildActivityTable(List<Map<String, dynamic>> activities) {
+static List<pw.Widget> _buildActivityTable(List<ActivityEntry> activities) {
   if (activities.isEmpty) {
     return [
       pw.SizedBox(height: 30),
@@ -508,22 +511,17 @@ static List<pw.Widget> _buildActivityTable(List<Map<String, dynamic>> activities
         "Note",
       ],
       data: activities.map((a) {
-        final date = (a['createdAt'] as Timestamp?)?.toDate();
-        final dateFormat = DateFormat('dd/MM/yyyy');
+  final dateFormat = DateFormat('dd/MM/yyyy');
 
-        return [
-          date != null ? dateFormat.format(date) : "-",
-          a['activityType'] ?? "-",
-          a['factoryClient'] ?? "-",
-          a['machine'] ?? "-",
-          (a['description'] ?? "").toString().isEmpty
-              ? "-"
-              : a['description'],
-          (a['note'] ?? "").toString().isEmpty
-              ? "-"
-              : a['note'],
-        ];
-      }).toList(),
+  return [
+    dateFormat.format(a.date),
+    a.activityType,
+    a.factoryClient,
+    a.machine,
+    a.description.isEmpty ? "-" : a.description,
+    a.note.isEmpty ? "-" : a.note,
+  ];
+}).toList(),
     ),
   ];
 }

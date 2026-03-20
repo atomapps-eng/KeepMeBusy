@@ -398,7 +398,7 @@ class _AttendanceSummaryPageState extends State<AttendanceSummaryPage> {
           const Divider(height: 24),
           _infoRow('Period', s.period),
           _infoRow('Total Days', '${s.present + s.off + s.sickLeave + s.annualLeave + s.traveling + s.joinHoliday} days'),
-          _infoRow('Work Days', '${s.present} days'),
+          _infoRow('Work Days', '${s.present + s.traveling} days'),
         ],
       ),
     );
