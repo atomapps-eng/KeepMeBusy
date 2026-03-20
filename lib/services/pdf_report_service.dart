@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../attendance/models/attendance_day.dart';
 import '../attendance/attendance_summary/attendance_summary_model.dart';
 import '../attendance/services/attendance_summary_helper.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class PdfReportService {
   static Future<Uint8List> generatePdf({
@@ -13,6 +14,7 @@ class PdfReportService {
     required String period,
     required List<AttendanceDay> attendanceDays,
     required AttendanceSummaryModel summary,
+    required List<Map<String, dynamic>> activities,
   }) async {
 
     final pdf = pw.Document();
@@ -325,6 +327,10 @@ summary.overnights.isEmpty
         ],
       ),
 
+      pw.SizedBox(height: 30),
+
+..._buildActivityTable(activities),
+
           pw.SizedBox(height: 50),
 
           /// SIGNATURE
@@ -386,11 +392,15 @@ summary.overnights.isEmpty
   }
 
   static pw.Widget _cell(String text) {
-    return pw.Padding(
-      padding: const pw.EdgeInsets.all(6),
-      child: pw.Text(text),
-    );
-  }
+  return pw.Padding(
+    padding: const pw.EdgeInsets.all(6),
+    child: pw.Text(
+      text,
+      style: const pw.TextStyle(fontSize: 9),
+      softWrap: true,
+    ),
+  );
+}
 
   static pw.Widget _statusCell(String text) {
     return pw.Container(
@@ -429,4 +439,75 @@ static pw.Widget _headerCell(String text) {
     ),
   );
 }
+
+static List<pw.Widget> _buildActivityTable(List<Map<String, dynamic>> activities) {
+  if (activities.isEmpty) {
+    return [
+      pw.Text(
+        "Activity List",
+        style: pw.TextStyle(
+          fontSize: 14,
+          fontWeight: pw.FontWeight.bold,
+        ),
+      ),
+      pw.SizedBox(height: 10),
+      pw.Text("No activity data"),
+    ];
+  }
+
+  return [
+    pw.Text(
+      "Activity List",
+      style: pw.TextStyle(
+        fontSize: 14,
+        fontWeight: pw.FontWeight.bold,
+      ),
+    ),
+    pw.SizedBox(height: 10),
+
+    pw.TableHelper.fromTextArray(
+      border: pw.TableBorder.all(color: PdfColors.grey300),
+      headerStyle: pw.TextStyle(
+        fontWeight: pw.FontWeight.bold,
+        fontSize: 10,
+      ),
+      cellStyle: const pw.TextStyle(fontSize: 9),
+      columnWidths: {
+        0: const pw.FlexColumnWidth(1.5),
+        1: const pw.FlexColumnWidth(2),
+        2: const pw.FlexColumnWidth(2),
+        3: const pw.FlexColumnWidth(2),
+        4: const pw.FlexColumnWidth(3),
+        5: const pw.FlexColumnWidth(3),
+      },
+      headers: [
+        "Date",
+        "Activity",
+        "Client",
+        "Machine",
+        "Description",
+        "Note",
+      ],
+      data: activities.map((a) {
+        final date = (a['createdAt'] as Timestamp?)?.toDate();
+
+        return [
+          date != null
+              ? "${date.day}/${date.month}/${date.year}"
+              : "-",
+          a['activityType'] ?? "-",
+          a['factoryClient'] ?? "-",
+          a['machine'] ?? "-",
+          (a['description'] ?? "").toString().isEmpty
+              ? "-"
+              : a['description'],
+          (a['note'] ?? "").toString().isEmpty
+              ? "-"
+              : a['note'],
+        ];
+      }).toList(),
+    ),
+  ];
+}
+
 }

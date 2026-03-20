@@ -368,7 +368,7 @@ Future<Uint8List> _addTextToImage(ImageProvider imageProvider, String text) asyn
                     child: ElevatedButton.icon(
                       icon: Icon(Icons.delete, size: isMobile ? 16 : 18),
                       label: Text(
-                        'Hapus',
+                        'Delete',
                         style: TextStyle(fontSize: isMobile ? 13 : 14),
                       ),
                       style: ElevatedButton.styleFrom(
@@ -388,7 +388,7 @@ Future<Uint8List> _addTextToImage(ImageProvider imageProvider, String text) asyn
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
                               content: Text(
-                                'Anda tidak memiliki hak akses untuk menghapus data ini',
+                                'You dont have access to delete this part',
                               ),
                               backgroundColor: Colors.orange,
                             ),
@@ -399,9 +399,9 @@ Future<Uint8List> _addTextToImage(ImageProvider imageProvider, String text) asyn
                         final confirm = await showDialog<bool>(
                           context: context,
                           builder: (_) => AlertDialog(
-                            title: const Text('Hapus Spare Part'),
+                            title: const Text('Delete Spare Part'),
                             content: Text(
-                              'Yakin ingin menghapus "${widget.part.name}"?',
+                              'Are you sure you want to delete?"${widget.part.name}"?',
                             ),
                             actions: [
                               TextButton(
@@ -413,7 +413,7 @@ Future<Uint8List> _addTextToImage(ImageProvider imageProvider, String text) asyn
                                   backgroundColor: Colors.red,
                                 ),
                                 onPressed: () => Navigator.pop(context, true),
-                                child: const Text('Hapus'),
+                                child: const Text('Delete'),
                               ),
                             ],
                           ),

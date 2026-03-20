@@ -5,9 +5,12 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:io';
+import 'package:path_provider/path_provider.dart';
+import 'package:open_filex/open_filex.dart';
 
 class ServiceReportPdfService {
-static Future<Uint8List> generatePdf({
+static Future<void> generatePdf({
   required Map<String, dynamic> data,
 }) async {
 
@@ -86,7 +89,6 @@ final hasAttachments = photo1 != null || photo2 != null || photo3 != null;
   fontBold,
   maxLines: 6,
 ),
-
             pw.SizedBox(height: 12),
 
            _buildModernTextSection(
@@ -95,14 +97,7 @@ final hasAttachments = photo1 != null || photo2 != null || photo3 != null;
   fontBold,
   maxLines: 6,
 ),
-
-            if (note != null && note.isNotEmpty) ...[
-              pw.SizedBox(height: 12),
-              _buildModernNoteSection(data, fontBold),
-            ],
-
             pw.SizedBox(height: 20),
-
                     ],
       ),
     ),
@@ -128,6 +123,11 @@ final hasAttachments = photo1 != null || photo2 != null || photo3 != null;
       pw.SizedBox(height: 20),
 
       _buildModernSparePartsSection(parts, fontBold),
+
+      if (note != null && note.isNotEmpty) ...[
+  pw.SizedBox(height: 20),
+  _buildModernNoteSection(data, fontBold),
+],
 
       if (photo1 != null || photo2 != null || photo3 != null) ...[
 
@@ -166,7 +166,15 @@ final hasAttachments = photo1 != null || photo2 != null || photo3 != null;
   ),
 );
 }
-return pdf.save();
+final bytes = await pdf.save();
+
+final dir = await getTemporaryDirectory();
+final file = File("${dir.path}/service_report_${DateTime.now().millisecondsSinceEpoch}.pdf");
+
+await file.writeAsBytes(bytes);
+
+// buka langsung viewer
+await OpenFilex.open(file.path);
 }
 
 // ================= MODERN UI COMPONENTS =================
@@ -778,7 +786,7 @@ static pw.Widget _buildModernFooter(Map<String, dynamic> data, pw.MemoryImage? s
         pw.Container(
           padding: const pw.EdgeInsets.symmetric(vertical: 6),
           child: pw.Text(
-            "Confirmed that the technician had spent the time and use the parts above indicated",
+            "Confirmed that all work performed and materials used are documented in this service report.",
             textAlign: pw.TextAlign.center,
             style: pw.TextStyle(
               fontSize: 8,

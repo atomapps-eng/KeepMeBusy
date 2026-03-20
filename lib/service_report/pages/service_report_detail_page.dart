@@ -1616,15 +1616,13 @@ Future<void> _printToPdf() async {
     final data = _reportDoc!.data()!;
     
     await Future.delayed(Duration(milliseconds: 100));
-    final bytes = await ServiceReportPdfService.generatePdf(
-      data: data,
-    );
+await ServiceReportPdfService.generatePdf(data: data);
+
+Navigator.pop(context);
 
     final fileName =
         "${data['sheetId'] ?? 'service_report'}.pdf";
 
-    // ⛔ JANGAN CLOSE DULU
-    await openPdf(bytes, fileName);
 
     if (mounted) {
       Navigator.of(context, rootNavigator: true).pop();

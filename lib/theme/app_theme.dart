@@ -69,8 +69,8 @@ class AppTheme {
   begin: Alignment.topCenter,
   end: Alignment.bottomCenter,
   colors: [
-   Color(0xFFE3F2FD), // biru sangat muda
-    Color(0xFFFFFFFF), // putih
+   Color.fromARGB(255, 230, 246, 247), // biru sangat muda
+    Color.fromARGB(255, 247, 238, 225), // putih
   ],
 );
 

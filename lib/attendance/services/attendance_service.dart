@@ -57,4 +57,33 @@ class AttendanceService {
     if (!doc.exists) return null;
     return AttendancePeriod.fromFirestore(doc);
   }
+
+ Stream<List<AttendanceDay>> streamCompanyAttendance(String companyId) async* {
+  final usersSnap = await FirebaseFirestore.instance
+      .collection('users')
+      .where('companyIds', arrayContains: companyId)
+      .get();
+
+  final List<AttendanceDay> allDays = [];
+
+  for (final user in usersSnap.docs) {
+    final data = user.data();
+    final employeeId = data['attendanceDocId'];
+
+    if (employeeId == null) continue;
+
+    final snap = await FirebaseFirestore.instance
+        .collection('attendance')
+        .doc(employeeId)
+        .collection('days')
+        .get();
+
+    for (final doc in snap.docs) {
+      allDays.add(AttendanceDay.fromFirestore(doc));
+    }
+  }
+
+  yield allDays;
+}
+
 }

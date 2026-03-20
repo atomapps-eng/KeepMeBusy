@@ -17,6 +17,7 @@ import '../../services/pdf_report_service.dart';
 import '../../services/pdf_action_service.dart';
 import '../../attendance/attendance_summary/attendance_summary_calculator.dart';
 import '../services/attendance_period_helper.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class AttendancePage extends StatefulWidget {
   final String employeeId;
@@ -38,12 +39,14 @@ class _AttendancePageState extends State<AttendancePage> {
   final TextEditingController _searchController = TextEditingController();
   late String _selectedPeriod;
   bool _isAllPeriod = false;
+  String? _companyId;
 
   @override
   void initState() {
     super.initState();
     _selectedPeriod = widget.period;
     _isAllPeriod = false;
+    _loadCompanyId();
   }
 
   @override
@@ -82,15 +85,25 @@ class _AttendancePageState extends State<AttendancePage> {
         period: _isAllPeriod ? 'ALL' : _selectedPeriod,
       );
 
+      final activities = await _getActivitiesForPeriod();
+
       if (mounted) Navigator.pop(context);
 
-      final bytes = await PdfReportService.generatePdf(
-        employeeId: widget.employeeId,
-        employeeName: 'Employee ${widget.employeeId}',
-        period: period,
-        attendanceDays: filteredDays,
-        summary: summary,
-      );
+      final doc = await FirebaseFirestore.instance
+    .collection('users')
+    .doc(widget.employeeId)
+    .get();
+
+final employeeName = doc.data()?['name'] ?? widget.employeeId;
+
+     final bytes = await PdfReportService.generatePdf(
+  employeeId: widget.employeeId,
+  employeeName: employeeName,
+  period: period,
+  attendanceDays: filteredDays,
+  summary: summary,
+  activities: activities,
+);
 
       await openPdf(bytes, 'attendance_${widget.employeeId}_$period.pdf');
     } catch (e) {
@@ -419,10 +432,14 @@ class _AttendancePageState extends State<AttendancePage> {
         ],
       ),
       body: AppBackgroundWrapper(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-        child: StreamBuilder<List<AttendanceDay>>(
-          stream: service.streamAttendanceDays(widget.employeeId),
-          builder: (context, snapshot) {
+  padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+  child: (_companyId == null)
+      ? const Center(child: CircularProgressIndicator())
+      : (_companyId == 'fallback')
+          ? const Center(child: Text('Company tidak ditemukan'))
+          : StreamBuilder<List<AttendanceDay>>(
+              stream: service.streamCompanyAttendance(_companyId!),
+              builder: (context, snapshot) {
             if (snapshot.hasError) {
               return Center(
                 child: Container(
@@ -2319,6 +2336,93 @@ class _AttendancePageState extends State<AttendancePage> {
     ];
     return '${monthNames[month]} $year';
   }
+  Future<void> _loadCompanyId() async {
+ final currentUserId = FirebaseAuth.instance.currentUser!.uid;
+
+  final userDoc = await FirebaseFirestore.instance
+    .collection('users')
+    .doc(currentUserId)
+    .get();
+
+  final data = userDoc.data();
+
+  print("=== DEBUG USER ===");
+  print("USER ID: $currentUserId");
+  print("DATA: $data");
+
+  final companyIds = data?['companyIds'];
+
+  print("COMPANY IDS RAW: $companyIds");
+  print("TYPE: ${companyIds.runtimeType}");
+
+  String? companyId;
+
+  if (companyIds is List && companyIds.isNotEmpty) {
+    companyId = companyIds.first.toString();
+  }
+
+  print("FINAL COMPANY ID: $companyId");
+
+  setState(() {
+    _companyId = companyId ?? 'fallback';
+  });
+}
+
+Future<List<Map<String, dynamic>>> _getActivitiesForPeriod() async {
+  final List<Map<String, dynamic>> activities = [];
+
+  final daySnap = await CompanyFirestore
+      .collection('attendance')
+      .doc(widget.employeeId)
+      .collection('days')
+      .get();
+
+  for (final day in daySnap.docs) {
+    final parts = day.id.split('-');
+    if (parts.length != 3) continue;
+
+    final date = DateTime(
+      int.parse(parts[0]),
+      int.parse(parts[1]),
+      int.parse(parts[2]),
+    );
+
+    final period = AttendancePeriodHelper.resolvePeriod(date);
+
+    // 🔥 filter period (INI KUNCI)
+    if (!_isAllPeriod && period != _selectedPeriod) continue;
+
+    // 🔥 masuk ke factories
+    final factorySnap = await day.reference.collection('factories').get();
+
+    for (final factory in factorySnap.docs) {
+      final actSnap = await factory.reference
+          .collection('activities')
+          .orderBy('createdAt', descending: false)
+          .get();
+
+      for (final act in actSnap.docs) {
+        final data = act.data();
+
+        // simpan date biar bisa dipakai di PDF
+        data['date'] = date;
+
+        activities.add(data);
+      }
+    }
+  }
+
+  // sorting by createdAt
+  activities.sort((a, b) {
+    final aTime = a['createdAt'] as Timestamp?;
+    final bTime = b['createdAt'] as Timestamp?;
+    return (aTime?.millisecondsSinceEpoch ?? 0)
+        .compareTo(bTime?.millisecondsSinceEpoch ?? 0);
+  });
+
+  return activities;
+}
+
 }
 
 // ================= UI HELPERS =================
@@ -2346,6 +2450,7 @@ Widget _glass(Widget child) {
     ),
   );
 }
+
 
 class _StaticChip extends StatelessWidget {
   final String label;
