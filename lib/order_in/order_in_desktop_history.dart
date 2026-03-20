@@ -152,7 +152,7 @@ class _OrderInDesktopHistoryState
 
         if (docs.isEmpty) {
           return const Center(
-              child: Text('Belum ada Order'));
+              child: Text('No Order'));
         }
 
         return ListView.builder(

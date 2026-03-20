@@ -718,7 +718,7 @@ Widget build(BuildContext context) {
 
     Expanded(
       child: items.isEmpty
-                  ? const Center(child: Text('Belum ada item'))
+                  ? const Center(child: Text('No item'))
                   : ListView.builder(
                       padding: const EdgeInsets.all(16),
                       itemCount: items.length,
@@ -741,7 +741,7 @@ Widget build(BuildContext context) {
               child: OutlinedButton.icon(
                 onPressed: _addPart,
                 icon: const Icon(Icons.add),
-                label: const Text('Tambah Item'),
+                label: const Text('Add Item'),
               ),
             ),
           ],
@@ -787,7 +787,7 @@ final desktopTotalWeight = totalWeight;
                           child: ElevatedButton.icon(
                             onPressed: _addPart,
                             icon: const Icon(Icons.add),
-                            label: const Text('Tambah Item'),
+                            label: const Text('Add Item'),
                           ),
                         ),
 
@@ -796,7 +796,7 @@ final desktopTotalWeight = totalWeight;
                         Expanded(
   child: items.isEmpty
       ? const Center(
-          child: Text('Belum ada item'),
+          child: Text('No item'),
         )
       : ListView.builder(
           itemCount: items.length,
@@ -1211,7 +1211,7 @@ class _OrderOutListView extends StatelessWidget {
         }).toList();
 
         if (docs.isEmpty) {
-          return const Center(child: Text('Belum ada Order'));
+          return const Center(child: Text('No Order'));
         }
 
         return ListView.builder(

@@ -8,6 +8,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:open_filex/open_filex.dart';
+import 'package:flutter/foundation.dart';
+import 'dart:html' as html;
 
 class ServiceReportPdfService {
 static Future<void> generatePdf({
@@ -166,15 +168,31 @@ final hasAttachments = photo1 != null || photo2 != null || photo3 != null;
   ),
 );
 }
+
 final bytes = await pdf.save();
 
-final dir = await getTemporaryDirectory();
-final file = File("${dir.path}/service_report_${DateTime.now().millisecondsSinceEpoch}.pdf");
+if (kIsWeb) {
+  final blob = html.Blob([bytes], 'application/pdf');
+  final url = html.Url.createObjectUrlFromBlob(blob);
 
-await file.writeAsBytes(bytes);
+  final anchor = html.AnchorElement(href: url)
+    ..setAttribute(
+      "download",
+      "service_report_${DateTime.now().millisecondsSinceEpoch}.pdf",
+    )
+    ..click();
 
-// buka langsung viewer
-await OpenFilex.open(file.path);
+  html.Url.revokeObjectUrl(url);
+
+} else {
+  final dir = await getTemporaryDirectory();
+  final file = File(
+    "${dir.path}/service_report_${DateTime.now().millisecondsSinceEpoch}.pdf",
+  );
+
+  await file.writeAsBytes(bytes);
+  await OpenFilex.open(file.path);
+}
 }
 
 // ================= MODERN UI COMPONENTS =================

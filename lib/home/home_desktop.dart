@@ -698,47 +698,6 @@ final bool canAccessSettings = isAdmin;
                 ),
               ],
             ),
-
-            const SizedBox(height: 24),
-
-            // Footer dengan Statistik Singkat
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.grey.shade50,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.grey.shade200),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  _footerStatItem(
-                    Icons.inventory,
-                    'Total Items',
-                    '2,847',
-                    Colors.blueGrey,
-                  ),
-                  _footerStatItem(
-                    Icons.warning,
-                    'Low Stock',
-                    '23',
-                    Colors.redAccent,
-                  ),
-                  _footerStatItem(
-                    Icons.attach_money,
-                    'Today\'s Value',
-                    'Rp 45.2M',
-                    Colors.green,
-                  ),
-                  _footerStatItem(
-                    Icons.people,
-                    'Active Users',
-                    '12',
-                    Colors.purple,
-                  ),
-                ],
-              ),
-            ),
           ],
         ),
       ),
