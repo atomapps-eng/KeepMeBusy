@@ -335,21 +335,21 @@ summary.overnights.isEmpty
 
           /// SIGNATURE
           pw.Row(
-            mainAxisAlignment: pw.MainAxisAlignment.end,
-            children: [
-              pw.Column(
-                children: [
-                  pw.Container(
-                    height: 1,
-                    width: 200,
-                    color: PdfColors.grey600,
-                  ),
-                  pw.SizedBox(height: 5),
-                  pw.Text("General Admin"),
-                ],
-              )
-            ],
-          ),
+  mainAxisAlignment: pw.MainAxisAlignment.end,
+  children: [
+    pw.Column(
+      children: [
+        pw.Container(
+          height: 1,
+          width: 200,
+          color: PdfColors.grey600,
+        ),
+        pw.SizedBox(height: 5),
+        pw.Text("General Admin"),
+      ],
+    )
+  ],
+),
         ],
       ),
     );
@@ -443,6 +443,7 @@ static pw.Widget _headerCell(String text) {
 static List<pw.Widget> _buildActivityTable(List<Map<String, dynamic>> activities) {
   if (activities.isEmpty) {
     return [
+      pw.SizedBox(height: 30),
       pw.Text(
         "Activity List",
         style: pw.TextStyle(
@@ -451,11 +452,24 @@ static List<pw.Widget> _buildActivityTable(List<Map<String, dynamic>> activities
         ),
       ),
       pw.SizedBox(height: 10),
-      pw.Text("No activity data"),
+      pw.Container(
+        padding: const pw.EdgeInsets.all(12),
+        decoration: pw.BoxDecoration(
+          border: pw.Border.all(color: PdfColors.grey300),
+          borderRadius: pw.BorderRadius.circular(6),
+        ),
+        child: pw.Center(
+          child: pw.Text(
+            "No activity data",
+            style: pw.TextStyle(fontSize: 10, color: PdfColors.grey600),
+          ),
+        ),
+      ),
     ];
   }
 
   return [
+    pw.SizedBox(height: 30),
     pw.Text(
       "Activity List",
       style: pw.TextStyle(
@@ -471,14 +485,19 @@ static List<pw.Widget> _buildActivityTable(List<Map<String, dynamic>> activities
         fontWeight: pw.FontWeight.bold,
         fontSize: 10,
       ),
-      cellStyle: const pw.TextStyle(fontSize: 9),
+      headerDecoration: const pw.BoxDecoration(
+        color: PdfColors.grey300,
+      ),
+      cellStyle: const pw.TextStyle(
+        fontSize: 9,
+      ),
       columnWidths: {
-        0: const pw.FlexColumnWidth(1.5),
-        1: const pw.FlexColumnWidth(2),
-        2: const pw.FlexColumnWidth(2),
-        3: const pw.FlexColumnWidth(2),
-        4: const pw.FlexColumnWidth(3),
-        5: const pw.FlexColumnWidth(3),
+        0: const pw.FlexColumnWidth(1.2),  // Date
+        1: const pw.FlexColumnWidth(1.5),  // Activity
+        2: const pw.FlexColumnWidth(1.5),  // Client
+        3: const pw.FlexColumnWidth(1.5),  // Machine
+        4: const pw.FlexColumnWidth(2.5),  // Description
+        5: const pw.FlexColumnWidth(2),    // Note
       },
       headers: [
         "Date",
@@ -490,11 +509,10 @@ static List<pw.Widget> _buildActivityTable(List<Map<String, dynamic>> activities
       ],
       data: activities.map((a) {
         final date = (a['createdAt'] as Timestamp?)?.toDate();
+        final dateFormat = DateFormat('dd/MM/yyyy');
 
         return [
-          date != null
-              ? "${date.day}/${date.month}/${date.year}"
-              : "-",
+          date != null ? dateFormat.format(date) : "-",
           a['activityType'] ?? "-",
           a['factoryClient'] ?? "-",
           a['machine'] ?? "-",
