@@ -5,11 +5,10 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'dart:io';
-import 'package:path_provider/path_provider.dart';
-import 'package:open_filex/open_filex.dart';
 import 'package:flutter/foundation.dart';
-import 'dart:html' as html;
+
+import 'pdf_io.dart'
+    if (dart.library.html) 'pdf_web.dart';
 
 class ServiceReportPdfService {
 static Future<void> generatePdf({
@@ -171,28 +170,18 @@ final hasAttachments = photo1 != null || photo2 != null || photo3 != null;
 
 final bytes = await pdf.save();
 
-if (kIsWeb) {
-  final blob = html.Blob([bytes], 'application/pdf');
-  final url = html.Url.createObjectUrlFromBlob(blob);
+final sheetId = data['sheetId'] ?? 'service_report';
 
-  final anchor = html.AnchorElement(href: url)
-    ..setAttribute(
-      "download",
-      "service_report_${DateTime.now().millisecondsSinceEpoch}.pdf",
-    )
-    ..click();
+final rawId = data['sheetId'] ?? 'service_report';
 
-  html.Url.revokeObjectUrl(url);
+final safeId = rawId
+    .toString()
+    .replaceAll(RegExp(r'[^\w\-]'), '_');
 
-} else {
-  final dir = await getTemporaryDirectory();
-  final file = File(
-    "${dir.path}/service_report_${DateTime.now().millisecondsSinceEpoch}.pdf",
-  );
-
-  await file.writeAsBytes(bytes);
-  await OpenFilex.open(file.path);
-}
+await openPdf(
+  bytes,
+  "$safeId.pdf",
+);
 }
 
 // ================= MODERN UI COMPONENTS =================
