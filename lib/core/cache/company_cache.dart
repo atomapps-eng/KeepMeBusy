@@ -24,12 +24,10 @@ class CompanyCache {
   Future<List<Map<String, dynamic>>> getPartners(String companyId) async {
     // Cek cache
     if (_isPartnersCacheValid()) {
-      print("📦 Menggunakan cached partners");
       return _cachedPartners!;
     }
 
     // Fetch dari Firestore
-    print("📦 Fetching partners from Firestore");
     final snapshot = await FirebaseFirestore.instance
         .collection('companies')
         .doc(companyId)
@@ -51,11 +49,9 @@ class CompanyCache {
   // ========== SPARE PARTS CACHE ==========
   Future<List<Map<String, dynamic>>> getSpareParts(String companyId) async {
     if (_isSparePartsCacheValid()) {
-      print("📦 Menggunakan cached spare parts");
       return _cachedSpareParts!;
     }
 
-    print("📦 Fetching spare parts from Firestore");
     final snapshot = await FirebaseFirestore.instance
         .collection('companies')
         .doc(companyId)
@@ -77,11 +73,9 @@ class CompanyCache {
   // ========== TECHNICIANS CACHE ==========
   Future<List<String>> getTechnicians(String companyId) async {
     if (_isTechniciansCacheValid()) {
-      print("📦 Menggunakan cached technicians");
       return _cachedTechnicians!;
     }
 
-    print("📦 Fetching technicians from Firestore");
     final snapshot = await FirebaseFirestore.instance
         .collection('users')
         .where('companyIds', arrayContains: companyId)
@@ -112,7 +106,6 @@ class CompanyCache {
     _sparePartsLastFetch = null;
     _cachedTechnicians = null;
     _techniciansLastFetch = null;
-    print("📦 All company caches cleared");
   }
 
   void clearPartners() {
@@ -134,7 +127,6 @@ class CompanyCache {
   void setSpareParts(List<Map<String, dynamic>> parts) {
     _cachedSpareParts = parts;
     _sparePartsLastFetch = DateTime.now();
-    print("📦 Spare parts cache updated with ${parts.length} items");
   }
 
   // Method untuk append spare parts
@@ -144,7 +136,6 @@ class CompanyCache {
     }
     _cachedSpareParts!.addAll(newParts);
     _sparePartsLastFetch = DateTime.now();
-    print("📦 Appended ${newParts.length} items to spare parts cache");
   }
 
   // Method untuk update single spare part
@@ -157,7 +148,6 @@ class CompanyCache {
     
     if (index != -1) {
       _cachedSpareParts![index] = {..._cachedSpareParts![index], ...updatedData};
-      print("📦 Updated spare part in cache: $partCode");
     }
   }
 
@@ -168,6 +158,5 @@ class CompanyCache {
     _cachedSpareParts!.removeWhere(
       (part) => part['partCode'] == partCode || part['id'] == partCode
     );
-    print("📦 Removed spare part from cache: $partCode");
   }
 }

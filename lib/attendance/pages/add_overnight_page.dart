@@ -4,10 +4,8 @@ import '../services/overnight_helper.dart';
 import '../../pages/common/app_background_wrapper.dart';
 import '../services/overnight_service.dart';
 import '../models/overnight_entry.dart';
-import '../../services/partner_service.dart';
 import '../../models/partner.dart';
 import '../../pages/partners/partner_list_page.dart';
-import '../../theme/app_theme.dart';
 
 class AddOvernightPage extends StatefulWidget {
   final String employeeId;
@@ -161,13 +159,13 @@ class _AddOvernightPageState extends State<AddOvernightPage> {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    Colors.purple.withOpacity(0.2),
-                    Colors.purple.withOpacity(0.1),
+                    Colors.purple.withValues(alpha:0.2),
+                    Colors.purple.withValues(alpha:0.1),
                   ],
                 ),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: Colors.purple.withOpacity(0.3),
+                  color: Colors.purple.withValues(alpha:0.3),
                   width: 1,
                 ),
               ),
@@ -193,7 +191,7 @@ class _AddOvernightPageState extends State<AddOvernightPage> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(
-                    color: Colors.purple.withOpacity(0.1),
+                    color: Colors.purple.withValues(alpha:0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
@@ -216,12 +214,12 @@ class _AddOvernightPageState extends State<AddOvernightPage> {
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
-                Colors.white.withOpacity(0.2),
-                Colors.white.withOpacity(0.1),
+                Colors.white.withValues(alpha:0.2),
+                Colors.white.withValues(alpha:0.1),
               ],
             ),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.white.withOpacity(0.3)),
+            border: Border.all(color: Colors.white.withValues(alpha:0.3)),
           ),
           child: IconButton(
             icon: const Icon(Icons.arrow_back),
@@ -257,8 +255,8 @@ class _AddOvernightPageState extends State<AddOvernightPage> {
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
-                            Colors.purple.withOpacity(0.2),
-                            Colors.purple.withOpacity(0.1),
+                            Colors.purple.withValues(alpha:0.2),
+                            Colors.purple.withValues(alpha:0.1),
                           ],
                         ),
                         borderRadius: BorderRadius.circular(10),
@@ -325,13 +323,13 @@ class _AddOvernightPageState extends State<AddOvernightPage> {
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
-                        categoryColor.withOpacity(0.1),
-                        categoryColor.withOpacity(0.05),
+                        categoryColor.withValues(alpha:0.1),
+                        categoryColor.withValues(alpha:0.05),
                       ],
                     ),
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: categoryColor.withOpacity(0.3),
+                      color: categoryColor.withValues(alpha:0.3),
                       width: 1.5,
                     ),
                   ),
@@ -377,10 +375,10 @@ class _AddOvernightPageState extends State<AddOvernightPage> {
                             vertical: 14,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
+                            color: Colors.white.withValues(alpha:0.2),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                              color: categoryColor.withOpacity(0.3),
+                              color: categoryColor.withValues(alpha:0.3),
                             ),
                           ),
                           child: Row(
@@ -447,13 +445,13 @@ class _AddOvernightPageState extends State<AddOvernightPage> {
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
-                        Colors.purple.withOpacity(0.1),
-                        Colors.purple.withOpacity(0.05),
+                        Colors.purple.withValues(alpha:0.1),
+                        Colors.purple.withValues(alpha:0.05),
                       ],
                     ),
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: Colors.purple.withOpacity(0.3),
+                      color: Colors.purple.withValues(alpha:0.3),
                     ),
                   ),
                   child: Row(
@@ -461,7 +459,7 @@ class _AddOvernightPageState extends State<AddOvernightPage> {
                       Container(
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: Colors.purple.withOpacity(0.2),
+                          color: Colors.purple.withValues(alpha:0.2),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Icon(
@@ -561,8 +559,8 @@ class _AddOvernightPageState extends State<AddOvernightPage> {
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
-                            Colors.purple.withOpacity(0.2),
-                            Colors.purple.withOpacity(0.1),
+                            Colors.purple.withValues(alpha:0.2),
+                            Colors.purple.withValues(alpha:0.1),
                           ],
                         ),
                         borderRadius: BorderRadius.circular(10),
@@ -593,15 +591,15 @@ class _AddOvernightPageState extends State<AddOvernightPage> {
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
-                            Colors.purple.withOpacity(0.1),
-                            Colors.purple.withOpacity(0.05),
+                            Colors.purple.withValues(alpha:0.1),
+                            Colors.purple.withValues(alpha:0.05),
                           ],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                         ),
                         borderRadius: BorderRadius.circular(24),
                         border: Border.all(
-                          color: Colors.purple.withOpacity(0.3),
+                          color: Colors.purple.withValues(alpha:0.3),
                           width: 2,
                         ),
                       ),
@@ -611,7 +609,7 @@ class _AddOvernightPageState extends State<AddOvernightPage> {
                           Container(
                             padding: const EdgeInsets.all(20),
                             decoration: BoxDecoration(
-                              color: Colors.purple.withOpacity(0.15),
+                              color: Colors.purple.withValues(alpha:0.15),
                               shape: BoxShape.circle,
                             ),
                             child: Icon(
@@ -650,7 +648,7 @@ class _AddOvernightPageState extends State<AddOvernightPage> {
                                 vertical: 8,
                               ),
                               decoration: BoxDecoration(
-                                color: Colors.purple.withOpacity(0.2),
+                                color: Colors.purple.withValues(alpha:0.2),
                                 borderRadius: BorderRadius.circular(30),
                               ),
                               child: Text(
@@ -691,7 +689,7 @@ class _AddOvernightPageState extends State<AddOvernightPage> {
                                 vertical: 4,
                               ),
                               decoration: BoxDecoration(
-                                color: categoryColor.withOpacity(0.15),
+                                color: categoryColor.withValues(alpha:0.15),
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               child: Text(
@@ -740,8 +738,8 @@ class _AddOvernightPageState extends State<AddOvernightPage> {
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
-                            Colors.purple.withOpacity(0.2),
-                            Colors.purple.withOpacity(0.1),
+                            Colors.purple.withValues(alpha:0.2),
+                            Colors.purple.withValues(alpha:0.1),
                           ],
                         ),
                         borderRadius: BorderRadius.circular(10),
@@ -826,13 +824,13 @@ InkWell(
     decoration: BoxDecoration(
       gradient: LinearGradient(
         colors: [
-          categoryColor.withOpacity(0.15),
-          categoryColor.withOpacity(0.08),
+          categoryColor.withValues(alpha:0.15),
+          categoryColor.withValues(alpha:0.08),
         ],
       ),
       borderRadius: BorderRadius.circular(16),
       border: Border.all(
-        color: categoryColor.withOpacity(0.4),
+        color: categoryColor.withValues(alpha:0.4),
       ),
     ),
     child: Row(
@@ -840,7 +838,7 @@ InkWell(
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: categoryColor.withOpacity(0.15),
+            color: categoryColor.withValues(alpha:0.15),
             borderRadius: BorderRadius.circular(10),
           ),
           child: Icon(
@@ -858,7 +856,7 @@ InkWell(
                 'Customer',
                 style: TextStyle(
                   fontSize: 11,
-                  color: categoryColor.withOpacity(0.8),
+                  color: categoryColor.withValues(alpha:0.8),
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -871,7 +869,7 @@ InkWell(
                       : FontWeight.w500,
                   color: selectedPartner != null
                       ? categoryColor
-                      : categoryColor.withOpacity(0.7),
+                      : categoryColor.withValues(alpha:0.7),
                 ),
               ),
               if (selectedPartner != null) ...[
@@ -915,13 +913,13 @@ InkWell(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
-                        Colors.purple.withOpacity(0.1),
-                        Colors.purple.withOpacity(0.05),
+                        Colors.purple.withValues(alpha:0.1),
+                        Colors.purple.withValues(alpha:0.05),
                       ],
                     ),
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: Colors.purple.withOpacity(0.3),
+                      color: Colors.purple.withValues(alpha:0.3),
                     ),
                   ),
                   child: Row(
@@ -929,7 +927,7 @@ InkWell(
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: Colors.purple.withOpacity(0.15),
+                          color: Colors.purple.withValues(alpha:0.15),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Icon(
@@ -976,12 +974,12 @@ InkWell(
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  Colors.white.withOpacity(0.2),
-                  Colors.white.withOpacity(0.1),
+                  Colors.white.withValues(alpha:0.2),
+                  Colors.white.withValues(alpha:0.1),
                 ],
               ),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.white.withOpacity(0.3)),
+              border: Border.all(color: Colors.white.withValues(alpha:0.3)),
             ),
             child: Row(
               children: [
@@ -1042,8 +1040,8 @@ InkWell(
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
                             colors: [
-                              Colors.purple.withOpacity(0.2),
-                              Colors.purple.withOpacity(0.1),
+                              Colors.purple.withValues(alpha:0.2),
+                              Colors.purple.withValues(alpha:0.1),
                             ],
                           ),
                           borderRadius: BorderRadius.circular(10),
@@ -1071,13 +1069,13 @@ InkWell(
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
-                          Colors.purple.withOpacity(0.1),
-                          Colors.purple.withOpacity(0.05),
+                          Colors.purple.withValues(alpha:0.1),
+                          Colors.purple.withValues(alpha:0.05),
                         ],
                       ),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: Colors.purple.withOpacity(0.3),
+                        color: Colors.purple.withValues(alpha:0.3),
                       ),
                     ),
                     child: Column(
@@ -1107,7 +1105,7 @@ InkWell(
                             Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: Colors.purple.withOpacity(0.15),
+                                color: Colors.purple.withValues(alpha:0.15),
                                 shape: BoxShape.circle,
                               ),
                               child: const Icon(
@@ -1155,7 +1153,7 @@ InkWell(
                                 vertical: 2,
                               ),
                               decoration: BoxDecoration(
-                                color: categoryColor.withOpacity(0.15),
+                                color: categoryColor.withValues(alpha:0.15),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Text(
@@ -1195,13 +1193,13 @@ InkWell(
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              color.withOpacity(0.1),
-              color.withOpacity(0.05),
+              color.withValues(alpha:0.1),
+              color.withValues(alpha:0.05),
             ],
           ),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: color.withOpacity(0.3),
+            color: color.withValues(alpha:0.3),
             width: 1.5,
           ),
         ),
@@ -1210,7 +1208,7 @@ InkWell(
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.15),
+                color: color.withValues(alpha:0.15),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(icon, color: color, size: 20),
@@ -1267,13 +1265,13 @@ InkWell(
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              color.withOpacity(0.1),
-              color.withOpacity(0.05),
+              color.withValues(alpha:0.1),
+              color.withValues(alpha:0.05),
             ],
           ),
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: color.withOpacity(0.3),
+            color: color.withValues(alpha:0.3),
           ),
         ),
         child: Row(
@@ -1329,14 +1327,14 @@ Widget _glass(Widget child) {
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              Colors.white.withOpacity(0.3),
-              Colors.white.withOpacity(0.15),
+              Colors.white.withValues(alpha:0.3),
+              Colors.white.withValues(alpha:0.15),
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.white.withOpacity(0.4)),
+          border: Border.all(color: Colors.white.withValues(alpha:0.4)),
         ),
         child: child,
       ),

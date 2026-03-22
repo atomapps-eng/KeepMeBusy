@@ -106,13 +106,13 @@ class _CreateTripPageState extends State<CreateTripPage> {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    Colors.blue.withOpacity(0.2),
-                    Colors.blue.withOpacity(0.1),
+                    Colors.blue.withValues(alpha:0.2),
+                    Colors.blue.withValues(alpha:0.1),
                   ],
                 ),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: Colors.blue.withOpacity(0.3),
+                  color: Colors.blue.withValues(alpha:0.3),
                   width: 1,
                 ),
               ),
@@ -136,7 +136,7 @@ class _CreateTripPageState extends State<CreateTripPage> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(
-                    color: Colors.blue.withOpacity(0.1),
+                    color: Colors.blue.withValues(alpha:0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
@@ -159,12 +159,12 @@ class _CreateTripPageState extends State<CreateTripPage> {
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
-                Colors.white.withOpacity(0.2),
-                Colors.white.withOpacity(0.1),
+                Colors.white.withValues(alpha:0.2),
+                Colors.white.withValues(alpha:0.1),
               ],
             ),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.white.withOpacity(0.3)),
+            border: Border.all(color: Colors.white.withValues(alpha:0.3)),
           ),
           child: IconButton(
             icon: const Icon(Icons.arrow_back),
@@ -201,8 +201,8 @@ class _CreateTripPageState extends State<CreateTripPage> {
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
                             colors: [
-                              Colors.blue.withOpacity(0.2),
-                              Colors.blue.withOpacity(0.1),
+                              Colors.blue.withValues(alpha:0.2),
+                              Colors.blue.withValues(alpha:0.1),
                             ],
                           ),
                           borderRadius: BorderRadius.circular(10),
@@ -229,7 +229,7 @@ class _CreateTripPageState extends State<CreateTripPage> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.grey.withOpacity(0.05),
+                      color: Colors.grey.withValues(alpha:0.05),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(color: Colors.grey.shade300),
                     ),
@@ -273,13 +273,13 @@ class _CreateTripPageState extends State<CreateTripPage> {
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
-                          Colors.green.withOpacity(0.1),
-                          Colors.green.withOpacity(0.05),
+                          Colors.green.withValues(alpha:0.1),
+                          Colors.green.withValues(alpha:0.05),
                         ],
                       ),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: Colors.green.withOpacity(0.3),
+                        color: Colors.green.withValues(alpha:0.3),
                         width: 1.5,
                       ),
                     ),
@@ -325,10 +325,10 @@ class _CreateTripPageState extends State<CreateTripPage> {
                               vertical: 14,
                             ),
                             decoration: BoxDecoration(
-                              color: Colors.green.withOpacity(0.08),
+                              color: Colors.green.withValues(alpha:0.08),
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
-                                color: Colors.green.withOpacity(0.3),
+                                color: Colors.green.withValues(alpha:0.3),
                               ),
                             ),
                             child: Row(
@@ -351,7 +351,7 @@ class _CreateTripPageState extends State<CreateTripPage> {
                                           'Select Client',
                                           style: TextStyle(
                                             fontSize: 14,
-                                            color: Colors.green.withOpacity(0.7),
+                                            color: Colors.green.withValues(alpha:0.7),
                                             fontWeight: FontWeight.w500,
                                           ),
                                         ),
@@ -406,13 +406,13 @@ class _CreateTripPageState extends State<CreateTripPage> {
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
                                 colors: [
-                                  Colors.green.withOpacity(0.1),
-                                  Colors.green.withOpacity(0.05),
+                                  Colors.green.withValues(alpha:0.1),
+                                  Colors.green.withValues(alpha:0.05),
                                 ],
                               ),
                               borderRadius: BorderRadius.circular(16),
                               border: Border.all(
-                                color: Colors.green.withOpacity(0.3),
+                                color: Colors.green.withValues(alpha:0.3),
                                 width: 1.5,
                               ),
                             ),
@@ -421,7 +421,7 @@ class _CreateTripPageState extends State<CreateTripPage> {
                                 Container(
                                   padding: const EdgeInsets.all(8),
                                   decoration: BoxDecoration(
-                                    color: Colors.green.withOpacity(0.15),
+                                    color: Colors.green.withValues(alpha:0.15),
                                     borderRadius: BorderRadius.circular(10),
                                   ),
                                   child: const Icon(Icons.calendar_today, color: Colors.green, size: 18),
@@ -486,13 +486,13 @@ class _CreateTripPageState extends State<CreateTripPage> {
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
                                 colors: [
-                                  Colors.red.withOpacity(0.1),
-                                  Colors.red.withOpacity(0.05),
+                                  Colors.red.withValues(alpha:0.1),
+                                  Colors.red.withValues(alpha:0.05),
                                 ],
                               ),
                               borderRadius: BorderRadius.circular(16),
                               border: Border.all(
-                                color: Colors.red.withOpacity(0.3),
+                                color: Colors.red.withValues(alpha:0.3),
                                 width: 1.5,
                               ),
                             ),
@@ -501,7 +501,7 @@ class _CreateTripPageState extends State<CreateTripPage> {
                                 Container(
                                   padding: const EdgeInsets.all(8),
                                   decoration: BoxDecoration(
-                                    color: Colors.red.withOpacity(0.15),
+                                    color: Colors.red.withValues(alpha:0.15),
                                     borderRadius: BorderRadius.circular(10),
                                   ),
                                   child: const Icon(Icons.calendar_month, color: Colors.red, size: 18),
@@ -547,7 +547,7 @@ class _CreateTripPageState extends State<CreateTripPage> {
                         child: Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: Colors.grey.withOpacity(0.05),
+                            color: Colors.grey.withValues(alpha:0.05),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(color: Colors.grey.shade300),
                           ),
@@ -598,7 +598,7 @@ class _CreateTripPageState extends State<CreateTripPage> {
                         child: Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: Colors.grey.withOpacity(0.05),
+                            color: Colors.grey.withValues(alpha:0.05),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(color: Colors.grey.shade300),
                           ),
@@ -701,8 +701,8 @@ class _CreateTripPageState extends State<CreateTripPage> {
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
-                            Colors.purple.withOpacity(0.2),
-                            Colors.purple.withOpacity(0.1),
+                            Colors.purple.withValues(alpha:0.2),
+                            Colors.purple.withValues(alpha:0.1),
                           ],
                         ),
                         borderRadius: BorderRadius.circular(10),
@@ -733,15 +733,15 @@ class _CreateTripPageState extends State<CreateTripPage> {
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
-                            Colors.blue.withOpacity(0.1),
-                            Colors.blue.withOpacity(0.05),
+                            Colors.blue.withValues(alpha:0.1),
+                            Colors.blue.withValues(alpha:0.05),
                           ],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                         ),
                         borderRadius: BorderRadius.circular(24),
                         border: Border.all(
-                          color: Colors.blue.withOpacity(0.3),
+                          color: Colors.blue.withValues(alpha:0.3),
                           width: 2,
                         ),
                       ),
@@ -752,7 +752,7 @@ class _CreateTripPageState extends State<CreateTripPage> {
                           Container(
                             padding: const EdgeInsets.all(20),
                             decoration: BoxDecoration(
-                              color: Colors.blue.withOpacity(0.15),
+                              color: Colors.blue.withValues(alpha:0.15),
                               shape: BoxShape.circle,
                             ),
                             child: Icon(
@@ -786,7 +786,7 @@ class _CreateTripPageState extends State<CreateTripPage> {
                                 vertical: 8,
                               ),
                               decoration: BoxDecoration(
-                                color: Colors.green.withOpacity(0.1),
+                                color: Colors.green.withValues(alpha:0.1),
                                 borderRadius: BorderRadius.circular(30),
                               ),
                               child: Row(
@@ -831,7 +831,7 @@ class _CreateTripPageState extends State<CreateTripPage> {
                             Container(
                               padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
-                                color: Colors.orange.withOpacity(0.1),
+                                color: Colors.orange.withValues(alpha:0.1),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Row(
@@ -894,7 +894,7 @@ class _CreateTripPageState extends State<CreateTripPage> {
                               vertical: 6,
                             ),
                             decoration: BoxDecoration(
-                              color: Colors.purple.withOpacity(0.1),
+                              color: Colors.purple.withValues(alpha:0.1),
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Text(
@@ -935,8 +935,8 @@ class _CreateTripPageState extends State<CreateTripPage> {
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
-                            Colors.blue.withOpacity(0.2),
-                            Colors.blue.withOpacity(0.1),
+                            Colors.blue.withValues(alpha:0.2),
+                            Colors.blue.withValues(alpha:0.1),
                           ],
                         ),
                         borderRadius: BorderRadius.circular(10),
@@ -998,13 +998,13 @@ class _CreateTripPageState extends State<CreateTripPage> {
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
-                          Colors.green.withOpacity(0.1),
-                          Colors.green.withOpacity(0.05),
+                          Colors.green.withValues(alpha:0.1),
+                          Colors.green.withValues(alpha:0.05),
                         ],
                       ),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: Colors.green.withOpacity(0.3),
+                        color: Colors.green.withValues(alpha:0.3),
                       ),
                     ),
                     child: Row(
@@ -1012,7 +1012,7 @@ class _CreateTripPageState extends State<CreateTripPage> {
                         Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: Colors.green.withOpacity(0.15),
+                            color: Colors.green.withValues(alpha:0.15),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: const Icon(
@@ -1030,7 +1030,7 @@ class _CreateTripPageState extends State<CreateTripPage> {
                                 'Client',
                                 style: TextStyle(
                                   fontSize: 11,
-                                  color: Colors.green.withOpacity(0.8),
+                                  color: Colors.green.withValues(alpha:0.8),
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
@@ -1043,7 +1043,7 @@ class _CreateTripPageState extends State<CreateTripPage> {
                                       : FontWeight.w500,
                                   color: partnerName != null
                                       ? Colors.green.shade700
-                                      : Colors.green.withOpacity(0.7),
+                                      : Colors.green.withValues(alpha:0.7),
                                 ),
                               ),
                             ],
@@ -1079,13 +1079,13 @@ class _CreateTripPageState extends State<CreateTripPage> {
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
-                          Colors.green.withOpacity(0.1),
-                          Colors.green.withOpacity(0.05),
+                          Colors.green.withValues(alpha:0.1),
+                          Colors.green.withValues(alpha:0.05),
                         ],
                       ),
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(
-                        color: Colors.green.withOpacity(0.3),
+                        color: Colors.green.withValues(alpha:0.3),
                       ),
                     ),
                     child: Row(
@@ -1143,13 +1143,13 @@ class _CreateTripPageState extends State<CreateTripPage> {
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
-                          Colors.red.withOpacity(0.1),
-                          Colors.red.withOpacity(0.05),
+                          Colors.red.withValues(alpha:0.1),
+                          Colors.red.withValues(alpha:0.05),
                         ],
                       ),
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(
-                        color: Colors.red.withOpacity(0.3),
+                        color: Colors.red.withValues(alpha:0.3),
                       ),
                     ),
                     child: Row(
@@ -1258,8 +1258,8 @@ class _CreateTripPageState extends State<CreateTripPage> {
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
                             colors: [
-                              Colors.purple.withOpacity(0.2),
-                              Colors.purple.withOpacity(0.1),
+                              Colors.purple.withValues(alpha:0.2),
+                              Colors.purple.withValues(alpha:0.1),
                             ],
                           ),
                           borderRadius: BorderRadius.circular(10),
@@ -1287,13 +1287,13 @@ class _CreateTripPageState extends State<CreateTripPage> {
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
-                          Colors.blue.withOpacity(0.1),
-                          Colors.blue.withOpacity(0.05),
+                          Colors.blue.withValues(alpha:0.1),
+                          Colors.blue.withValues(alpha:0.05),
                         ],
                       ),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: Colors.blue.withOpacity(0.3),
+                        color: Colors.blue.withValues(alpha:0.3),
                       ),
                     ),
                     child: Column(
@@ -1303,7 +1303,7 @@ class _CreateTripPageState extends State<CreateTripPage> {
                             Container(
                               padding: const EdgeInsets.all(10),
                               decoration: BoxDecoration(
-                                color: Colors.blue.withOpacity(0.15),
+                                color: Colors.blue.withValues(alpha:0.15),
                                 shape: BoxShape.circle,
                               ),
                               child: Icon(
@@ -1387,7 +1387,7 @@ class _CreateTripPageState extends State<CreateTripPage> {
                                     vertical: 2,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: Colors.purple.withOpacity(0.1),
+                                    color: Colors.purple.withValues(alpha:0.1),
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: Text(
@@ -1418,12 +1418,12 @@ class _CreateTripPageState extends State<CreateTripPage> {
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  Colors.white.withOpacity(0.2),
-                  Colors.white.withOpacity(0.1),
+                  Colors.white.withValues(alpha:0.2),
+                  Colors.white.withValues(alpha:0.1),
                 ],
               ),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.white.withOpacity(0.3)),
+              border: Border.all(color: Colors.white.withValues(alpha:0.3)),
             ),
             child: Row(
               children: [
@@ -1480,14 +1480,14 @@ Widget _glass(Widget child) {
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              Colors.white.withOpacity(0.3),
-              Colors.white.withOpacity(0.15),
+              Colors.white.withValues(alpha:0.3),
+              Colors.white.withValues(alpha:0.15),
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.white.withOpacity(0.4)),
+          border: Border.all(color: Colors.white.withValues(alpha:0.4)),
         ),
         child: child,
       ),

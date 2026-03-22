@@ -8,12 +8,10 @@ import 'activity_form_page.dart';
 import '../../pages/common/app_background_wrapper.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../core/session/company_session.dart';
-import '../../services/partner_service.dart';
 import '../../models/partner.dart';
 import '../models/activity_entry.dart';
 import '../models/factory_visit.dart';
 import '../../pages/partners/partner_list_page.dart';
-import '../../theme/app_theme.dart';
 
 class AttendanceInputPage extends StatefulWidget {
   final String employeeId;
@@ -326,7 +324,7 @@ class _AttendanceInputPageState extends State<AttendanceInputPage> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: statusColor.withOpacity(0.1),
+                color: statusColor.withValues(alpha:0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
@@ -362,7 +360,7 @@ class _AttendanceInputPageState extends State<AttendanceInputPage> {
         leading: Container(
           margin: const EdgeInsets.only(left: 8),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.2),
+            color: Colors.white.withValues(alpha:0.2),
             borderRadius: BorderRadius.circular(12),
           ),
           child: IconButton(
@@ -399,7 +397,7 @@ class _AttendanceInputPageState extends State<AttendanceInputPage> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: statusColor.withOpacity(0.1),
+                color: statusColor.withValues(alpha:0.1),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(
@@ -425,7 +423,7 @@ class _AttendanceInputPageState extends State<AttendanceInputPage> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.grey.withOpacity(0.05),
+                    color: Colors.grey.withValues(alpha:0.05),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: Colors.grey.shade300),
                   ),
@@ -484,7 +482,7 @@ class _AttendanceInputPageState extends State<AttendanceInputPage> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.grey.withOpacity(0.05),
+                      color: Colors.grey.withValues(alpha:0.05),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(color: Colors.grey.shade300),
                     ),
@@ -526,7 +524,7 @@ class _AttendanceInputPageState extends State<AttendanceInputPage> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.grey.withOpacity(0.05),
+                      color: Colors.grey.withValues(alpha:0.05),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(color: Colors.grey.shade300),
                     ),
@@ -559,9 +557,9 @@ class _AttendanceInputPageState extends State<AttendanceInputPage> {
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                             decoration: BoxDecoration(
-                              color: Colors.blue.withOpacity(0.05),
+                              color: Colors.blue.withValues(alpha:0.05),
                               borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: Colors.blue.withOpacity(0.3)),
+                              border: Border.all(color: Colors.blue.withValues(alpha:0.3)),
                             ),
                             child: Row(
                               children: [
@@ -604,7 +602,7 @@ class _AttendanceInputPageState extends State<AttendanceInputPage> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.grey.withOpacity(0.05),
+                      color: Colors.grey.withValues(alpha:0.05),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(color: Colors.grey.shade300),
                     ),
@@ -666,7 +664,7 @@ class _AttendanceInputPageState extends State<AttendanceInputPage> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.grey.withOpacity(0.05),
+                    color: Colors.grey.withValues(alpha:0.05),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: Colors.grey.shade300),
                   ),
@@ -778,9 +776,9 @@ class _AttendanceInputPageState extends State<AttendanceInputPage> {
                   margin: const EdgeInsets.only(bottom: 16),
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
+                    color: Colors.white.withValues(alpha:0.2),
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.white.withOpacity(0.3)),
+                    border: Border.all(color: Colors.white.withValues(alpha:0.3)),
                   ),
                   child: Row(
                     children: [
@@ -835,7 +833,7 @@ class _AttendanceInputPageState extends State<AttendanceInputPage> {
                           Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: Colors.purple.withOpacity(0.1),
+                              color: Colors.purple.withValues(alpha:0.1),
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: const Icon(
@@ -857,7 +855,7 @@ class _AttendanceInputPageState extends State<AttendanceInputPage> {
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                               decoration: BoxDecoration(
-                                color: Colors.purple.withOpacity(0.1),
+                                color: Colors.purple.withValues(alpha:0.1),
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               child: Text(
@@ -916,9 +914,9 @@ class _AttendanceInputPageState extends State<AttendanceInputPage> {
                                     margin: const EdgeInsets.only(bottom: 8),
                                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                                     decoration: BoxDecoration(
-                                      color: Colors.blue.withOpacity(0.1),
+                                      color: Colors.blue.withValues(alpha:0.1),
                                       borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(color: Colors.blue.withOpacity(0.2)),
+                                      border: Border.all(color: Colors.blue.withValues(alpha:0.2)),
                                     ),
                                     child: Row(
                                       children: [
@@ -988,7 +986,7 @@ class _AttendanceInputPageState extends State<AttendanceInputPage> {
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: statusColor.withOpacity(0.1),
+                        color: statusColor.withValues(alpha:0.1),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Icon(
@@ -1097,9 +1095,9 @@ class _AttendanceInputPageState extends State<AttendanceInputPage> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                       decoration: BoxDecoration(
-                        color: Colors.blue.withOpacity(0.05),
+                        color: Colors.blue.withValues(alpha:0.05),
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.blue.withOpacity(0.3)),
+                        border: Border.all(color: Colors.blue.withValues(alpha:0.3)),
                       ),
                       child: Row(
                         children: [
@@ -1185,9 +1183,9 @@ class _AttendanceInputPageState extends State<AttendanceInputPage> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
+              color: Colors.white.withValues(alpha:0.2),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.white.withOpacity(0.3)),
+              border: Border.all(color: Colors.white.withValues(alpha:0.3)),
             ),
             child: Row(
               children: [
@@ -1270,7 +1268,7 @@ class _AttendanceInputPageState extends State<AttendanceInputPage> {
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: Colors.purple.withOpacity(0.1),
+                          color: Colors.purple.withValues(alpha:0.1),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: const Icon(Icons.bolt, color: Colors.purple, size: 20),
@@ -1288,7 +1286,7 @@ class _AttendanceInputPageState extends State<AttendanceInputPage> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                           decoration: BoxDecoration(
-                            color: Colors.purple.withOpacity(0.1),
+                            color: Colors.purple.withValues(alpha:0.1),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
@@ -1371,9 +1369,9 @@ class _AttendanceInputPageState extends State<AttendanceInputPage> {
                             margin: const EdgeInsets.only(bottom: 8),
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                             decoration: BoxDecoration(
-                              color: Colors.blue.withOpacity(0.1),
+                              color: Colors.blue.withValues(alpha:0.1),
                               borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: Colors.blue.withOpacity(0.2)),
+                              border: Border.all(color: Colors.blue.withValues(alpha:0.2)),
                             ),
                             child: Row(
                               children: [
@@ -1445,7 +1443,7 @@ class _AttendanceInputPageState extends State<AttendanceInputPage> {
         padding: const EdgeInsets.symmetric(vertical: 10),
         decoration: BoxDecoration(
           color: isSelected 
-              ? (loc == AttendanceLocation.office ? Colors.green : Colors.orange).withOpacity(0.2)
+              ? (loc == AttendanceLocation.office ? Colors.green : Colors.orange).withValues(alpha:0.2)
               : Colors.transparent,
           borderRadius: BorderRadius.circular(30),
           border: Border.all(
@@ -1476,9 +1474,9 @@ class _AttendanceInputPageState extends State<AttendanceInputPage> {
       child: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.05),
+          color: color.withValues(alpha:0.05),
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: color.withOpacity(0.3)),
+          border: Border.all(color: color.withValues(alpha:0.3)),
         ),
         child: Column(
           children: [
@@ -1516,7 +1514,7 @@ class _AttendanceInputPageState extends State<AttendanceInputPage> {
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
+        color: Colors.white.withValues(alpha:0.1),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.grey.shade300),
       ),
@@ -1626,7 +1624,7 @@ class _AttendanceInputPageState extends State<AttendanceInputPage> {
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
+        color: Colors.white.withValues(alpha:0.1),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.grey.shade300),
       ),
@@ -1767,9 +1765,9 @@ Widget _glass(Widget child) {
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.3),
+          color: Colors.white.withValues(alpha:0.3),
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.white.withOpacity(0.4)),
+          border: Border.all(color: Colors.white.withValues(alpha:0.4)),
         ),
         child: child,
       ),

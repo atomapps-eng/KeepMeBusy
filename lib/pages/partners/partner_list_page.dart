@@ -252,7 +252,7 @@ class _PartnerListPageState extends State<PartnerListPage> with TickerProviderSt
                   _selectedFilter = filter;
                 });
               },
-              backgroundColor: Colors.white.withOpacity(0.2),
+              backgroundColor: Colors.white.withValues(alpha:0.2),
               selectedColor: Colors.blueGrey.shade300,
               checkmarkColor: Colors.white,
               labelStyle: TextStyle(
@@ -260,7 +260,7 @@ class _PartnerListPageState extends State<PartnerListPage> with TickerProviderSt
               ),
               shape: StadiumBorder(
                 side: BorderSide(
-                  color: Colors.white.withOpacity(0.5),
+                  color: Colors.white.withValues(alpha:0.5),
                 ),
               ),
             ),
@@ -323,7 +323,7 @@ class _PartnerListPageState extends State<PartnerListPage> with TickerProviderSt
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: Colors.white.withOpacity(0.2),
+              color: Colors.white.withValues(alpha:0.2),
             ),
             child: const Icon(
               Icons.business_center,
@@ -396,7 +396,7 @@ class _PartnerListPageState extends State<PartnerListPage> with TickerProviderSt
               Container(
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.white.withOpacity(0.3),
+                  color: Colors.white.withValues(alpha:0.3),
                 ),
                 child: IconButton(
                   icon: const Icon(Icons.arrow_back),
@@ -415,7 +415,7 @@ class _PartnerListPageState extends State<PartnerListPage> with TickerProviderSt
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.3),
+                  color: Colors.white.withValues(alpha:0.3),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: const Icon(Icons.more_vert, size: 18),
@@ -489,7 +489,7 @@ class _StatisticItem extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.2),
+            color: color.withValues(alpha:0.2),
             shape: BoxShape.circle,
           ),
           child: Icon(icon, color: color, size: 20),
@@ -528,7 +528,7 @@ class _ShimmerLoadingList extends StatelessWidget {
           margin: const EdgeInsets.only(bottom: 12),
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.3),
+            color: Colors.white.withValues(alpha:0.3),
             borderRadius: BorderRadius.circular(14),
           ),
           child: Row(
@@ -537,7 +537,7 @@ class _ShimmerLoadingList extends StatelessWidget {
                 width: 56,
                 height: 56,
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.5),
+                  color: Colors.white.withValues(alpha:0.5),
                   borderRadius: BorderRadius.circular(10),
                 ),
               ),
@@ -550,7 +550,7 @@ class _ShimmerLoadingList extends StatelessWidget {
                       width: double.infinity,
                       height: 16,
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.5),
+                        color: Colors.white.withValues(alpha:0.5),
                         borderRadius: BorderRadius.circular(4),
                       ),
                     ),
@@ -559,7 +559,7 @@ class _ShimmerLoadingList extends StatelessWidget {
                       width: 150,
                       height: 12,
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.5),
+                        color: Colors.white.withValues(alpha:0.5),
                         borderRadius: BorderRadius.circular(4),
                       ),
                     ),
@@ -591,7 +591,7 @@ class _PartnerItem extends StatelessWidget {
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.1),
+                color: Colors.black.withValues(alpha:0.1),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
@@ -641,9 +641,9 @@ class _PartnerItem extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                     decoration: BoxDecoration(
-                      color: Colors.green.withOpacity(0.2),
+                      color: Colors.green.withValues(alpha:0.2),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.green.withOpacity(0.3)),
+                      border: Border.all(color: Colors.green.withValues(alpha:0.3)),
                     ),
                     child: const Text(
                       'Active',
@@ -670,7 +670,7 @@ class _PartnerItem extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Colors.blueGrey.withOpacity(0.1),
+                  color: Colors.blueGrey.withValues(alpha:0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(

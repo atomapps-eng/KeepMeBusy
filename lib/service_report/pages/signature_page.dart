@@ -2,8 +2,6 @@
 import 'package:flutter/material.dart';
 import 'package:signature/signature.dart';
 import 'dart:typed_data';
-import 'package:image_picker/image_picker.dart'; // Untuk XFile
-import 'package:flutter/foundation.dart' show kIsWeb;
 
 class SignaturePage extends StatefulWidget {
   final Function(Uint8List) onSave; // Kirim bytes langsung
@@ -87,7 +85,6 @@ class _SignaturePageState extends State<SignaturePage> {
         Navigator.pop(context);
       }
     } catch (e) {
-      print("Error saving signature: $e");
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Error: $e")),
       );

@@ -307,20 +307,14 @@ Stream<Map<String, dynamic>> dashboardStatsStream() {
   final userProfile = await _getUserProfile();
 
   if (userProfile == null) {
-    print("USER PROFILE NULL");
     return;
   }
 
   final accessLevel = userProfile['accessLevel'];
-
-  print("ACCESS LEVEL = $accessLevel");
-
   final now = DateTime.now();
   final period = AttendancePeriodHelper.resolvePeriod(now);
 
   if (accessLevel == 'admin_countries') {
-
-    print("OPEN ADMIN PAGE");
 
     Navigator.push(
       context,
@@ -330,8 +324,6 @@ Stream<Map<String, dynamic>> dashboardStatsStream() {
     );
 
   } else {
-
-    print("OPEN NORMAL ATTENDANCE");
 
     Navigator.push(
       context,
@@ -577,7 +569,6 @@ Future<void> _switchCompany(BuildContext context) async {
       ),
     );
   } catch (e) {
-    print('Error switching company: $e');
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Gagal switch company: $e')),
     );

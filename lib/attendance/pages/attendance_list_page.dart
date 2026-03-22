@@ -99,7 +99,7 @@ class _AttendanceListPageState extends State<AttendanceListPage> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
+                color: Colors.white.withValues(alpha:0.2),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: const Icon(
@@ -137,7 +137,7 @@ class _AttendanceListPageState extends State<AttendanceListPage> {
           icon: Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
+              color: Colors.white.withValues(alpha:0.2),
               borderRadius: BorderRadius.circular(10),
             ),
             child: const Icon(Icons.arrow_back, size: 18),
@@ -163,11 +163,11 @@ class _AttendanceListPageState extends State<AttendanceListPage> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.95),
+        color: Colors.white.withValues(alpha:0.95),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.shade200.withOpacity(0.5),
+            color: Colors.grey.shade200.withValues(alpha:0.5),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -376,7 +376,7 @@ class _AttendanceListPageState extends State<AttendanceListPage> {
                 Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.9),
+                    color: Colors.white.withValues(alpha:0.9),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
@@ -429,7 +429,7 @@ class _AttendanceListPageState extends State<AttendanceListPage> {
                 Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.9),
+                    color: Colors.white.withValues(alpha:0.9),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
@@ -498,11 +498,11 @@ class _AttendanceListPageState extends State<AttendanceListPage> {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.95),
+        color: Colors.white.withValues(alpha:0.95),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.shade200.withOpacity(0.5),
+            color: Colors.grey.shade200.withValues(alpha:0.5),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -566,7 +566,7 @@ class _AttendanceListPageState extends State<AttendanceListPage> {
                                     vertical: 2,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: statusColor.withOpacity(0.1),
+                                    color: statusColor.withValues(alpha:0.1),
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: Text(

@@ -95,7 +95,7 @@ class SelectCompanyPage extends StatelessWidget {
     Container(
       margin: const EdgeInsets.only(right: 8),
       decoration: BoxDecoration(
-        color: AppTheme.errorColor.withOpacity(0.1),
+        color: AppTheme.errorColor.withValues(alpha:0.1),
         borderRadius: BorderRadius.circular(12),
       ),
       child: IconButton(
@@ -297,16 +297,16 @@ Widget _buildCompanyCard(
   gradient: LinearGradient(
     colors: [
       AppTheme.surfaceColor,
-      AppTheme.surfaceColor.withOpacity(0.9),
+      AppTheme.surfaceColor.withValues(alpha:0.9),
     ],
   ),
   borderRadius: BorderRadius.circular(24),
   border: Border.all(
-    color: AppTheme.primaryColor.withOpacity(0.1),
+    color: AppTheme.primaryColor.withValues(alpha:0.1),
   ),
   boxShadow: [
     BoxShadow(
-      color: Colors.black.withOpacity(0.05),
+      color: Colors.black.withValues(alpha:0.05),
       blurRadius: 12,
       offset: const Offset(0, 4),
     ),
@@ -325,7 +325,7 @@ Container(
   width: 70,
   height: 70,
   decoration: BoxDecoration(
-    color: companyColor.withOpacity(0.1),
+    color: companyColor.withValues(alpha:0.1),
     borderRadius: BorderRadius.circular(16),
   ),
   child: Center(
@@ -378,7 +378,7 @@ Container(
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: companyColor.withOpacity(0.1),
+                    color: companyColor.withValues(alpha:0.1),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(

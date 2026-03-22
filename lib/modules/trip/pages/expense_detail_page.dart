@@ -58,13 +58,13 @@ Future<void> downloadFile(String url) async {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    categoryColor.withOpacity(0.2),
-                    categoryColor.withOpacity(0.1),
+                    categoryColor.withValues(alpha:0.2),
+                    categoryColor.withValues(alpha:0.1),
                   ],
                 ),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: categoryColor.withOpacity(0.3),
+                  color: categoryColor.withValues(alpha:0.3),
                   width: 1,
                 ),
               ),
@@ -88,7 +88,7 @@ Future<void> downloadFile(String url) async {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(
-                    color: categoryColor.withOpacity(0.1),
+                    color: categoryColor.withValues(alpha:0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
@@ -111,12 +111,12 @@ Future<void> downloadFile(String url) async {
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
-                Colors.white.withOpacity(0.2),
-                Colors.white.withOpacity(0.1),
+                Colors.white.withValues(alpha:0.2),
+                Colors.white.withValues(alpha:0.1),
               ],
             ),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.white.withOpacity(0.3)),
+            border: Border.all(color: Colors.white.withValues(alpha:0.3)),
           ),
           child: IconButton(
             icon: const Icon(Icons.arrow_back),
@@ -141,8 +141,8 @@ Future<void> downloadFile(String url) async {
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
                               colors: [
-                                categoryColor.withOpacity(0.2),
-                                categoryColor.withOpacity(0.1),
+                                categoryColor.withValues(alpha:0.2),
+                                categoryColor.withValues(alpha:0.1),
                               ],
                             ),
                             borderRadius: BorderRadius.circular(10),
@@ -209,7 +209,7 @@ Future<void> downloadFile(String url) async {
                       width: double.infinity,
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.grey.withOpacity(0.05),
+                        color: Colors.grey.withValues(alpha:0.05),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: Colors.grey.shade300),
                       ),
@@ -237,8 +237,8 @@ Future<void> downloadFile(String url) async {
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
                                 colors: [
-                                  Colors.orange.withOpacity(0.2),
-                                  Colors.orange.withOpacity(0.1),
+                                  Colors.orange.withValues(alpha:0.2),
+                                  Colors.orange.withValues(alpha:0.1),
                                 ],
                               ),
                               borderRadius: BorderRadius.circular(10),
@@ -266,7 +266,7 @@ Future<void> downloadFile(String url) async {
                           constraints: const BoxConstraints(maxHeight: 300),
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: Colors.grey.withOpacity(0.05),
+                            color: Colors.grey.withValues(alpha:0.05),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(color: Colors.grey.shade300),
                           ),
@@ -295,7 +295,7 @@ Future<void> downloadFile(String url) async {
                                 Container(
                                   height: 150,
                                   decoration: BoxDecoration(
-                                    color: Colors.red.withOpacity(0.05),
+                                    color: Colors.red.withValues(alpha:0.05),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: const Center(
@@ -334,7 +334,6 @@ Future<void> downloadFile(String url) async {
                                 icon: const Icon(Icons.download, size: 18),
                                 label: const Text('Download Receipt'),
                                 onPressed: () {
-                                  print(expense.receiptUrl);
                                   downloadFile(expense.receiptUrl);
                                 },
                               ),
@@ -366,7 +365,7 @@ Future<void> downloadFile(String url) async {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha:0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(icon, size: 16, color: color),
@@ -413,14 +412,14 @@ Widget _glass(Widget child) {
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              Colors.white.withOpacity(0.3),
-              Colors.white.withOpacity(0.15),
+              Colors.white.withValues(alpha:0.3),
+              Colors.white.withValues(alpha:0.15),
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.white.withOpacity(0.4)),
+          border: Border.all(color: Colors.white.withValues(alpha:0.4)),
         ),
         child: child,
       ),

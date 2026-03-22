@@ -21,19 +21,16 @@ class ReadTrackerService {
   void startTracking() {
     _isTracking = true;
     _readLogs.clear();
-    print('📊 Read tracking started'); // GANTI DENGAN print
   }
 
   // Stop tracking
   void stopTracking() {
     _isTracking = false;
-    print('📊 Read tracking stopped. Total reads: ${_readLogs.length}'); // GANTI DENGAN print
   }
 
   // Clear logs
   void clearLogs() {
     _readLogs.clear();
-    print('📊 Read logs cleared'); // GANTI DENGAN print
   }
 
   // Track a read operation
@@ -61,8 +58,6 @@ class ReadTrackerService {
     if (_readLogs.length > _maxLogs) {
       _readLogs.removeAt(0);
     }
-
-    print('📖 READ: $page - $collection ($documentsCount docs)'); // GANTI DENGAN print
   }
 
   // Get analytics data

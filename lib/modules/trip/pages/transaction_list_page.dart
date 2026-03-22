@@ -51,13 +51,13 @@ class TransactionListPage extends StatelessWidget {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    Colors.purple.withOpacity(0.2),
-                    Colors.purple.withOpacity(0.1),
+                    Colors.purple.withValues(alpha:0.2),
+                    Colors.purple.withValues(alpha:0.1),
                   ],
                 ),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: Colors.purple.withOpacity(0.3),
+                  color: Colors.purple.withValues(alpha:0.3),
                   width: 1,
                 ),
               ),
@@ -84,12 +84,12 @@ class TransactionListPage extends StatelessWidget {
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
-                Colors.white.withOpacity(0.2),
-                Colors.white.withOpacity(0.1),
+                Colors.white.withValues(alpha:0.2),
+                Colors.white.withValues(alpha:0.1),
               ],
             ),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.white.withOpacity(0.3)),
+            border: Border.all(color: Colors.white.withValues(alpha:0.3)),
           ),
           child: IconButton(
             icon: const Icon(Icons.arrow_back),
@@ -132,10 +132,10 @@ class TransactionListPage extends StatelessWidget {
                     child: Container(
                       padding: const EdgeInsets.all(32),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.1),
+                        color: Colors.white.withValues(alpha:0.1),
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
-                          color: Colors.white.withOpacity(0.2),
+                          color: Colors.white.withValues(alpha:0.2),
                         ),
                       ),
                       child: Column(
@@ -144,7 +144,7 @@ class TransactionListPage extends StatelessWidget {
                           Container(
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              color: Colors.purple.withOpacity(0.1),
+                              color: Colors.purple.withValues(alpha:0.1),
                               shape: BoxShape.circle,
                             ),
                             child: Icon(
@@ -185,19 +185,19 @@ class TransactionListPage extends StatelessWidget {
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
-                            Colors.white.withOpacity(0.2),
-                            Colors.white.withOpacity(0.1),
+                            Colors.white.withValues(alpha:0.2),
+                            Colors.white.withValues(alpha:0.1),
                           ],
                         ),
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: Colors.white.withOpacity(0.3)),
+                        border: Border.all(color: Colors.white.withValues(alpha:0.3)),
                       ),
                       child: Row(
                         children: [
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                             decoration: BoxDecoration(
-                              color: Colors.purple.withOpacity(0.1),
+                              color: Colors.purple.withValues(alpha:0.1),
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Row(
@@ -223,7 +223,7 @@ class TransactionListPage extends StatelessWidget {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                             decoration: BoxDecoration(
-                              color: Colors.blue.withOpacity(0.1),
+                              color: Colors.blue.withValues(alpha:0.1),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: const Text(
@@ -337,12 +337,12 @@ Widget _buildTransactionCard(BuildContext context, TripLedgerItem item) {
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
-                Colors.white.withOpacity(0.15),
-                Colors.white.withOpacity(0.05),
+                Colors.white.withValues(alpha:0.15),
+                Colors.white.withValues(alpha:0.05),
               ],
             ),
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: color.withOpacity(0.3)),
+            border: Border.all(color: color.withValues(alpha:0.3)),
           ),
           child: Row(
             children: [
@@ -354,12 +354,12 @@ Widget _buildTransactionCard(BuildContext context, TripLedgerItem item) {
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      color.withOpacity(0.2),
-                      color.withOpacity(0.1),
+                      color.withValues(alpha:0.2),
+                      color.withValues(alpha:0.1),
                     ],
                   ),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: color.withOpacity(0.3)),
+                  border: Border.all(color: color.withValues(alpha:0.3)),
                 ),
                 child: Icon(
                   isDebit ? Icons.arrow_downward : Icons.arrow_upward,
@@ -443,12 +443,12 @@ Widget _buildTransactionCard(BuildContext context, TripLedgerItem item) {
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      color.withOpacity(0.15),
-                      color.withOpacity(0.05),
+                      color.withValues(alpha:0.15),
+                      color.withValues(alpha:0.05),
                     ],
                   ),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: color.withOpacity(0.3)),
+                  border: Border.all(color: color.withValues(alpha:0.3)),
                 ),
                 child: Text(
                   '${isDebit ? '+' : '-'} ${item.amount.toStringAsFixed(2)}',

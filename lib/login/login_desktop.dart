@@ -48,7 +48,6 @@ Future<void> _handleLogin() async {
       );
     }
   } catch (e) {
-    print("ERROR: $e");
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Terjadi kesalahan: $e')),
@@ -151,13 +150,11 @@ Future<void> _handleLogin() async {
       const SnackBar(content: Text('Email reset terkirim')),
     );
   } on FirebaseAuthException catch (e) {
-     print("AUTH ERROR: ${e.code}");
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(e.message ?? 'Terjadi kesalahan')),
     );
   }
   catch (e) {
-  print("UNKNOWN ERROR: $e");
 }
 }
 @override

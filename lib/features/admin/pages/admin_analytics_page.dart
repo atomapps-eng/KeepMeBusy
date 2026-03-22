@@ -63,8 +63,8 @@ class _AdminAnalyticsPageState extends State<AdminAnalyticsPage> {
         child: Container(
           padding: const EdgeInsets.fromLTRB(16, 20, 16, 20),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.3),
-            border: Border.all(color: Colors.white.withOpacity(0.4)),
+            color: Colors.white.withValues(alpha:0.3),
+            border: Border.all(color: Colors.white.withValues(alpha:0.4)),
           ),
           child: Row(
             children: [
@@ -76,7 +76,7 @@ class _AdminAnalyticsPageState extends State<AdminAnalyticsPage> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: AppTheme.primaryColor.withOpacity(0.1),
+                  color: AppTheme.primaryColor.withValues(alpha:0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(
@@ -106,9 +106,9 @@ class _AdminAnalyticsPageState extends State<AdminAnalyticsPage> {
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.3),
+        color: Colors.white.withValues(alpha:0.3),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withOpacity(0.4)),
+        border: Border.all(color: Colors.white.withValues(alpha:0.4)),
       ),
       child: Column(
         children: [
@@ -127,7 +127,7 @@ class _AdminAnalyticsPageState extends State<AdminAnalyticsPage> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.blue.withOpacity(0.1),
+              color: Colors.blue.withValues(alpha:0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
@@ -366,16 +366,16 @@ class _AdminAnalyticsPageState extends State<AdminAnalyticsPage> {
           margin: const EdgeInsets.only(bottom: 8),
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.3),
+            color: Colors.white.withValues(alpha:0.3),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.white.withOpacity(0.4)),
+            border: Border.all(color: Colors.white.withValues(alpha:0.4)),
           ),
           child: Row(
             children: [
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: _getOperationColor(read.operation).withOpacity(0.1),
+                  color: _getOperationColor(read.operation).withValues(alpha:0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
@@ -428,19 +428,19 @@ class _AdminAnalyticsPageState extends State<AdminAnalyticsPage> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            color.withOpacity(0.2),
-            color.withOpacity(0.05),
+            color.withValues(alpha:0.2),
+            color.withValues(alpha:0.05),
           ],
         ),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha:0.3)),
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.2),
+              color: color.withValues(alpha:0.2),
               shape: BoxShape.circle,
             ),
             child: Icon(icon, color: color, size: 28),
@@ -480,9 +480,9 @@ class _AdminAnalyticsPageState extends State<AdminAnalyticsPage> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.3),
+        color: Colors.white.withValues(alpha:0.3),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withOpacity(0.4)),
+        border: Border.all(color: Colors.white.withValues(alpha:0.4)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -492,7 +492,7 @@ class _AdminAnalyticsPageState extends State<AdminAnalyticsPage> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
+                  color: color.withValues(alpha:0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Icon(icon, color: color, size: 18),
@@ -534,7 +534,7 @@ class _AdminAnalyticsPageState extends State<AdminAnalyticsPage> {
               borderRadius: BorderRadius.circular(4),
               child: LinearProgressIndicator(
                 value: value / total,
-                backgroundColor: color.withOpacity(0.1),
+                backgroundColor: color.withValues(alpha:0.1),
                 valueColor: AlwaysStoppedAnimation<Color>(color),
                 minHeight: 8,
               ),
@@ -570,16 +570,16 @@ class _AdminAnalyticsPageState extends State<AdminAnalyticsPage> {
           margin: const EdgeInsets.only(bottom: 8),
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.3),
+            color: Colors.white.withValues(alpha:0.3),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.white.withOpacity(0.4)),
+            border: Border.all(color: Colors.white.withValues(alpha:0.4)),
           ),
           child: Row(
             children: [
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: _getRandomColor(index).withOpacity(0.1),
+                  color: _getRandomColor(index).withValues(alpha:0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(icon, size: 16, color: _getRandomColor(index)),

@@ -136,7 +136,6 @@ class _ServiceReportFormPageState extends State<ServiceReportFormPage> {
       _isLoadingPartners = false;
     });
   } catch (e) {
-    print("Error loading partners: $e");
     setState(() {
       _isLoadingPartners = false;
     });
@@ -259,9 +258,6 @@ final doc = await ServiceReportFirestore.getReport(
         _photo3Url = data['photo3'];
         _videoUrl = data['video'];
         _signatureUrl = data['signature'];
-
-        print("SIGNATURE URL: $_signatureUrl");
-
         _photo1 = null;
         _photo2 = null;
         _photo3 = null;
@@ -272,7 +268,6 @@ final doc = await ServiceReportFirestore.getReport(
       });
 
     } catch (e) {
-      print("Error loading report data: $e");
       if (!mounted) return;
       
       ScaffoldMessenger.of(context).showSnackBar(
@@ -301,7 +296,7 @@ final doc = await ServiceReportFirestore.getReport(
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: AppTheme.primaryColor.withOpacity(0.1),
+                  color: AppTheme.primaryColor.withValues(alpha:0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(
@@ -338,7 +333,7 @@ final doc = await ServiceReportFirestore.getReport(
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: AppTheme.primaryColor.withOpacity(0.1),
+                color: AppTheme.primaryColor.withValues(alpha:0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: const Icon(
@@ -443,7 +438,7 @@ final doc = await ServiceReportFirestore.getReport(
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: AppTheme.primaryColor.withOpacity(0.1),
+                  color: AppTheme.primaryColor.withValues(alpha:0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: const Icon(
@@ -506,7 +501,7 @@ final doc = await ServiceReportFirestore.getReport(
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.purple.withOpacity(0.1),
+                  color: Colors.purple.withValues(alpha:0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: const Icon(
@@ -534,7 +529,7 @@ final doc = await ServiceReportFirestore.getReport(
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: Colors.blue.withOpacity(0.1),
+              color: Colors.blue.withValues(alpha:0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: const Row(
@@ -572,7 +567,7 @@ final doc = await ServiceReportFirestore.getReport(
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.teal.withOpacity(0.1),
+                  color: Colors.teal.withValues(alpha:0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: const Icon(
@@ -1374,7 +1369,7 @@ const SizedBox(height: 12),
               Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
+                  color: color.withValues(alpha:0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(icon, color: color, size: 16),
@@ -1450,7 +1445,7 @@ const SizedBox(height: 12),
               Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
+                  color: color.withValues(alpha:0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(icon, color: color, size: 16),
@@ -1482,7 +1477,7 @@ const SizedBox(height: 12),
           borderRadius: BorderRadius.circular(8),
         ),
         filled: true,
-        fillColor: Colors.white.withOpacity(0.5),
+        fillColor: Colors.white.withValues(alpha:0.5),
       ),
     );
   }
@@ -1498,7 +1493,7 @@ const SizedBox(height: 12),
           borderRadius: BorderRadius.circular(8),
         ),
         filled: true,
-        fillColor: Colors.white.withOpacity(0.5),
+        fillColor: Colors.white.withValues(alpha:0.5),
       ),
     );
   }
@@ -1528,7 +1523,7 @@ const SizedBox(height: 12),
       decoration: BoxDecoration(
         border: Border.all(color: Colors.grey.shade400),
         borderRadius: BorderRadius.circular(8),
-        color: Colors.white.withOpacity(0.5),
+        color: Colors.white.withValues(alpha:0.5),
       ),
       child: Row(
         children: [
@@ -1567,7 +1562,7 @@ const SizedBox(height: 12),
         decoration: BoxDecoration(
           border: Border.all(color: Colors.grey.shade400),
           borderRadius: BorderRadius.circular(8),
-          color: Colors.white.withOpacity(0.5),
+          color: Colors.white.withValues(alpha:0.5),
         ),
         child: Row(
           children: [
@@ -1603,7 +1598,7 @@ const SizedBox(height: 12),
         decoration: BoxDecoration(
           border: Border.all(color: Colors.grey.shade400),
           borderRadius: BorderRadius.circular(8),
-          color: Colors.white.withOpacity(0.5),
+          color: Colors.white.withValues(alpha:0.5),
         ),
         child: Row(
           children: [
@@ -1940,8 +1935,6 @@ void _showQtyDialog(SparePart part) {
 
   // ================= EXISTING SAVE/SUBMIT METHODS (TIDAK DIUBAH) =================
   Future<void> _saveDraft() async {
-    print("AUTH UID: ${FirebaseAuth.instance.currentUser?.uid}");
-print("AUTH EMAIL: ${FirebaseAuth.instance.currentUser?.email}");
     final companyId = CompanySession.selectedCompanyId;
     if (companyId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -2010,16 +2003,12 @@ print("AUTH EMAIL: ${FirebaseAuth.instance.currentUser?.email}");
 
       setState(() => _isUploading = false);
 
-print("DEBUG FACTORY: $factory");
-print("DEBUG FACTORY ID: $_factoryId");
-print("DEBUG END CUSTOMER ID: $_endCustomerId");
-
       final rawData = {
   "startDate": startDate != null ? Timestamp.fromDate(startDate!) : null,
   "endDate": endDate != null ? Timestamp.fromDate(endDate!) : null,
   "factory": factory,
   "factoryId": _factoryId,
-"endCustomerId": _endCustomerId,
+  "endCustomerId": _endCustomerId,
   "endCustomer": endCustomer,
   "customerCode": customerCodeController.text,
   "machine": machineController.text,
@@ -2072,10 +2061,6 @@ final reportData = Map<String, dynamic>.from(rawData)
       Navigator.pop(context, true);
 
     } catch (e, stack) {
-  print("ERROR TYPE: ${e.runtimeType}");
-  print("ERROR DETAIL: $e");
-  print("STACK TRACE: $stack");
-
   if (!mounted) return;
 
   ScaffoldMessenger.of(context).showSnackBar(
@@ -2610,9 +2595,9 @@ Widget _glass(Widget child) {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.3),
+          color: Colors.white.withValues(alpha:0.3),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.white.withOpacity(0.4)),
+          border: Border.all(color: Colors.white.withValues(alpha:0.4)),
         ),
         child: child,
       ),

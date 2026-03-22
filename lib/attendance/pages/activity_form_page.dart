@@ -147,7 +147,7 @@ class _ActivityFormPageState extends State<ActivityFormPage> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: activityColor.withOpacity(0.1),
+                  color: activityColor.withValues(alpha:0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
@@ -185,7 +185,7 @@ class _ActivityFormPageState extends State<ActivityFormPage> {
           leading: Container(
             margin: const EdgeInsets.only(left: 8),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
+              color: Colors.white.withValues(alpha:0.2),
               borderRadius: BorderRadius.circular(12),
             ),
             child: IconButton(
@@ -221,7 +221,7 @@ class _ActivityFormPageState extends State<ActivityFormPage> {
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: activityColor.withOpacity(0.1),
+                        color: activityColor.withValues(alpha:0.1),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Icon(
@@ -279,7 +279,7 @@ class _ActivityFormPageState extends State<ActivityFormPage> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.grey.withOpacity(0.05),
+                    color: Colors.grey.withValues(alpha:0.05),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: Colors.grey.shade300),
                   ),
@@ -321,7 +321,7 @@ class _ActivityFormPageState extends State<ActivityFormPage> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.grey.withOpacity(0.05),
+                    color: Colors.grey.withValues(alpha:0.05),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: Colors.grey.shade300),
                   ),
@@ -363,7 +363,7 @@ class _ActivityFormPageState extends State<ActivityFormPage> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.grey.withOpacity(0.05),
+                    color: Colors.grey.withValues(alpha:0.05),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: Colors.grey.shade300),
                   ),
@@ -433,7 +433,7 @@ class _ActivityFormPageState extends State<ActivityFormPage> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.grey.withOpacity(0.05),
+                    color: Colors.grey.withValues(alpha:0.05),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: Colors.grey.shade300),
                   ),
@@ -497,7 +497,7 @@ class _ActivityFormPageState extends State<ActivityFormPage> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.grey.withOpacity(0.05),
+                    color: Colors.grey.withValues(alpha:0.05),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: Colors.grey.shade300),
                   ),
@@ -540,7 +540,7 @@ class _ActivityFormPageState extends State<ActivityFormPage> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.grey.withOpacity(0.05),
+                    color: Colors.grey.withValues(alpha:0.05),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: Colors.grey.shade300),
                   ),
@@ -625,7 +625,7 @@ class _ActivityFormPageState extends State<ActivityFormPage> {
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: Colors.purple.withOpacity(0.1),
+                        color: Colors.purple.withValues(alpha:0.1),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: const Icon(
@@ -652,10 +652,10 @@ class _ActivityFormPageState extends State<ActivityFormPage> {
                       width: 300,
                       padding: const EdgeInsets.all(24),
                       decoration: BoxDecoration(
-                        color: activityColor.withOpacity(0.05),
+                        color: activityColor.withValues(alpha:0.05),
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
-                          color: activityColor.withOpacity(0.3),
+                          color: activityColor.withValues(alpha:0.3),
                           width: 2,
                         ),
                       ),
@@ -665,7 +665,7 @@ class _ActivityFormPageState extends State<ActivityFormPage> {
                           Container(
                             padding: const EdgeInsets.all(20),
                             decoration: BoxDecoration(
-                              color: activityColor.withOpacity(0.1),
+                              color: activityColor.withValues(alpha:0.1),
                               shape: BoxShape.circle,
                             ),
                             child: Icon(
@@ -712,7 +712,7 @@ class _ActivityFormPageState extends State<ActivityFormPage> {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                             decoration: BoxDecoration(
-                              color: status == 'paid' ? Colors.green.withOpacity(0.1) : Colors.orange.withOpacity(0.1),
+                              color: status == 'paid' ? Colors.green.withValues(alpha:0.1) : Colors.orange.withValues(alpha:0.1),
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Row(
@@ -762,7 +762,7 @@ class _ActivityFormPageState extends State<ActivityFormPage> {
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: activityColor.withOpacity(0.1),
+                        color: activityColor.withValues(alpha:0.1),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Icon(
@@ -965,9 +965,9 @@ class _ActivityFormPageState extends State<ActivityFormPage> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
+              color: Colors.white.withValues(alpha:0.2),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.white.withOpacity(0.3)),
+              border: Border.all(color: Colors.white.withValues(alpha:0.3)),
             ),
             child: Row(
               children: [
@@ -1017,7 +1017,7 @@ class _ActivityFormPageState extends State<ActivityFormPage> {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: isSelected ? color.withOpacity(0.05) : Colors.grey.withOpacity(0.05),
+          color: isSelected ? color.withValues(alpha:0.05) : Colors.grey.withValues(alpha:0.05),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isSelected ? color : Colors.grey.shade300,
@@ -1029,7 +1029,7 @@ class _ActivityFormPageState extends State<ActivityFormPage> {
             Container(
               padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
+                color: color.withValues(alpha:0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(icon, size: 16, color: color),
@@ -1081,7 +1081,7 @@ class _ActivityFormPageState extends State<ActivityFormPage> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
         decoration: BoxDecoration(
-          color: isSelected ? color.withOpacity(0.05) : Colors.grey.withOpacity(0.05),
+          color: isSelected ? color.withValues(alpha:0.05) : Colors.grey.withValues(alpha:0.05),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isSelected ? color : Colors.grey.shade300,
@@ -1138,9 +1138,9 @@ Widget _glass(Widget child) {
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.3),
+          color: Colors.white.withValues(alpha:0.3),
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.white.withOpacity(0.4)),
+          border: Border.all(color: Colors.white.withValues(alpha:0.4)),
         ),
         child: child,
       ),

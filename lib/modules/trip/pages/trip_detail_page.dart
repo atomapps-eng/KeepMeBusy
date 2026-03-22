@@ -56,13 +56,13 @@ class TripDetailPage extends StatelessWidget {
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              Colors.blue.withOpacity(0.2),
-              Colors.blue.withOpacity(0.1),
+              Colors.blue.withValues(alpha:0.2),
+              Colors.blue.withValues(alpha:0.1),
             ],
           ),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: Colors.blue.withOpacity(0.3),
+            color: Colors.blue.withValues(alpha:0.3),
             width: 1,
           ),
         ),
@@ -90,12 +90,12 @@ class TripDetailPage extends StatelessWidget {
     decoration: BoxDecoration(
       gradient: LinearGradient(
         colors: [
-          Colors.white.withOpacity(0.2),
-          Colors.white.withOpacity(0.1),
+          Colors.white.withValues(alpha:0.2),
+          Colors.white.withValues(alpha:0.1),
         ],
       ),
       borderRadius: BorderRadius.circular(12),
-      border: Border.all(color: Colors.white.withOpacity(0.3)),
+      border: Border.all(color: Colors.white.withValues(alpha:0.3)),
     ),
     child: IconButton(
       icon: const Icon(Icons.arrow_back),
@@ -111,13 +111,13 @@ class TripDetailPage extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            Colors.red.withOpacity(0.2),
-            Colors.red.withOpacity(0.1),
+            Colors.red.withValues(alpha:0.2),
+            Colors.red.withValues(alpha:0.1),
           ],
         ),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: Colors.red.withOpacity(0.3),
+          color: Colors.red.withValues(alpha:0.3),
         ),
       ),
       child: IconButton(
@@ -132,13 +132,13 @@ class TripDetailPage extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            Colors.blue.withOpacity(0.2),
-            Colors.blue.withOpacity(0.1),
+            Colors.blue.withValues(alpha:0.2),
+            Colors.blue.withValues(alpha:0.1),
           ],
         ),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: Colors.blue.withOpacity(0.3),
+          color: Colors.blue.withValues(alpha:0.3),
         ),
       ),
       child: PopupMenuButton<String>(
@@ -269,12 +269,12 @@ class TripDetailPage extends StatelessWidget {
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
-                          Colors.green.withOpacity(0.15),
-                          Colors.green.withOpacity(0.05),
+                          Colors.green.withValues(alpha:0.15),
+                          Colors.green.withValues(alpha:0.05),
                         ],
                       ),
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: Colors.green.withOpacity(0.3)),
+                      border: Border.all(color: Colors.green.withValues(alpha:0.3)),
                     ),
                     child: Text(
                       trip.status,
@@ -302,8 +302,8 @@ _glass(
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  Colors.green.withOpacity(0.2),
-                  Colors.green.withOpacity(0.1),
+                  Colors.green.withValues(alpha:0.2),
+                  Colors.green.withValues(alpha:0.1),
                 ],
               ),
               borderRadius: BorderRadius.circular(8),
@@ -376,18 +376,18 @@ _glass(
                         gradient: LinearGradient(
                           colors: [
                             isPositive
-                                ? Colors.green.withOpacity(0.1)
-                                : Colors.red.withOpacity(0.1),
+                                ? Colors.green.withValues(alpha:0.1)
+                                : Colors.red.withValues(alpha:0.1),
                             isPositive
-                                ? Colors.green.withOpacity(0.05)
-                                : Colors.red.withOpacity(0.05),
+                                ? Colors.green.withValues(alpha:0.05)
+                                : Colors.red.withValues(alpha:0.05),
                           ],
                         ),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
                           color: isPositive
-                              ? Colors.green.withOpacity(0.3)
-                              : Colors.red.withOpacity(0.3),
+                              ? Colors.green.withValues(alpha:0.3)
+                              : Colors.red.withValues(alpha:0.3),
                         ),
                       ),
                       child: Row(
@@ -397,8 +397,8 @@ _glass(
                             padding: const EdgeInsets.all(4),
                             decoration: BoxDecoration(
                               color: isPositive
-                                  ? Colors.green.withOpacity(0.2)
-                                  : Colors.red.withOpacity(0.2),
+                                  ? Colors.green.withValues(alpha:0.2)
+                                  : Colors.red.withValues(alpha:0.2),
                               shape: BoxShape.circle,
                             ),
                             child: Icon(
@@ -422,8 +422,8 @@ _glass(
                             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                             decoration: BoxDecoration(
                               color: isPositive
-                                  ? Colors.green.withOpacity(0.1)
-                                  : Colors.red.withOpacity(0.1),
+                                  ? Colors.green.withValues(alpha:0.1)
+                                  : Colors.red.withValues(alpha:0.1),
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: Text(
@@ -465,8 +465,8 @@ _glass(
                               decoration: BoxDecoration(
                                 gradient: LinearGradient(
                                   colors: [
-                                    Colors.purple.withOpacity(0.2),
-                                    Colors.purple.withOpacity(0.1),
+                                    Colors.purple.withValues(alpha:0.2),
+                                    Colors.purple.withValues(alpha:0.1),
                                   ],
                                 ),
                                 borderRadius: BorderRadius.circular(10),
@@ -489,7 +489,7 @@ _glass(
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                               decoration: BoxDecoration(
-                                color: Colors.purple.withOpacity(0.1),
+                                color: Colors.purple.withValues(alpha:0.1),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: StreamBuilder<List<TripTransfer>>(
@@ -581,7 +581,7 @@ _glass(
                                       Container(
                                         padding: const EdgeInsets.all(20),
                                         decoration: BoxDecoration(
-                                          color: Colors.purple.withOpacity(0.1),
+                                          color: Colors.purple.withValues(alpha:0.1),
                                           shape: BoxShape.circle,
                                         ),
                                         child: const Icon(
@@ -731,15 +731,15 @@ Widget _buildTransactionItem(BuildContext context, TripLedgerItem item) {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            Colors.white.withOpacity(0.1),
-            Colors.white.withOpacity(0.05),
+            Colors.white.withValues(alpha:0.1),
+            Colors.white.withValues(alpha:0.05),
           ],
         ),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: item.isDebit
-              ? Colors.green.withOpacity(0.3)
-              : Colors.red.withOpacity(0.3),
+              ? Colors.green.withValues(alpha:0.3)
+              : Colors.red.withValues(alpha:0.3),
         ),
       ),
       child: Row(
@@ -767,18 +767,18 @@ Widget _buildTransactionItem(BuildContext context, TripLedgerItem item) {
                 gradient: LinearGradient(
                   colors: [
                     item.isDebit
-                        ? Colors.green.withOpacity(0.2)
-                        : Colors.red.withOpacity(0.2),
+                        ? Colors.green.withValues(alpha:0.2)
+                        : Colors.red.withValues(alpha:0.2),
                     item.isDebit
-                        ? Colors.green.withOpacity(0.1)
-                        : Colors.red.withOpacity(0.1),
+                        ? Colors.green.withValues(alpha:0.1)
+                        : Colors.red.withValues(alpha:0.1),
                   ],
                 ),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
                   color: item.isDebit
-                      ? Colors.green.withOpacity(0.3)
-                      : Colors.red.withOpacity(0.3),
+                      ? Colors.green.withValues(alpha:0.3)
+                      : Colors.red.withValues(alpha:0.3),
                 ),
               ),
               child: Icon(
@@ -813,7 +813,7 @@ Widget _buildTransactionItem(BuildContext context, TripLedgerItem item) {
                         margin: const EdgeInsets.only(left: 4),
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
-                          color: Colors.blue.withOpacity(0.1),
+                          color: Colors.blue.withValues(alpha:0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: const Row(
@@ -879,18 +879,18 @@ Widget _buildTransactionItem(BuildContext context, TripLedgerItem item) {
               gradient: LinearGradient(
                 colors: [
                   item.isDebit
-                      ? Colors.green.withOpacity(0.15)
-                      : Colors.red.withOpacity(0.15),
+                      ? Colors.green.withValues(alpha:0.15)
+                      : Colors.red.withValues(alpha:0.15),
                   item.isDebit
-                      ? Colors.green.withOpacity(0.05)
-                      : Colors.red.withOpacity(0.05),
+                      ? Colors.green.withValues(alpha:0.05)
+                      : Colors.red.withValues(alpha:0.05),
                 ],
               ),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
                 color: item.isDebit
-                    ? Colors.green.withOpacity(0.3)
-                    : Colors.red.withOpacity(0.3),
+                    ? Colors.green.withValues(alpha:0.3)
+                    : Colors.red.withValues(alpha:0.3),
               ),
             ),
             child: Text(
@@ -1647,14 +1647,14 @@ Widget _glass(Widget child) {
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              Colors.white.withOpacity(0.3),
-              Colors.white.withOpacity(0.15),
+              Colors.white.withValues(alpha:0.3),
+              Colors.white.withValues(alpha:0.15),
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.white.withOpacity(0.4)),
+          border: Border.all(color: Colors.white.withValues(alpha:0.4)),
         ),
         child: child,
       ),

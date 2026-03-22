@@ -402,7 +402,7 @@ class _SettingsPageState extends State<SettingsPage> with TickerProviderStateMix
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.1),
+            color: Colors.white.withValues(alpha:0.1),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Row(
@@ -410,7 +410,7 @@ class _SettingsPageState extends State<SettingsPage> with TickerProviderStateMix
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: (color ?? Colors.blue).withOpacity(0.2),
+                  color: (color ?? Colors.blue).withValues(alpha:0.2),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(icon, color: color ?? Colors.blue, size: 20),
@@ -455,9 +455,9 @@ class _SettingsPageState extends State<SettingsPage> with TickerProviderStateMix
       margin: const EdgeInsets.only(top: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha:0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha:0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -484,7 +484,7 @@ class _SettingsPageState extends State<SettingsPage> with TickerProviderStateMix
           const SizedBox(height: 8),
           LinearProgressIndicator(
             value: progress,
-            backgroundColor: color.withOpacity(0.2),
+            backgroundColor: color.withValues(alpha:0.2),
             valueColor: AlwaysStoppedAnimation<Color>(color),
             minHeight: 8,
             borderRadius: BorderRadius.circular(4),
@@ -540,7 +540,7 @@ class _SettingsPageState extends State<SettingsPage> with TickerProviderStateMix
                                   Container(
                                     padding: const EdgeInsets.all(12),
                                     decoration: BoxDecoration(
-                                      color: isAdmin ? Colors.green.withOpacity(0.2) : Colors.grey.withOpacity(0.2),
+                                      color: isAdmin ? Colors.green.withValues(alpha:0.2) : Colors.grey.withValues(alpha:0.2),
                                       shape: BoxShape.circle,
                                     ),
                                     child: Icon(
@@ -615,7 +615,7 @@ class _SettingsPageState extends State<SettingsPage> with TickerProviderStateMix
                                       Container(
                                         padding: const EdgeInsets.all(4),
                                         decoration: BoxDecoration(
-                                          color: Colors.white.withOpacity(0.2),
+                                          color: Colors.white.withValues(alpha:0.2),
                                           shape: BoxShape.circle,
                                         ),
                                         child: Icon(
@@ -642,7 +642,7 @@ class _SettingsPageState extends State<SettingsPage> with TickerProviderStateMix
                                 Container(
                                   padding: const EdgeInsets.all(8),
                                   decoration: BoxDecoration(
-                                    color: Colors.green.withOpacity(0.1),
+                                    color: Colors.green.withValues(alpha:0.1),
                                     borderRadius: BorderRadius.circular(8),
                                     border: Border.all(color: Colors.green),
                                   ),
@@ -771,9 +771,9 @@ _buildActionButton(
                                 Container(
                                   padding: const EdgeInsets.all(12),
                                   decoration: BoxDecoration(
-                                    color: Colors.red.withOpacity(0.05),
+                                    color: Colors.red.withValues(alpha:0.05),
                                     borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(color: Colors.red.withOpacity(0.3)),
+                                    border: Border.all(color: Colors.red.withValues(alpha:0.3)),
                                   ),
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -882,21 +882,21 @@ _buildActionButton(
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               decoration: BoxDecoration(
-                color: (color ?? Colors.blue).withOpacity(0.1),
+                color: (color ?? Colors.blue).withValues(alpha:0.1),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: (color ?? Colors.blue).withOpacity(0.3),
+                  color: (color ?? Colors.blue).withValues(alpha:0.3),
                 ),
               ),
               child: Row(
                 children: [
-                  Icon(icon, color: (color ?? Colors.blue).withOpacity(canPress ? 1 : 0.5), size: 20),
+                  Icon(icon, color: (color ?? Colors.blue).withValues(alpha:canPress ? 1 : 0.5), size: 20),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
                       label,
                       style: TextStyle(
-                        color: (color ?? Colors.blue).withOpacity(canPress ? 1 : 0.5),
+                        color: (color ?? Colors.blue).withValues(alpha:canPress ? 1 : 0.5),
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -967,7 +967,7 @@ class BackgroundPatternPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = Colors.white.withOpacity(0.05)
+      ..color = Colors.white.withValues(alpha:0.05)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1;
 
@@ -1015,7 +1015,7 @@ class _GlassHeader extends StatelessWidget {
             children: [
               Container(
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: Colors.white.withValues(alpha:0.2),
                   shape: BoxShape.circle,
                 ),
                 child: IconButton(

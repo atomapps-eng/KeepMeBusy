@@ -184,7 +184,6 @@ class _AddExpensePageState extends State<AddExpensePage> {
     /// ===============================
     /// CREATE EXPENSE MODEL
     /// ===============================
-print("DESC SAVE: ${descController.text}");
 
     final expense = TripExpense(
       id: '',
@@ -337,13 +336,13 @@ Future<void> scanReceipt() async {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    Colors.red.withOpacity(0.2),
-                    Colors.red.withOpacity(0.1),
+                    Colors.red.withValues(alpha:0.2),
+                    Colors.red.withValues(alpha:0.1),
                   ],
                 ),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: Colors.red.withOpacity(0.3),
+                  color: Colors.red.withValues(alpha:0.3),
                   width: 1,
                 ),
               ),
@@ -367,7 +366,7 @@ Future<void> scanReceipt() async {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(
-                    color: Colors.red.withOpacity(0.1),
+                    color: Colors.red.withValues(alpha:0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
@@ -390,12 +389,12 @@ Future<void> scanReceipt() async {
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
-                Colors.white.withOpacity(0.2),
-                Colors.white.withOpacity(0.1),
+                Colors.white.withValues(alpha:0.2),
+                Colors.white.withValues(alpha:0.1),
               ],
             ),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.white.withOpacity(0.3)),
+            border: Border.all(color: Colors.white.withValues(alpha:0.3)),
           ),
           child: IconButton(
             icon: const Icon(Icons.arrow_back),
@@ -415,7 +414,7 @@ Future<void> scanReceipt() async {
 
     if (isUploading)
   Container(
-    color: Colors.black.withOpacity(0.4),
+    color: Colors.black.withValues(alpha:0.4),
     child: Center(
       child: Container(
         width: 300,
@@ -480,8 +479,8 @@ Future<void> scanReceipt() async {
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
                             colors: [
-                              Colors.red.withOpacity(0.2),
-                              Colors.red.withOpacity(0.1),
+                              Colors.red.withValues(alpha:0.2),
+                              Colors.red.withValues(alpha:0.1),
                             ],
                           ),
                           borderRadius: BorderRadius.circular(10),
@@ -607,7 +606,7 @@ Future<void> scanReceipt() async {
                     style: OutlinedButton.styleFrom(
                       foregroundColor: Colors.blue,
                       padding: const EdgeInsets.symmetric(vertical: 18),
-                      side: BorderSide(color: Colors.blue.withOpacity(0.5)),
+                      side: BorderSide(color: Colors.blue.withValues(alpha:0.5)),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -665,7 +664,7 @@ Future<void> scanReceipt() async {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.grey.withOpacity(0.05),
+                        color: Colors.grey.withValues(alpha:0.05),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: Colors.grey.shade300),
                       ),
@@ -709,9 +708,9 @@ Future<void> scanReceipt() async {
   Container(
     padding: const EdgeInsets.all(12),
     decoration: BoxDecoration(
-      color: Colors.red.withOpacity(0.05),
+      color: Colors.red.withValues(alpha:0.05),
       borderRadius: BorderRadius.circular(12),
-      border: Border.all(color: Colors.red.withOpacity(0.3)),
+      border: Border.all(color: Colors.red.withValues(alpha:0.3)),
     ),
     child: Row(
       children: [
@@ -793,8 +792,8 @@ Future<void> scanReceipt() async {
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
-                            Colors.purple.withOpacity(0.2),
-                            Colors.purple.withOpacity(0.1),
+                            Colors.purple.withValues(alpha:0.2),
+                            Colors.purple.withValues(alpha:0.1),
                           ],
                         ),
                         borderRadius: BorderRadius.circular(10),
@@ -825,15 +824,15 @@ Future<void> scanReceipt() async {
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
-                            Colors.red.withOpacity(0.1),
-                            Colors.red.withOpacity(0.05),
+                            Colors.red.withValues(alpha:0.1),
+                            Colors.red.withValues(alpha:0.05),
                           ],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                         ),
                         borderRadius: BorderRadius.circular(24),
                         border: Border.all(
-                          color: Colors.red.withOpacity(0.3),
+                          color: Colors.red.withValues(alpha:0.3),
                           width: 2,
                         ),
                       ),
@@ -844,7 +843,7 @@ Future<void> scanReceipt() async {
                           Container(
                             padding: const EdgeInsets.all(20),
                             decoration: BoxDecoration(
-                              color: Colors.red.withOpacity(0.15),
+                              color: Colors.red.withValues(alpha:0.15),
                               shape: BoxShape.circle,
                             ),
                             child: Icon(
@@ -859,7 +858,7 @@ Future<void> scanReceipt() async {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                             decoration: BoxDecoration(
-                              color: Colors.blue.withOpacity(0.1),
+                              color: Colors.blue.withValues(alpha:0.1),
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Text(
@@ -903,7 +902,7 @@ Future<void> scanReceipt() async {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                             decoration: BoxDecoration(
-                              color: categoryColor.withOpacity(0.15),
+                              color: categoryColor.withValues(alpha:0.15),
                               borderRadius: BorderRadius.circular(30),
                             ),
                             child: Text(
@@ -923,7 +922,7 @@ Future<void> scanReceipt() async {
                             Container(
                               padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
-                                color: Colors.grey.withOpacity(0.1),
+                                color: Colors.grey.withValues(alpha:0.1),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Text(
@@ -961,8 +960,8 @@ Future<void> scanReceipt() async {
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
-                            Colors.red.withOpacity(0.2),
-                            Colors.red.withOpacity(0.1),
+                            Colors.red.withValues(alpha:0.2),
+                            Colors.red.withValues(alpha:0.1),
                           ],
                         ),
                         borderRadius: BorderRadius.circular(10),
@@ -1003,13 +1002,13 @@ Future<void> scanReceipt() async {
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
-                          Colors.blue.withOpacity(0.1),
-                          Colors.blue.withOpacity(0.05),
+                          Colors.blue.withValues(alpha:0.1),
+                          Colors.blue.withValues(alpha:0.05),
                         ],
                       ),
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(
-                        color: Colors.blue.withOpacity(0.3),
+                        color: Colors.blue.withValues(alpha:0.3),
                       ),
                     ),
                     child: Row(
@@ -1157,7 +1156,7 @@ Future<void> scanReceipt() async {
         style: OutlinedButton.styleFrom(
           foregroundColor: Colors.blue,
           padding: const EdgeInsets.symmetric(vertical: 16),
-          side: BorderSide(color: Colors.blue.withOpacity(0.5)),
+          side: BorderSide(color: Colors.blue.withValues(alpha:0.5)),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
@@ -1175,7 +1174,7 @@ Future<void> scanReceipt() async {
         style: OutlinedButton.styleFrom(
           foregroundColor: Colors.green,
           padding: const EdgeInsets.symmetric(vertical: 16),
-          side: BorderSide(color: Colors.green.withOpacity(0.5)),
+          side: BorderSide(color: Colors.green.withValues(alpha:0.5)),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
@@ -1193,7 +1192,7 @@ Future<void> scanReceipt() async {
         style: OutlinedButton.styleFrom(
           foregroundColor: Colors.red,
           padding: const EdgeInsets.symmetric(vertical: 16),
-          side: BorderSide(color: Colors.red.withOpacity(0.5)),
+          side: BorderSide(color: Colors.red.withValues(alpha:0.5)),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
@@ -1211,7 +1210,7 @@ Future<void> scanReceipt() async {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.grey.withOpacity(0.05),
+                      color: Colors.grey.withValues(alpha:0.05),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(color: Colors.grey.shade300),
                     ),
@@ -1254,9 +1253,9 @@ Future<void> scanReceipt() async {
   Container(
     padding: const EdgeInsets.all(12),
     decoration: BoxDecoration(
-      color: Colors.red.withOpacity(0.05),
+      color: Colors.red.withValues(alpha:0.05),
       borderRadius: BorderRadius.circular(12),
-      border: Border.all(color: Colors.red.withOpacity(0.3)),
+      border: Border.all(color: Colors.red.withValues(alpha:0.3)),
     ),
     child: Row(
       children: [
@@ -1297,12 +1296,12 @@ Future<void> scanReceipt() async {
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  Colors.white.withOpacity(0.2),
-                  Colors.white.withOpacity(0.1),
+                  Colors.white.withValues(alpha:0.2),
+                  Colors.white.withValues(alpha:0.1),
                 ],
               ),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.white.withOpacity(0.3)),
+              border: Border.all(color: Colors.white.withValues(alpha:0.3)),
             ),
             child: Row(
               children: [
@@ -1355,7 +1354,7 @@ Future<void> scanReceipt() async {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.grey.withOpacity(0.05),
+        color: Colors.grey.withValues(alpha:0.05),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.grey.shade300),
       ),
@@ -1408,13 +1407,13 @@ Future<void> scanReceipt() async {
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              color.withOpacity(0.1),
-              color.withOpacity(0.05),
+              color.withValues(alpha:0.1),
+              color.withValues(alpha:0.05),
             ],
           ),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: color.withOpacity(0.3),
+            color: color.withValues(alpha:0.3),
             width: 1.5,
           ),
         ),
@@ -1423,7 +1422,7 @@ Future<void> scanReceipt() async {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.15),
+                color: color.withValues(alpha:0.15),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(icon, color: color, size: 20),
@@ -1474,7 +1473,7 @@ Future<void> scanReceipt() async {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.grey.withOpacity(0.05),
+        color: Colors.grey.withValues(alpha:0.05),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.grey.shade300),
       ),
@@ -1561,14 +1560,14 @@ Widget _glass(Widget child) {
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              Colors.white.withOpacity(0.3),
-              Colors.white.withOpacity(0.15),
+              Colors.white.withValues(alpha:0.3),
+              Colors.white.withValues(alpha:0.15),
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.white.withOpacity(0.4)),
+          border: Border.all(color: Colors.white.withValues(alpha:0.4)),
         ),
         child: child,
       ),

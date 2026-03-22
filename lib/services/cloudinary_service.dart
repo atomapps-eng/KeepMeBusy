@@ -85,7 +85,6 @@ class CloudinaryService {
       return null;
     }
   } catch (e) {
-    print("Error uploading to Cloudinary: $e");
     return null;
   }
 }
@@ -133,11 +132,9 @@ class CloudinaryService {
       if (response.statusCode == 200) {
         return data['secure_url'];
       } else {
-        print("Video upload failed: ${data['error']['message']}");
         return null;
       }
     } catch (e) {
-      print("Error uploading video: $e");
       return null;
     }
   }
@@ -215,11 +212,9 @@ static Future<String?> uploadBytes({
     if (response.statusCode == 200) {
       return data['secure_url'];
     } else {
-      print("Upload failed: ${data['error']['message']}");
       return null;
     }
   } catch (e) {
-    print("Error uploading bytes: $e");
     return null;
   }
 }

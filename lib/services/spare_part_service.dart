@@ -22,7 +22,6 @@ class SparePartService {
 
   // Stream untuk real-time updates (pertahankan)
   Stream<List<SparePart>> getSpareParts() {
-    print("🔥 getSpareParts STREAM ATTACHED");
     final ref = CompanyFirestore.collection('spare_parts');
     return ref.snapshots().map((snapshot) {
       return snapshot.docs.map((doc) {
@@ -106,7 +105,6 @@ class SparePartService {
         return SparePart.fromMap(data, doc.id);
       }).toList();
     } catch (e) {
-      print('Error searching by location: $e');
       return [];
     }
   }
@@ -145,7 +143,6 @@ class SparePartService {
 
     await docRef.set(completeData);
   } catch (e) {
-    print('Error adding spare part: $e');
     rethrow;
   }
 }
@@ -175,7 +172,6 @@ class SparePartService {
 
     await docRef.update(completeData);
   } catch (e) {
-    print('Error updating spare part: $e');
     rethrow;
   }
 }
@@ -198,7 +194,6 @@ class SparePartService {
 
       await batch.commit();
     } catch (e) {
-      print('Error deleting spare part: $e');
       rethrow;
     }
   }
@@ -245,7 +240,6 @@ class SparePartService {
       final doc = await CompanyFirestore.doc('spare_parts', partCode).get();
       return doc.exists;
     } catch (e) {
-      print('Error checking part code: $e');
       return false;
     }
   }
@@ -259,7 +253,6 @@ class SparePartService {
       }
       return null;
     } catch (e) {
-      print('Error getting spare part: $e');
       return null;
     }
   }

@@ -28,13 +28,13 @@ class OvernightPreview extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            Colors.purple.withOpacity(0.1),
-            Colors.purple.withOpacity(0.05),
+            Colors.purple.withValues(alpha:0.1),
+            Colors.purple.withValues(alpha:0.05),
           ],
         ),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: Colors.purple.withOpacity(0.3),
+          color: Colors.purple.withValues(alpha:0.3),
         ),
       ),
       child: Column(

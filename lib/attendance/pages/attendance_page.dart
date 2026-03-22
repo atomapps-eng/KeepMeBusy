@@ -250,7 +250,7 @@ class _AttendancePageState extends State<AttendancePage> {
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
             child: Container(
-              color: Colors.white.withOpacity(0.2),
+              color: Colors.white.withValues(alpha:0.2),
             ),
           ),
         ),
@@ -262,15 +262,15 @@ class _AttendancePageState extends State<AttendancePage> {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    AppTheme.primaryColor.withOpacity(0.2),
-                    AppTheme.primaryColor.withOpacity(0.1),
+                    AppTheme.primaryColor.withValues(alpha:0.2),
+                    AppTheme.primaryColor.withValues(alpha:0.1),
                   ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: AppTheme.primaryColor.withOpacity(0.3),
+                  color: AppTheme.primaryColor.withValues(alpha:0.3),
                   width: 1,
                 ),
               ),
@@ -298,7 +298,7 @@ class _AttendancePageState extends State<AttendancePage> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                     decoration: BoxDecoration(
-                      color: AppTheme.primaryColor.withOpacity(0.1),
+                      color: AppTheme.primaryColor.withValues(alpha:0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
@@ -323,14 +323,14 @@ class _AttendancePageState extends State<AttendancePage> {
               width: 250,
               margin: const EdgeInsets.symmetric(vertical: 8),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.15),
+                color: Colors.white.withValues(alpha:0.15),
                 borderRadius: BorderRadius.circular(30),
                 border: Border.all(
-                  color: Colors.white.withOpacity(0.3),
+                  color: Colors.white.withValues(alpha:0.3),
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black.withValues(alpha:0.05),
                     blurRadius: 10,
                     offset: const Offset(0, 2),
                   ),
@@ -356,13 +356,13 @@ class _AttendancePageState extends State<AttendancePage> {
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  Colors.green.withOpacity(0.2),
-                  Colors.green.withOpacity(0.1),
+                  Colors.green.withValues(alpha:0.2),
+                  Colors.green.withValues(alpha:0.1),
                 ],
               ),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: Colors.green.withOpacity(0.3),
+                color: Colors.green.withValues(alpha:0.3),
                 width: 1,
               ),
             ),
@@ -377,13 +377,13 @@ class _AttendancePageState extends State<AttendancePage> {
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  AppTheme.primaryColor.withOpacity(0.2),
-                  AppTheme.primaryColor.withOpacity(0.1),
+                  AppTheme.primaryColor.withValues(alpha:0.2),
+                  AppTheme.primaryColor.withValues(alpha:0.1),
                 ],
               ),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: AppTheme.primaryColor.withOpacity(0.3),
+                color: AppTheme.primaryColor.withValues(alpha:0.3),
                 width: 1,
               ),
             ),
@@ -412,13 +412,13 @@ class _AttendancePageState extends State<AttendancePage> {
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  Colors.blue.withOpacity(0.2),
-                  Colors.blue.withOpacity(0.1),
+                  Colors.blue.withValues(alpha:0.2),
+                  Colors.blue.withValues(alpha:0.1),
                 ],
               ),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: Colors.blue.withOpacity(0.3),
+                color: Colors.blue.withValues(alpha:0.3),
                 width: 1,
               ),
             ),
@@ -460,13 +460,13 @@ class _AttendancePageState extends State<AttendancePage> {
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
-                        Colors.red.withOpacity(0.1),
-                        Colors.red.withOpacity(0.05),
+                        Colors.red.withValues(alpha:0.1),
+                        Colors.red.withValues(alpha:0.05),
                       ],
                     ),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: Colors.red.withOpacity(0.2),
+                      color: Colors.red.withValues(alpha:0.2),
                     ),
                   ),
                   child: Column(
@@ -475,7 +475,7 @@ class _AttendancePageState extends State<AttendancePage> {
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: Colors.red.withOpacity(0.1),
+                          color: Colors.red.withValues(alpha:0.1),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(Icons.error_outline, size: 48, color: Colors.red.shade300),
@@ -580,8 +580,8 @@ class _AttendancePageState extends State<AttendancePage> {
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      AppTheme.primaryColor.withOpacity(0.2),
-                      AppTheme.primaryColor.withOpacity(0.1),
+                      AppTheme.primaryColor.withValues(alpha:0.2),
+                      AppTheme.primaryColor.withValues(alpha:0.1),
                     ],
                   ),
                   borderRadius: BorderRadius.circular(10),
@@ -604,7 +604,7 @@ class _AttendancePageState extends State<AttendancePage> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Colors.blue.withOpacity(0.1),
+                  color: Colors.blue.withValues(alpha:0.1),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
@@ -655,7 +655,7 @@ class _AttendancePageState extends State<AttendancePage> {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                     decoration: BoxDecoration(
-                      color: Colors.grey.withOpacity(0.1),
+                      color: Colors.grey.withValues(alpha:0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: const Text(
@@ -698,21 +698,21 @@ class _AttendancePageState extends State<AttendancePage> {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            color.withOpacity(0.1),
-            color.withOpacity(0.05),
+            color.withValues(alpha:0.1),
+            color.withValues(alpha:0.05),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: color.withOpacity(0.2), width: 1),
+        border: Border.all(color: color.withValues(alpha:0.2), width: 1),
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.15),
+              color: color.withValues(alpha:0.15),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(icon, color: color, size: 14),
@@ -755,8 +755,8 @@ class _AttendancePageState extends State<AttendancePage> {
           gradient: isSelected
               ? LinearGradient(
                   colors: [
-                    color.withOpacity(0.3),
-                    color.withOpacity(0.2),
+                    color.withValues(alpha:0.3),
+                    color.withValues(alpha:0.2),
                   ],
                 )
               : null,
@@ -792,8 +792,8 @@ class _AttendancePageState extends State<AttendancePage> {
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      Colors.purple.withOpacity(0.2),
-                      Colors.purple.withOpacity(0.1),
+                      Colors.purple.withValues(alpha:0.2),
+                      Colors.purple.withValues(alpha:0.1),
                     ],
                   ),
                   borderRadius: BorderRadius.circular(10),
@@ -901,7 +901,7 @@ class _AttendancePageState extends State<AttendancePage> {
             style: OutlinedButton.styleFrom(
               foregroundColor: Colors.purple,
               minimumSize: const Size(double.infinity, 40),
-              side: BorderSide(color: Colors.purple.withOpacity(0.5)),
+              side: BorderSide(color: Colors.purple.withValues(alpha:0.5)),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -928,9 +928,9 @@ class _AttendancePageState extends State<AttendancePage> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha:0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.2)),
+        border: Border.all(color: color.withValues(alpha:0.2)),
       ),
       child: Row(
         children: [
@@ -962,14 +962,14 @@ class _AttendancePageState extends State<AttendancePage> {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            Colors.white.withOpacity(0.3),
-            Colors.white.withOpacity(0.2),
+            Colors.white.withValues(alpha:0.3),
+            Colors.white.withValues(alpha:0.2),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withOpacity(0.4)),
+        border: Border.all(color: Colors.white.withValues(alpha:0.4)),
       ),
       child: Row(
         children: [
@@ -1059,12 +1059,12 @@ class _AttendancePageState extends State<AttendancePage> {
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
-                        Colors.blue.withOpacity(0.2),
-                        Colors.blue.withOpacity(0.1),
+                        Colors.blue.withValues(alpha:0.2),
+                        Colors.blue.withValues(alpha:0.1),
                       ],
                     ),
                     borderRadius: BorderRadius.circular(30),
-                    border: Border.all(color: Colors.blue.withOpacity(0.3)),
+                    border: Border.all(color: Colors.blue.withValues(alpha:0.3)),
                   ),
                   child: Text(
                     '${filtered.length} records',
@@ -1084,7 +1084,7 @@ class _AttendancePageState extends State<AttendancePage> {
             decoration: BoxDecoration(
               border: Border.all(color: Colors.grey.shade300),
               borderRadius: BorderRadius.circular(16),
-              color: Colors.white.withOpacity(0.3),
+              color: Colors.white.withValues(alpha:0.3),
             ),
             height: 500,
             child: ClipRRect(
@@ -1172,7 +1172,7 @@ class _AttendancePageState extends State<AttendancePage> {
                                 Container(
                                   padding: const EdgeInsets.all(20),
                                   decoration: BoxDecoration(
-                                    color: Colors.grey.withOpacity(0.1),
+                                    color: Colors.grey.withValues(alpha:0.1),
                                     shape: BoxShape.circle,
                                   ),
                                   child: Icon(Icons.inbox, size: 48, color: Colors.grey.shade400),
@@ -1254,7 +1254,7 @@ class _AttendancePageState extends State<AttendancePage> {
                 height: 46,
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [color, color.withOpacity(0.5)],
+                    colors: [color, color.withValues(alpha:0.5)],
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                   ),
@@ -1281,10 +1281,10 @@ class _AttendancePageState extends State<AttendancePage> {
                             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
-                                colors: [Colors.red.withOpacity(0.2), Colors.red.withOpacity(0.1)],
+                                colors: [Colors.red.withValues(alpha:0.2), Colors.red.withValues(alpha:0.1)],
                               ),
                               borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: Colors.red.withOpacity(0.3)),
+                              border: Border.all(color: Colors.red.withValues(alpha:0.3)),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
@@ -1311,10 +1311,10 @@ class _AttendancePageState extends State<AttendancePage> {
                                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                 decoration: BoxDecoration(
                                   gradient: LinearGradient(
-                                    colors: [Colors.blue.withOpacity(0.2), Colors.blue.withOpacity(0.1)],
+                                    colors: [Colors.blue.withValues(alpha:0.2), Colors.blue.withValues(alpha:0.1)],
                                   ),
                                   borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: Colors.blue.withOpacity(0.3)),
+                                  border: Border.all(color: Colors.blue.withValues(alpha:0.3)),
                                 ),
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
@@ -1369,10 +1369,10 @@ class _AttendancePageState extends State<AttendancePage> {
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
-                        colors: [color.withOpacity(0.15), color.withOpacity(0.05)],
+                        colors: [color.withValues(alpha:0.15), color.withValues(alpha:0.05)],
                       ),
                       borderRadius: BorderRadius.circular(30),
-                      border: Border.all(color: color.withOpacity(0.3)),
+                      border: Border.all(color: color.withValues(alpha:0.3)),
                     ),
                     child: Text(
                       day.status.label,
@@ -1395,10 +1395,10 @@ class _AttendancePageState extends State<AttendancePage> {
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
-                              colors: [Colors.green.withOpacity(0.15), Colors.green.withOpacity(0.05)],
+                              colors: [Colors.green.withValues(alpha:0.15), Colors.green.withValues(alpha:0.05)],
                             ),
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Colors.green.withOpacity(0.3)),
+                            border: Border.all(color: Colors.green.withValues(alpha:0.3)),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
@@ -1433,10 +1433,10 @@ class _AttendancePageState extends State<AttendancePage> {
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
-                              colors: [Colors.red.withOpacity(0.15), Colors.red.withOpacity(0.05)],
+                              colors: [Colors.red.withValues(alpha:0.15), Colors.red.withValues(alpha:0.05)],
                             ),
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Colors.red.withOpacity(0.3)),
+                            border: Border.all(color: Colors.red.withValues(alpha:0.3)),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
@@ -1486,7 +1486,7 @@ class _AttendancePageState extends State<AttendancePage> {
                           return Container(
                             margin: const EdgeInsets.only(left: 8),
                             decoration: BoxDecoration(
-                              color: Colors.blue.withOpacity(0.1),
+                              color: Colors.blue.withValues(alpha:0.1),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: IconButton(
@@ -1556,8 +1556,8 @@ class _AttendancePageState extends State<AttendancePage> {
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
-                            AppTheme.primaryColor.withOpacity(0.2),
-                            AppTheme.primaryColor.withOpacity(0.1),
+                            AppTheme.primaryColor.withValues(alpha:0.2),
+                            AppTheme.primaryColor.withValues(alpha:0.1),
                           ],
                         ),
                         borderRadius: BorderRadius.circular(10),
@@ -1683,8 +1683,8 @@ class _AttendancePageState extends State<AttendancePage> {
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
-                            Colors.purple.withOpacity(0.2),
-                            Colors.purple.withOpacity(0.1),
+                            Colors.purple.withValues(alpha:0.2),
+                            Colors.purple.withValues(alpha:0.1),
                           ],
                         ),
                         borderRadius: BorderRadius.circular(10),
@@ -1737,7 +1737,7 @@ class _AttendancePageState extends State<AttendancePage> {
                           margin: const EdgeInsets.only(bottom: 8),
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.1),
+                            color: Colors.white.withValues(alpha:0.1),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(color: Colors.grey.shade300),
                           ),
@@ -1750,7 +1750,7 @@ class _AttendancePageState extends State<AttendancePage> {
                                   gradient: LinearGradient(
                                     colors: [
                                       Colors.purple,
-                                      Colors.purple.withOpacity(0.5),
+                                      Colors.purple.withValues(alpha:0.5),
                                     ],
                                   ),
                                   borderRadius: BorderRadius.circular(2),
@@ -1815,7 +1815,7 @@ class _AttendancePageState extends State<AttendancePage> {
                         style: OutlinedButton.styleFrom(
                           foregroundColor: Colors.purple,
                           padding: const EdgeInsets.symmetric(vertical: 12),
-                          side: BorderSide(color: Colors.purple.withOpacity(0.5)),
+                          side: BorderSide(color: Colors.purple.withValues(alpha:0.5)),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -1854,8 +1854,8 @@ class _AttendancePageState extends State<AttendancePage> {
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
-                            Colors.blue.withOpacity(0.2),
-                            Colors.blue.withOpacity(0.1),
+                            Colors.blue.withValues(alpha:0.2),
+                            Colors.blue.withValues(alpha:0.1),
                           ],
                         ),
                         borderRadius: BorderRadius.circular(10),
@@ -1891,7 +1891,7 @@ class _AttendancePageState extends State<AttendancePage> {
                           margin: const EdgeInsets.only(bottom: 8),
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.1),
+                            color: Colors.white.withValues(alpha:0.1),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(color: Colors.grey.shade300),
                           ),
@@ -1904,7 +1904,7 @@ class _AttendancePageState extends State<AttendancePage> {
                                   gradient: LinearGradient(
                                     colors: [
                                       Colors.blue,
-                                      Colors.blue.withOpacity(0.5),
+                                      Colors.blue.withValues(alpha:0.5),
                                     ],
                                   ),
                                   borderRadius: BorderRadius.circular(2),
@@ -1942,7 +1942,7 @@ class _AttendancePageState extends State<AttendancePage> {
                     style: OutlinedButton.styleFrom(
                       foregroundColor: Colors.blue,
                       padding: const EdgeInsets.symmetric(vertical: 14),
-                      side: BorderSide(color: Colors.blue.withOpacity(0.5)),
+                      side: BorderSide(color: Colors.blue.withValues(alpha:0.5)),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14),
                       ),
@@ -1991,12 +1991,12 @@ class _AttendancePageState extends State<AttendancePage> {
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              Colors.white.withOpacity(0.15),
-              Colors.white.withOpacity(0.05),
+              Colors.white.withValues(alpha:0.15),
+              Colors.white.withValues(alpha:0.05),
             ],
           ),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.white.withOpacity(0.25)),
+          border: Border.all(color: Colors.white.withValues(alpha:0.25)),
         ),
         child: Row(
           children: [
@@ -2005,7 +2005,7 @@ class _AttendancePageState extends State<AttendancePage> {
               height: 50,
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [color, color.withOpacity(0.5)],
+                  colors: [color, color.withValues(alpha:0.5)],
                 ),
                 borderRadius: BorderRadius.circular(4),
               ),
@@ -2025,7 +2025,7 @@ class _AttendancePageState extends State<AttendancePage> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                         decoration: BoxDecoration(
-                          color: color.withOpacity(0.2),
+                          color: color.withValues(alpha:0.2),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
@@ -2055,10 +2055,10 @@ class _AttendancePageState extends State<AttendancePage> {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [color.withOpacity(0.15), color.withOpacity(0.05)],
+          colors: [color.withValues(alpha:0.15), color.withValues(alpha:0.05)],
         ),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha:0.3)),
       ),
       child: Text(
         '$label: $value',
@@ -2159,8 +2159,8 @@ class _AttendancePageState extends State<AttendancePage> {
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      Colors.orange.withOpacity(0.2),
-                      Colors.orange.withOpacity(0.1),
+                      Colors.orange.withValues(alpha:0.2),
+                      Colors.orange.withValues(alpha:0.1),
                     ],
                   ),
                   borderRadius: BorderRadius.circular(10),
@@ -2180,13 +2180,13 @@ class _AttendancePageState extends State<AttendancePage> {
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  Colors.white.withOpacity(0.4),
-                  Colors.white.withOpacity(0.2),
+                  Colors.white.withValues(alpha:0.4),
+                  Colors.white.withValues(alpha:0.2),
                 ],
               ),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: AppTheme.primaryColor.withOpacity(0.3),
+                color: AppTheme.primaryColor.withValues(alpha:0.3),
               ),
             ),
             child: DropdownButtonHideUnderline(
@@ -2270,13 +2270,13 @@ class _AttendancePageState extends State<AttendancePage> {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            Colors.white.withOpacity(0.4),
-            Colors.white.withOpacity(0.2),
+            Colors.white.withValues(alpha:0.4),
+            Colors.white.withValues(alpha:0.2),
           ],
         ),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: AppTheme.primaryColor.withOpacity(0.3),
+          color: AppTheme.primaryColor.withValues(alpha:0.3),
         ),
       ),
       child: Row(
@@ -2284,7 +2284,7 @@ class _AttendancePageState extends State<AttendancePage> {
           Container(
             padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
-              color: AppTheme.primaryColor.withOpacity(0.1),
+              color: AppTheme.primaryColor.withValues(alpha:0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: const Icon(Icons.calendar_month, size: 16, color: AppTheme.primaryColor),
@@ -2360,15 +2360,7 @@ class _AttendancePageState extends State<AttendancePage> {
     .get();
 
   final data = userDoc.data();
-
-  print("=== DEBUG USER ===");
-  print("USER ID: $currentUserId");
-  print("DATA: $data");
-
   final companyIds = data?['companyIds'];
-
-  print("COMPANY IDS RAW: $companyIds");
-  print("TYPE: ${companyIds.runtimeType}");
 
   String? companyId;
 
@@ -2376,7 +2368,6 @@ class _AttendancePageState extends State<AttendancePage> {
     companyId = companyIds.first.toString();
   }
 
-  print("FINAL COMPANY ID: $companyId");
 
   setState(() {
     _companyId = companyId ?? 'fallback';
@@ -2476,14 +2467,14 @@ Widget _glass(Widget child) {
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              Colors.white.withOpacity(0.3),
-              Colors.white.withOpacity(0.15),
+              Colors.white.withValues(alpha:0.3),
+              Colors.white.withValues(alpha:0.15),
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.white.withOpacity(0.4)),
+          border: Border.all(color: Colors.white.withValues(alpha:0.4)),
         ),
         child: child,
       ),
@@ -2507,10 +2498,10 @@ class _StaticChip extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [color.withOpacity(0.15), color.withOpacity(0.05)],
+          colors: [color.withValues(alpha:0.15), color.withValues(alpha:0.05)],
         ),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: color.withOpacity(0.4)),
+        border: Border.all(color: color.withValues(alpha:0.4)),
       ),
       child: Text(
         label,
@@ -2551,10 +2542,10 @@ class _StatusChips extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: [Colors.red.withOpacity(0.15), Colors.red.withOpacity(0.05)],
+              colors: [Colors.red.withValues(alpha:0.15), Colors.red.withValues(alpha:0.05)],
             ),
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: Colors.red.withOpacity(0.4)),
+            border: Border.all(color: Colors.red.withValues(alpha:0.4)),
           ),
           child: Text(
             'Overtime ${summary['overtime'] ?? 0}',
@@ -2574,14 +2565,14 @@ class _StatusChips extends StatelessWidget {
         decoration: BoxDecoration(
           gradient: isSelected
               ? LinearGradient(
-                  colors: [color.withOpacity(0.3), color.withOpacity(0.2)],
+                  colors: [color.withValues(alpha:0.3), color.withValues(alpha:0.2)],
                 )
               : LinearGradient(
-                  colors: [color.withOpacity(0.15), color.withOpacity(0.05)],
+                  colors: [color.withValues(alpha:0.15), color.withValues(alpha:0.05)],
                 ),
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: isSelected ? color : color.withOpacity(0.3),
+            color: isSelected ? color : color.withValues(alpha:0.3),
             width: isSelected ? 1.5 : 1,
           ),
         ),
@@ -2590,7 +2581,7 @@ class _StatusChips extends StatelessWidget {
           style: TextStyle(
             fontSize: 12,
             fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
-            color: isSelected ? color : color.withOpacity(0.9),
+            color: isSelected ? color : color.withValues(alpha:0.9),
           ),
         ),
       ),

@@ -20,7 +20,6 @@ class UserCache {
   Future<void> setUser(UserModel user) async {
     _currentUser = user;
     _lastFetch = DateTime.now();
-    print("📦 User cached manually: ${user.name}");
   }
 
   // Get user dari cache atau Firestore
@@ -30,12 +29,10 @@ class UserCache {
 
     // Cek apakah cache masih valid
     if (_isCacheValid()) {
-      print("📦 Using cached user data");
       return _currentUser!;
     }
 
     // Ambil dari Firestore
-    print("📦 Fetching user data from Firestore");
     final userDoc = await FirebaseFirestore.instance
         .collection('users')
         .doc(user.uid)
@@ -63,7 +60,6 @@ class UserCache {
   void clear() {
     _currentUser = null;
     _lastFetch = null;
-    print("📦 User cache cleared");
   }
 
   // Force refresh (panggil setelah update profile)

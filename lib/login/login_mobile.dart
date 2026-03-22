@@ -81,7 +81,6 @@ class _LoginMobileState extends State<LoginMobile> {
     }
 
   } catch (e) {
-    print("ERROR: $e");
   } finally {
     if (mounted) {
       setState(() => _isLoading = false);

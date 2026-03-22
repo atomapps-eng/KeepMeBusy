@@ -82,7 +82,7 @@ class OvernightDetailPage extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
+                color: Colors.white.withValues(alpha:0.2),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: const Icon(
@@ -180,7 +180,7 @@ class OvernightDetailPage extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.9),
+                        color: Colors.white.withValues(alpha:0.9),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(
@@ -238,7 +238,7 @@ class OvernightDetailPage extends StatelessWidget {
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF2563EB).withOpacity(0.3),
+                color: const Color(0xFF2563EB).withValues(alpha:0.3),
                 blurRadius: 12,
                 offset: const Offset(0, 4),
               ),
@@ -249,7 +249,7 @@ class OvernightDetailPage extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: Colors.white.withValues(alpha:0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(
@@ -336,11 +336,11 @@ class OvernightDetailPage extends StatelessWidget {
               return Container(
                 margin: const EdgeInsets.only(bottom: 12),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.95),
+                  color: Colors.white.withValues(alpha:0.95),
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.grey.shade200.withOpacity(0.5),
+                      color: Colors.grey.shade200.withValues(alpha:0.5),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
@@ -376,7 +376,7 @@ class OvernightDetailPage extends StatelessWidget {
                                 end: Alignment.bottomRight,
                                 colors: [
                                   categoryColor,
-                                  categoryColor.withOpacity(0.8),
+                                  categoryColor.withValues(alpha:0.8),
                                 ],
                               ),
                               borderRadius: BorderRadius.circular(12),
@@ -410,7 +410,7 @@ class OvernightDetailPage extends StatelessWidget {
                                     vertical: 2,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: categoryColor.withOpacity(0.1),
+                                    color: categoryColor.withValues(alpha:0.1),
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: Text(

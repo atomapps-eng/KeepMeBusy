@@ -363,7 +363,7 @@ if (!mounted || _isDisposed) return;
         context: context,
         barrierDismissible: true,
         barrierLabel: "SparePartDetail",
-        barrierColor: Colors.black.withOpacity(0.35),
+        barrierColor: Colors.black.withValues(alpha:0.35),
         transitionDuration: const Duration(milliseconds: 200),
         pageBuilder: (_, _, _) {
           return DraggableResizableWindow(

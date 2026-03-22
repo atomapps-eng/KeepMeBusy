@@ -226,7 +226,7 @@ countryController.dispose();
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.green.withOpacity(0.1),
+                color: Colors.green.withValues(alpha:0.1),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
@@ -350,7 +350,7 @@ countryController.dispose();
             // ===== LOADING OVERLAY =====
             if (isSaving || isDeleting)
               Container(
-                color: Colors.black.withOpacity(0.3),
+                color: Colors.black.withValues(alpha:0.3),
                 child: Center(
                   child: _buildLoadingIndicator(),
                 ),
@@ -369,12 +369,12 @@ countryController.dispose();
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.2),
+            color: Colors.white.withValues(alpha:0.2),
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.white.withOpacity(0.3)),
+            border: Border.all(color: Colors.white.withValues(alpha:0.3)),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Colors.black.withValues(alpha:0.05),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
@@ -385,7 +385,7 @@ countryController.dispose();
               Container(
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.white.withOpacity(0.3),
+                  color: Colors.white.withValues(alpha:0.3),
                 ),
                 child: IconButton(
                   icon: const Icon(Icons.arrow_back, color: Colors.black87),
@@ -416,7 +416,7 @@ countryController.dispose();
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.3),
+                  color: Colors.white.withValues(alpha:0.3),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(Icons.edit_note, size: 20),
@@ -441,7 +441,7 @@ countryController.dispose();
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
+                    color: Colors.black.withValues(alpha:0.1),
                     blurRadius: 20,
                     offset: const Offset(0, 8),
                   ),
@@ -449,13 +449,13 @@ countryController.dispose();
               ),
               child: ClipOval(
                 child: Container(
-                  color: Colors.white.withOpacity(0.3),
+                  color: Colors.white.withValues(alpha:0.3),
                   child: selectedImage != null
                       ? Image.file(selectedImage!, fit: BoxFit.cover)
                       : (currentLogoUrl.isNotEmpty
                           ? Image.network(currentLogoUrl, fit: BoxFit.cover)
                           : Container(
-                              color: Colors.blueGrey.withOpacity(0.1),
+                              color: Colors.blueGrey.withValues(alpha:0.1),
                               child: const Icon(
                                 Icons.business,
                                 size: 50,
@@ -586,9 +586,9 @@ _buildModernInput(
         filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.2),
+            color: Colors.white.withValues(alpha:0.2),
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.white.withOpacity(0.3)),
+            border: Border.all(color: Colors.white.withValues(alpha:0.3)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -600,7 +600,7 @@ _buildModernInput(
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: Colors.blueGrey.withOpacity(0.2),
+                        color: Colors.blueGrey.withValues(alpha:0.2),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Icon(icon, size: 18, color: Colors.blueGrey),
@@ -651,14 +651,14 @@ _buildModernInput(
           labelStyle: const TextStyle(color: Colors.black54),
           prefixIcon: icon != null ? Icon(icon, size: 18, color: Colors.blueGrey) : null,
           filled: true,
-          fillColor: Colors.white.withOpacity(0.3),
+          fillColor: Colors.white.withValues(alpha:0.3),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: BorderSide.none,
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: Colors.white.withOpacity(0.5)),
+            borderSide: BorderSide(color: Colors.white.withValues(alpha:0.5)),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
@@ -684,7 +684,7 @@ _buildModernInput(
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.blueGrey.withOpacity(0.3),
+                  color: Colors.blueGrey.withValues(alpha:0.3),
                   blurRadius: 8,
                   offset: const Offset(0, 4),
                 ),
@@ -728,7 +728,7 @@ _buildModernInput(
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.red.withOpacity(0.3),
+                  color: Colors.red.withValues(alpha:0.3),
                   blurRadius: 8,
                   offset: const Offset(0, 4),
                 ),
@@ -772,11 +772,11 @@ _buildModernInput(
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.9),
+        color: Colors.white.withValues(alpha:0.9),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha:0.1),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),

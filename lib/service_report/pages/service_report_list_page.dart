@@ -159,7 +159,7 @@ class _ServiceReportListPageState extends State<ServiceReportListPage> {
       Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: AppTheme.primaryColor.withOpacity(0.1),
+          color: AppTheme.primaryColor.withValues(alpha:0.1),
           borderRadius: BorderRadius.circular(12),
         ),
         child: const Icon(
@@ -218,10 +218,10 @@ class _ServiceReportListPageState extends State<ServiceReportListPage> {
         width: 250,
         margin: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.2),
+          color: Colors.white.withValues(alpha:0.2),
           borderRadius: BorderRadius.circular(30),
           border: Border.all(
-            color: AppTheme.surfaceColor.withOpacity(0.3),
+            color: AppTheme.surfaceColor.withValues(alpha:0.3),
           ),
         ),
         child: TextField(
@@ -246,7 +246,7 @@ class _ServiceReportListPageState extends State<ServiceReportListPage> {
     Container(
       margin: const EdgeInsets.only(right: 16),
       decoration: BoxDecoration(
-        color: Colors.green.withOpacity(0.1),
+        color: Colors.green.withValues(alpha:0.1),
         borderRadius: BorderRadius.circular(12),
       ),
       child: IconButton(
@@ -382,7 +382,7 @@ class _ServiceReportListPageState extends State<ServiceReportListPage> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: AppTheme.primaryColor.withOpacity(0.1),
+                  color: AppTheme.primaryColor.withValues(alpha:0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: const Icon(
@@ -444,9 +444,9 @@ class _ServiceReportListPageState extends State<ServiceReportListPage> {
     return Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha:0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.2)),
+        border: Border.all(color: color.withValues(alpha:0.2)),
       ),
       child: Row(
         children: [
@@ -486,7 +486,7 @@ class _ServiceReportListPageState extends State<ServiceReportListPage> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
         decoration: BoxDecoration(
-          color: isSelected ? color.withOpacity(0.2) : Colors.transparent,
+          color: isSelected ? color.withValues(alpha:0.2) : Colors.transparent,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: isSelected ? color : Colors.grey.shade300,
@@ -515,7 +515,7 @@ class _ServiceReportListPageState extends State<ServiceReportListPage> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.blue.withOpacity(0.1),
+                  color: Colors.blue.withValues(alpha:0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: const Icon(
@@ -583,7 +583,7 @@ class _ServiceReportListPageState extends State<ServiceReportListPage> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.purple.withOpacity(0.1),
+                  color: Colors.purple.withValues(alpha:0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: const Icon(
@@ -622,9 +622,9 @@ class _ServiceReportListPageState extends State<ServiceReportListPage> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.2),
+        color: Colors.white.withValues(alpha:0.2),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.3)),
+        border: Border.all(color: Colors.white.withValues(alpha:0.3)),
       ),
       child: Row(
         children: [
@@ -682,7 +682,7 @@ class _ServiceReportListPageState extends State<ServiceReportListPage> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Colors.blue.withOpacity(0.1),
+                  color: Colors.blue.withValues(alpha:0.1),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
@@ -699,7 +699,7 @@ class _ServiceReportListPageState extends State<ServiceReportListPage> {
           decoration: BoxDecoration(
             border: Border.all(color: Colors.grey.shade300),
             borderRadius: BorderRadius.circular(8),
-            color: AppTheme.surfaceColor.withOpacity(0.3),
+            color: AppTheme.surfaceColor.withValues(alpha:0.3),
           ),
           height: 500,
           child: ClipRRect(
@@ -862,7 +862,7 @@ Widget _buildTableRow(
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: color.withOpacity(0.1),
+                    color: color.withValues(alpha:0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
@@ -914,7 +914,7 @@ Widget _buildTableRow(
         Container(
           margin: const EdgeInsets.only(bottom: 12),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.2),
+            color: Colors.white.withValues(alpha:0.2),
             borderRadius: BorderRadius.circular(30),
             border: Border.all(color: Colors.grey.shade300),
           ),
@@ -1022,9 +1022,9 @@ Widget _buildTableRow(
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: color.withOpacity(isSelected ? 0.25 : 0.15),
+          color: color.withValues(alpha:isSelected ? 0.25 : 0.15),
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: color.withOpacity(0.45)),
+          border: Border.all(color: color.withValues(alpha:0.45)),
         ),
         child: Text(
           '$label $value',
@@ -1075,7 +1075,7 @@ Widget _buildTableRow(
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
+                color: color.withValues(alpha:0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
@@ -1137,10 +1137,10 @@ Widget _glass(Widget child) {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppTheme.surfaceColor.withOpacity(0.3),
+          color: AppTheme.surfaceColor.withValues(alpha:0.3),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-  color: AppTheme.primaryColor.withOpacity(0.2),
+  color: AppTheme.primaryColor.withValues(alpha:0.2),
 ),
         ),
         child: child,

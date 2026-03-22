@@ -5,7 +5,6 @@ import 'package:intl/intl.dart';
 import '../attendance/models/attendance_day.dart';
 import '../attendance/attendance_summary/attendance_summary_model.dart';
 import '../attendance/services/attendance_summary_helper.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../attendance/models/activity_entry.dart';
 
 class PdfReportService {
