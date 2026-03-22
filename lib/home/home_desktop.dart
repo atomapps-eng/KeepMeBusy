@@ -68,6 +68,12 @@ class _HomeDesktopState extends State<HomeDesktop> {
   int _currentTipIndex = 0;
 
   @override
+void dispose() {
+  _focusNode.dispose();
+  super.dispose();
+}
+
+  @override
 void initState() {
   super.initState();
   _roleFuture = RoleService.getUserRole();
@@ -76,6 +82,7 @@ void initState() {
 
   WidgetsBinding.instance.addPostFrameCallback((_) {
     if (!mounted) return;
+     _focusNode.requestFocus();
     _trackSectionView();
   });
 }
@@ -345,11 +352,11 @@ final bool canAccessSettings = isAdmin;
                         ),
                       ],
                     ),
-                    child: Image.asset(
-                      'assets/images/Atom.png',
-                      width: 70,
-                      fit: BoxFit.contain,
-                    ),
+                    child: const Image(
+  image: AssetImage('assets/images/Atom.png'),
+  width: 70,
+  fit: BoxFit.contain,
+)
                   ),
                 ],
               ),
@@ -451,7 +458,6 @@ final bool canAccessSettings = isAdmin;
                     ),
                     
                     // Settings (hanya untuk super admin)
-                    if (canAccessSettings)
                       _quickActionCard(
                         Icons.settings,
                         'Settings',
@@ -881,7 +887,7 @@ void _showAllMenusDialog() {
                     ),
                     
                     // Systems Section (hanya untuk super admin)
-                    if (_canAccessSettings) ...[
+                    ...[
                       const SizedBox(height: 24),
                       
                       _buildMenuSection(
@@ -1384,26 +1390,11 @@ Widget _buildMenuItemCard(_MenuItem item) {
                   childAspectRatio: 1.2,
                   children: [
                     _desktopMenuCard(
-                      Icons.event_available,
-                      'Daily Attendance',
-                      Colors.blue,
-                      () {
-                        final user = FirebaseAuth.instance.currentUser!;
-                        final employeeId = user.displayName!;
-                        final now = DateTime.now();
-                        final period = AttendancePeriodHelper.resolvePeriod(now);
-
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => AttendancePage(
-                              employeeId: employeeId,
-                              period: period,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
+  Icons.event_available,
+  'Daily Attendance',
+  Colors.blue,
+  _openAttendance, // 🔥 langsung pakai ini
+),
                     _desktopMenuCard(
                       Icons.build_circle,
                       'Service Report',
@@ -1616,7 +1607,7 @@ Widget build(BuildContext context) {
       return RawKeyboardListener(
         focusNode: _focusNode,
         onKey: _handleKeyPress,
-        autofocus: true,
+        autofocus: false,
         child: Scaffold(
           body: Row(
             children: [
@@ -1671,11 +1662,11 @@ final bool canAccessSettings = isAdmin;
           // Logo Aplikasi
           Container(
             padding: const EdgeInsets.only(top: 28, bottom: 16),
-            child: Image.asset(
-              'assets/images/Atom.png',
-              width: 70,
-              fit: BoxFit.contain,
-            ),
+            child: const Image(
+  image: AssetImage('assets/images/Atom.png'),
+  width: 70,
+  fit: BoxFit.contain,
+)
           ),
 
           // COMPANY INFO CARD
@@ -2024,7 +2015,6 @@ final bool canAccessSettings = isAdmin;
                   'Reports',
                   DesktopSection.reports,
                 ),
-                if (canAccessSettings)
                   _sidebarItem(
                     Icons.settings_outlined,
                     Icons.settings,
@@ -2218,8 +2208,6 @@ final bool canAccessSettings = isAdmin;
   }
 
   void _openSettings() async {
-    if (!_canAccessSettings) return;
-    
     await ActivityService.addActivity(
       icon: Icons.settings,
       title: 'Opened settings',
