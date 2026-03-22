@@ -61,57 +61,55 @@ class ReadTrackerService {
   }
 
   // Get analytics data
-  AnalyticsData getAnalytics() {
-    if (_readLogs.isEmpty) {
-      return AnalyticsData(
-        totalReads: 0,
-        readsByPage: {},
-        readsByCollection: {},
-        readsByHour: {},
-        recentReads: [],
-      );
-    }
-
-    // Hitung reads per page
-    final readsByPage = <String, int>{};
-    for (var log in _readLogs) {
-      final page = log['page'] as String;
-      readsByPage[page] = (readsByPage[page] ?? 0) + 1;
-    }
-
-    // Hitung reads per collection
-    final readsByCollection = <String, int>{};
-    for (var log in _readLogs) {
-      final collection = log['collection'] as String;
-      readsByCollection[collection] = (readsByCollection[collection] ?? 0) + 1;
-    }
-
-    // Hitung reads per hour
-    final readsByHour = <String, int>{};
-    for (var log in _readLogs) {
-      final hour = (log['timestamp'] as DateTime).hour.toString();
-      readsByHour[hour] = (readsByHour[hour] ?? 0) + 1;
-    }
-
-    // Recent reads
-    final recentReads = _readLogs.reversed.take(50).map((log) {
-      return ReadOperation(
-        page: log['page'],
-        collection: log['collection'],
-        operation: log['operation'],
-        timestamp: log['timestamp'],
-        documentsCount: log['documentsCount'],
-      );
-    }).toList();
-
+ AnalyticsData getAnalytics() {
+  if (_readLogs.isEmpty) {
     return AnalyticsData(
-      totalReads: _readLogs.length,
-      readsByPage: readsByPage,
-      readsByCollection: readsByCollection,
-      readsByHour: readsByHour,
-      recentReads: recentReads,
+      totalReads: 0,
+      readsByPage: {},
+      readsByCollection: {},
+      readsByHour: {},
+      recentReads: [],
     );
   }
+
+  final readsByPage = <String, int>{};
+  final readsByCollection = <String, int>{};
+  final readsByHour = <String, int>{};
+
+  int totalReads = 0;
+
+  for (var log in _readLogs) {
+    final page = log['page'] as String;
+    final collection = log['collection'] as String;
+    final hour = (log['timestamp'] as DateTime).hour.toString();
+    final count = log['documentsCount'] as int;
+
+    totalReads += count;
+
+    readsByPage[page] = (readsByPage[page] ?? 0) + count;
+    readsByCollection[collection] =
+        (readsByCollection[collection] ?? 0) + count;
+    readsByHour[hour] = (readsByHour[hour] ?? 0) + count;
+  }
+
+  final recentReads = _readLogs.reversed.take(50).map((log) {
+    return ReadOperation(
+      page: log['page'],
+      collection: log['collection'],
+      operation: log['operation'],
+      timestamp: log['timestamp'],
+      documentsCount: log['documentsCount'],
+    );
+  }).toList();
+
+  return AnalyticsData(
+    totalReads: totalReads,
+    readsByPage: readsByPage,
+    readsByCollection: readsByCollection,
+    readsByHour: readsByHour,
+    recentReads: recentReads,
+  );
+}
 
   // Export data sebagai JSON
   Map<String, dynamic> exportData() {

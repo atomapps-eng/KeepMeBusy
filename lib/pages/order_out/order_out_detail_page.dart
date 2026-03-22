@@ -7,6 +7,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:open_filex/open_filex.dart';
 import '../../core/services/company_firestore.dart';
 import '../../theme/app_theme.dart';
+import '../../core/services/firestore_tracker.dart';
 
 
 
@@ -23,10 +24,51 @@ class OrderOutDetailPage extends StatefulWidget {
 }
 
 class _OrderOutDetailPageState extends State<OrderOutDetailPage> {
+  Map<String, dynamic>? freshData;
+  bool isLoading = true;
+
+  @override
+void initState() {
+  super.initState();
+  _loadDetail();
+}
+
+Future<void> _loadDetail() async {
+  try {
+    final doc = await FirestoreTracker.getDoc(
+      docRef: CompanyFirestore
+          .collection('order_out')
+          .doc(widget.data['id']),
+      page: 'OrderOutDetailPage',
+      collection: 'order_out',
+    );
+
+    if (!doc.exists) {
+      if (mounted) {
+        Navigator.pop(context);
+      }
+      return;
+    }
+
+    setState(() {
+      freshData = doc.data() as Map<String, dynamic>;
+      isLoading = false;
+    });
+  } catch (e) {
+    setState(() => isLoading = false);
+  }
+}
   
   @override
   Widget build(BuildContext context) {
-    final data = widget.data;
+
+    if (isLoading) {
+  return const Scaffold(
+    body: Center(child: CircularProgressIndicator()),
+  );
+}
+
+    final data = freshData ?? widget.data;
     final items = data['items'] as List<dynamic>? ?? [];
 
     final totalItem = items.length;

@@ -8,6 +8,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../pages/partners/partner_list_page.dart';
 import '../pages/order_out/order_out_detail_page.dart';
 import '../theme/app_theme.dart';
+import '../../models/read_tracker_service.dart';
 
 
 class OrderOutMobile extends StatefulWidget {
@@ -46,6 +47,7 @@ class _OrderOutPageState extends State<OrderOutMobile> {
   bool isAdmin = false;
 bool isCheckingAdmin = true;
 
+
 int get totalItem => items.length;
 
 int get totalQty =>
@@ -80,6 +82,15 @@ void initState() {
 
   _checkAdminAccess();
 
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    ReadTrackerService().trackRead(
+      page: 'OrderOutPage',
+      collection: 'order_out',
+      operation: 'page_open',
+      documentsCount: 0,
+    );
+  });
+
   if (widget.autoCreate) {
     isCreateMode = true;
   }
@@ -89,6 +100,7 @@ void initState() {
       _openEditOrder(widget.initialEditData!);
     });
   }
+  
 }
   void _openEditOrder(Map<String, dynamic> data) {
     editingOrderId = data['id']; // ← sekarang VALID
@@ -519,6 +531,13 @@ Future<void> _commitOrderOut() async {
       isEdit: isEditMode,
     );
 
+    ReadTrackerService().trackRead(
+  page: 'OrderOutPage',
+  collection: 'order_out',
+  operation: isEditMode ? 'edit' : 'create',
+  documentsCount: items.length,
+);
+
     setState(() {
       isCreateMode = false;
       isEditMode = false;
@@ -626,6 +645,12 @@ Widget build(BuildContext context) {
   filterDate: fullscreenFilterDate,
 
   onTap: (context, data) async {
+    ReadTrackerService().trackRead(
+    page: 'OrderOutPage',
+    collection: 'order_out',
+    operation: 'open_detail',
+    documentsCount: 1,
+  );
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
@@ -680,6 +705,7 @@ Widget build(BuildContext context) {
                 poController: poController,
                 onSave: _commitOrderOut,
                 onBack: () => setState(() => isCreateMode = false),
+                isFormValid: isFormValid,
               ),
             ),
             Expanded(
@@ -1107,6 +1133,13 @@ Future<void> _deleteOrder(String orderId) async {
       .doc(orderId)
       .delete();
 
+      ReadTrackerService().trackRead(
+  page: 'OrderOutPage',
+  collection: 'order_out',
+  operation: 'delete',
+  documentsCount: 1,
+);
+
   if (!mounted) return;
 
   ScaffoldMessenger.of(context).showSnackBar(
@@ -1178,9 +1211,21 @@ class _OrderOutListView extends StatelessWidget {
           .orderBy('createdAt', descending: true)
           .snapshots(),
       builder: (_, snapshot) {
-        if (!snapshot.hasData) {
-          return const Center(child: CircularProgressIndicator());
-        }
+         if (snapshot.connectionState == ConnectionState.waiting) {
+    return const Center(child: CircularProgressIndicator());
+  }
+
+  if (!snapshot.hasData || snapshot.data == null) {
+    return const Center(child: Text('No data'));
+  }
+        if (snapshot.hasData) {
+    ReadTrackerService().trackRead(
+      page: 'OrderOutPage',
+      collection: 'order_out',
+      operation: 'stream_list',
+      documentsCount: snapshot.data!.docs.length,
+    );
+  }
 
         final docs = snapshot.data!.docs.where((doc) {
           final data = doc.data() as Map<String, dynamic>;
@@ -1382,6 +1427,7 @@ class _OrderHeader extends StatelessWidget {
   final TextEditingController poController;
   final VoidCallback onSave;
   final VoidCallback onBack;
+  final bool isFormValid;
 
   const _OrderHeader({
     required this.orderDate,
@@ -1391,6 +1437,7 @@ class _OrderHeader extends StatelessWidget {
     required this.poController,
     required this.onSave,
     required this.onBack,
+     required this.isFormValid,
   });
 
   @override
@@ -1487,7 +1534,7 @@ class _OrderHeader extends StatelessWidget {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
-                  onPressed: onSave,
+                  onPressed: isFormValid ? onSave : null,
                   icon: const Icon(Icons.save),
                   label: const Text('Save Order Out'),
                 ),

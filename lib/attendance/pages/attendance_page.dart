@@ -19,6 +19,7 @@ import '../../attendance/attendance_summary/attendance_summary_calculator.dart';
 import '../services/attendance_period_helper.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/activity_entry.dart';
+import '../../core/services/firestore_tracker.dart';
 
 class AttendancePage extends StatefulWidget {
   final String employeeId;
@@ -2081,10 +2082,18 @@ class _AttendancePageState extends State<AttendancePage> {
         .collection('days')
         .doc(dateStr);
 
-    final factorySnap = await dayRef.collection('factories').get();
+   final factorySnap = await FirestoreTracker.get(
+  query: dayRef.collection('factories'),
+  page: 'AttendancePage',
+  collection: 'attendance_factories',
+);
 
     for (final factory in factorySnap.docs) {
-      final actSnap = await factory.reference.collection('activities').limit(1).get();
+      final actSnap = await FirestoreTracker.get(
+  query: factory.reference.collection('activities').limit(1),
+  page: 'AttendancePage',
+  collection: 'activities',
+);
       if (actSnap.docs.isNotEmpty) {
         yield true;
         return;
@@ -2335,12 +2344,15 @@ class _AttendancePageState extends State<AttendancePage> {
   Future<void> _loadCompanyId() async {
  final currentUserId = FirebaseAuth.instance.currentUser!.uid;
 
-  final userDoc = await FirebaseFirestore.instance
-    .collection('users')
-    .doc(currentUserId)
-    .get();
+  final userDoc = await FirestoreTracker.getDoc(
+  docRef: FirebaseFirestore.instance
+      .collection('users')
+      .doc(currentUserId),
+  page: 'AttendancePage',
+  collection: 'users',
+);
 
-  final data = userDoc.data();
+  final data = userDoc.data() as Map<String, dynamic>?;
   final companyIds = data?['companyIds'];
 
   String? companyId;
@@ -2358,11 +2370,14 @@ class _AttendancePageState extends State<AttendancePage> {
 Future<List<ActivityEntry>> _getActivitiesForPeriod() async {
   final List<ActivityEntry> activities = [];
 
-  final daySnap = await CompanyFirestore
+  final daySnap = await FirestoreTracker.get(
+  query: CompanyFirestore
       .collection('attendance')
       .doc(widget.employeeId)
-      .collection('days')
-      .get();
+      .collection('days'),
+  page: 'AttendancePage',
+  collection: 'attendance_days',
+);
 
   for (final day in daySnap.docs) {
     final parts = day.id.split('-');
@@ -2378,16 +2393,23 @@ Future<List<ActivityEntry>> _getActivitiesForPeriod() async {
 
     if (!_isAllPeriod && period != _selectedPeriod) continue;
 
-    final factorySnap = await day.reference.collection('factories').get();
+    final factorySnap = await FirestoreTracker.get(
+  query: day.reference.collection('factories'),
+  page: 'AttendancePage',
+  collection: 'attendance_factories',
+);
 
     for (final factory in factorySnap.docs) {
-      final actSnap = await factory.reference
-          .collection('activities')
-          .orderBy('createdAt', descending: false)
-          .get();
+      final actSnap = await FirestoreTracker.get(
+  query: factory.reference
+      .collection('activities')
+      .orderBy('createdAt', descending: false),
+  page: 'AttendancePage',
+  collection: 'activities',
+);
 
       for (final act in actSnap.docs) {
-        final data = act.data();
+       final data = act.data() as Map<String, dynamic>;
 
         final activity = ActivityEntry.fromMap(data, date);
 

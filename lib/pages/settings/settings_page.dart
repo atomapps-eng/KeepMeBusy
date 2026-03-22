@@ -9,6 +9,8 @@ import '../../features/admin/pages/admin_analytics_page.dart';
 import '../../../models/read_tracker_service.dart';
 import '../../tools/migrate_spare_part_lowercase.dart';
 import '../../theme/app_theme.dart';
+import '../../core/services/firestore_tracker.dart';
+
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -79,17 +81,20 @@ class _SettingsPageState extends State<SettingsPage> with TickerProviderStateMix
   if (user == null) return false;
 
   try {
-    final doc = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(user.uid)
-        .get();
+    final doc = await FirestoreTracker.getDoc(
+  docRef: FirebaseFirestore.instance
+      .collection('users')
+      .doc(user.uid),
+  page: 'SettingsPage',
+  collection: 'users',
+);
 
     if (!doc.exists) return false;
 
-    final data = doc.data();
-    if (data == null) return false;
+final data = doc.data() as Map<String, dynamic>?;
+if (data == null) return false;
 
-    return data['role'] == 'super_admin';
+return data['role'] == 'super_admin';
   } catch (e) {
     return false;
   }
@@ -247,12 +252,17 @@ class _SettingsPageState extends State<SettingsPage> with TickerProviderStateMix
       context: context,
       builder: (_) => AlertDialog(
         title: Row(
-          children: const [
-            Icon(Icons.warning_amber_rounded, color: Colors.red, size: 28),
-            SizedBox(width: 8),
-            Text('⚠️ RESET SEMUA DATA'),
-          ],
-        ),
+  children: const [
+    Icon(Icons.warning_amber_rounded, color: Colors.red, size: 28),
+    SizedBox(width: 8),
+    Expanded(
+      child: Text(
+        '⚠️ RESET SEMUA DATA',
+        overflow: TextOverflow.ellipsis,
+      ),
+    ),
+  ],
+),
         content: Container(
           padding: const EdgeInsets.symmetric(vertical: 8),
           child: Column(
@@ -350,13 +360,19 @@ class _SettingsPageState extends State<SettingsPage> with TickerProviderStateMix
     );
   }
 
-  Future<int> _countCollection(String name) async {
-    final collection = name == 'spare_parts'
-        ? CompanyFirestore.collection('spare_parts')
-        : FirebaseFirestore.instance.collection(name);
-    final snap = await collection.get();
-    return snap.size;
-  }
+ Future<int> _countCollection(String name) async {
+  final collection = name == 'spare_parts'
+      ? CompanyFirestore.collection('spare_parts')
+      : FirebaseFirestore.instance.collection(name);
+
+  final snap = await FirestoreTracker.get(
+    query: collection,
+    page: 'SettingsPage',
+    collection: name,
+  );
+
+  return snap.size;
+}
 
   Future<void> _deleteCollectionWithProgress(String name) async {
     final firestore = FirebaseFirestore.instance;

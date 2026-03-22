@@ -3,6 +3,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../core/services/company_firestore.dart';
 import '../order_out/admin_service.dart';
 import '../order_out/order_out_service.dart';
+import '../../core/services/firestore_tracker.dart';
+import '../../models/read_tracker_service.dart';
 
 class OrderOutDesktopHistory extends StatefulWidget {
   final void Function(BuildContext, Map<String, dynamic>) onTap;
@@ -23,6 +25,7 @@ class _OrderOutDesktopHistoryState
 
       bool _isAdmin = false;
       bool _loadingAdmin = true;
+      bool _hasTracked = false;
 
   final TextEditingController _searchController =
       TextEditingController();
@@ -128,9 +131,23 @@ Widget build(BuildContext context) {
       builder: (_, snapshot) {
 
         if (!snapshot.hasData) {
-          return const Center(
-              child: CircularProgressIndicator());
-        }
+  return const Center(
+      child: CircularProgressIndicator());
+}
+
+// 🔥 TRACK HANYA SEKALI (FIRST LOAD)
+if (!_hasTracked) {
+  _hasTracked = true;
+
+  final docsCount = snapshot.data!.docs.length;
+
+  ReadTrackerService().trackRead(
+    page: 'OrderOutDesktopHistory',
+    collection: 'order_out',
+    documentsCount: docsCount,
+    operation: 'openList',
+  );
+}
 
         final keyword =
             _searchController.text.toLowerCase();

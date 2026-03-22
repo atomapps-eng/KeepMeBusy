@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/spare_part.dart';
 import '../core/services/company_firestore.dart';
+import '../../core/services/firestore_tracker.dart';
 
 class SparePartService {
   // Gunakan method yang sudah ada
@@ -17,7 +18,11 @@ class SparePartService {
       query = query.startAfterDocument(lastDoc);
     }
 
-    return await query.get();
+    return await FirestoreTracker.get(
+  query: query,
+  page: 'SparePartListPage',
+  collection: 'spare_parts',
+);
   }
 
   // Stream untuk real-time updates (pertahankan)
@@ -51,27 +56,36 @@ class SparePartService {
 
   // jalankan 3 query paralel
   final results = await Future.wait([
-    collection
+  FirestoreTracker.get(
+    query: collection
         .orderBy('partCode_lower')
         .startAt([lower])
         .endAt([end])
-        .limit(limit)
-        .get(),
+        .limit(limit),
+    page: 'SparePartSearch',
+    collection: 'spare_parts',
+  ),
 
-    collection
+  FirestoreTracker.get(
+    query: collection
         .orderBy('name_lower')
         .startAt([lower])
         .endAt([end])
-        .limit(limit)
-        .get(),
+        .limit(limit),
+    page: 'SparePartSearch',
+    collection: 'spare_parts',
+  ),
 
-    collection
+  FirestoreTracker.get(
+    query: collection
         .orderBy('nameEn')
         .startAt([keyword])
         .endAt(['$keyword\uf8ff'])
-        .limit(limit)
-        .get(),
-  ]);
+        .limit(limit),
+    page: 'SparePartSearch',
+    collection: 'spare_parts',
+  ),
+]);
 
   // deduplicate hasil
   final Map<String, QueryDocumentSnapshot> uniqueDocs = {};
