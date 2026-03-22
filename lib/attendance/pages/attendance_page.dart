@@ -2071,25 +2071,6 @@ class _AttendancePageState extends State<AttendancePage> {
     );
   }
 
-  // Helper functions
-  void _filterByDate(DateTime date) {
-    setState(() {
-      _activeStatus = null;
-    });
-  }
-
-  void _filterByWeek() {
-    setState(() {
-      _activeStatus = null;
-    });
-  }
-
-  void _filterByMonth() {
-    setState(() {
-      _activeStatus = null;
-    });
-  }
-
   Stream<bool> _hasActivities(DateTime date) async* {
     final dateStr =
         '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
@@ -2480,39 +2461,6 @@ Widget _glass(Widget child) {
       ),
     ),
   );
-}
-
-
-class _StaticChip extends StatelessWidget {
-  final String label;
-  final Color color;
-
-  const _StaticChip({
-    required this.label,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [color.withValues(alpha:0.15), color.withValues(alpha:0.05)],
-        ),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: color.withValues(alpha:0.4)),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-          color: color,
-        ),
-      ),
-    );
-  }
 }
 
 class _StatusChips extends StatelessWidget {

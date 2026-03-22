@@ -6,7 +6,6 @@ import '../services/trip_service.dart';
 import '../../../pages/partners/partner_list_page.dart';
 import '../../../models/partner.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../../theme/app_theme.dart';
 import '../../../pages/common/app_background_wrapper.dart';
 
 class CreateTripPage extends StatefulWidget {

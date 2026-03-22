@@ -56,9 +56,6 @@ class _HomeDesktopState extends State<HomeDesktop> {
 
   late Future<UserRole> _roleFuture;
 
-  // User role
-  String? _userEmail;
-
   // Tips bergantian (rotating tips)
   final List<String> _proTips = [
     'Use keyboard shortcuts: Ctrl+N for new order, Ctrl+F for search',
@@ -165,27 +162,6 @@ String _getRoleDisplay(UserRole role) {
       return Icons.verified_user;
     case UserRole.user:
       return Icons.person;
-  }
-}
-
-  String _getCountryFlag(String? countryId) {
-  if (countryId == null) return '🌐';
-
-  switch (countryId.toLowerCase()) {
-    case 'indonesia':
-    case 'atomindonesia':
-    case 'indonesia atom':
-      return '🇮🇩';
-    case 'india':
-    case 'atomindia':
-    case 'india atom':
-      return '🇮🇳';
-    case 'vietnam':
-    case 'atomvietnam':
-    case 'vietnam atom':
-      return '🇻🇳';
-    default:
-      return '🏢';
   }
 }
 
@@ -1144,41 +1120,6 @@ Widget _buildMenuItemCard(_MenuItem item) {
             description,
             style: const TextStyle(fontSize: 12),
           ),
-        ),
-      ],
-    );
-  }
-
-  Widget _footerStatItem(IconData icon, String label, String value, Color color) {
-    return Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: color.withValues(alpha:0.1),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Icon(icon, size: 16, color: color),
-        ),
-        const SizedBox(width: 8),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 11,
-                color: Colors.grey.shade600,
-              ),
-            ),
-            Text(
-              value,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
         ),
       ],
     );

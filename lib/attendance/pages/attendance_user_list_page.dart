@@ -4,7 +4,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../core/session/company_session.dart';
 import '../../attendance/pages/attendance_page.dart';
 import '../services/attendance_period_helper.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import '../../theme/app_theme.dart';
 
 class AttendanceUserListPage extends StatelessWidget {

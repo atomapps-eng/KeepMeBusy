@@ -50,11 +50,6 @@ class TripMobilePage extends StatelessWidget {
     return flags[countryCode.toUpperCase()] ?? '🌍';
   }
 
-  String _formatDate(DateTime? date) {
-    if (date == null) return 'N/A';
-    return '${date.day}/${date.month}/${date.year}';
-  }
-
   @override
   Widget build(BuildContext context) {
     final tripService = TripService();

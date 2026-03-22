@@ -116,7 +116,6 @@ class ActivityDetailPage extends StatelessWidget {
     final isDesktop = MediaQuery.of(context).size.width >= 900;
     final activityType = activity['activityType'] ?? '-';
     final color = _getActivityTypeColor(activityType);
-    final activityDate = activity['date'] as Timestamp?;
     final createdAt = activity['createdAt'] as Timestamp?;
 
     return Scaffold(

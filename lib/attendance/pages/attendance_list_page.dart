@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../../core/services/company_firestore.dart';
 import '../models/attendance_day.dart';
@@ -54,8 +53,6 @@ class _AttendanceListPageState extends State<AttendanceListPage> {
         return '✈️';
         case AttendanceStatus.joinHoliday:
         return '🧑‍🎄';
-      default:
-        return '📝';
     }
   }
 
@@ -73,8 +70,6 @@ class _AttendanceListPageState extends State<AttendanceListPage> {
         return const Color(0xFF2563EB);
         case AttendanceStatus.joinHoliday:
         return const Color.fromARGB(255, 240, 31, 20);
-      default:
-        return const Color(0xFF64748B);
     }
   }
 
@@ -84,8 +79,6 @@ class _AttendanceListPageState extends State<AttendanceListPage> {
         return '🏢';
       case AttendanceLocation.outstation:
         return '🚗';
-      default:
-        return '📍';
     }
   }
 
