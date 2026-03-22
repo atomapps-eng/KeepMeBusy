@@ -602,9 +602,7 @@ return data['role'] == 'super_admin';
                               Container(
                                 decoration: BoxDecoration(
                                   gradient: LinearGradient(
-                                    colors: isAdmin 
-                                      ? [Colors.purple.shade300, Colors.purple.shade700]
-                                      : [Colors.grey.shade300, Colors.grey.shade700],
+                                  colors: [Colors.purple.shade300, Colors.purple.shade700],   
                                   ),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
@@ -617,14 +615,14 @@ return data['role'] == 'super_admin';
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                   ),
-                                  onPressed: isAdmin ? () {
+                                  onPressed: () {
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
                                         builder: (_) => const AdminAnalyticsPage(),
                                       ),
                                     );
-                                  } : null,
+                                  },
                                   child: Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
