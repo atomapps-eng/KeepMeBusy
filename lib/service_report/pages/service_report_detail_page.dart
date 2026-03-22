@@ -4,13 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/service_report_firestore.dart';
-import '../../core/session/company_session.dart';
 import 'service_report_form_page.dart';
-import '../../config/cloudinary_config.dart';
 import '../../theme/app_theme.dart';
 import '../../pages/common/app_background_wrapper.dart';
 import '../../services/service_report_pdf_service.dart';
-import '../../services/pdf_action_service.dart';
 import '../services/company_collection_resolver.dart';
 
 class ServiceReportDetailPage extends StatefulWidget {

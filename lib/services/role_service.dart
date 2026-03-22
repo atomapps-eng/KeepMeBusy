@@ -47,7 +47,6 @@ class RoleService {
 
       return UserRole.user;
     } catch (e) {
-      print("ROLE ERROR: $e");
       return UserRole.user;
     }
   }

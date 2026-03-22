@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 class SparePartMigration {
   static Future<void> addLowercaseFields() async {
-    print('🚀 START MIGRATION');
+
 
     final collection = FirebaseFirestore.instance
         .collection('companies')
@@ -11,7 +11,6 @@ class SparePartMigration {
 
     const int batchSize = 400;
     DocumentSnapshot? lastDoc;
-    int totalUpdated = 0;
 
     while (true) {
       Query query = collection
@@ -38,19 +37,14 @@ class SparePartMigration {
           'partCode_lower': partCode.toLowerCase(),
           'name_lower': nameEn.toLowerCase(),
         });
-
-        totalUpdated++;
       }
 
       await batch.commit();
-
-      print('✅ Batch updated: ${snapshot.docs.length}');
 
       lastDoc = snapshot.docs.last;
 
       if (snapshot.docs.length < batchSize) break;
     }
 
-    print('🎯 MIGRATION DONE. Total updated: $totalUpdated');
   }
 }

@@ -121,7 +121,6 @@ class _RegisterPageState extends State<RegisterPage> {
     setState(() => _isLoading = true);
 
     // CEK USERNAME DUPLIKAT
-   print('CHECK USERNAME START');
     final isUsernameFree = await _isUsernameAvailable(username);
     if (!mounted) return;
 

@@ -911,7 +911,6 @@ final desktopTotalWeight = totalWeight;
 Widget _buildDesktopFormPanel() {
 
   final isDateInvalid = orderDate == null;
-  final isClientInvalid = selectedClient == null;
   final isPoInvalid = poController.text.trim().isEmpty;
 
   return SingleChildScrollView(
@@ -1252,13 +1251,11 @@ class _OrderHistoryCard extends StatelessWidget {
   final Map<String, dynamic> data;
   final bool isAdmin;
   final VoidCallback? onDelete;
-  final bool isFullscreen;
 
   const _OrderHistoryCard({
     required this.data,
     required this.isAdmin,
     this.onDelete,
-    this.isFullscreen = false,
   });
 
 

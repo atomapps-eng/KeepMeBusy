@@ -48,14 +48,6 @@ class ServiceReportFirestore {
 
   final firebaseUser = FirebaseAuth.instance.currentUser;
 
-  print("========== SERVICE REPORT STREAM ==========");
-  print("Firebase UID: ${firebaseUser?.uid}");
-  print("Firebase Email: ${firebaseUser?.email}");
-  print("UserModel role: ${user.role}");
-  print("UserModel companyIds: ${user.companyIds}");
-  print("Selected company session: ${CompanySession.selectedCompanyId}");
-  print("===========================================");
-
   if (user.role == 'super_admin') {
     return streamAllCompaniesReports(companyIds: user.companyIds);
   } else {
@@ -232,7 +224,6 @@ static Future<void> submitServiceReport({
     required String companyId,
     required String docId,
   }) async {
-    print("Getting report from: companies/$companyId/service_reports/$docId");
     return await FirebaseFirestore.instance
         .collection('companies')
         .doc(companyId)

@@ -34,9 +34,7 @@ class AuthService {
       // Ambil data user dan simpan di cache
       await _loadUserToCache();
 
-      print("✅ Login success, cache initialized");
     } catch (e) {
-      print("❌ Login error: $e");
       rethrow;
     }
   }
@@ -68,9 +66,7 @@ class AuthService {
         'createdAt': FieldValue.serverTimestamp(),
       });
 
-      print("✅ Register success, user document created");
     } catch (e) {
-      print("❌ Register error: $e");
       rethrow;
     }
   }
@@ -79,9 +75,7 @@ class AuthService {
   Future<void> sendPasswordReset(String email) async {
     try {
       await _auth.sendPasswordResetEmail(email: email);
-      print("✅ Password reset email sent");
     } catch (e) {
-      print("❌ Password reset error: $e");
       rethrow;
     }
   }
@@ -94,9 +88,7 @@ class AuthService {
       CompanyCache().clearAll();
       
       await _auth.signOut();
-      print("✅ Logout success, cache cleared");
     } catch (e) {
-      print("❌ Logout error: $e");
       rethrow;
     }
   }
@@ -131,7 +123,6 @@ class AuthService {
       // Coba ambil dari cache dulu
       return await UserCache().getUser();
     } catch (e) {
-      print("Cache miss, loading from Firestore: $e");
       // Jika gagal, load dari Firestore
       return await _loadUserToCache();
     }
@@ -141,7 +132,6 @@ class AuthService {
   Future<UserModel> refreshUserData() async {
     // Force refresh dari Firestore
     final userModel = await _loadUserToCache();
-    print("✅ User data refreshed");
     return userModel;
   }
 }

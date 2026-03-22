@@ -3,7 +3,6 @@ import 'dart:ui';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/trip_transfer_model.dart';
 import '../services/trip_transfer_service.dart';
-import '../../../theme/app_theme.dart';
 import '../../../pages/common/app_background_wrapper.dart';
 import 'dart:io';
 import 'dart:convert';
@@ -30,6 +29,7 @@ class _AddTransferPageState extends State<AddTransferPage> {
   final amountController = TextEditingController();
   final noteController = TextEditingController();
   File? transferImage;
+  String? existingImageUrl;
 
 final String cloudName = 'djl2sukor';
 final String uploadPreset = 'Receipt';
@@ -64,13 +64,14 @@ final String uploadPreset = 'Receipt';
       currency = transfer['currency'];
       noteController.text = doc.note;
       date = doc.date;
+      existingImageUrl = doc.receiptUrl;
     });
   }
 
     Future<void> saveTransfer() async {
   final user = FirebaseAuth.instance.currentUser!;
 
-  String photoUrl = '';
+  String photoUrl = existingImageUrl ?? '';
 
   if (transferImage != null) {
     photoUrl = await uploadImageToCloudinary();
@@ -358,7 +359,7 @@ Row(
 ),
 
 // PHOTO PREVIEW
-if (transferImage != null) ...[
+if (transferImage != null || (existingImageUrl?.isNotEmpty ?? false)) ...[
   const SizedBox(height: 16),
 
   Container(
@@ -370,11 +371,17 @@ if (transferImage != null) ...[
     ),
     child: ClipRRect(
       borderRadius: BorderRadius.circular(8),
-      child: Image.file(
-        transferImage!,
-        height: 120,
-        fit: BoxFit.cover,
-      ),
+      child: transferImage != null
+          ? Image.file(
+              transferImage!,
+              height: 120,
+              fit: BoxFit.cover,
+            )
+          : Image.network(
+              existingImageUrl!,
+              height: 120,
+              fit: BoxFit.cover,
+            ),
     ),
   ),
 ],
@@ -519,8 +526,8 @@ if (transferImage != null) ...[
                           // Amount
                           Text(
                             amountController.text.isEmpty
-                                ? '0.00'
-                                : amountController.text,
+      ? '0'
+      : formatNumber(double.tryParse(amountController.text) ?? 0),
                             style: TextStyle(
                               fontSize: 36,
                               fontWeight: FontWeight.bold,
@@ -1199,6 +1206,14 @@ Future<String> uploadImageToCloudinary() async {
   } else {
     debugPrint('Upload failed');
     return '';
+  }
+}
+
+String formatNumber(num value) {
+  if (value % 1 == 0) {
+    return value.toInt().toString();
+  } else {
+    return value.toString();
   }
 }
 

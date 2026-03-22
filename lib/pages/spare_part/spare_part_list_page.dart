@@ -57,8 +57,6 @@ class _SparePartListPageState extends State<SparePartListPage> {
   @override
   void initState() {
     super.initState();
-
-    print("ACTIVE COMPANY (LIST PAGE): ${CompanySession.selectedCompanyId}");
     
     // Cek apakah ada searchKeyword dari parameter
     if (widget.searchKeyword != null && widget.searchKeyword!.isNotEmpty) {
@@ -174,7 +172,6 @@ class _SparePartListPageState extends State<SparePartListPage> {
       _hasMore = false;
     }
   } catch (e) {
-    print('Error loading more search results: $e');
   } finally {
     if (!mounted || _isDisposed) return;
     setState(() => _isLoadingMore = false);
@@ -207,7 +204,6 @@ class _SparePartListPageState extends State<SparePartListPage> {
 
     _hasMore = snapshot.docs.length == 50;
   } catch (e) {
-    print('Error loading initial data: $e');
   } finally {
 if (!mounted || _isDisposed) return;
    setState(() => _isLoading = false);
@@ -239,7 +235,6 @@ if (!mounted || _isDisposed) return;
 
       _hasMore = snapshot.docs.length == 50;
     } catch (e) {
-      print('Error loading more: $e');
     } finally {
       if (!mounted || _isDisposed) return;
       setState(() => _isLoadingMore = false);
