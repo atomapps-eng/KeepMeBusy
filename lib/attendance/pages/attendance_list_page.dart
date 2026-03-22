@@ -3,6 +3,8 @@ import '../../core/services/company_firestore.dart';
 import '../models/attendance_day.dart';
 import '../../pages/common/app_background_wrapper.dart';
 import '../pages/attendance_input_page.dart';
+import '../../models/read_tracker_service.dart';
+import '../../core/services/firestore_tracker.dart';
 
 class AttendanceListPage extends StatefulWidget {
   final String employeeId;
@@ -22,18 +24,23 @@ class _AttendanceListPageState extends State<AttendanceListPage> {
   DateTime? fromDate;
   DateTime? toDate;
 
-  Stream<List<AttendanceDay>> _attendanceStream() {
-    return CompanyFirestore
-        .collection('attendance')
-        .doc(widget.employeeId)
-        .collection('days')
-        .orderBy('date', descending: false)
-        .snapshots()
-        .map(
-          (snap) =>
-              snap.docs.map((d) => AttendanceDay.fromFirestore(d)).toList(),
-        );
-  }
+  Stream<List<AttendanceDay>> _attendanceStream() async* {
+  final query = CompanyFirestore
+      .collection('attendance')
+      .doc(widget.employeeId)
+      .collection('days')
+      .orderBy('date', descending: false);
+
+  final snapshot = await FirestoreTracker.get(
+    query: query,
+    page: 'AttendanceListPage',
+    collection: 'attendance_days',
+  );
+
+  yield snapshot.docs
+      .map((d) => AttendanceDay.fromFirestore(d))
+      .toList();
+}
 
   String _formatDate(DateTime date) {
     return "${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}";
@@ -505,6 +512,13 @@ class _AttendanceListPageState extends State<AttendanceListPage> {
         color: Colors.transparent,
         child: InkWell(
           onTap: () {
+              ReadTrackerService().trackRead(
+    page: 'AttendanceListPage',
+    collection: 'attendance_days',
+    operation: 'open_detail',
+    documentsCount: 1,
+    queryParams: '${widget.employeeId}_${d.date.toIso8601String()}',
+  );
             Navigator.of(context).push(
               MaterialPageRoute(
                 builder: (_) => AttendanceInputPage(
