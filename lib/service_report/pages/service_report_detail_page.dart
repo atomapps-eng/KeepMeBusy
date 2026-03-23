@@ -495,7 +495,6 @@ setState(() {
 
     // TAMPILAN DATA
     final data = _reportDoc!.data()!;
-    print("DETAIL DEBUG factoryId: ${data['factoryId']}");
     final status = data['status'] ?? 'Draft';
     final isDraft = status == 'Draft';
 
@@ -1611,7 +1610,6 @@ Future<void> _printToPdf() async {
 
   try {
     final data = _reportDoc!.data()!;
-    
     await Future.delayed(Duration(milliseconds: 100));
 await ServiceReportPdfService.generatePdf(data: data);
 

@@ -232,9 +232,27 @@ pw.SizedBox(height: 10),
   headerDecoration: const pw.BoxDecoration(
     color: PdfColors.grey300,
   ),
+  headerAlignments: {
+    0: pw.Alignment.center,
+    1: pw.Alignment.center,
+    2: pw.Alignment.center,
+    3: pw.Alignment.center,
+    4: pw.Alignment.center,
+    5: pw.Alignment.center,
+    6: pw.Alignment.center,
+  },
   cellStyle: const pw.TextStyle(
     fontSize: 9,
   ),
+   cellAlignments: {
+  0: pw.Alignment.center,
+  1: pw.Alignment.center,
+  2: pw.Alignment.center,
+  3: pw.Alignment.center,
+  4: pw.Alignment.center,
+  5: pw.Alignment.center,
+  6: pw.Alignment.center,
+},
   columnWidths: {
     0: const pw.FlexColumnWidth(1.5),
     1: const pw.FlexColumnWidth(1.5),
@@ -393,13 +411,15 @@ summary.overnights.isEmpty
     );
   }
 
-  static pw.Widget _cell(String text) {
+static pw.Widget _cell(String text) {
   return pw.Padding(
     padding: const pw.EdgeInsets.all(6),
-    child: pw.Text(
-      text,
-      style: const pw.TextStyle(fontSize: 9),
-      softWrap: true,
+    child: pw.Center(
+      child: pw.Text(
+        text,
+        style: const pw.TextStyle(fontSize: 9),
+        textAlign: pw.TextAlign.center,
+      ),
     ),
   );
 }
@@ -494,18 +514,20 @@ static List<pw.Widget> _buildActivityTable(List<ActivityEntry> activities) {
         fontSize: 9,
       ),
       columnWidths: {
-        0: const pw.FlexColumnWidth(1.2),  // Date
-        1: const pw.FlexColumnWidth(1.5),  // Activity
-        2: const pw.FlexColumnWidth(1.5),  // Client
-        3: const pw.FlexColumnWidth(1.5),  // Machine
-        4: const pw.FlexColumnWidth(2.5),  // Description
-        5: const pw.FlexColumnWidth(2),    // Note
-      },
+  0: const pw.FlexColumnWidth(1.2),  // Date
+  1: const pw.FlexColumnWidth(1.3),  // Activity
+  2: const pw.FlexColumnWidth(1.5),  // Client
+  3: const pw.FlexColumnWidth(1.5),  // Machine
+  4: const pw.FlexColumnWidth(1.4),    // 🔥 Serial Number (diperkecil)
+  5: const pw.FlexColumnWidth(2.5),  // Description
+  6: const pw.FlexColumnWidth(2),    // Note
+},
       headers: [
         "Date",
         "Activity",
         "Client",
         "Machine",
+        "Serial Number",
         "Description",
         "Note",
       ],
@@ -513,16 +535,26 @@ static List<pw.Widget> _buildActivityTable(List<ActivityEntry> activities) {
   final dateFormat = DateFormat('dd/MM/yyyy');
 
   return [
-    dateFormat.format(a.date),
-    a.activityType,
-    a.factoryClient,
-    a.machine,
-    a.description.isEmpty ? "-" : a.description,
-    a.note.isEmpty ? "-" : a.note,
+    _centerText(dateFormat.format(a.date)),
+    _centerText(a.activityType ?? '-'),
+    _centerText(a.factoryClient ?? '-'),
+    _centerText(a.machine ?? '-'),
+    _centerText(a.serialNumber ?? '-'),
+    _centerText((a.description?.isEmpty ?? true) ? "-" : a.description!),
+    _centerText((a.note?.isEmpty ?? true) ? "-" : a.note!),
   ];
 }).toList(),
     ),
   ];
+}
+
+static pw.Widget _centerText(String text) {
+  return pw.Center(
+    child: pw.Text(
+      text,
+      textAlign: pw.TextAlign.center,
+    ),
+  );
 }
 
 }

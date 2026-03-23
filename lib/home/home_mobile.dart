@@ -491,19 +491,63 @@ class _HomeMobileState extends State<HomeMobile> {
   label: 'ATOM Cloud',
   color: Colors.blueAccent,
  onTap: () async {
+  final url = Uri.parse('https://cloud.atom.it/');
+
+  // loading
+  showGeneralDialog(
+  context: context,
+  barrierDismissible: false,
+  barrierColor: Colors.black.withOpacity(0.3),
+  transitionDuration: const Duration(milliseconds: 300),
+  pageBuilder: (_, __, ___) {
+    return Center(
+  child: Column(
+    mainAxisSize: MainAxisSize.min, // 🔥 penting biar center bener
+    children: [
+      Image.asset(
+        'assets/images/Atom.png',
+        width: 70, // kecilin dikit
+      ),
+      const SizedBox(height: 16),
+      const CircularProgressIndicator(),
+      const SizedBox(height: 12),
+      const Text(
+        'Opening ATOM Cloud...',
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          fontSize: 14, // 🔥 kecilin biar proporsional
+          color: Colors.white,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+    ],
+  ),
+);
+  },
+  transitionBuilder: (_, animation, __, child) {
+    return FadeTransition(
+      opacity: animation,
+      child: child,
+    );
+  },
+);
+
+await Future.delayed(const Duration(milliseconds: 200));
+
   try {
     await launchUrl(
-      Uri.parse('https://cloud.atom.it/'),
+      url,
       customTabsOptions: const CustomTabsOptions(
         showTitle: true,
         shareState: CustomTabsShareState.off,
       ),
-      safariVCOptions: const SafariViewControllerOptions(
-        barCollapsingEnabled: true,
-      ),
     );
   } catch (e) {
-    print('ERROR: $e');
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Failed to open ATOM Cloud')),
+    );
+  } finally {
+    Navigator.pop(context);
   }
 },
 ),
@@ -1272,7 +1316,7 @@ class _CategorySection extends StatelessWidget {
             crossAxisCount: crossAxisCount,
             mainAxisSpacing: 10,
 crossAxisSpacing: 10,
-childAspectRatio: 1.2,
+childAspectRatio: 1.27,
             children: children,
           ),
         ],
@@ -1302,13 +1346,17 @@ class _MenuCard extends StatelessWidget {
     final bool isTablet = MediaQuery.of(context).size.width >= 700;
     final double sizeIcon = iconSize ?? (isTablet ? 36 : 30);
 
-    return InkResponse(
+    return Center(
+  child: Material(
+    color: Colors.transparent,
+    child: InkWell(
       onTap: onTap,
-      radius: 40,
-      child: Padding(
-        padding: const EdgeInsets.only(top: 4),
+      borderRadius: BorderRadius.circular(12),
+      child: SizedBox(
+        width: 70,
+        height: 70,
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
               icon,
@@ -1330,7 +1378,9 @@ class _MenuCard extends StatelessWidget {
           ],
         ),
       ),
-    );
+    ),
+  ),
+);
   }
 }
 

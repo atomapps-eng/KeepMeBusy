@@ -12,7 +12,6 @@ import 'auth_controller.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../../models/read_tracker_service.dart';
-import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 
 final GlobalKey<ScaffoldMessengerState> rootScaffoldMessengerKey =
     GlobalKey<ScaffoldMessengerState>();
