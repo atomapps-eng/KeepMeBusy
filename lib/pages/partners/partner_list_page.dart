@@ -6,6 +6,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'add_partner_page.dart';
 import 'edit_partner_page.dart';
 import '../../theme/app_theme.dart';
+import '../../models/read_tracker_service.dart';
 
 class PartnerListPage extends StatefulWidget {
   final bool selectionMode;
@@ -24,6 +25,7 @@ class _PartnerListPageState extends State<PartnerListPage> with TickerProviderSt
   final TextEditingController searchController = TextEditingController();
   final FocusNode searchFocusNode = FocusNode();
   final PartnerService service = PartnerService();
+  bool _hasTracked = false;
   
   // Animation controllers
   late AnimationController _fabAnimationController;
@@ -134,6 +136,19 @@ class _PartnerListPageState extends State<PartnerListPage> with TickerProviderSt
                         }
 
                         final partners = snapshot.data!;
+
+                       if (!_hasTracked && snapshot.hasData) {
+  final partners = snapshot.data!;
+
+  ReadTrackerService().trackRead(
+    page: 'PartnerListPage',
+    collection: 'partners',
+    operation: 'stream',
+    documentsCount: partners.length,
+  );
+
+  _hasTracked = true;
+}
                         final keyword = searchController.text.toLowerCase();
 
                         List<Partner> filtered = partners.where((p) {
