@@ -228,10 +228,11 @@ pw.SizedBox(height: 10),
   headerStyle: pw.TextStyle(
     fontWeight: pw.FontWeight.bold,
     fontSize: 10,
+    color: PdfColors.white,
   ),
-  headerDecoration: const pw.BoxDecoration(
-    color: PdfColors.grey300,
-  ),
+  headerDecoration: pw.BoxDecoration(
+  color: PdfColor.fromHex('#F28C28'),
+),
   headerAlignments: {
     0: pw.Alignment.center,
     1: pw.Alignment.center,
@@ -321,8 +322,8 @@ summary.overnights.isEmpty
         },
         children: [
           pw.TableRow(
-            decoration: const pw.BoxDecoration(
-              color: PdfColors.grey300,
+            decoration: pw.BoxDecoration(
+              color: PdfColor.fromHex('#F28C28'),
             ),
             children: [
               _headerCell("Location"),
@@ -457,6 +458,7 @@ static pw.Widget _headerCell(String text) {
       style: pw.TextStyle(
         fontWeight: pw.FontWeight.bold,
         fontSize: 10,
+        color: PdfColors.white,
       ),
     ),
   );
@@ -506,10 +508,11 @@ static List<pw.Widget> _buildActivityTable(List<ActivityEntry> activities) {
       headerStyle: pw.TextStyle(
         fontWeight: pw.FontWeight.bold,
         fontSize: 10,
+        color: PdfColors.white,
       ),
-      headerDecoration: const pw.BoxDecoration(
-        color: PdfColors.grey300,
-      ),
+      headerDecoration: pw.BoxDecoration(
+  color: PdfColor.fromHex('#F28C28'),
+),
       cellStyle: const pw.TextStyle(
         fontSize: 9,
       ),

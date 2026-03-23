@@ -23,7 +23,7 @@ import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:flutter/services.dart';
-
+//
 
 class TripDetailPage extends StatelessWidget {
   final TripTransferService transferService = TripTransferService();
