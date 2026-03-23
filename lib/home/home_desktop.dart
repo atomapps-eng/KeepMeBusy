@@ -24,10 +24,12 @@ import '../services/role_service.dart';
 import '../service_report/pages/service_report_list_page.dart';
 import '../attendance/pages/attendance_user_list_page.dart';
 import '../modules/trip/pages/trip_mobile_page.dart';
+import '../pages/quotation/quotation_page.dart';
 //
 enum DesktopSection {
   dashboard,
   inventory,
+  sales,
   machinery,
   reports,
   systems,
@@ -800,6 +802,47 @@ void _showAllMenusDialog() {
                         ),
                       ],
                     ),
+
+                    const SizedBox(height: 24),
+
+_buildMenuSection(
+  title: 'SALES & TRANSACTIONS',
+  icon: Icons.request_quote,
+  color: Colors.orange,
+  items: [
+    _MenuItem(
+      icon: Icons.request_quote,
+      label: 'Quotation',
+      color: Colors.orange,
+      onTap: () {
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (_) => const QuotationPage(),
+    ),
+  );
+},
+    ),
+    _MenuItem(
+      icon: Icons.local_shipping,
+      label: 'Delivery Order',
+      color: Colors.blue,
+      onTap: () {
+        Navigator.pop(context);
+        // nanti page
+      },
+    ),
+    _MenuItem(
+      icon: Icons.payment,
+      label: 'Payment Check',
+      color: Colors.green,
+      onTap: () {
+        Navigator.pop(context);
+        // nanti page
+      },
+    ),
+  ],
+),
                     
                     const SizedBox(height: 24),
                     
@@ -1433,6 +1476,73 @@ Widget _buildMenuItemCard(_MenuItem item) {
     );
   }
 
+  Widget _buildDesktopSales() {
+  return LayoutBuilder(
+    builder: (context, constraints) {
+      final crossAxisCount = _crossAxis(constraints.maxWidth);
+
+      return SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Sales & Transactions',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 32),
+
+              GridView.count(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                crossAxisCount: crossAxisCount,
+                crossAxisSpacing: 24,
+                mainAxisSpacing: 24,
+                childAspectRatio: 1.2,
+                children: [
+                  _desktopMenuCard(
+                    Icons.request_quote,
+                    'Quotation',
+                    Colors.orange,
+                    () {
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (_) => const QuotationPage(),
+    ),
+  );
+},
+                  ),
+                  _desktopMenuCard(
+                    Icons.local_shipping,
+                    'Delivery Order',
+                    Colors.blue,
+                    () {
+                      // nanti isi
+                    },
+                  ),
+                  _desktopMenuCard(
+                    Icons.payment,
+                    'Payment Check',
+                    Colors.green,
+                    () {
+                      // nanti isi
+                    },
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      );
+    },
+  );
+}
+
   Future<void> _confirmLogout(BuildContext context) async {
     final bool? result = await showDialog<bool>(
       context: context,
@@ -1566,21 +1676,24 @@ Widget _buildContent(UserRole role) {
   }
 
   switch (selectedSection) {
-    case DesktopSection.dashboard:
-      return _buildDesktopWelcome(role);
+  case DesktopSection.dashboard:
+    return _buildDesktopWelcome(role);
 
-    case DesktopSection.inventory:
-      return _buildInventoryContent();
+  case DesktopSection.inventory:
+    return _buildInventoryContent();
 
-    case DesktopSection.machinery:
-      return _buildDesktopMachinery();
+  case DesktopSection.sales:
+    return _buildDesktopSales(); // ✅
 
-    case DesktopSection.reports:
-      return _buildDesktopReports();
+  case DesktopSection.machinery:
+    return _buildDesktopMachinery();
 
-    case DesktopSection.systems:
-      return _buildDesktopSystems();
-  }
+  case DesktopSection.reports:
+    return _buildDesktopReports();
+
+  case DesktopSection.systems:
+    return _buildDesktopSystems();
+}
 }
 
  // === STEP 4: ROLE FUTURE BUILDER START ===
@@ -2003,6 +2116,12 @@ final bool canAccessSettings = isAdmin;
                   'Inventory',
                   DesktopSection.inventory,
                 ),
+                _sidebarItem(
+  Icons.request_quote_outlined,
+  Icons.request_quote,
+  'Sales & Transactions',
+  DesktopSection.sales,
+),
                 _sidebarItem(
                   Icons.precision_manufacturing_outlined,
                   Icons.precision_manufacturing,
@@ -2448,27 +2567,36 @@ final bool canAccessSettings = isAdmin;
   String collection = '';
 
   switch (selectedSection) {
-    case DesktopSection.dashboard:
-      pageName = 'Dashboard Section';
-      collection = 'spare_parts';
-      break;
-    case DesktopSection.inventory:
-      pageName = 'Inventory Section';
-      collection = 'spare_parts';
-      break;
-    case DesktopSection.machinery:
-      pageName = 'Machinery Section';
-      collection = 'machinery';
-      break;
-    case DesktopSection.reports:
-      pageName = 'Reports Section';
-      collection = 'attendance';
-      break;
-    case DesktopSection.systems:
-      pageName = 'Systems Section';
-      collection = 'settings';
-      break;
-  }
+  case DesktopSection.dashboard:
+    pageName = 'Dashboard Section';
+    collection = 'spare_parts';
+    break;
+
+  case DesktopSection.inventory:
+    pageName = 'Inventory Section';
+    collection = 'spare_parts';
+    break;
+
+  case DesktopSection.sales:
+    pageName = 'Sales Section';
+    collection = 'sales';
+    break;
+
+  case DesktopSection.machinery:
+    pageName = 'Machinery Section';
+    collection = 'machinery';
+    break;
+
+  case DesktopSection.reports:
+    pageName = 'Reports Section';
+    collection = 'attendance';
+    break;
+
+  case DesktopSection.systems:
+    pageName = 'Systems Section';
+    collection = 'settings';
+    break;
+}
 
   ReadTrackerService().trackRead(
     page: pageName,

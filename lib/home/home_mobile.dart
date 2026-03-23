@@ -19,6 +19,7 @@ import '../order_out/order_out_mobile.dart';
 import '../attendance/pages/attendance_user_list_page.dart';
 import '../modules/trip/pages/trip_mobile_page.dart';
 import 'package:flutter_custom_tabs/flutter_custom_tabs.dart';
+import '../pages/quotation/quotation_page.dart';
 
 // Enum untuk navigation items
 enum MobileNavItem {
@@ -354,65 +355,41 @@ class _HomeMobileState extends State<HomeMobile> {
                   ],
                 ),
 
-                // Machinery Section
                 _CategorySection(
-                  title: 'Machinery',
-                  crossAxisCount: 4,
-                  children: [
-                    _MenuCard(
-                      icon: Icons.list,
-                      label: 'Machine List',
-                      color: Colors.pinkAccent,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const PlaceholderPage(title: 'Machine List'),
-                          ),
-                        );
-                      },
-                    ),
-                    _MenuCard(
-                      icon: Icons.menu_book,
-                      label: 'Machine Manual',
-                      color: Colors.teal,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const PlaceholderPage(title: 'Machine Manual'),
-                          ),
-                        );
-                      },
-                    ),
-                    _MenuCard(
-                      icon: Icons.auto_stories,
-                      label: 'Machine Catalogue',
-                      color: Colors.indigo,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const PlaceholderPage(title: 'Machine Catalogue'),
-                          ),
-                        );
-                      },
-                    ),
-                    _MenuCard(
-                      icon: Icons.verified,
-                      label: 'Licenses',
-                      color: Colors.orange,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const PlaceholderPage(title: 'Licenses'),
-                          ),
-                        );
-                      },
-                    ),
-                  ],
-                ),
+  title: 'Sales & Transactions',
+  crossAxisCount: 3,
+  children: [
+    _MenuCard(
+      icon: Icons.request_quote,
+      label: 'Quotation',
+      color: Colors.orange,
+      onTap: () {
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (_) => const QuotationPage(),
+    ),
+  );
+},
+    ),
+    _MenuCard(
+      icon: Icons.local_shipping,
+      label: 'Delivery Order',
+      color: Colors.blue,
+      onTap: () {
+        // nanti isi page
+      },
+    ),
+    _MenuCard(
+      icon: Icons.payment,
+      label: 'Payment Check',
+      color: Colors.green,
+      onTap: () {
+        // nanti isi page
+      },
+    ),
+  ],
+),
 
                 // Reports Section
                 _CategorySection(
@@ -569,6 +546,65 @@ await Future.delayed(const Duration(milliseconds: 1000));
                       label: 'Logout',
                       color: Colors.redAccent,
                       onTap: () => _confirmLogout(context),
+                    ),
+                  ],
+                ),
+                // Machinery Section
+                _CategorySection(
+                  title: 'Machinery',
+                  crossAxisCount: 4,
+                  children: [
+                    _MenuCard(
+                      icon: Icons.list,
+                      label: 'Machine List',
+                      color: Colors.pinkAccent,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const PlaceholderPage(title: 'Machine List'),
+                          ),
+                        );
+                      },
+                    ),
+                    _MenuCard(
+                      icon: Icons.menu_book,
+                      label: 'Machine Manual',
+                      color: Colors.teal,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const PlaceholderPage(title: 'Machine Manual'),
+                          ),
+                        );
+                      },
+                    ),
+                    _MenuCard(
+                      icon: Icons.auto_stories,
+                      label: 'Machine Catalogue',
+                      color: Colors.indigo,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const PlaceholderPage(title: 'Machine Catalogue'),
+                          ),
+                        );
+                      },
+                    ),
+                    _MenuCard(
+                      icon: Icons.verified,
+                      label: 'Licenses',
+                      color: Colors.orange,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const PlaceholderPage(title: 'Licenses'),
+                          ),
+                        );
+                      },
                     ),
                   ],
                 ),
@@ -1277,7 +1313,7 @@ class _CategorySection extends StatelessWidget {
   final int crossAxisCount;
   final List<Widget> children;
 
-  // ✅ TAMBAHAN
+  // Parameter untuk mengatur spacing
   final EdgeInsetsGeometry? margin;
   final double spacingTop;
   final double spacingBottom;
@@ -1287,8 +1323,8 @@ class _CategorySection extends StatelessWidget {
     required this.crossAxisCount,
     required this.children,
     this.margin,
-    this.spacingTop = 16,
-    this.spacingBottom = 8,
+    this.spacingTop = 4,      // Diubah dari 10 menjadi 4 (lebih rapat)
+    this.spacingBottom = 8,   // Diubah dari 2 menjadi 8 (konsisten)
   });
 
   @override
@@ -1309,14 +1345,14 @@ class _CategorySection extends StatelessWidget {
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),  // Diubah dari 12 menjadi 8 (lebih rapat)
           GridView.count(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             crossAxisCount: crossAxisCount,
-            mainAxisSpacing: 10,
-crossAxisSpacing: 10,
-childAspectRatio: 1.27,
+            mainAxisSpacing: 8,      // Diubah dari 10 menjadi 8 (lebih rapat)
+            crossAxisSpacing: 8,     // Diubah dari 10 menjadi 8 (lebih rapat)
+            childAspectRatio: 1.27,
             children: children,
           ),
         ],

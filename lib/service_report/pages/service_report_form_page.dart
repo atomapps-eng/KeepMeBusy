@@ -179,6 +179,7 @@ Future<void> _loadTechnicians() async {
       _isLoadingTechnicians = false;
     });
   } catch (e) {
+    print("Error loading technicians: $e");
     setState(() {
       _isLoadingTechnicians = false;
     });
@@ -2289,6 +2290,8 @@ await ServiceReportFirestore.submitServiceReport(
           backgroundColor: Colors.red,
         ),
       );
+
+      print("Error submitting report: $e");
       
       setState(() {
         _isSaving = false;
