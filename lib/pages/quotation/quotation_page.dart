@@ -379,38 +379,23 @@ Row(
 if (data['approvedBy'] != null) ...[
   const SizedBox(height: 2),
 
-  FutureBuilder<DocumentSnapshot>(
-    future: FirebaseFirestore.instance
-        .collection('users')
-        .doc(data['approvedBy'])
-        .get(),
-    builder: (context, snapshot) {
-      String name = '-';
-
-      if (snapshot.hasData && snapshot.data!.exists) {
-        final userData = snapshot.data!.data() as Map<String, dynamic>;
-        name = userData['name'] ?? '-';
-      }
-
-      return Row(
-        children: [
-          const Icon(Icons.verified, size: 14, color: Colors.green),
-          const SizedBox(width: 4),
-          Expanded(
-            child: Text(
-              'Approved: $name',
-              style: const TextStyle(
-                fontSize: 12,
-                color: Colors.green,
-                fontWeight: FontWeight.w500,
-              ),
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-        ],
-      );
-    },
-  ),
+  Row(
+  children: [
+    const Icon(Icons.verified, size: 14, color: Colors.green),
+    const SizedBox(width: 4),
+    Expanded(
+      child: Text(
+        'Approved: ${data['approvedByName'] ?? '-'}',
+        style: const TextStyle(
+          fontSize: 12,
+          color: Colors.green,
+          fontWeight: FontWeight.w500,
+        ),
+        overflow: TextOverflow.ellipsis,
+      ),
+    ),
+  ],
+),
 ],
                                       const SizedBox(height: 4),
                                       

@@ -192,10 +192,11 @@ final userData = userDoc.data() as Map<String, dynamic>?;
 
 // 🔽 update quotation
 await docRef.update({
-  'status': 'approved',
-  'approvedAt': FieldValue.serverTimestamp(),
-  'approvedBy': userId,
-  'approvedByName': userData?['name'] ?? '-',
+  'status': 'submitted',
+  'submittedAt': FieldValue.serverTimestamp(),
+  'submittedBy': userId,
+
+  'updatedAt': FieldValue.serverTimestamp(),
 });
 }
 
@@ -210,11 +211,23 @@ static Future<void> approveQuotation({
       .collection('quotations')
       .doc(quotationId);
 
-  await docRef.update({
-    'status': 'approved',
-    'approvedAt': FieldValue.serverTimestamp(),
-    'approvedBy': userId,
-  });
+  final userDoc = await FirebaseFirestore.instance
+    .collection('users')
+    .doc(userId)
+    .get();
+
+final userData = userDoc.data() as Map<String, dynamic>?;
+
+await docRef.update({
+  'status': 'approved',
+  'approvedAt': FieldValue.serverTimestamp(),
+  'approvedBy': userId,
+
+  // 🔥 INI YANG HILANG
+  'approvedByName': userData?['username'] ?? userData?['name'] ?? '-',
+
+  'updatedAt': FieldValue.serverTimestamp(),
+});
 }
 
 static Future<void> rejectQuotation({
