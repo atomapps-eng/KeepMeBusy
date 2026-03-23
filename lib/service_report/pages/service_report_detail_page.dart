@@ -35,12 +35,6 @@ class _ServiceReportDetailPageState extends State<ServiceReportDetailPage> {
   @override
   void initState() {
     super.initState();
-    // DEBUG: Lihat parameter yang diterima
-    print("=== SERVICE REPORT DETAIL PAGE ===");
-    print("reportId: ${widget.reportId}");
-    print("companyId: ${widget.companyId}");
-    print("Current User: ${FirebaseAuth.instance.currentUser?.uid}");
-    
     _loadReport();
   }
 
@@ -51,7 +45,6 @@ class _ServiceReportDetailPageState extends State<ServiceReportDetailPage> {
     });
 
     try {
-      print("Mencoba membaca dokumen: companies/${widget.companyId}/service_reports/${widget.reportId}");
       // Validasi input
       if (widget.companyId.isEmpty || widget.reportId.isEmpty) {
         throw Exception("companyId atau reportId tidak valid");
@@ -59,7 +52,7 @@ class _ServiceReportDetailPageState extends State<ServiceReportDetailPage> {
 
       // Path lengkap ke dokumen
       String path = 'companies/${widget.companyId}/service_reports/${widget.reportId}';
-      print("Mencoba membaca dokumen: $path");
+
 
       // Ambil dokumen dari Firestore
       final doc = await FirebaseFirestore.instance
@@ -68,14 +61,6 @@ class _ServiceReportDetailPageState extends State<ServiceReportDetailPage> {
           .collection('service_reports')
           .doc(widget.reportId)
           .get();
-
-      print("Hasil query:");
-      print("  exists: ${doc.exists}");
-      
-      if (doc.exists) {
-        print("  data: ${doc.data()}");
-        print("  companyId in data: ${doc.data()?['companyId']}");
-      }
 
       if (!mounted) return;
 
@@ -109,14 +94,7 @@ setState(() {
   _isLoading = false;
 });
 
-      print("Report berhasil dimuat");
-
     } catch (e, stackTrace) {
-      print("ERROR saat memuat report:");
-      print("  tipe error: ${e.runtimeType}");
-      print("  pesan: $e");
-      print("  stackTrace: $stackTrace");
-
       if (!mounted) return;
 
       setState(() {
@@ -1644,9 +1622,6 @@ Future<Map<String, dynamic>?> _getPartnerData(String? partnerId) async {
       .partners()
       .doc(partnerId)
       .get();
-
-       print("PARTNER EXISTS: ${doc.exists}");
-  print("PARTNER DATA: ${doc.data()}");
 
   return doc.data();
 }

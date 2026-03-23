@@ -122,7 +122,40 @@ class TripDetailPage extends StatelessWidget {
       ),
       child: IconButton(
         icon: const Icon(Icons.picture_as_pdf, color: Colors.red),
-        onPressed: () => _generateEnterprisePdf(context),
+        onPressed: () async {
+  final confirm = await showDialog<bool>(
+    context: context,
+    builder: (context) {
+      return AlertDialog(
+        title: const Text("Export PDF"),
+        content: const Text(
+          "Do you want to generate and export this trip report as a PDF?",
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text("Cancel"),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text("Export"),
+          ),
+        ],
+      );
+    },
+  );
+
+  if (confirm == true) {
+    _generateEnterprisePdf(context);
+  }
+},
       ),
     ),
 
@@ -349,6 +382,10 @@ _glass(
 
               final expenses = expenseSnapshot.data!;
               final balances = calculateBalance(transfers, expenses);
+              final ledger = buildLedger(transfers, expenses);
+
+              
+
 
               if (balances.isEmpty) {
                 return Container(
@@ -1093,11 +1130,78 @@ Widget _buildTransactionItem(BuildContext context, TripLedgerItem item) {
   }
 
  Future<void> _generateEnterprisePdf(BuildContext context) async {
+  double progress = 0;
+  Function(void Function())? updateDialog;
   try {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (_) => const Center(child: CircularProgressIndicator()),
+      builder: (context) {
+  return StatefulBuilder(
+    builder: (context, setStateDialog) {
+
+      updateDialog = setStateDialog;
+
+      return Center(
+  child: ClipRRect(
+    borderRadius: BorderRadius.circular(16),
+    child: BackdropFilter(
+      filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+      child: Container(
+        width: 260,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.85),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.grey.shade300),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+
+            /// TITLE (kecil & clean)
+            const Text(
+              "Exporting PDF",
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+
+            const SizedBox(height: 12),
+
+            /// PROGRESS BAR
+            ClipRRect(
+              borderRadius: BorderRadius.circular(6),
+              child: LinearProgressIndicator(
+                value: progress,
+                minHeight: 6,
+              ),
+            ),
+
+            const SizedBox(height: 8),
+
+            /// PERCENT TEXT (kanan bawah)
+            Align(
+              alignment: Alignment.centerRight,
+              child: Text(
+                "${(progress * 100).toStringAsFixed(0)}%",
+                style: TextStyle(
+                  fontSize: 11,
+                  color: Colors.grey.shade600,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  ),
+);
+    },
+  );
+},
     );
 
     final transfers = await transferService.getTransfers(trip.id);
@@ -1106,8 +1210,73 @@ Widget _buildTransactionItem(BuildContext context, TripLedgerItem item) {
     final ledger = buildLedger(transfers, expenses);
     final balances = calculateBalance(transfers, expenses);
 
-    final pdf = pw.Document();
     final dio = Dio();
+  dio.options.connectTimeout = const Duration(seconds: 10);
+dio.options.receiveTimeout = const Duration(seconds: 10);
+    // =====================
+// ATTACHMENT_LIST START
+// =====================
+final List<Map<String, dynamic>> attachments = [];
+
+for (var e in ledger) {
+  if (e.receiptUrl != null && e.receiptUrl!.isNotEmpty) {
+    attachments.add({
+      "id": e.id,
+      "url": e.receiptUrl!,
+      "date": e.date,
+      "amount": e.amount,
+      "currency": e.currency,
+      "isPdf": e.receiptUrl!.toLowerCase().endsWith(".pdf"),
+    });
+  }
+}
+
+
+// =====================
+// ATTACHMENT_LIST END
+// =====================
+
+// ==========================
+// ATTACHMENT_DOWNLOAD START
+// ==========================
+final Map<String, Uint8List> attachmentBytes = {};
+
+int i = 0;
+
+int total = attachments.length;
+
+if (total == 0) {
+  progress = 1;
+  if (updateDialog != null) updateDialog!(() {});
+} else {
+  int i = 0;
+
+  for (var att in attachments) {
+    try {
+      final res = await dio.get(
+        att["url"],
+        options: Options(responseType: ResponseType.bytes),
+      );
+
+      attachmentBytes[att["id"]] = Uint8List.fromList(res.data);
+
+    } catch (e) {
+    }
+
+    i++;
+    progress = i / total;
+
+    if (updateDialog != null) {
+      updateDialog!(() {});
+    }
+  }
+}
+
+// ==========================
+// ATTACHMENT_DOWNLOAD END
+// ==========================
+
+    final pdf = pw.Document();
     final currencyFormat =
         NumberFormat.currency(locale: 'id_ID', symbol: '', decimalDigits: 2);
 
@@ -1513,6 +1682,102 @@ Widget _buildTransactionItem(BuildContext context, TripLedgerItem item) {
             ),
           ),
 
+          // ==========================
+// ATTACHMENT INLINE START
+// ==========================
+
+pw.SizedBox(height: 20),
+
+pw.Text(
+  "Attachments",
+  style: pw.TextStyle(
+    fontSize: 14,
+    fontWeight: pw.FontWeight.bold,
+  ),
+),
+
+pw.SizedBox(height: 10),
+
+pw.Wrap(
+  spacing: 10,
+  runSpacing: 10,
+  children: [
+    ...attachments.map((att) {
+      final bytes = attachmentBytes[att["id"]];
+
+      return pw.Container(
+        width: 120,
+        padding: const pw.EdgeInsets.all(6),
+        decoration: pw.BoxDecoration(
+          border: pw.Border.all(color: PdfColors.grey300),
+          borderRadius: pw.BorderRadius.circular(6),
+        ),
+        child: pw.Column(
+  crossAxisAlignment: pw.CrossAxisAlignment.start,
+  children: [
+    pw.Container(
+      height: 80,
+      width: double.infinity,
+      alignment: pw.Alignment.center,
+      color: PdfColors.grey100,
+      child: att["isPdf"]
+          ? pw.UrlLink(
+              destination: att["url"],
+              child: pw.Text(
+                "Open PDF",
+                style: pw.TextStyle(
+                  color: PdfColors.red,
+                  decoration: pw.TextDecoration.underline,
+                ),
+              ),
+            )
+          : (bytes != null
+              ? pw.Image(
+                  pw.MemoryImage(bytes),
+                  fit: pw.BoxFit.contain,
+                )
+              : pw.Text("-")),
+    ),
+
+    pw.SizedBox(height: 4),
+
+    pw.Text(
+      _formatDate(att["date"]),
+      style: pw.TextStyle(fontSize: 8),
+    ),
+
+    pw.Text(
+      currencyFormat.format(att["amount"]),
+      style: pw.TextStyle(
+        fontSize: 9,
+        fontWeight: pw.FontWeight.bold,
+      ),
+    ),
+
+    pw.SizedBox(height: 4),
+
+    pw.UrlLink(
+      destination: att["url"],
+      child: pw.Text(
+        "Download",
+        style: pw.TextStyle(
+          fontSize: 8,
+          color: PdfColors.blue,
+          decoration: pw.TextDecoration.underline,
+        ),
+      ),
+    ),
+  ],
+)
+      );
+    }).toList(),
+  ],
+),
+
+// ==========================
+// ATTACHMENT INLINE END
+// ==========================
+
           /// SUMMARY FOOTER
           pw.SizedBox(height: 20),
           pw.Container(
@@ -1545,8 +1810,105 @@ Widget _buildTransactionItem(BuildContext context, TripLedgerItem item) {
       ),
     );
 
+// ==========================
+// ATTACHMENT_PAGE START
+// ==========================
+pdf.addPage(
+  pw.MultiPage(
+    pageFormat: PdfPageFormat.a4,
+    margin: const pw.EdgeInsets.all(24),
+    build: (context) => [
+
+      pw.Text(
+        "ATTACHMENTS",
+        style: pw.TextStyle(
+          fontSize: 18,
+          fontWeight: pw.FontWeight.bold,
+        ),
+      ),
+
+      pw.SizedBox(height: 10),
+
+      ...attachments.map((att) {
+        final bytes = attachmentBytes[att["id"]];
+
+        return pw.Container(
+          margin: const pw.EdgeInsets.only(bottom: 12),
+          padding: const pw.EdgeInsets.all(10),
+          decoration: pw.BoxDecoration(
+            border: pw.Border.all(color: PdfColors.grey300),
+            borderRadius: pw.BorderRadius.circular(8),
+          ),
+          child: pw.Row(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+
+              /// PREVIEW (IMAGE / LABEL PDF)
+              pw.Container(
+                width: 80,
+                height: 80,
+                child: att["isPdf"]
+                    ? pw.Center(
+                        child: pw.Text(
+                          "PDF",
+                          style: pw.TextStyle(
+                            color: PdfColors.red,
+                            fontWeight: pw.FontWeight.bold,
+                          ),
+                        ),
+                      )
+                    : (bytes != null
+                        ? pw.Image(pw.MemoryImage(bytes), fit: pw.BoxFit.cover)
+                        : pw.Text("No Image")),
+              ),
+
+              pw.SizedBox(width: 10),
+
+              /// INFO + DOWNLOAD LINK
+              pw.Expanded(
+                child: pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Text("Date: ${_formatDate(att["date"])}"),
+
+                    pw.Text(
+                      "Amount: ${currencyFormat.format(att["amount"])} ${att["currency"]}",
+                    ),
+
+                    pw.SizedBox(height: 6),
+
+                    /// 🔥 CLICKABLE DOWNLOAD
+                    pw.UrlLink(
+                      destination: att["url"],
+                      child: pw.Text(
+                        "Download File",
+                        style: pw.TextStyle(
+                          color: PdfColors.blue,
+                          decoration: pw.TextDecoration.underline,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      }),
+    ],
+  ),
+);
+// ==========================
+// ATTACHMENT_PAGE END
+// ==========================
+
     final dir = await getTemporaryDirectory();
-    final file = File("${dir.path}/trip_report_${trip.id}.pdf");
+    final tripDate =
+    "${trip.startDate.day}-${trip.startDate.month}-${trip.startDate.year}";
+
+final file = File(
+  "${dir.path}/${trip.country},$tripDate.pdf",
+);
 
     await file.writeAsBytes(await pdf.save());
 

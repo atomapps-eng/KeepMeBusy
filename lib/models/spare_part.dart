@@ -47,6 +47,7 @@ class SparePart {
   final int minimumStock;
   final double weight;
   final String weightUnit;
+  final double basePriceEur;
   final String imageUrl;
   final int imageVersion;
   final SparePartCategory category;
@@ -65,6 +66,7 @@ class SparePart {
     required this.minimumStock,   // ⬅️ baru
     required this.weight,
     required this.weightUnit,
+    this.basePriceEur = 0.0,
     required this.imageUrl,
     this.imageVersion = 0,
     this.category = SparePartCategory.autoCutting,
@@ -93,6 +95,7 @@ class SparePart {
       weight: _safeDouble(data['weight']),
 
       weightUnit: (data['weightUnit'] ?? 'Kg').toString(),
+      basePriceEur: (data['basePriceEur'] ?? 0).toDouble(),
       imageUrl: (data['imageUrl'] ?? '').toString(),
       imageVersion: _safeInt(data['imageVersion']),
 
@@ -144,6 +147,7 @@ Map<String, dynamic> toMap() {
     'minimumStock': minimumStock,
     'weight': weight,
     'weightUnit': weightUnit,
+    'basePriceEur': basePriceEur,
     'imageUrl': imageUrl,
     'imageVersion': imageVersion,
     'category': category.name.toUpperCase(),

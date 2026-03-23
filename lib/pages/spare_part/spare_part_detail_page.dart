@@ -13,6 +13,8 @@ import 'package:http/http.dart' as http;
 import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import '../../theme/app_theme.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:intl/intl.dart';
 
 class SparePartDetailPage extends StatefulWidget {
   final SparePart part;
@@ -160,7 +162,7 @@ Future<Uint8List> _addTextToImage(ImageProvider imageProvider, String text) asyn
         fontWeight: FontWeight.bold,
       ),
     ),
-    textDirection: TextDirection.ltr,
+    textDirection: ui.TextDirection.ltr,
   );
 
   textPainter.layout();
@@ -267,7 +269,7 @@ Future<Uint8List> _addTextToImage(ImageProvider imageProvider, String text) asyn
               SizedBox(height: sectionSpacing),
 
               _buildInfoSection(
-                title: 'STOK',
+                title: 'STOCK',
                 children: [
                   _infoRow('Initial Stock', widget.part.initialStock.toString(),
                       labelFontSize: labelFontSize,
@@ -284,7 +286,7 @@ Future<Uint8List> _addTextToImage(ImageProvider imageProvider, String text) asyn
               SizedBox(height: sectionSpacing),
 
               _buildInfoSection(
-                title: 'KATEGORI',
+                title: 'CATEGORY',
                 children: [
                   _infoRow('Category',
                       widget.part.category.name.replaceAll('_', ' '),
@@ -299,11 +301,23 @@ Future<Uint8List> _addTextToImage(ImageProvider imageProvider, String text) asyn
               SizedBox(height: sectionSpacing),
 
               _buildInfoSection(
-                title: 'SPESIFIKASI',
+                title: 'SPESIFICATION',
                 children: [
                   _infoRow('Weight', '${widget.part.weight} ${widget.part.weightUnit}',
                       labelFontSize: labelFontSize,
                       valueFontSize: valueFontSize),
+                ],
+              ),
+
+              _buildInfoSection(
+                title: 'PRICE',
+                children: [
+                  _infoRow(
+  'Base Price',
+  eurFormat.format(widget.part.basePriceEur),
+  labelFontSize: labelFontSize,
+  valueFontSize: valueFontSize,
+),
                 ],
               ),
 
@@ -498,6 +512,11 @@ Future<Uint8List> _addTextToImage(ImageProvider imageProvider, String text) asyn
       ),
     );
   }
+  final eurFormat = NumberFormat.currency(
+  locale: 'en',
+  symbol: '€ ',
+  decimalDigits: 2,
+);
 }
 
 // =========================
@@ -544,48 +563,24 @@ class _DetailImage extends StatelessWidget {
                       child: AspectRatio(
                         aspectRatio: 1,
                         child: imageUrl.isNotEmpty
-                            ? Image.network(
-                                imageUrl,
-                                fit: BoxFit.contain,
-                                loadingBuilder: (context, child, loadingProgress) {
-                                  if (loadingProgress == null) return child;
-                                  return Container(
-                                    color: const Color.fromARGB(255, 243, 228, 172),
-                                    child: Center(
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 3,
-                                        value: loadingProgress.expectedTotalBytes != null
-                                            ? loadingProgress.cumulativeBytesLoaded /
-                                                loadingProgress.expectedTotalBytes!
-                                            : null,
-                                      ),
-                                    ),
-                                  );
-                                },
-                                errorBuilder: (context, error, stackTrace) {
-                                  return Container(
-                                    color: const Color.fromARGB(255, 243, 228, 172),
-                                    child: Column(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        Icon(
-                                          Icons.broken_image,
-                                          size: 60,
-                                          color: Colors.grey.shade600,
-                                        ),
-                                        const SizedBox(height: 8),
-                                        Text(
-                                          'Gambar tidak tersedia',
-                                          style: TextStyle(
-                                            color: Colors.grey.shade700,
-                                            fontSize: 14,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  );
-                                },
-                              )
+                            ? CachedNetworkImage(
+  imageUrl: imageUrl,
+  fit: BoxFit.contain,
+  placeholder: (context, url) => Center(
+    child: CircularProgressIndicator(strokeWidth: 2),
+  ),
+  errorWidget: (context, url, error) => Container(
+    color: const Color.fromARGB(255, 243, 228, 172),
+    child: Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(Icons.broken_image, size: 60),
+        SizedBox(height: 8),
+        Text('Gambar gagal dimuat'),
+      ],
+    ),
+  ),
+)
                             : Container(
                                 color: const Color.fromARGB(255, 243, 228, 172),
                                 child: Column(
@@ -680,22 +675,24 @@ class _DetailImage extends StatelessWidget {
                 AspectRatio(
                   aspectRatio: 1,
                   child: imageUrl.isNotEmpty
-                      ? Image.network(
-                          imageUrl,
-                          fit: BoxFit.contain,
-                          loadingBuilder: (context, child, loadingProgress) {
-                            if (loadingProgress == null) return child;
-                            return Center(
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                value: loadingProgress.expectedTotalBytes != null
-                                    ? loadingProgress.cumulativeBytesLoaded /
-                                        loadingProgress.expectedTotalBytes!
-                                    : null,
-                              ),
-                            );
-                          },
-                        )
+                      ? CachedNetworkImage(
+  imageUrl: imageUrl,
+  fit: BoxFit.contain,
+  placeholder: (context, url) => Center(
+    child: CircularProgressIndicator(strokeWidth: 2),
+  ),
+  errorWidget: (context, url, error) => Container(
+    color: const Color.fromARGB(255, 243, 228, 172),
+    child: Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(Icons.broken_image, size: 60),
+        SizedBox(height: 8),
+        Text('Gambar gagal dimuat'),
+      ],
+    ),
+  ),
+)
                       : Icon(
                           Icons.inventory,
                           size: isMobile ? 48 : 56,

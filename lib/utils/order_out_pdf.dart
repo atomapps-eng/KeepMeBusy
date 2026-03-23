@@ -107,42 +107,58 @@ class OrderOutPdfGenerator {
               color: PdfColors.grey400,
             ),
             columnWidths: const {
-              0: pw.FixedColumnWidth(30),
-              1: pw.FlexColumnWidth(2),
-              2: pw.FlexColumnWidth(3),
-              3: pw.FlexColumnWidth(2),
-              4: pw.FixedColumnWidth(40),
-            },
+  0: pw.FixedColumnWidth(30),
+  1: pw.FixedColumnWidth(50), // ✅ checkbox column
+  2: pw.FlexColumnWidth(2),
+  3: pw.FlexColumnWidth(3),
+  4: pw.FlexColumnWidth(2),
+  5: pw.FixedColumnWidth(40),
+},
             children: [
               // HEADER
               pw.TableRow(
-                decoration: const pw.BoxDecoration(
-                  color: PdfColors.orange800,
-                ),
-                children: [
-                  _headerCell('No'),
-                  _headerCell('Part Code'),
-                  _headerCell('Name'),
-                  _headerCell('Location'),
-                  _headerCell('Qty'),
-                ],
-              ),
+  decoration: const pw.BoxDecoration(
+    color: PdfColors.orange800,
+  ),
+  children: [
+    _headerCell('No'),
+    _headerCell('Check'), // atau 'Check'
+    _headerCell('Part Code'),
+    _headerCell('Name'),
+    _headerCell('Location'),
+    _headerCell('Qty'),
+  ],
+),
 
               // ROWS
               ...List.generate(items.length, (index) {
                 final item = items[index];
-                return pw.TableRow(
-                  children: [
-                    _cell('${index + 1}', alignCenter: true),
-                    _cell(item['partCode'] ?? '-'),
-                    _cell(item['nameEn'] ?? '-'),
-                    _cell(item['location'] ?? '-'),
-                    _cell(
-                      item['qty'].toString(),
-                      alignCenter: true,
-                    ),
-                  ],
-                );
+               return pw.TableRow(
+  children: [
+    _cell('${index + 1}', alignCenter: true),
+
+    // ✅ CHECKBOX
+    pw.Container(
+  height: 28, // penting untuk vertical centering
+  alignment: pw.Alignment.center,
+  child: pw.Container(
+    width: 12,
+    height: 12,
+    decoration: pw.BoxDecoration(
+      border: pw.Border.all(width: 1),
+    ),
+  ),
+),
+
+    _cell(item['partCode'] ?? '-'),
+    _cell(item['nameEn'] ?? '-'),
+    _cell(item['location'] ?? '-'),
+    _cell(
+      item['qty'].toString(),
+      alignCenter: true,
+    ),
+  ],
+);
               }),
             ],
           ),

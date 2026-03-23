@@ -8,6 +8,7 @@ import 'dart:convert';
 import 'package:crypto/crypto.dart';
 import '../../core/services/company_firestore.dart';
 import '../../theme/app_theme.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class EditSparePartPage extends StatefulWidget {
   final SparePart part;
@@ -26,9 +27,13 @@ class _EditSparePartPageState extends State<EditSparePartPage>
   late TextEditingController locationController;
   late TextEditingController stockController;
   late TextEditingController weightController;
+  late TextEditingController basePriceController;
   late SparePartCategory _selectedCategory;
   late SparePartOrigin _selectedOrigin;
   late TextEditingController currentStockController;
+
+  bool isSuperAdmin = false;
+  bool isLoadingRole = true;
 
   String formatLocation(String input) {
     String value = input
@@ -96,6 +101,9 @@ class _EditSparePartPageState extends State<EditSparePartPage>
     currentStockController = TextEditingController(text: widget.part.currentStock.toString());
     weightController = TextEditingController(text: widget.part.weight.toString());
     weightUnit = widget.part.weightUnit;
+    basePriceController = TextEditingController(
+  text: widget.part.basePriceEur.toString(),
+);
     _selectedCategory = widget.part.category;
     _selectedOrigin = widget.part.origin;
 
@@ -104,6 +112,8 @@ class _EditSparePartPageState extends State<EditSparePartPage>
     _fadeController = AnimationController(vsync: this, duration: const Duration(milliseconds: 400));
     _fadeAnimation = CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut);
     _fadeController.forward();
+
+     _loadRole();
   }
 
   @override
@@ -293,6 +303,8 @@ class _EditSparePartPageState extends State<EditSparePartPage>
     final String nameEn = nameEnController.text.trim();
     final String location = locationController.text.trim();
     final String inputWeight = weightController.text.replaceAll(',', '.');
+    double basePrice =
+    double.tryParse(basePriceController.text.replaceAll(',', '.')) ?? 0.0;
 
     if (name.isEmpty || nameEn.isEmpty) {
       showMessage('Name dan Name (English) wajib diisi');
@@ -316,21 +328,41 @@ class _EditSparePartPageState extends State<EditSparePartPage>
     final newImageUrl = await uploadImageToCloudinary(widget.part.partCode);
     await safeDeleteCloudinaryImage(oldImageUrl, newImageUrl);
 
-    await CompanyFirestore
-        .collection('spare_parts')
-        .doc(widget.part.partCode)
-        .update({
-      'name': name,
-      'nameEn': nameEn,
-      'location': location,
-      'stock': stock,
-      'weight': weight,
-      'weightUnit': weightUnit,
-      'imageUrl': newImageUrl,
-      'category': _selectedCategory.name.toUpperCase(),
-      'origin': _selectedOrigin.name.toUpperCase(),
-      'updatedAt': Timestamp.now(),
-    });
+    // 🔥 STEP 7B — BUILD PAYLOAD (HARUS DI LUAR)
+Map<String, dynamic> updatePayload = {
+  'name': name,
+  'nameEn': nameEn,
+  'location': location,
+  'stock': stock,
+  'weight': weight,
+  'weightUnit': weightUnit,
+  'imageUrl': newImageUrl,
+  'category': _selectedCategory.name.toUpperCase(),
+  'origin': _selectedOrigin.name.toUpperCase(),
+  'updatedAt': Timestamp.now(),
+};
+
+// 🔥 hanya super_admin boleh update base price
+if (isSuperAdmin) {
+  updatePayload['basePriceEur'] = basePrice;
+}
+
+// 🔥 BARU panggil update
+await CompanyFirestore
+    .collection('spare_parts')
+    .doc(widget.part.partCode)
+    .update(updatePayload);
+
+// 🔥 hanya super_admin boleh update base price
+if (isSuperAdmin) {
+  updatePayload['basePriceEur'] = basePrice;
+}
+
+// 🔥 FINAL UPDATE
+await CompanyFirestore
+    .collection('spare_parts')
+    .doc(widget.part.partCode)
+    .update(updatePayload);
 
     if (oldLocationKey != newLocationKey) {
       await CompanyFirestore
@@ -721,6 +753,16 @@ Widget _buildImageSection() {
   ],
 ),
 
+const SizedBox(height: 16),
+
+_buildTextField(
+  controller: basePriceController,
+  label: 'Base Price (EUR)',
+  keyboardType: TextInputType.numberWithOptions(decimal: true),
+  enabled: !isLoadingRole && isSuperAdmin,
+  isMobile: isMobile,
+),
+
         const SizedBox(height: 16),
 
         // Category Dropdown
@@ -958,4 +1000,30 @@ Widget _buildImageSection() {
       ),
     );
   }
+
+  Future<bool> _isSuperAdmin() async {
+  final user = FirebaseAuth.instance.currentUser;
+  if (user == null) return false;
+
+  final doc = await FirebaseFirestore.instance
+      .collection('users')
+      .doc(user.uid) // 🔥 PAKAI UID
+      .get();
+
+  final role = (doc.data()?['role'] ?? '').toString().trim();
+
+  return doc.exists && role == 'super_admin';
+}
+
+// 🔥 STEP TAMBAHAN 3
+Future<void> _loadRole() async {
+  final result = await _isSuperAdmin();
+  if (!mounted) return;
+
+  setState(() {
+    isSuperAdmin = result;
+     isLoadingRole = false;
+  });
+}
+
 }

@@ -24,6 +24,7 @@ class _AddSparePartPageState extends State<AddSparePartPage> {
   final stockController = TextEditingController();
   final weightController = TextEditingController();
   final minimumStockController = TextEditingController();
+  final basePriceController = TextEditingController();
   SparePartCategory _selectedCategory = SparePartCategory.autoCutting;
   SparePartOrigin _selectedOrigin = SparePartOrigin.local;
 
@@ -178,6 +179,8 @@ request.fields['public_id'] = uniqueId;
   String location = locationController.text.trim();
   final locationKey = normalizeLocation(location);
   String inputWeight = weightController.text.replaceAll(',', '.');
+  double basePrice =
+    double.tryParse(basePriceController.text.replaceAll(',', '.')) ?? 0.0;
 
   if (partCode.isEmpty) {
     showMessage('Part Code wajib diisi');
@@ -239,6 +242,7 @@ request.fields['public_id'] = uniqueId;
     'minimumStock': minimumStock,
     'weight': weight,
     'weightUnit': weightUnit,
+    'basePriceEur': basePrice,
     'imageUrl': imageUrl,
     'category': _selectedCategory.name.toUpperCase(),
     'origin': _selectedOrigin.name.toUpperCase(),
@@ -380,6 +384,16 @@ request.fields['public_id'] = uniqueId;
                     const InputDecoration(labelText: 'Weight'),
               ),
               const SizedBox(height: 12),
+
+              TextField(
+  controller: basePriceController,
+  keyboardType: TextInputType.numberWithOptions(decimal: true),
+  decoration: const InputDecoration(
+    labelText: 'Base Price (EUR)',
+    prefixText: '€ ',
+  ),
+),
+const SizedBox(height: 12),
 
               DropdownButtonFormField<String>(
                 initialValue: weightUnit,

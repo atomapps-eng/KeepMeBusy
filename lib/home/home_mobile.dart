@@ -532,7 +532,7 @@ class _HomeMobileState extends State<HomeMobile> {
   },
 );
 
-await Future.delayed(const Duration(milliseconds: 200));
+await Future.delayed(const Duration(milliseconds: 1000));
 
   try {
     await launchUrl(
