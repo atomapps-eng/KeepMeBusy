@@ -18,6 +18,7 @@ import '../order_in/order_in_mobile.dart';
 import '../order_out/order_out_mobile.dart';
 import '../attendance/pages/attendance_user_list_page.dart';
 import '../modules/trip/pages/trip_mobile_page.dart';
+import 'package:flutter_custom_tabs/flutter_custom_tabs.dart';
 
 // Enum untuk navigation items
 enum MobileNavItem {
@@ -239,6 +240,8 @@ class _HomeMobileState extends State<HomeMobile> {
         return _buildSettingsPage();
     }
   }
+
+ 
 
   // ================= HOME PAGE =================
   Widget _buildHomePage(String displayName, String email) {
@@ -479,10 +482,31 @@ class _HomeMobileState extends State<HomeMobile> {
                 // Systems Section
                 _CategorySection(
                   title: 'Systems',
-                  crossAxisCount: 2,
+                  crossAxisCount: 3,
                   spacingTop: 0,     // 🔥 kecilin jarak dari atas
   spacingBottom: 20,
                   children: [
+                   _MenuCard(
+  icon: Icons.cloud,
+  label: 'ATOM Cloud',
+  color: Colors.blueAccent,
+ onTap: () async {
+  try {
+    await launchUrl(
+      Uri.parse('https://cloud.atom.it/'),
+      customTabsOptions: const CustomTabsOptions(
+        showTitle: true,
+        shareState: CustomTabsShareState.off,
+      ),
+      safariVCOptions: const SafariViewControllerOptions(
+        barCollapsingEnabled: true,
+      ),
+    );
+  } catch (e) {
+    print('ERROR: $e');
+  }
+},
+),
                     _MenuCard(
                       icon: Icons.settings,
                       label: 'Settings',
@@ -938,7 +962,7 @@ Widget _buildSettingsPage() {
               const SizedBox(height: 24),
               _CategorySection(
                 title: 'System Menu',
-                crossAxisCount: 2,
+                crossAxisCount: 3,
                 children: [
                   _MenuCard(
                     icon: Icons.settings,
@@ -993,7 +1017,7 @@ Widget _buildSettingsPage() {
               children: [
                 Icon(
                   icon,
-                  size: 24,
+                  size: 22,
                   color: isSelected 
                       ? const Color(0xFF667EEA) 
                       : Colors.grey.shade600,
@@ -1002,7 +1026,7 @@ Widget _buildSettingsPage() {
                 Text(
                   label,
                   style: TextStyle(
-                    fontSize: 11,
+                    fontSize: 10,
                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                     color: isSelected 
                         ? const Color(0xFF667EEA) 
