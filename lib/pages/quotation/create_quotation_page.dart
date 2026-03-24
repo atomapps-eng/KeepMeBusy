@@ -32,6 +32,10 @@ class _CreateQuotationPageState extends State<CreateQuotationPage> {
   String? selectedPartnerName;
   String? selectedPartnerAddress;
   final List<Map<String, dynamic>> selectedItems = [];
+
+  String safeString(dynamic value) => (value ?? '').toString();
+int safeInt(dynamic value) => (value ?? 0) as int;
+double safeDouble(dynamic value) => (value ?? 0).toDouble();
   
   bool get hasOverStock {
     return selectedItems.any(
@@ -74,26 +78,38 @@ class _CreateQuotationPageState extends State<CreateQuotationPage> {
     super.initState();
     _loadRate();
 
-    if (isEditMode) {
-      final data = widget.initialData!;
-      selectedPartnerName = data['partnerName'];
-      selectedPartnerAddress = data['partnerAddress'];
+   if (isEditMode) {
+  final data = widget.initialData ?? {};
 
-      final items = data['items'] as List;
-      for (var item in items) {
-        final partId = item['partId'];
-        qtyControllers[partId] = TextEditingController(text: item['qty'].toString());
-        selectedItems.add({
-          'partId': item['partId'],
-          'partCode': item['partCode'],
-          'partName': item['partName'],
-          'qty': item['qty'],
-          'stock': item['stock'],
-          'priceEur': item['priceEur'],
-        });
-      }
-      _recalculateTotal(liveRate ?? (QuotationService.getCurrencyConfig(CompanySession.selectedCompanyId!)['rate'] as double));
-    }
+  selectedPartnerName = (data['partnerName'] ?? '').toString();
+  selectedPartnerAddress = (data['partnerAddress'] ?? '').toString();
+
+  final items = (data['items'] ?? []) as List;
+
+  for (var item in items) {
+    final partId = item['partId'] ?? '';
+
+    qtyControllers[partId] = TextEditingController(
+      text: (item['qty'] ?? 0).toString(),
+    );
+
+    selectedItems.add({
+      'partId': item['partId'] ?? '',
+      'partCode': item['partCode'] ?? '',
+      'partName': item['partName'] ?? '',
+      'qty': item['qty'] ?? 0,
+      'stock': item['stock'] ?? 0,
+      'priceEur': item['priceEur'] ?? 0,
+    });
+  }
+
+  _recalculateTotal(
+    liveRate ??
+        (QuotationService.getCurrencyConfig(
+          CompanySession.selectedCompanyId!,
+        )['rate'] as double),
+  );
+}
   }
 
   @override
