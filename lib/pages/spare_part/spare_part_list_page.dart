@@ -349,9 +349,10 @@ if (!mounted || _isDisposed) return;
   onTap: () {
     // ✅ SELECT MODE
     if (widget.selectionMode) {
-      Navigator.pop(context, part);
-      return;
-    }
+  Navigator.of(context).pop(); // tutup navigator dalam
+  Navigator.of(context, rootNavigator: true).pop(part); // tutup dialog + kirim data
+  return;
+}
 
     // Normal mode
     if (widget.isCompact) return;

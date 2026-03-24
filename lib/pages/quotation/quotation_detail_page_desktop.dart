@@ -108,10 +108,9 @@ final doc = snapshot.data!;
 final raw = doc.data();
 
 if (raw == null) {
-  WidgetsBinding.instance.addPostFrameCallback((_) {
-    if (context.mounted) Navigator.pop(context);
-  });
-  return const SizedBox();
+  return const Center(
+    child: Text("Quotation deleted"),
+  );
 }
 
 final newData = raw as Map<String, dynamic>;
@@ -565,7 +564,8 @@ final docId = doc.id;
       .delete();
 
   if (context.mounted) {
-    Navigator.pop(context, true); // ← kirim signal ke list
+    if (Navigator.canPop(context)) {
+}// ← kirim signal ke list
   }
 }
                         },

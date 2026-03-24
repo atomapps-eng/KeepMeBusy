@@ -309,7 +309,8 @@ class _PartnerListPageState extends State<PartnerListPage> with TickerProviderSt
       borderRadius: BorderRadius.circular(14),
      onTap: () async {
   if (widget.selectionMode) {
-    Navigator.pop(context, partner);
+    Navigator.of(context).pop(); // pop inner navigator dulu
+Navigator.of(context, rootNavigator: true).pop(partner); // pop dialog + kirim data
     return;
   }
 

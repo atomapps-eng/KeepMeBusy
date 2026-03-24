@@ -4,12 +4,14 @@ class DraggableResizableWindow extends StatefulWidget {
   final String title;
   final Widget child;
   final Color headerColor; // ← TAMBAH INI
+   final VoidCallback? onClose;
 
   const DraggableResizableWindow({
     super.key,
     required this.title,
     required this.child,
     this.headerColor = Colors.green, // default tetap hijau
+     this.onClose,
   });
 
   @override
@@ -116,12 +118,16 @@ double left = 200;
         ),
 
         // CLOSE
-        IconButton(
-          icon: const Icon(Icons.close,
-              color: Colors.white),
-          onPressed: () =>
-              Navigator.pop(context),
-        ),
+IconButton(
+  icon: const Icon(Icons.close, color: Colors.white),
+  onPressed: () {
+    if (widget.onClose != null) {
+      widget.onClose!();
+    } else {
+      Navigator.pop(context);
+    }
+  },
+),
       ],
     ),
   ],

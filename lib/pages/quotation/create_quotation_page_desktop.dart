@@ -9,13 +9,16 @@ import '../../pages/partners/partner_list_page.dart';
 import '../spare_part/spare_part_list_page.dart';
 import '../../services/exchange_rate_service.dart';
 import 'package:intl/intl.dart';
+import '../../core/widgets/draggable_window.dart';
 
 class CreateQuotationPageDesktop extends StatefulWidget {
   final Map<String, dynamic>? initialData;
+  final VoidCallback? onClose; // 🔥 TAMBAHAN
 
   const CreateQuotationPageDesktop({
     super.key,
     this.initialData,
+    this.onClose,
   });
 
   @override
@@ -25,6 +28,7 @@ class CreateQuotationPageDesktop extends StatefulWidget {
 
 class _CreateQuotationPageDesktopState
     extends State<CreateQuotationPageDesktop> {
+
   bool get isEditMode => widget.initialData != null;
   double? liveRate;
 
@@ -222,20 +226,20 @@ class _CreateQuotationPageDesktopState
               color: Colors.transparent,
               child: InkWell(
                 onTap: () async {
-                  final result = await Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const PartnerListPage(selectionMode: true),
-                    ),
-                  );
-                  if (result != null) {
-                    setState(() {
-                      selectedPartnerName = result.name;
-                      selectedPartnerAddress = result.address;
-                    });
-                    _recalculateTotal(liveRate ?? rate);
-                  }
-                },
+  final result = await _openDraggable(
+    context,
+    const PartnerListPage(selectionMode: true),
+    "Select Partner",
+  );
+
+  if (result != null) {
+    setState(() {
+      selectedPartnerName = result.name;
+      selectedPartnerAddress = result.address;
+    });
+    _recalculateTotal(liveRate ?? rate);
+  }
+},
                 borderRadius: BorderRadius.circular(16),
                 child: Padding(
                   padding: const EdgeInsets.all(20),
@@ -326,25 +330,25 @@ class _CreateQuotationPageDesktopState
               color: Colors.transparent,
               child: InkWell(
                 onTap: () async {
-                  final result = await Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const SparePartListPage(selectionMode: true),
-                    ),
-                  );
-                  if (result != null) {
-                    setState(() {
-                      selectedItems.add({
-                        'partId': result.id,
-                        'partName': result.name,
-                        'qty': 1,
-                        'stock': result.currentStock ?? 0,
-                        'priceEur': result.basePriceEur,
-                      });
-                    });
-                    _recalculateTotal(liveRate ?? rate);
-                  }
-                },
+  final result = await _openDraggable(
+    context,
+    const SparePartListPage(selectionMode: true),
+    "Select Spare Part",
+  );
+
+  if (result != null) {
+    setState(() {
+      selectedItems.add({
+        'partId': result.id,
+        'partName': result.name,
+        'qty': 1,
+        'stock': result.currentStock ?? 0,
+        'priceEur': result.basePriceEur,
+      });
+    });
+    _recalculateTotal(liveRate ?? rate);
+  }
+},
                 borderRadius: BorderRadius.circular(16),
                 child: const Padding(
                   padding: EdgeInsets.all(16),
@@ -869,7 +873,13 @@ class _CreateQuotationPageDesktopState
                         );
                       }
 
-                      if (context.mounted) Navigator.pop(context);
+                      if (context.mounted) {
+  if (widget.onClose != null) {
+    widget.onClose!();
+  } else {
+    Navigator.pop(context);
+  }
+}
                     },
               child: Text(isEditMode ? 'Save Changes' : 'Create Quotation'),
             ),
@@ -905,4 +915,34 @@ class _CreateQuotationPageDesktopState
       ),
     );
   }
+
+ Future<dynamic> _openDraggable(BuildContext context, Widget page, String title) async {
+  dynamic result;
+
+  await showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (dialogContext) {
+      return Material(
+        color: Colors.transparent,
+        child: DraggableResizableWindow(
+          title: title,
+          headerColor: const Color(0xFF2563EB),
+          child: Navigator(
+            onGenerateRoute: (_) => MaterialPageRoute(
+              builder: (innerContext) {
+                return page;
+              },
+            ),
+          ),
+        ),
+      );
+    },
+  ).then((value) {
+    result = value;
+  });
+
+  return result;
+}
+
 }

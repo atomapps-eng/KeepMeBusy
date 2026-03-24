@@ -10,6 +10,7 @@ import 'quotation_detail_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'quotation_detail_page_desktop.dart';
 import 'create_quotation_page_desktop.dart';
+import '../../core/widgets/draggable_window.dart';
 
 class QuotationPageDesktop extends StatefulWidget {
   final String companyId;
@@ -26,7 +27,10 @@ class QuotationPageDesktop extends StatefulWidget {
 }
 
 class _QuotationPageDesktopState extends State<QuotationPageDesktop> {
+  bool _showCreateWindow = false;
   Map<String, dynamic>? selectedData;
+  bool _showDetailWindow = false;
+  Map<String, dynamic>? detailData;
   final TextEditingController searchController = TextEditingController();
   String selectedStatus = 'all';
   String selectedSort = 'newest';
@@ -107,22 +111,21 @@ class _QuotationPageDesktopState extends State<QuotationPageDesktop> {
       ),
       floatingActionButton: FloatingActionButton.extended(
   onPressed: () {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => const CreateQuotationPageDesktop(),
-      ),
-    );
+    setState(() {
+      _showCreateWindow = true;
+    });
   },
   icon: const Icon(Icons.add),
   label: const Text('New Quotation'),
   backgroundColor: const Color(0xFF2563EB),
 ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: AppTheme.backgroundGradient,
-        ),
-        child: Row(
+      body: Stack(
+  children: [
+    Container(
+      decoration: BoxDecoration(
+        gradient: AppTheme.backgroundGradient,
+      ),
+      child: Row(
           children: [
             // LEFT PANEL - Preview
             Expanded(
@@ -137,6 +140,42 @@ class _QuotationPageDesktopState extends State<QuotationPageDesktop> {
           ],
         ),
       ),
+      if (_showCreateWindow)
+  if (_showCreateWindow)
+  DraggableResizableWindow(
+    title: "Create Quotation",
+    headerColor: const Color(0xFF2563EB),
+    onClose: () {
+      setState(() {
+        _showCreateWindow = false;
+      });
+    },
+    child: CreateQuotationPageDesktop(
+  onClose: () {
+    setState(() {
+      _showCreateWindow = false;
+    });
+  },
+),
+  ),
+  if (_showDetailWindow && detailData != null)
+  DraggableResizableWindow(
+    title: "Quotation Detail",
+    headerColor: const Color(0xFF10B981),
+    onClose: () {
+      setState(() {
+        _showDetailWindow = false;
+        detailData = null;
+      });
+    },
+    child: QuotationDetailPageDesktop(
+      data: detailData!,
+      isSuperAdmin: widget.isSuperAdmin,
+    ),
+  ),
+  ],
+      ),
+      
     );
   }
 
@@ -938,23 +977,12 @@ if (selectedData != null) {
                                     selectedData = {...data, 'id': doc.id};
                                   });
                                 },
-                                onDoubleTap: () {
-                                  final isDesktop = MediaQuery.of(context).size.width > 900;
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => isDesktop
-                                          ? QuotationDetailPageDesktop(
-                                              data: {...data, 'id': doc.id},
-                                              isSuperAdmin: widget.isSuperAdmin,
-                                            )
-                                          : QuotationDetailPage(
-                                              data: {...data, 'id': doc.id},
-                                              isSuperAdmin: widget.isSuperAdmin,
-                                            ),
-                                    ),
-                                  );
-                                },
+                               onDoubleTap: () {
+  setState(() {
+    detailData = {...data, 'id': doc.id};
+    _showDetailWindow = true;
+  });
+},
                                 borderRadius: BorderRadius.circular(12),
                                 child: Padding(
                                   padding: const EdgeInsets.all(12),
