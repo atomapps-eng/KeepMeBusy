@@ -8,6 +8,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../quotation/create_quotation_page.dart';
 import 'package:intl/intl.dart';
 import '../../theme/app_theme.dart';
+import 'quotation_detail_page_desktop.dart';
 
 class QuotationDetailPage extends StatelessWidget {
   final Map<String, dynamic> data;
@@ -56,6 +57,14 @@ class QuotationDetailPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDesktop = MediaQuery.of(context).size.width > 900;
+
+if (isDesktop) {
+  return QuotationDetailPageDesktop(
+    data: data,
+    isSuperAdmin: isSuperAdmin,
+  );
+}
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(

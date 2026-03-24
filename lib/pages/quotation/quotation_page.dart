@@ -8,6 +8,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../../theme/app_theme.dart';
 import 'create_quotation_page.dart';
 import 'quotation_detail_page.dart';
+import 'quotation_page_desktop.dart';
 
 class QuotationPage extends StatelessWidget {
   const QuotationPage({super.key});
@@ -47,11 +48,20 @@ class QuotationPage extends StatelessWidget {
           );
         }
 
-        return _buildQuotationContent(
-          context,
-          companyId,
-          isSuperAdmin,
-        );
+        final isDesktop = MediaQuery.of(context).size.width > 900;
+
+if (isDesktop) {
+  return QuotationPageDesktop(
+    companyId: companyId,
+    isSuperAdmin: isSuperAdmin,
+  );
+}
+
+return _buildQuotationContent(
+  context,
+  companyId,
+  isSuperAdmin,
+);
       },
     );
   }
