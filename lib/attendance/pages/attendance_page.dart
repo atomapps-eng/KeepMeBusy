@@ -20,15 +20,18 @@ import '../services/attendance_period_helper.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/activity_entry.dart';
 import '../../core/services/firestore_tracker.dart';
+import '../../core/widgets/draggable_window.dart';
 
 class AttendancePage extends StatefulWidget {
   final String employeeId;
   final String period;
+  final VoidCallback? onClose;
 
   const AttendancePage({
     super.key,
     required this.employeeId,
     required this.period,
+    this.onClose,
   });
 
   @override
@@ -1040,9 +1043,10 @@ class _AttendancePageState extends State<AttendancePage> {
     );
   }
 
-  Widget _buildDesktopAttendanceList(List<AttendanceDay> filtered) {
-    return _glass(
-      Column(
+Widget _buildDesktopAttendanceList(List<AttendanceDay> filtered) {
+  return _glass(
+    SizedBox.expand( // 🔥 FIX PALING PENTING
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // HEADER
@@ -1055,161 +1059,34 @@ class _AttendancePageState extends State<AttendancePage> {
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
                 const Spacer(),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        Colors.blue.withValues(alpha:0.2),
-                        Colors.blue.withValues(alpha:0.1),
-                      ],
-                    ),
-                    borderRadius: BorderRadius.circular(30),
-                    border: Border.all(color: Colors.blue.withValues(alpha:0.3)),
-                  ),
-                  child: Text(
-                    '${filtered.length} records',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.blue.shade700,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
+                Text('${filtered.length} records'),
               ],
             ),
           ),
 
           // TABLE
-          Container(
-            decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey.shade300),
-              borderRadius: BorderRadius.circular(16),
-              color: Colors.white.withValues(alpha:0.3),
-            ),
-            height: 500,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(16),
-              child: Column(
-                children: [
-                  // HEADER ROW
-                  Container(
-                    padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          Colors.grey.shade200,
-                          Colors.grey.shade100,
-                        ],
-                      ),
-                      border: Border(
-                        bottom: BorderSide(color: Colors.grey.shade300),
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        const SizedBox(width: 12),
-                        Expanded(
-                          flex: 2,
-                          child: Row(
-                            children: [
-                              Icon(Icons.calendar_today, size: 14, color: Colors.grey.shade600),
-                              const SizedBox(width: 4),
-                              const Text('Date / Location', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-                            ],
-                          ),
-                        ),
-                        Expanded(
-                          flex: 2,
-                          child: Center(
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.info, size: 14, color: Colors.grey.shade600),
-                                const SizedBox(width: 4),
-                                const Text('Status', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-                              ],
-                            ),
-                          ),
-                        ),
-                        Expanded(
-                          flex: 2,
-                          child: Center(
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.access_time, size: 14, color: Colors.grey.shade600),
-                                const SizedBox(width: 4),
-                                const Text('Check In/Out', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-                              ],
-                            ),
-                          ),
-                        ),
-                        Expanded(
-                          flex: 2,
-                          child: Center(
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.note, size: 14, color: Colors.grey.shade600),
-                                const SizedBox(width: 4),
-                                const Text('Notes', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-                              ],
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 24),
-                      ],
-                    ),
-                  ),
-
-                  // LIST VIEW
-                  Expanded(
-                    child: filtered.isEmpty
-                        ? Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(20),
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey.withValues(alpha:0.1),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: Icon(Icons.inbox, size: 48, color: Colors.grey.shade400),
-                                ),
-                                const SizedBox(height: 16),
-                                Text(
-                                  'No attendance records',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.grey.shade600,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  'Add a new attendance record to get started',
-                                  style: TextStyle(color: Colors.grey.shade500, fontSize: 13),
-                                ),
-                              ],
-                            ),
-                          )
-                        : ListView.builder(
-                            itemCount: filtered.length,
-                            itemBuilder: (context, index) {
-                              return _buildTableRow(filtered[index]);
-                            },
-                          ),
-                  ),
-                ],
+          Expanded(
+            child: Container(
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.grey.shade300),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: ListView.builder(
+                  itemCount: filtered.length,
+                  itemBuilder: (context, index) {
+                    return _buildTableRow(filtered[index]);
+                  },
+                ),
               ),
             ),
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildTableRow(AttendanceDay day) {
     final color = _getStatusColor(day.status);
@@ -1234,21 +1111,46 @@ class _AttendancePageState extends State<AttendancePage> {
       ),
       child: InkWell(
         onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => AttendanceInputPage(
-                employeeId: widget.employeeId,
-                date: day.date,
-                existingDay: day,
-              ),
+  final overlay = Overlay.of(context);
+  late OverlayEntry entry;
+
+  // ✅ INI YANG BENAR (PAKAI VARIABLE YANG SUDAH ADA)
+  final DateTime selectedDate = day.date;
+  final AttendanceDay? existingDay = day;
+
+  entry = OverlayEntry(
+    builder: (context) {
+      return Positioned.fill(
+        child: Material(
+          color: Colors.transparent,
+          child: DraggableResizableWindow(
+            title: "Attendance Input",
+            headerColor: Colors.green,
+            onClose: () {
+              entry.remove();
+            },
+            child: AttendanceInputPage(
+              employeeId: widget.employeeId,
+              date: selectedDate,
+              existingDay: existingDay,
+              onClose: () {
+                entry.remove();
+              },
             ),
-          );
-        },
+          ),
+        ),
+      );
+    },
+  );
+
+  overlay.insert(entry);
+},
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-          child: Row(
-            children: [
+  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+  child: SingleChildScrollView(
+    scrollDirection: Axis.horizontal,
+    child: Row(
+      children: [
               // Color bar
               Container(
                 width: 4,
@@ -1265,8 +1167,8 @@ class _AttendancePageState extends State<AttendancePage> {
               const SizedBox(width: 12),
 
               // Date/Location
-              Expanded(
-                flex: 2,
+              SizedBox(
+  width: 180,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -1363,8 +1265,8 @@ class _AttendancePageState extends State<AttendancePage> {
               ),
 
               // Status
-              Expanded(
-                flex: 2,
+              SizedBox(
+  width: 180,
                 child: Center(
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -1384,8 +1286,8 @@ class _AttendancePageState extends State<AttendancePage> {
               ),
 
               // Check In/Out
-              Expanded(
-                flex: 2,
+              SizedBox(
+  width: 180,
                 child: Center(
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -1466,8 +1368,8 @@ class _AttendancePageState extends State<AttendancePage> {
               ),
 
               // Notes + Activity Button
-              Expanded(
-                flex: 2,
+              SizedBox(
+  width: 180,
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -1511,9 +1413,10 @@ class _AttendancePageState extends State<AttendancePage> {
                 margin: const EdgeInsets.only(left: 8),
                 child: Icon(Icons.chevron_right, size: 18, color: Colors.grey.shade400),
               ),
-            ],
+            ], // Children
           ),
         ),
+      ),
       ),
     );
   }

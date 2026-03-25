@@ -5,9 +5,12 @@ import '../../core/session/company_session.dart';
 import '../../attendance/pages/attendance_page.dart';
 import '../services/attendance_period_helper.dart';
 import '../../theme/app_theme.dart';
+import '../../core/widgets/draggable_window.dart';
 
 class AttendanceUserListPage extends StatelessWidget {
-  const AttendanceUserListPage({super.key});
+  final VoidCallback? onClose;
+
+  const AttendanceUserListPage({super.key, this.onClose});
 
   String _formatEmployeeName(String? name) {
     if (name == null || name.isEmpty) return '';
@@ -101,7 +104,13 @@ class AttendanceUserListPage extends StatelessWidget {
           ),
           child: IconButton(
             icon: const Icon(Icons.arrow_back),
-            onPressed: () => Navigator.pop(context),
+            onPressed: () {
+  if (onClose != null) {
+    onClose!();
+  } else {
+    Navigator.pop(context);
+  }
+},
           ),
         ),
       ),
@@ -223,94 +232,96 @@ class AttendanceUserListPage extends StatelessWidget {
       children: [
         // LEFT SIDEBAR - STATS
         Container(
-          width: 280,
-          margin: const EdgeInsets.only(right: 16),
-          child: _glass(
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+  width: 280,
+  margin: const EdgeInsets.only(right: 16),
+  child: _glass(
+    SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.blue.withValues(alpha:0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.analytics,
+                  color: Colors.blue,
+                  size: 18,
+                ),
+              ),
+              const SizedBox(width: 10),
+              const Text(
+                'Employee Overview',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          _buildStatItem(
+            'Total Employees',
+            users.length.toString(),
+            Icons.people,
+            Colors.blue,
+          ),
+          const SizedBox(height: 8),
+
+          const Divider(height: 24),
+
+          const Text(
+            'Period Information',
+            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+          ),
+          const SizedBox(height: 8),
+
+          _buildInfoItem(
+            'Current Period',
+            period,
+            Icons.calendar_month,
+            Colors.green,
+          ),
+
+          _buildInfoItem(
+            'Company ID',
+            CompanySession.selectedCompanyId ?? 'N/A',
+            Icons.business,
+            Colors.purple,
+          ),
+
+          const SizedBox(height: 16),
+
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.amber.withValues(alpha:0.1),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.amber.withValues(alpha:0.2)),
+            ),
+            child: const Row(
               children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.blue.withValues(alpha:0.1),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: const Icon(
-                        Icons.analytics,
-                        color: Colors.blue,
-                        size: 18,
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    const Text(
-                      'Employee Overview',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-
-                // Stats
-                _buildStatItem(
-                  'Total Employees',
-                  users.length.toString(),
-                  Icons.people,
-                  Colors.blue,
-                ),
-                const SizedBox(height: 8),
-                
-                const Divider(height: 24),
-
-                // Info
-                const Text(
-                  'Period Information',
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
-                ),
-                const SizedBox(height: 8),
-                _buildInfoItem(
-                  'Current Period',
-                  period,
-                  Icons.calendar_month,
-                  Colors.green,
-                ),
-                _buildInfoItem(
-                  'Company ID',
-                  CompanySession.selectedCompanyId ?? 'N/A', // FIX: Add null check with fallback
-                  Icons.business,
-                  Colors.purple,
-                ),
-                
-                const SizedBox(height: 16),
-                
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.amber.withValues(alpha:0.1),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.amber.withValues(alpha:0.2)),
-                  ),
-                  child: const Row(
-                    children: [
-                      Icon(Icons.info_outline, size: 16, color: Colors.amber),
-                      SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          'Select an employee to view their attendance records',
-                          style: TextStyle(fontSize: 11),
-                        ),
-                      ),
-                    ],
+                Icon(Icons.info_outline, size: 16, color: Colors.amber),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Select an employee to view their attendance records',
+                    style: TextStyle(fontSize: 11),
                   ),
                 ),
               ],
             ),
           ),
-        ),
+        ],
+      ),
+    ),
+  ),
+),
 
         // RIGHT CONTENT - EMPLOYEE LIST
         Expanded(
@@ -370,74 +381,72 @@ class AttendanceUserListPage extends StatelessWidget {
 
               // Employee List
               Expanded(
-                child: _glass(
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Header
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: Row(
-                          children: [
-                            const Text(
-                              'Employee Directory',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const Spacer(),
-                          ],
-                        ),
-                      ),
-
-                      // Table
-                      Container(
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.grey.shade300),
-                          borderRadius: BorderRadius.circular(8),
-                          color: Colors.white.withValues(alpha:0.3),
-                        ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: Column(
-                            children: [
-                              // Header Row
-                              Container(
-                                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                                color: Colors.grey.shade200,
-                                child: Row(
-                                  children: const [
-                                    SizedBox(width: 40), // Untuk avatar
-                                    Expanded(flex: 3, child: Text('Employee Name', style: TextStyle(fontWeight: FontWeight.w600))),
-                                    Expanded(flex: 2, child: Center(child: Text('Employee ID', style: TextStyle(fontWeight: FontWeight.w600)))),
-                                    Expanded(flex: 2, child: Center(child: Text('Status', style: TextStyle(fontWeight: FontWeight.w600)))),
-                                    SizedBox(width: 24),
-                                  ],
-                                ),
-                              ),
-
-                              // List View
-                              Container(
-                                constraints: BoxConstraints(
-                                  maxHeight: MediaQuery.of(context).size.height - 350,
-                                ),
-                                child: ListView.builder(
-                                  itemCount: users.length,
-                                  shrinkWrap: true,
-                                  itemBuilder: (context, index) {
-                                    return _buildDesktopEmployeeRow(context, users[index], period);
-                                  },
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+  child: _glass(
+    Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Header
+        Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: Row(
+            children: [
+              const Text(
+                'Employee Directory',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
+              const Spacer(),
+            ],
+          ),
+        ),
+
+        // ✅ FIX: kasih Expanded di sini
+        Expanded(
+          child: Container(
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.grey.shade300),
+              borderRadius: BorderRadius.circular(8),
+              color: Colors.white.withValues(alpha:0.3),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Column(
+                children: [
+                  // Header Row
+                  Container(
+                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                    color: Colors.grey.shade200,
+                    child: Row(
+                      children: const [
+                        SizedBox(width: 40),
+                        Expanded(flex: 3, child: Text('Employee Name', style: TextStyle(fontWeight: FontWeight.w600))),
+                        Expanded(flex: 2, child: Center(child: Text('Employee ID', style: TextStyle(fontWeight: FontWeight.w600)))),
+                        Expanded(flex: 2, child: Center(child: Text('Status', style: TextStyle(fontWeight: FontWeight.w600)))),
+                        SizedBox(width: 24),
+                      ],
+                    ),
+                  ),
+
+                  // ✅ FIX PALING PENTING
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: users.length,
+                      itemBuilder: (context, index) {
+                        return _buildDesktopEmployeeRow(context, users[index], period);
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    ),
+  ),
+),
             ],
           ),
         ),
@@ -465,16 +474,35 @@ class AttendanceUserListPage extends StatelessWidget {
       ),
       child: InkWell(
         onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => AttendancePage(
-                employeeId: employeeDocId,
-                period: period,
-              ),
+  final overlay = Overlay.of(context);
+  late OverlayEntry entry;
+
+  entry = OverlayEntry(
+    builder: (context) {
+      return Positioned.fill(
+        child: Material(
+          color: Colors.transparent,
+          child: DraggableResizableWindow(
+            title: "Attendance Detail",
+            headerColor: Colors.blue,
+            onClose: () {
+              entry.remove();
+            },
+            child: AttendancePage(
+              employeeId: employeeDocId,
+              period: period,
+              onClose: () {
+                entry.remove();
+              },
             ),
-          );
-        },
+          ),
+        ),
+      );
+    },
+  );
+
+  overlay.insert(entry);
+},
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
           child: Row(
@@ -653,61 +681,54 @@ class AttendanceUserListPage extends StatelessWidget {
                 const SizedBox(width: 16),
 
                 // Employee Info
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        formattedName.isNotEmpty ? formattedName : 'Unknown',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: Colors.green.withValues(alpha:0.1),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: const Row(
-                              children: [
-                                Icon(
-                                  Icons.circle,
-                                  size: 6,
-                                  color: Colors.green,
-                                ),
-                                SizedBox(width: 4),
-                                Text(
-                                  'Active',
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    color: Colors.green,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              'ID: ${employeeDocId.length > 12 ? '...${employeeDocId.substring(employeeDocId.length - 8)}' : employeeDocId}',
-                              style: TextStyle(
-                                fontSize: 10,
-                                color: Colors.grey.shade600,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
+               Expanded(
+  child: Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(
+        formattedName.isNotEmpty ? formattedName : 'Unknown',
+        style: const TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+      const SizedBox(height: 4),
+      Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            decoration: BoxDecoration(
+              color: Colors.green.withValues(alpha:0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Row(
+              children: [
+                Icon(Icons.circle, size: 6, color: Colors.green),
+                SizedBox(width: 4),
+                Text(
+                  'Active',
+                  style: TextStyle(fontSize: 10, color: Colors.green),
                 ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              'ID: ${employeeDocId.length > 12 ? '...${employeeDocId.substring(employeeDocId.length - 8)}' : employeeDocId}',
+              style: TextStyle(
+                fontSize: 10,
+                color: Colors.grey.shade600,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+    ],
+  ),
+),
 
                 // Arrow
                 Container(

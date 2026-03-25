@@ -71,60 +71,40 @@ Map<String, dynamic>? _editData;
 Widget build(BuildContext context) {
   return Scaffold(
     extendBodyBehindAppBar: true,
-
-    appBar: AppBar(
-      title: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Icon(
-              Icons.request_quote,
-              size: 20,
-              color: Colors.white,
-            ),
-          ),
-          const SizedBox(width: 12),
-          const Text(
-            'Quotation Management',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
-      ),
-      backgroundColor: Colors.transparent,
-      elevation: 0,
-      scrolledUnderElevation: 0, // 🔥 INI WAJIB
-  surfaceTintColor: Colors.transparent, // 🔥 INI WAJIB
-      foregroundColor: Colors.white,
-      leading: Container(
-        margin: const EdgeInsets.only(left: 8),
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.2),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
-    ),
-
     floatingActionButton: FloatingActionButton.extended(
-      onPressed: () {
-        setState(() {
-          _showCreateWindow = true;
-        });
+  onPressed: () {
+    final overlay = Overlay.of(context);
+
+    late OverlayEntry entry;
+
+    entry = OverlayEntry(
+      builder: (context) {
+        return Positioned.fill(
+          child: Material(
+            color: Colors.transparent,
+            child: DraggableResizableWindow(
+              title: "Create Quotation",
+              headerColor: Colors.green,
+              onClose: () {
+                entry.remove();
+              },
+              child: CreateQuotationPageDesktop(
+                onClose: () {
+                  entry.remove();
+                },
+              ),
+            ),
+          ),
+        );
       },
-      icon: const Icon(Icons.add),
-      label: const Text('New Quotation'),
-      backgroundColor: const Color(0xFF2563EB),
-    ),
+    );
+
+    overlay.insert(entry);
+  },
+  icon: const Icon(Icons.add),
+  label: const Text('New Quotation'),
+  backgroundColor: const Color(0xFF2563EB),
+),
 
     body: Stack(
       children: [
@@ -149,68 +129,6 @@ Widget build(BuildContext context) {
             ],
           ),
         ),
-
-        // =========================
-        // 🟢 CREATE WINDOW
-        // =========================
-        if (_showCreateWindow)
-          DraggableResizableWindow(
-            title: "Create Quotation",
-            headerColor: Colors.green,
-            onClose: () {
-              setState(() {
-                _showCreateWindow = false;
-              });
-            },
-            child: CreateQuotationPageDesktop(
-              onClose: () {
-                setState(() {
-                  _showCreateWindow = false;
-                });
-              },
-            ),
-          ),
-          if (_showDetailWindow && _selectedQuotation != null)
-  DraggableResizableWindow(
-    title: "Quotation Detail",
-    headerColor: Colors.blueGrey,
-    onClose: () {
-      setState(() {
-        _showDetailWindow = false;
-        _selectedQuotation = null;
-      });
-    },
-    child: QuotationDetailPageDesktop(
-  data: _selectedQuotation!,
-  isSuperAdmin: widget.isSuperAdmin,
-  onEdit: (editData) {
-    setState(() {
-      _editData = editData;
-      _showEditWindow = true;
-    });
-  },
-),
-  ),
-  if (_showEditWindow && _editData != null)
-  DraggableResizableWindow(
-    title: "Edit Quotation",
-    headerColor: Colors.orange,
-    onClose: () {
-      setState(() {
-        _showEditWindow = false;
-        _editData = null;
-      });
-    },
-    child: CreateQuotationPageDesktop(
-      initialData: _editData,
-      onClose: () {
-        setState(() {
-          _showEditWindow = false;
-          _editData = null;
-        });
-      },
-    ),
-  ),
       ],
     ),
   );
@@ -935,12 +853,64 @@ WidgetsBinding.instance.addPostFrameCallback((_) {
 },
                                onDoubleTap: () {
   final safeData = Map<String, dynamic>.from(data);
-  safeData['id'] = doc.id; // 🔥 WAJIB
+  safeData['id'] = doc.id;
 
-  setState(() {
-    _selectedQuotation = safeData;
-    _showDetailWindow = true;
-  });
+  final overlay = Overlay.of(context);
+
+  late OverlayEntry entry;
+
+  entry = OverlayEntry(
+    builder: (context) {
+      return Positioned.fill(
+        child: Material(
+          color: Colors.transparent,
+          child: DraggableResizableWindow(
+            title: "Quotation Detail",
+            headerColor: Colors.blueGrey,
+            onClose: () {
+              entry.remove();
+            },
+            child: QuotationDetailPageDesktop(
+              data: safeData,
+              isSuperAdmin: widget.isSuperAdmin,
+              onEdit: (editData) {
+  final overlay = Overlay.of(context);
+
+  late OverlayEntry entry;
+
+  entry = OverlayEntry(
+    builder: (context) {
+      return Positioned.fill(
+        child: Material(
+          color: Colors.transparent,
+          child: DraggableResizableWindow(
+            title: "Edit Quotation",
+            headerColor: Colors.orange,
+            onClose: () {
+              entry.remove();
+            },
+            child: CreateQuotationPageDesktop(
+              initialData: editData,
+              onClose: () {
+                entry.remove();
+              },
+            ),
+          ),
+        ),
+      );
+    },
+  );
+
+  overlay.insert(entry);
+},
+            ),
+          ),
+        ),
+      );
+    },
+  );
+
+  overlay.insert(entry);
 },
                                 borderRadius: BorderRadius.circular(12),
                                 child: Padding(
@@ -1071,6 +1041,71 @@ WidgetsBinding.instance.addPostFrameCallback((_) {
     );
   }
 
+  List<Widget> _buildPreviewContent(
+  Map<String, dynamic> data,
+  Color statusColor,
+  bool isExpired,
+) {
+  final format = NumberFormat.currency(
+    locale: 'id',
+    symbol: '${data['currency'] ?? ''} ',
+    decimalDigits: 0,
+  );
+
+  return [
+    // HEADER CARD
+    Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [statusColor, statusColor.withOpacity(0.8)],
+        ),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        children: [
+          Text(
+            data['quotationNumber'] ?? '-',
+            style: const TextStyle(color: Colors.white),
+          ),
+        ],
+      ),
+    ),
+
+    const SizedBox(height: 16),
+
+    // TOTAL
+    Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.95),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Text(
+        format.format(data['totalAmount'] ?? 0),
+        style: const TextStyle(fontSize: 24),
+      ),
+    ),
+
+    const SizedBox(height: 16),
+
+    // DETAILS
+    Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.95),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        children: [
+          _infoRow('Partner', data['partnerName'] ?? '-', Icons.business),
+          _infoRow('Address', data['partnerAddress'] ?? '-', Icons.location_on),
+        ],
+      ),
+    ),
+  ];
+}
+
   Widget _buildActionButton({
     required IconData icon,
     required String label,
@@ -1092,4 +1127,5 @@ WidgetsBinding.instance.addPostFrameCallback((_) {
       onPressed: onPressed,
     );
   }
+
 }

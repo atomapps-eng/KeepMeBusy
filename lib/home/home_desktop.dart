@@ -25,6 +25,7 @@ import '../service_report/pages/service_report_list_page.dart';
 import '../attendance/pages/attendance_user_list_page.dart';
 import '../modules/trip/pages/trip_mobile_page.dart';
 import '../pages/quotation/quotation_page.dart';
+import '../pages/quotation/quotation_page_desktop.dart';
 //
 enum DesktopSection {
   dashboard,
@@ -815,12 +816,23 @@ _buildMenuSection(
       label: 'Quotation',
       color: Colors.orange,
       onTap: () {
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (_) => const QuotationPage(),
-    ),
-  );
+  showGeneralDialog(
+  context: context,
+  barrierDismissible: true,
+  barrierLabel: "Quotation",
+  barrierColor: Colors.black.withOpacity(0.35),
+  transitionDuration: const Duration(milliseconds: 200),
+  pageBuilder: (_, _, _) {
+    return DraggableResizableWindow(
+      title: "Quotation Management",
+      headerColor: Colors.orange,
+      child: QuotationPageDesktop(
+        companyId: CompanySession.selectedCompanyId!,
+        isSuperAdmin: _isSuperAdmin,
+      ),
+    );
+  },
+);
 },
     ),
     _MenuItem(
@@ -1509,12 +1521,23 @@ Widget _buildMenuItemCard(_MenuItem item) {
                     'Quotation',
                     Colors.orange,
                     () {
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (_) => const QuotationPage(),
-    ),
-  );
+  showGeneralDialog(
+  context: context,
+  barrierDismissible: true,
+  barrierLabel: "Quotation",
+  barrierColor: Colors.black.withOpacity(0.35),
+  transitionDuration: const Duration(milliseconds: 200),
+  pageBuilder: (_, _, _) {
+    return DraggableResizableWindow(
+      title: "Quotation Management",
+      headerColor: Colors.orange,
+      child: QuotationPageDesktop(
+        companyId: CompanySession.selectedCompanyId!,
+        isSuperAdmin: _isSuperAdmin,
+      ),
+    );
+  },
+);
 },
                   ),
                   _desktopMenuCard(
@@ -2281,30 +2304,42 @@ final bool canAccessSettings = isAdmin;
   final now = DateTime.now();
   final period = AttendancePeriodHelper.resolvePeriod(now);
 
-  // 🔥 ADMIN membuka employee list
-  if (_currentRole == UserRole.admin || _currentRole == UserRole.superAdmin) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => const AttendanceUserListPage(),
-      ),
-    );
-    return;
-  }
+  final overlay = Overlay.of(context);
+  late OverlayEntry entry;
 
-  // 🔥 USER membuka attendance sendiri
-  final user = FirebaseAuth.instance.currentUser!;
-  final employeeId = user.displayName ?? user.uid;
-
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (_) => AttendancePage(
-        employeeId: employeeId,
+  entry = OverlayEntry(
+    builder: (context) {
+      return Positioned.fill(
+        child: Material(
+          color: Colors.transparent,
+          child: DraggableResizableWindow(
+            title: "Attendance",
+            headerColor: Colors.blue,
+            onClose: () {
+              entry.remove();
+            },
+            child: (_currentRole == UserRole.admin ||
+        _currentRole == UserRole.superAdmin)
+    ? AttendanceUserListPage(
+        onClose: () {
+          entry.remove();
+        },
+      )
+    : AttendancePage(
+        employeeId: FirebaseAuth.instance.currentUser!.displayName ??
+            FirebaseAuth.instance.currentUser!.uid,
         period: period,
+        onClose: () {
+          entry.remove();
+        },
       ),
-    ),
+          ),
+        ),
+      );
+    },
   );
+
+  overlay.insert(entry);
 }
 
   void _openPartners() async {

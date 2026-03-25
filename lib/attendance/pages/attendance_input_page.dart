@@ -18,6 +18,7 @@ class AttendanceInputPage extends StatefulWidget {
   final DateTime date;
   final AttendanceDay? existingDay;
   final ActivityEntry? pendingActivity;
+  final VoidCallback? onClose;
 
   const AttendanceInputPage({
     super.key,
@@ -25,6 +26,7 @@ class AttendanceInputPage extends StatefulWidget {
     required this.date,
     this.existingDay,
     this.pendingActivity,
+    this.onClose,
   });
 
   @override
@@ -191,7 +193,11 @@ class _AttendanceInputPageState extends State<AttendanceInputPage> {
     await dayRef.delete();
 
     if (!mounted) return;
-    Navigator.pop(context);
+    if (widget.onClose != null) {
+  widget.onClose!();
+} else {
+  Navigator.pop(context);
+}
   }
 
   Future<void> _saveAttendance() async {
@@ -286,7 +292,11 @@ class _AttendanceInputPageState extends State<AttendanceInputPage> {
       }
 
       if (!mounted) return;
-      Navigator.pop(context);
+      if (widget.onClose != null) {
+  widget.onClose!();
+} else {
+  Navigator.pop(context);
+}
     } finally {
       if (mounted) {
         setState(() => _isSaving = false);
@@ -365,7 +375,13 @@ class _AttendanceInputPageState extends State<AttendanceInputPage> {
           ),
           child: IconButton(
             icon: const Icon(Icons.arrow_back),
-            onPressed: () => Navigator.pop(context),
+            onPressed: () {
+  if (widget.onClose != null) {
+    widget.onClose!();
+  } else {
+    Navigator.pop(context);
+  }
+},
           ),
         ),
       ),
