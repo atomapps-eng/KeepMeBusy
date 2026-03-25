@@ -10,6 +10,7 @@ import 'quotation_detail_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'quotation_detail_page_desktop.dart';
 import 'create_quotation_page_desktop.dart';
+import '../../core/widgets/draggable_window.dart';
 
 class QuotationPageDesktop extends StatefulWidget {
   final String companyId;
@@ -26,6 +27,11 @@ class QuotationPageDesktop extends StatefulWidget {
 }
 
 class _QuotationPageDesktopState extends State<QuotationPageDesktop> {
+  bool _showCreateWindow = false;
+  Map<String, dynamic>? _selectedQuotation;
+bool _showDetailWindow = false;
+bool _showEditWindow = false;
+Map<String, dynamic>? _editData;
   ValueNotifier<Map<String, dynamic>?> selectedDataNotifier = ValueNotifier(null);
   final TextEditingController searchController = TextEditingController();
   String selectedStatus = 'all';
@@ -61,84 +67,154 @@ class _QuotationPageDesktopState extends State<QuotationPageDesktop> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Icon(
-                Icons.request_quote,
-                size: 20,
-                color: Colors.white,
-              ),
+ @override
+Widget build(BuildContext context) {
+  return Scaffold(
+    extendBodyBehindAppBar: true,
+
+    appBar: AppBar(
+      title: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(12),
             ),
-            const SizedBox(width: 12),
-            const Text(
-              'Quotation Management',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
+            child: const Icon(
+              Icons.request_quote,
+              size: 20,
+              color: Colors.white,
             ),
-          ],
-        ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        foregroundColor: Colors.white,
-        leading: Container(
-          margin: const EdgeInsets.only(left: 8),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.2),
-            borderRadius: BorderRadius.circular(12),
           ),
-          child: IconButton(
-            icon: const Icon(Icons.arrow_back),
-            onPressed: () => Navigator.pop(context),
+          const SizedBox(width: 12),
+          const Text(
+            'Quotation Management',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
           ),
-        ),
+        ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-  onPressed: () {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => const CreateQuotationPageDesktop(),
-      ),
-    );
-  },
-  icon: const Icon(Icons.add),
-  label: const Text('New Quotation'),
-  backgroundColor: const Color(0xFF2563EB),
-),
-      body: Container(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      scrolledUnderElevation: 0, // 🔥 INI WAJIB
+  surfaceTintColor: Colors.transparent, // 🔥 INI WAJIB
+      foregroundColor: Colors.white,
+      leading: Container(
+        margin: const EdgeInsets.only(left: 8),
         decoration: BoxDecoration(
-          gradient: AppTheme.backgroundGradient,
+          color: Colors.white.withOpacity(0.2),
+          borderRadius: BorderRadius.circular(12),
         ),
-        child: Row(
-          children: [
-            // LEFT PANEL - Preview
-            Expanded(
-              flex: 4,
-              child: _buildPreviewPanel(),
-            ),
-            // RIGHT PANEL - List
-            Expanded(
-              flex: 6,
-              child: _buildListPanel(),
-            ),
-          ],
+        child: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context),
         ),
       ),
-    );
-  }
+    ),
+
+    floatingActionButton: FloatingActionButton.extended(
+      onPressed: () {
+        setState(() {
+          _showCreateWindow = true;
+        });
+      },
+      icon: const Icon(Icons.add),
+      label: const Text('New Quotation'),
+      backgroundColor: const Color(0xFF2563EB),
+    ),
+
+    body: Stack(
+      children: [
+
+        // =========================
+        // 🔵 MAIN CONTENT
+        // =========================
+        Container(
+          decoration: BoxDecoration(
+            gradient: AppTheme.backgroundGradient,
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                flex: 4,
+                child: _buildPreviewPanel(),
+              ),
+              Expanded(
+                flex: 6,
+                child: _buildListPanel(),
+              ),
+            ],
+          ),
+        ),
+
+        // =========================
+        // 🟢 CREATE WINDOW
+        // =========================
+        if (_showCreateWindow)
+          DraggableResizableWindow(
+            title: "Create Quotation",
+            headerColor: Colors.green,
+            onClose: () {
+              setState(() {
+                _showCreateWindow = false;
+              });
+            },
+            child: CreateQuotationPageDesktop(
+              onClose: () {
+                setState(() {
+                  _showCreateWindow = false;
+                });
+              },
+            ),
+          ),
+          if (_showDetailWindow && _selectedQuotation != null)
+  DraggableResizableWindow(
+    title: "Quotation Detail",
+    headerColor: Colors.blueGrey,
+    onClose: () {
+      setState(() {
+        _showDetailWindow = false;
+        _selectedQuotation = null;
+      });
+    },
+    child: QuotationDetailPageDesktop(
+  data: _selectedQuotation!,
+  isSuperAdmin: widget.isSuperAdmin,
+  onEdit: (editData) {
+    setState(() {
+      _editData = editData;
+      _showEditWindow = true;
+    });
+  },
+),
+  ),
+  if (_showEditWindow && _editData != null)
+  DraggableResizableWindow(
+    title: "Edit Quotation",
+    headerColor: Colors.orange,
+    onClose: () {
+      setState(() {
+        _showEditWindow = false;
+        _editData = null;
+      });
+    },
+    child: CreateQuotationPageDesktop(
+      initialData: _editData,
+      onClose: () {
+        setState(() {
+          _showEditWindow = false;
+          _editData = null;
+        });
+      },
+    ),
+  ),
+      ],
+    ),
+  );
+}
 
   // ===============================
   // PREVIEW PANEL (Modern)
@@ -600,6 +676,16 @@ if (selectedDataNotifier.value != null) {
 
  if (updatedDoc != null) {
   final newData = updatedDoc.data() as Map<String, dynamic>;
+final safeData = Map<String, dynamic>.from(newData);
+safeData['id'] = updatedDoc.id; // 🔥 WAJIB
+
+if (selectedDataNotifier.value?['updatedAt'] != newData['updatedAt']) {
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    if (!mounted) return;
+
+    selectedDataNotifier.value = safeData;
+  });
+}
 
   // 🔥 HANYA update kalau data benar-benar berubah
   if (selectedDataNotifier.value?['updatedAt'] != newData['updatedAt']) {
@@ -654,9 +740,12 @@ if (selectedDataNotifier.value != null) {
           if (allDocs.isNotEmpty && selectedDataNotifier.value == null) {
             final first = allDocs.first;
             final firstData = first.data() as Map<String, dynamic>;
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              selectedDataNotifier.value = {...firstData, 'id': first.id};
-            });
+final safeData = Map<String, dynamic>.from(firstData);
+safeData['id'] = first.id; // 🔥 WAJIB
+
+WidgetsBinding.instance.addPostFrameCallback((_) {
+  selectedDataNotifier.value = safeData;
+});
           }
 
           return Column(
@@ -839,27 +928,20 @@ if (selectedDataNotifier.value != null) {
                               color: Colors.transparent,
                               child: InkWell(
                                 onTap: () {
-  if (selectedDataNotifier.value?['id'] == doc.id) return;
+  final safeData = Map<String, dynamic>.from(data);
+  safeData['id'] = doc.id;
 
-  selectedDataNotifier.value = {...data, 'id': doc.id};
+  selectedDataNotifier.value = safeData;
 },
-                                onDoubleTap: () {
-                                  final isDesktop = MediaQuery.of(context).size.width > 900;
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => isDesktop
-                                          ? QuotationDetailPageDesktop(
-                                              data: {...data, 'id': doc.id},
-                                              isSuperAdmin: widget.isSuperAdmin,
-                                            )
-                                          : QuotationDetailPage(
-                                              data: {...data, 'id': doc.id},
-                                              isSuperAdmin: widget.isSuperAdmin,
-                                            ),
-                                    ),
-                                  );
-                                },
+                               onDoubleTap: () {
+  final safeData = Map<String, dynamic>.from(data);
+  safeData['id'] = doc.id; // 🔥 WAJIB
+
+  setState(() {
+    _selectedQuotation = safeData;
+    _showDetailWindow = true;
+  });
+},
                                 borderRadius: BorderRadius.circular(12),
                                 child: Padding(
                                   padding: const EdgeInsets.all(12),

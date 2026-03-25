@@ -12,11 +12,13 @@ import '../quotation/create_quotation_page_desktop.dart';
 class QuotationDetailPageDesktop extends StatelessWidget {
   final Map<String, dynamic> data;
   final bool isSuperAdmin;
+  final Function(Map<String, dynamic>)? onEdit;
 
   const QuotationDetailPageDesktop({
     super.key,
     required this.data,
     required this.isSuperAdmin,
+    this.onEdit,
   });
 
   String _formatDate(Timestamp? timestamp) {
@@ -60,34 +62,20 @@ class QuotationDetailPageDesktop extends StatelessWidget {
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: Row(
-          children: [
-            const SizedBox(width: 12),
-            Text(
-  (status == 'draft' || status == 'submitted')
-      ? ''
-      : (data['quotationNumber'] ?? 'Quotation Detail'),
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
+         automaticallyImplyLeading: false,
+         
+       title: (status == 'draft' || status == 'submitted')
+    ? Row(
+        children: const [
+          SizedBox(width: 12),
+        ],
+      )
+    : null,
         backgroundColor: Colors.transparent,
         elevation: 0,
+        scrolledUnderElevation: 0, // 🔥 INI WAJIB
+  surfaceTintColor: Colors.transparent, // 🔥 INI WAJIB
         foregroundColor: Colors.white,
-        leading: Container(
-          margin: const EdgeInsets.only(left: 8),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.2),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: IconButton(
-            icon: const Icon(Icons.arrow_back),
-            onPressed: () => Navigator.pop(context),
-          ),
-        ),
       ),
       body: Container(
         decoration: BoxDecoration(
@@ -265,6 +253,8 @@ final docId = doc.id;
           ),
 
           const SizedBox(height: 20),
+
+          
 
           // Partner Info Card
           Container(
@@ -514,20 +504,11 @@ final docId = doc.id;
     safeData['partnerAddress'] = safeData['partnerAddress'] ?? '';
     safeData['currency'] = safeData['currency'] ?? 'IDR';
 
-    final result = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => CreateQuotationPageDesktop(
-          initialData: safeData,
-        ),
-      ),
-    );
+   
 
-    if (result == true) {
-      if (context.mounted) {
-        Navigator.pop(context, true);
-      }
-    }
+    if (onEdit != null) {
+  onEdit!(safeData); // ✅ cukup ini saja
+}
   },
 ),
                       const SizedBox(height: 8),
@@ -660,7 +641,7 @@ if (context.mounted) Navigator.pop(context, true);
                                 .collection('companies')
                                 .doc(data['companyId'])
                                 .collection('quotations')
-                                .doc(data['id'])
+                                 .doc(docId)
                                 .update({
                               'status': 'approved',
                               'approvedBy': user.uid,
@@ -753,7 +734,7 @@ if (context.mounted) Navigator.pop(context, true);
                                 .collection('companies')
                                 .doc(data['companyId'])
                                 .collection('quotations')
-                                .doc(data['id'])
+                                 .doc(docId)
                                 .update({
                               'status': 'rejected',
                               'rejectedBy': user.uid,

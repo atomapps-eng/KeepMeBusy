@@ -439,15 +439,15 @@ final bool canAccessSettings = isAdmin;
                       _openPartners,
                     ),
                     
-                    // Machinery
-                    _quickActionCard(
-                      Icons.precision_manufacturing,
-                      'Machinery',
-                      Colors.pinkAccent,
-                      () => setState(() {
-                        selectedSection = DesktopSection.machinery;
-                      }),
-                    ),
+                    // Sales
+_quickActionCard(
+  Icons.request_quote,
+  'Sales',
+  Colors.orange,
+  () => setState(() {
+    selectedSection = DesktopSection.sales;
+  }),
+),
                     
                     // Reports
                     _quickActionCard(
@@ -1718,20 +1718,25 @@ Widget build(BuildContext context) {
       _cachedRole = role;
 
       return RawKeyboardListener(
-        focusNode: _focusNode,
-        onKey: _handleKeyPress,
-        autofocus: false,
-        child: Scaffold(
-          body: Row(
-            children: [
-              _buildSidebar(role),
-              Expanded(
-                child: _buildContent(role),
-              ),
-            ],
+  focusNode: _focusNode,
+  onKey: _handleKeyPress,
+  autofocus: false,
+  child: Scaffold(
+    body: Container(
+      decoration: BoxDecoration(
+        gradient: AppTheme.backgroundGradient,
+      ),
+      child: Row(
+        children: [
+          _buildSidebar(role),
+          Expanded(
+            child: _buildContent(role),
           ),
-        ),
-      );
+        ],
+      ),
+    ),
+  ),
+);
     },
   );
 }
@@ -1754,14 +1759,7 @@ final bool canAccessSettings = isAdmin;
     return Container(
       width: 280,
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            const Color(0xFFFFE0B2),
-            Colors.white,
-          ],
-        ),
+        gradient: AppTheme.backgroundGradient,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha:0.05),

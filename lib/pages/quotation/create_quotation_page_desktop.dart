@@ -13,10 +13,13 @@ import 'package:intl/intl.dart';
 class CreateQuotationPageDesktop extends StatefulWidget {
   final Map<String, dynamic>? initialData;
 
-  const CreateQuotationPageDesktop({
-    super.key,
-    this.initialData,
-  });
+  final VoidCallback? onClose;
+
+const CreateQuotationPageDesktop({
+  super.key,
+  this.initialData,
+  this.onClose,
+});
 
   @override
   State<CreateQuotationPageDesktop> createState() =>
@@ -139,7 +142,10 @@ class _CreateQuotationPageDesktopState
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: Row(
+        automaticallyImplyLeading: false,
+  title: isEditMode
+      ? const SizedBox() // 🔥 kosongkan di edit mode
+      : Row(
           children: [
             Container(
               padding: const EdgeInsets.all(8),
@@ -147,26 +153,32 @@ class _CreateQuotationPageDesktopState
                 color: Colors.white.withOpacity(0.2),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(
-                isEditMode ? Icons.edit_note : Icons.add,
+              child: const Icon(
+                Icons.add,
                 size: 20,
                 color: Colors.white,
               ),
             ),
             const SizedBox(width: 12),
-            Text(
-              isEditMode ? 'Edit Quotation' : 'Create Quotation',
-              style: const TextStyle(
+            const Text(
+              'Create Quotation',
+              style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
             ),
           ],
         ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        foregroundColor: Colors.white,
-        leading: Container(
+  backgroundColor: Colors.transparent,
+  elevation: 0,
+  scrolledUnderElevation: 0, // 🔥 INI WAJIB
+  surfaceTintColor: Colors.transparent, // 🔥 INI WAJIB
+  foregroundColor: Colors.white,
+
+  // 🔥 hilangkan tombol back saat edit mode
+  leading: isEditMode
+      ? null
+      : Container(
           margin: const EdgeInsets.only(left: 8),
           decoration: BoxDecoration(
             color: Colors.white.withOpacity(0.2),
@@ -177,7 +189,7 @@ class _CreateQuotationPageDesktopState
             onPressed: () => Navigator.pop(context),
           ),
         ),
-      ),
+),
       body: Container(
         decoration: BoxDecoration(
           gradient: AppTheme.backgroundGradient,
@@ -903,7 +915,13 @@ print("COMPANY ID: $companyId");
 
           print("STEP G - BEFORE POP");
 
-          if (context.mounted) Navigator.pop(context, true);
+          if (context.mounted) {
+  if (widget.onClose != null) {
+    widget.onClose!();
+  } else {
+    Navigator.pop(context, true);
+  }
+}
 
         } catch (e, s) {
           print("🔥 ERROR SAVE: $e");
