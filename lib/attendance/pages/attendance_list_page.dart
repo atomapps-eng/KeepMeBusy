@@ -5,6 +5,7 @@ import '../../pages/common/app_background_wrapper.dart';
 import '../pages/attendance_input_page.dart';
 import '../../models/read_tracker_service.dart';
 import '../../core/services/firestore_tracker.dart';
+import '../../core/widgets/draggable_window.dart';
 
 class AttendanceListPage extends StatefulWidget {
   final String employeeId;
@@ -512,23 +513,58 @@ class _AttendanceListPageState extends State<AttendanceListPage> {
         color: Colors.transparent,
         child: InkWell(
           onTap: () {
-              ReadTrackerService().trackRead(
+  ReadTrackerService().trackRead(
     page: 'AttendanceListPage',
     collection: 'attendance_days',
     operation: 'open_detail',
     documentsCount: 1,
     queryParams: '${widget.employeeId}_${d.date.toIso8601String()}',
   );
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => AttendanceInputPage(
-                  employeeId: widget.employeeId,
-                  date: d.date,
-                  existingDay: d,
-                ),
+
+  final isDesktop = MediaQuery.of(context).size.width >= 900;
+
+  if (isDesktop) {
+    final overlay = Overlay.of(context, rootOverlay: true);
+    late OverlayEntry entry;
+
+    entry = OverlayEntry(
+      builder: (context) {
+        return Positioned.fill(
+          child: Material(
+            color: Colors.transparent,
+            child: DraggableResizableWindow(
+              title: "Edit Attendance",
+              headerColor: Colors.green,
+              onClose: () {
+                entry.remove();
+              },
+              child: AttendanceInputPage(
+                employeeId: widget.employeeId,
+                date: d.date,
+                existingDay: d,
+                onClose: () {
+                  entry.remove();
+                },
               ),
-            );
-          },
+            ),
+          ),
+        );
+      },
+    );
+
+    overlay.insert(entry);
+  } else {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => AttendanceInputPage(
+          employeeId: widget.employeeId,
+          date: d.date,
+          existingDay: d,
+        ),
+      ),
+    );
+  }
+},
           borderRadius: BorderRadius.circular(16),
           child: Padding(
             padding: const EdgeInsets.all(16),

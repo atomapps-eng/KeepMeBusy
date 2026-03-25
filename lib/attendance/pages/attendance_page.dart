@@ -39,6 +39,9 @@ class AttendancePage extends StatefulWidget {
 }
 
 class _AttendancePageState extends State<AttendancePage> {
+  bool isDesktop(BuildContext context) {
+  return MediaQuery.of(context).size.width >= 900;
+}
   AttendanceStatus? _activeStatus;
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
@@ -399,16 +402,44 @@ class _AttendancePageState extends State<AttendancePage> {
                 size: 22,
               ),
               onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => AttendanceSummaryPage(
-                      employeeId: widget.employeeId,
-                      period: widget.period,
-                    ),
-                  ),
-                );
+  if (isDesktop) {
+    final overlay = Overlay.of(context, rootOverlay: true);
+    late OverlayEntry entry;
+
+    entry = OverlayEntry(
+      builder: (context) {
+        return Positioned.fill(
+          child: Material(
+            color: Colors.transparent,
+            child: DraggableResizableWindow(
+              title: "Attendance Summary",
+              headerColor: Colors.blue,
+              onClose: () {
+                entry.remove();
               },
+              child: AttendanceSummaryPage(
+                employeeId: widget.employeeId,
+                period: widget.period,
+              ),
+            ),
+          ),
+        );
+      },
+    );
+
+    overlay.insert(entry);
+  } else {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AttendanceSummaryPage(
+          employeeId: widget.employeeId,
+          period: widget.period,
+        ),
+      ),
+    );
+  }
+},
             ),
           ),
           Container(
@@ -434,16 +465,44 @@ class _AttendancePageState extends State<AttendancePage> {
                 size: 22,
               ),
               onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => ActivityListPage(
-                      employeeId: widget.employeeId,
-                      period: widget.period,
-                    ),
-                  ),
-                );
+  if (isDesktop) {
+    final overlay = Overlay.of(context, rootOverlay: true);
+    late OverlayEntry entry;
+
+    entry = OverlayEntry(
+      builder: (context) {
+        return Positioned.fill(
+          child: Material(
+            color: Colors.transparent,
+            child: DraggableResizableWindow(
+              title: "Activity List",
+              headerColor: Colors.blue,
+              onClose: () {
+                entry.remove();
               },
+              child: ActivityListPage(
+                employeeId: widget.employeeId,
+                period: widget.period,
+              ),
+            ),
+          ),
+        );
+      },
+    );
+
+    overlay.insert(entry);
+  } else {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ActivityListPage(
+          employeeId: widget.employeeId,
+          period: widget.period,
+        ),
+      ),
+    );
+  }
+},
             ),
           ),
         ],
@@ -991,52 +1050,105 @@ class _AttendancePageState extends State<AttendancePage> {
               icon: const Icon(Icons.add, size: 18),
               label: const Text('Add Attendance', style: TextStyle(fontSize: 14)),
               onPressed: () async {
-                final picked = await showDatePicker(
-                  context: context,
-                  initialDate: DateTime.now(),
-                  firstDate: DateTime(2020),
-                  lastDate: DateTime(2035),
-                );
+  final isDesktop = MediaQuery.of(context).size.width >= 900;
 
-                if (picked != null && mounted) {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => AttendanceInputPage(
-                        employeeId: widget.employeeId,
-                        date: picked,
-                      ),
-                    ),
-                  );
-                }
+  if (isDesktop) {
+    final overlay = Overlay.of(context, rootOverlay: true);
+    late OverlayEntry entry;
+
+    entry = OverlayEntry(
+      builder: (context) {
+        return Positioned.fill(
+          child: Material(
+            color: Colors.transparent,
+            child: DraggableResizableWindow(
+              title: "Add Attendance",
+              onClose: () {
+                entry.remove();
               },
+              child: AttendanceInputPage(
+                employeeId: widget.employeeId,
+                date: DateTime.now(), // 🔥 default dulu
+                onClose: () {
+                  entry.remove();
+                },
+              ),
+            ),
+          ),
+        );
+      },
+    );
+
+    overlay.insert(entry);
+  } else {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AttendanceInputPage(
+          employeeId: widget.employeeId,
+          date: DateTime.now(),
+        ),
+      ),
+    );
+  }
+}
             ),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: OutlinedButton.icon(
-              style: OutlinedButton.styleFrom(
-                foregroundColor: Colors.black87,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                side: BorderSide(color: Colors.grey.shade400),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
+  style: OutlinedButton.styleFrom(
+    foregroundColor: Colors.black87,
+    padding: const EdgeInsets.symmetric(vertical: 14),
+    side: BorderSide(color: Colors.grey.shade400),
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(14),
+    ),
+  ),
+  icon: const Icon(Icons.list, size: 18),
+  label: const Text('View All', style: TextStyle(fontSize: 14)),
+  onPressed: () {
+    final isDesktop = MediaQuery.of(context).size.width >= 900;
+
+    if (isDesktop) {
+      final overlay = Overlay.of(context, rootOverlay: true);
+      late OverlayEntry entry;
+
+      entry = OverlayEntry(
+        builder: (context) {
+          return Positioned.fill(
+            child: Material(
+              color: Colors.transparent,
+              child: DraggableResizableWindow(
+                title: "Attendance List",
+                headerColor: Colors.blue,
+                onClose: () {
+                  entry.remove();
+                },
+                child: AttendanceListPage(
+                  employeeId: widget.employeeId,
+                  period: _isAllPeriod ? 'ALL' : _selectedPeriod,
                 ),
               ),
-              icon: const Icon(Icons.list, size: 18),
-              label: const Text('View All', style: TextStyle(fontSize: 14)),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => AttendanceListPage(
-                      employeeId: widget.employeeId,
-                      period: _isAllPeriod ? 'ALL' : _selectedPeriod,
-                    ),
-                  ),
-                );
-              },
             ),
+          );
+        },
+      );
+
+      overlay.insert(entry);
+    } else {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => AttendanceListPage(
+            employeeId: widget.employeeId,
+            period: _isAllPeriod ? 'ALL' : _selectedPeriod,
+          ),
+        ),
+      );
+    }
+  },
+),
           ),
         ],
       ),
@@ -1111,39 +1223,69 @@ Widget _buildDesktopAttendanceList(List<AttendanceDay> filtered) {
       ),
       child: InkWell(
         onTap: () {
-  final overlay = Overlay.of(context);
-  late OverlayEntry entry;
+  if (isDesktop(context)) {
+    final overlay = Overlay.of(context, rootOverlay: true);
+    late OverlayEntry entry;
 
-  // ✅ INI YANG BENAR (PAKAI VARIABLE YANG SUDAH ADA)
-  final DateTime selectedDate = day.date;
-  final AttendanceDay? existingDay = day;
+    final DateTime selectedDate = day.date;
+    final AttendanceDay? existingDay = day;
 
-  entry = OverlayEntry(
-    builder: (context) {
-      return Positioned.fill(
-        child: Material(
-          color: Colors.transparent,
-          child: DraggableResizableWindow(
-            title: "Attendance Input",
-            headerColor: Colors.green,
-            onClose: () {
-              entry.remove();
-            },
-            child: AttendanceInputPage(
-              employeeId: widget.employeeId,
-              date: selectedDate,
-              existingDay: existingDay,
+    entry = OverlayEntry(
+      builder: (context) {
+        return Positioned.fill(
+          child: Material(
+            color: Colors.transparent,
+            child: DraggableResizableWindow(
+              title: "Attendance Input",
+              headerColor: Colors.green,
               onClose: () {
                 entry.remove();
               },
+              child: AttendanceInputPage(
+                employeeId: widget.employeeId,
+                date: selectedDate,
+                existingDay: existingDay,
+                onClose: () {
+                  entry.remove();
+                },
+              ),
             ),
           ),
-        ),
-      );
-    },
-  );
+        );
+      },
+    );
 
-  overlay.insert(entry);
+    overlay.insert(entry);
+  } else {
+    final overlay2 = Overlay.of(context, rootOverlay: true);
+late OverlayEntry entry2;
+
+entry2 = OverlayEntry(
+  builder: (context) {
+    return Positioned.fill(
+      child: Material(
+        color: Colors.transparent,
+        child: DraggableResizableWindow(
+          title: "Add Attendance",
+          headerColor: Colors.green,
+          onClose: () {
+            entry2.remove();
+          },
+          child: AttendanceInputPage(
+            employeeId: widget.employeeId,
+             date: day.date,
+            onClose: () {
+              entry2.remove();
+            },
+          ),
+        ),
+      ),
+    );
+  },
+);
+
+overlay2.insert(entry2);
+  }
 },
         child: Padding(
   padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
@@ -1523,12 +1665,19 @@ Widget _buildDesktopAttendanceList(List<AttendanceDay> filtered) {
                         label: const Text('Add Attendance', style: TextStyle(fontSize: 14)),
                         onPressed: () async {
                           final navigator = Navigator.of(context);
-                          final picked = await showDatePicker(
-                            context: context,
-                            initialDate: DateTime.now(),
-                            firstDate: DateTime(2020),
-                            lastDate: DateTime(2035),
-                          );
+                         final picked = await showDatePicker(
+  context: context,
+  useRootNavigator: true,
+  initialDate: DateTime.now(),
+  firstDate: DateTime(2020),
+  lastDate: DateTime(2100),
+  builder: (context, child) {
+    return Theme(
+      data: Theme.of(context),
+      child: child!,
+    );
+  },
+);
                           if (picked == null) return;
                           if (!mounted) return;
                           navigator.push(

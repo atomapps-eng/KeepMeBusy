@@ -296,7 +296,6 @@ class _AttendanceSummaryPageState extends State<AttendanceSummaryPage> {
           width: 320,
           margin: const EdgeInsets.only(right: 16),
           child: SingleChildScrollView(
-            controller: _scrollController,
             child: Column(
               children: [
                 _buildEmployeeCard(s),

@@ -112,17 +112,7 @@ data['dayDocId'] = doc.reference.parent.parent?.parent?.parent?.id;
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: Container(
-          margin: const EdgeInsets.only(left: 8),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha:0.2),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: IconButton(
-            icon: const Icon(Icons.arrow_back),
-            onPressed: () => Navigator.pop(context),
-          ),
-        ),
+        leading: null,
       ),
       body: AppBackgroundWrapper(
         padding: const EdgeInsets.all(16),
@@ -337,74 +327,81 @@ data['dayDocId'] = doc.reference.parent.parent?.parent?.parent?.id;
 
               // Activity List
               Expanded(
-                child: _glass(
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+  child: _glass(
+    LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              minHeight: constraints.maxHeight,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Row(
                     children: [
-                      // Header
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: Row(
-                          children: [
-                            const Text(
-                              'Activity Records',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const Spacer(),
-                          ],
+                      const Text(
+                        'Activity Records',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
-
-                      // Table
-                      Container(
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.grey.shade300),
-                          borderRadius: BorderRadius.circular(8),
-                          color: Colors.white.withValues(alpha:0.3),
-                        ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: Column(
-                            children: [
-                              // Header Row
-                              Container(
-                                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                                color: Colors.grey.shade200,
-                                child: Row(
-                                  children: const [
-                                    Expanded(flex: 2, child: Text('Activity', style: TextStyle(fontWeight: FontWeight.w600))),
-                                    Expanded(flex: 2, child: Center(child: Text('Client / Machine', style: TextStyle(fontWeight: FontWeight.w600)))),
-                                    Expanded(flex: 2, child: Center(child: Text('Date / Time', style: TextStyle(fontWeight: FontWeight.w600)))),
-                                    Expanded(flex: 2, child: Center(child: Text('Hours', style: TextStyle(fontWeight: FontWeight.w600)))),
-                                    SizedBox(width: 24),
-                                  ],
-                                ),
-                              ),
-
-                              // List View
-                              Container(
-                                constraints: BoxConstraints(
-                                  maxHeight: MediaQuery.of(context).size.height - 350,
-                                ),
-                                child: ListView.builder(
-                                  itemCount: activities.length,
-                                  shrinkWrap: true,
-                                  itemBuilder: (context, index) {
-                                    return _buildDesktopActivityRow(context, activities[index]);
-                                  },
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
+                      const Spacer(),
                     ],
                   ),
                 ),
-              ),
+
+                // Table
+                Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey.shade300),
+                    borderRadius: BorderRadius.circular(8),
+                    color: Colors.white.withValues(alpha:0.3),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Column(
+                      children: [
+                        // Header Row
+                        Container(
+                          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                          color: Colors.grey.shade200,
+                          child: Row(
+                            children: const [
+                              Expanded(flex: 2, child: Text('Activity', style: TextStyle(fontWeight: FontWeight.w600))),
+                              Expanded(flex: 2, child: Center(child: Text('Client / Machine', style: TextStyle(fontWeight: FontWeight.w600)))),
+                              Expanded(flex: 2, child: Center(child: Text('Date / Time', style: TextStyle(fontWeight: FontWeight.w600)))),
+                              Expanded(flex: 2, child: Center(child: Text('Hours', style: TextStyle(fontWeight: FontWeight.w600)))),
+                              SizedBox(width: 24),
+                            ],
+                          ),
+                        ),
+
+                        // List View (NO HEIGHT LIMIT)
+                        ListView.builder(
+                          itemCount: activities.length,
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemBuilder: (context, index) {
+                            return _buildDesktopActivityRow(context, activities[index]);
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    ),
+  ),
+),
             ],
           ),
         ),

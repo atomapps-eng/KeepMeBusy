@@ -9,6 +9,7 @@ import '../../pages/partners/partner_list_page.dart';
 import '../spare_part/spare_part_list_page.dart';
 import '../../services/exchange_rate_service.dart';
 import 'package:intl/intl.dart';
+import '../../core/widgets/draggable_window.dart';
 
 class CreateQuotationPageDesktop extends StatefulWidget {
   final Map<String, dynamic>? initialData;
@@ -234,27 +235,51 @@ class _CreateQuotationPageDesktopState
               color: Colors.transparent,
               child: InkWell(
                 onTap: () async {
-                  final result = await showDialog(
-  context: context,
+  final overlay = Overlay.of(context, rootOverlay: true);
+
+  late OverlayEntry entry;
+  dynamic result;
+
+  entry = OverlayEntry(
   builder: (context) {
-    return Dialog(
-      insetPadding: const EdgeInsets.all(40),
-      child: SizedBox(
-        width: 800,
-        height: 600,
-        child: const PartnerListPage(selectionMode: true),
+    return Positioned.fill(
+      child: Material(
+        color: Colors.black.withOpacity(0.2),
+        child: DraggableResizableWindow(
+          title: "Select Partner",
+          headerColor: Colors.blueGrey,
+          onClose: () {
+            entry.remove();
+          },
+          child: PartnerListPage(
+            selectionMode: true,
+            onSelected: (data) {
+              result = data;
+              entry.remove();
+            },
+          ),
+        ),
       ),
     );
   },
 );
-                  if (result != null) {
-                    setState(() {
-                      selectedPartnerName = result.name;
-                      selectedPartnerAddress = result.address;
-                    });
-                    _recalculateTotal(liveRate ?? rate);
-                  }
-                },
+
+  overlay.insert(entry);
+
+  // 🔥 tunggu sampai dialog ditutup
+  await Future.doWhile(() async {
+    await Future.delayed(const Duration(milliseconds: 100));
+    return entry.mounted;
+  });
+
+  if (result != null) {
+    setState(() {
+      selectedPartnerName = result.name;
+      selectedPartnerAddress = result.address;
+    });
+    _recalculateTotal(liveRate ?? rate);
+  }
+},
                 borderRadius: BorderRadius.circular(16),
                 child: Padding(
                   padding: const EdgeInsets.all(20),
@@ -345,32 +370,55 @@ class _CreateQuotationPageDesktopState
               color: Colors.transparent,
               child: InkWell(
                 onTap: () async {
-                  final result = await showDialog(
-  context: context,
+  final overlay = Overlay.of(context, rootOverlay: true);
+
+  late OverlayEntry entry;
+  dynamic result;
+
+  entry = OverlayEntry(
   builder: (context) {
-    return Dialog(
-      insetPadding: const EdgeInsets.all(40),
-      child: SizedBox(
-        width: 900,
-        height: 600,
-        child: const SparePartListPage(selectionMode: true),
+    return Positioned.fill(
+      child: Material(
+        color: Colors.black.withOpacity(0.2),
+        child: DraggableResizableWindow(
+          title: "Select Spare Part",
+          headerColor: Colors.blueGrey,
+          onClose: () {
+            entry.remove();
+          },
+          child: SparePartListPage(
+            selectionMode: true,
+            onSelected: (data) {
+              result = data;
+              entry.remove();
+            },
+          ),
+        ),
       ),
     );
   },
 );
-                  if (result != null) {
-                    setState(() {
-                      selectedItems.add({
-                        'partId': result.id,
-                        'partName': result.name,
-                        'qty': 1,
-                        'stock': result.currentStock ?? 0,
-                        'priceEur': result.basePriceEur,
-                      });
-                    });
-                    _recalculateTotal(liveRate ?? rate);
-                  }
-                },
+
+  overlay.insert(entry);
+
+  await Future.doWhile(() async {
+    await Future.delayed(const Duration(milliseconds: 100));
+    return entry.mounted;
+  });
+
+  if (result != null) {
+    setState(() {
+      selectedItems.add({
+        'partId': result.id,
+        'partName': result.name,
+        'qty': 1,
+        'stock': result.currentStock ?? 0,
+        'priceEur': result.basePriceEur,
+      });
+    });
+    _recalculateTotal(liveRate ?? rate);
+  }
+},
                 borderRadius: BorderRadius.circular(16),
                 child: const Padding(
                   padding: EdgeInsets.all(16),

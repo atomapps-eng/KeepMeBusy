@@ -5,17 +5,22 @@ import '../models/activity_entry.dart';
 import '../../models/partner.dart';
 import '../../pages/partners/partner_list_page.dart';
 import '../../theme/app_theme.dart';
+import '../../core/widgets/draggable_window.dart';
 
 class ActivityFormPage extends StatefulWidget {
   final DateTime attendanceDate;
   final String customerId;
   final ActivityEntry? existingActivity;
+  final VoidCallback? onClose;
+  final Function(ActivityEntry)? onSaved;
 
   const ActivityFormPage({
     super.key,
     required this.attendanceDate,
     required this.customerId,
     this.existingActivity,
+    this.onClose,
+    this.onSaved,
   });
 
   @override
@@ -69,6 +74,41 @@ class _ActivityFormPageState extends State<ActivityFormPage> {
   }
 
   Future<void> _selectFactory() async {
+  final isDesktop = MediaQuery.of(context).size.width >= 900;
+
+  if (isDesktop) {
+    final overlay = Overlay.of(context, rootOverlay: true);
+    late OverlayEntry entry;
+
+    entry = OverlayEntry(
+      builder: (context) {
+        return Positioned.fill(
+          child: Material(
+            color: Colors.transparent,
+            child: DraggableResizableWindow(
+              title: "Select Factory",
+              headerColor: Colors.green,
+              onClose: () {
+                entry.remove();
+              },
+              child: PartnerListPage(
+                selectionMode: true,
+                onSelected: (partner) {
+                  setState(() {
+                    factoryId = partner.id;
+                    factoryName = partner.name;
+                  });
+                  entry.remove();
+                },
+              ),
+            ),
+          ),
+        );
+      },
+    );
+
+    overlay.insert(entry);
+  } else {
     final partner = await Navigator.push(
       context,
       MaterialPageRoute(
@@ -85,32 +125,45 @@ class _ActivityFormPageState extends State<ActivityFormPage> {
       });
     }
   }
+}
 
-  void _save() {
-    if (factoryId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select factory'),
-        ),
-      );
-      return;
-    }
-
-    final activity = ActivityEntry(
-      date: date,
-      factoryId: factoryId!,
-      factoryClient: factoryName ?? '',
-      customerId: widget.customerId,
-      machine: machineCtrl.text,
-      serialNumber: serialCtrl.text,
-      activityType: activityType,
-      description: descCtrl.text,
-      status: status,
-      note: noteCtrl.text,
+void _save() {
+  if (factoryId == null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Please select factory'),
+      ),
     );
+    return;
+  }
 
+  final activity = ActivityEntry(
+    date: date,
+    factoryId: factoryId!,
+    factoryClient: factoryName ?? '',
+    customerId: widget.customerId,
+    machine: machineCtrl.text,
+    serialNumber: serialCtrl.text,
+    activityType: activityType,
+    description: descCtrl.text,
+    status: status,
+    note: noteCtrl.text,
+  );
+
+  final isDesktop = MediaQuery.of(context).size.width >= 900;
+
+  if (isDesktop) {
+    if (widget.onSaved != null) {
+      widget.onSaved!(activity);
+    }
+    if (widget.onClose != null) {
+      widget.onClose!();
+    }
+  } else {
     Navigator.pop(context, activity);
   }
+}
+
 
   Color _getActivityTypeColor(String type) {
     switch (type.toLowerCase()) {
@@ -210,416 +263,410 @@ class _ActivityFormPageState extends State<ActivityFormPage> {
       children: [
         // LEFT SIDEBAR - FORM
         Container(
-          width: 450,
-          margin: const EdgeInsets.only(right: 16),
-          child: _glass(
-            Column(
+  width: 450,
+  margin: const EdgeInsets.only(right: 16),
+  child: _glass(
+    SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: activityColor.withValues(alpha:0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  Icons.info_outline,
+                  color: activityColor,
+                  size: 18,
+                ),
+              ),
+              const SizedBox(width: 10),
+              const Text(
+                'Activity Information',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          _buildDesktopField(
+            'Date',
+            date.toString().split(' ').first,
+            Icons.calendar_today,
+            Colors.blue,
+            () async {
+              final picked = await showDatePicker(
+                context: context,
+                firstDate: DateTime(2020),
+                lastDate: DateTime(2030),
+                initialDate: date,
+              );
+              if (picked != null) {
+                setState(() => date = picked);
+              }
+            },
+          ),
+
+          const SizedBox(height: 12),
+
+          _buildDesktopField(
+            'Factory',
+            factoryName ?? 'Select Factory',
+            Icons.factory,
+            Colors.green,
+            _selectFactory,
+            isSelected: factoryName != null,
+          ),
+
+          const SizedBox(height: 16),
+
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.grey.withValues(alpha:0.05),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey.shade300),
+            ),
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: activityColor.withValues(alpha:0.1),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Icon(
-                        Icons.info_outline,
-                        color: activityColor,
-                        size: 18,
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    const Text(
-                      'Activity Information',
+                    Icon(Icons.precision_manufacturing, size: 14, color: Colors.grey.shade600),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Machine',
                       style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                        color: Colors.grey.shade600,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
-
-                // Date Selector
-                _buildDesktopField(
-                  'Date',
-                  date.toString().split(' ').first,
-                  Icons.calendar_today,
-                  Colors.blue,
-                  () async {
-                    final picked = await showDatePicker(
-                      context: context,
-                      firstDate: DateTime(2020),
-                      lastDate: DateTime(2030),
-                      initialDate: date,
-                    );
-                    if (picked != null) {
-                      setState(() => date = picked);
-                    }
-                  },
-                ),
-
-                const SizedBox(height: 12),
-
-                // Factory Selector
-                _buildDesktopField(
-                  'Factory',
-                  factoryName ?? 'Select Factory',
-                  Icons.factory,
-                  Colors.green,
-                  _selectFactory,
-                  isSelected: factoryName != null,
-                ),
-
-                const SizedBox(height: 16),
-
-                // Machine
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.withValues(alpha:0.05),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey.shade300),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(Icons.precision_manufacturing, size: 14, color: Colors.grey.shade600),
-                          const SizedBox(width: 4),
-                          Text(
-                            'Machine',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey.shade600,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      TextField(
-                        controller: machineCtrl,
-                        decoration: InputDecoration(
-                          hintText: 'Enter machine name/number',
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 12),
-
-                // Serial Number
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.withValues(alpha:0.05),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey.shade300),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(Icons.qr_code, size: 14, color: Colors.grey.shade600),
-                          const SizedBox(width: 4),
-                          Text(
-                            'Serial Number',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey.shade600,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      TextField(
-                        controller: serialCtrl,
-                        decoration: InputDecoration(
-                          hintText: 'Enter serial number',
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 16),
-
-                // Activity Type Dropdown
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.withValues(alpha:0.05),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey.shade300),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(Icons.category, size: 14, color: Colors.grey.shade600),
-                          const SizedBox(width: 4),
-                          Text(
-                            'Activity Type',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey.shade600,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      DropdownButtonFormField<String>(
-                        value: activityType,
-                        decoration: const InputDecoration(
-                          border: OutlineInputBorder(),
-                          contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        ),
-                        items: const [
-                          'service',
-                          'maintenance',
-                          'remote',
-                          'installation',
-                          'training',
-                          'general visit',
-                          'meeting',
-                        ].map((e) {
-                          final color = _getActivityTypeColor(e);
-                          return DropdownMenuItem(
-                            value: e,
-                            child: Row(
-                              children: [
-                                Container(
-                                  width: 10,
-                                  height: 10,
-                                  decoration: BoxDecoration(
-                                    color: color,
-                                    shape: BoxShape.circle,
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Text(e),
-                              ],
-                            ),
-                          );
-                        }).toList(),
-                        onChanged: (v) {
-                          setState(() => activityType = v!);
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 12),
-
-                // Status Dropdown
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.withValues(alpha:0.05),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey.shade300),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(Icons.info, size: 14, color: Colors.grey.shade600),
-                          const SizedBox(width: 4),
-                          Text(
-                            'Status',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey.shade600,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      DropdownButtonFormField<String>(
-                        value: status,
-                        decoration: const InputDecoration(
-                          border: OutlineInputBorder(),
-                          contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        ),
-                        items: const [
-                          DropdownMenuItem(
-                            value: 'paid',
-                            child: Row(
-                              children: [
-                                Icon(Icons.check_circle, size: 14, color: Colors.green),
-                                SizedBox(width: 8),
-                                Text('Paid'),
-                              ],
-                            ),
-                          ),
-                          DropdownMenuItem(
-                            value: 'warranty',
-                            child: Row(
-                              children: [
-                                Icon(Icons.verified, size: 14, color: Colors.orange),
-                                SizedBox(width: 8),
-                                Text('Warranty'),
-                              ],
-                            ),
-                          ),
-                        ],
-                        onChanged: (v) {
-                          setState(() => status = v!);
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 12),
-
-                // Description
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.withValues(alpha:0.05),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey.shade300),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(Icons.description, size: 14, color: Colors.grey.shade600),
-                          const SizedBox(width: 4),
-                          Text(
-                            'Description',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey.shade600,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      TextField(
-                        controller: descCtrl,
-                        maxLines: 3,
-                        decoration: InputDecoration(
-                          hintText: 'Enter activity description...',
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          contentPadding: const EdgeInsets.all(12),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 12),
-
-                // Note
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.withValues(alpha:0.05),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey.shade300),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(Icons.note, size: 14, color: Colors.grey.shade600),
-                          const SizedBox(width: 4),
-                          Text(
-                            'Note',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey.shade600,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      TextField(
-                        controller: noteCtrl,
-                        maxLines: 2,
-                        decoration: InputDecoration(
-                          hintText: 'Additional notes...',
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          contentPadding: const EdgeInsets.all(12),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 16),
-
-                // Action Buttons
-                Row(
-                  children: [
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.grey.shade300,
-                          foregroundColor: Colors.black87,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                        ),
-                        icon: const Icon(Icons.cancel),
-                        label: const Text('Cancel'),
-                        onPressed: () => Navigator.pop(context),
-                      ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: machineCtrl,
+                  decoration: InputDecoration(
+                    hintText: 'Enter machine name/number',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: activityColor,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                        ),
-                        icon: const Icon(Icons.save),
-                        label: const Text('Save Activity'),
-                        onPressed: _save,
-                      ),
-                    ),
-                  ],
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                  ),
                 ),
               ],
             ),
           ),
-        ),
+
+          const SizedBox(height: 12),
+
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.grey.withValues(alpha:0.05),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey.shade300),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.qr_code, size: 14, color: Colors.grey.shade600),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Serial Number',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey.shade600,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: serialCtrl,
+                  decoration: InputDecoration(
+                    hintText: 'Enter serial number',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.grey.withValues(alpha:0.05),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey.shade300),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.category, size: 14, color: Colors.grey.shade600),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Activity Type',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey.shade600,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                DropdownButtonFormField<String>(
+                  value: activityType,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  ),
+                  items: const [
+                    'service',
+                    'maintenance',
+                    'remote',
+                    'installation',
+                    'training',
+                    'general visit',
+                    'meeting',
+                  ].map((e) {
+                    final color = _getActivityTypeColor(e);
+                    return DropdownMenuItem(
+                      value: e,
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 10,
+                            height: 10,
+                            decoration: BoxDecoration(
+                              color: color,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(e),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                  onChanged: (v) {
+                    setState(() => activityType = v!);
+                  },
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.grey.withValues(alpha:0.05),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey.shade300),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.info, size: 14, color: Colors.grey.shade600),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Status',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey.shade600,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                DropdownButtonFormField<String>(
+                  value: status,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  ),
+                  items: const [
+                    DropdownMenuItem(
+                      value: 'paid',
+                      child: Row(
+                        children: [
+                          Icon(Icons.check_circle, size: 14, color: Colors.green),
+                          SizedBox(width: 8),
+                          Text('Paid'),
+                        ],
+                      ),
+                    ),
+                    DropdownMenuItem(
+                      value: 'warranty',
+                      child: Row(
+                        children: [
+                          Icon(Icons.verified, size: 14, color: Colors.orange),
+                          SizedBox(width: 8),
+                          Text('Warranty'),
+                        ],
+                      ),
+                    ),
+                  ],
+                  onChanged: (v) {
+                    setState(() => status = v!);
+                  },
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.grey.withValues(alpha:0.05),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey.shade300),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.description, size: 14, color: Colors.grey.shade600),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Description',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey.shade600,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: descCtrl,
+                  maxLines: 3,
+                  decoration: InputDecoration(
+                    hintText: 'Enter activity description...',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    contentPadding: const EdgeInsets.all(12),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.grey.withValues(alpha:0.05),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey.shade300),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.note, size: 14, color: Colors.grey.shade600),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Note',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey.shade600,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: noteCtrl,
+                  maxLines: 2,
+                  decoration: InputDecoration(
+                    hintText: 'Additional notes...',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    contentPadding: const EdgeInsets.all(12),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.grey.shade300,
+                    foregroundColor: Colors.black87,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  icon: const Icon(Icons.cancel),
+                  label: const Text('Cancel'),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: activityColor,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  icon: const Icon(Icons.save),
+                  label: const Text('Save Activity'),
+                  onPressed: _save,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    ),
+  ),
+),
 
         // RIGHT CONTENT - PREVIEW
         Expanded(
           child: _glass(
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
+  SingleChildScrollView(
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
                 Row(
                   children: [
                     Container(
@@ -646,8 +693,7 @@ class _ActivityFormPageState extends State<ActivityFormPage> {
                 ),
                 const SizedBox(height: 16),
 
-                Expanded(
-                  child: Center(
+                Center(
                     child: Container(
                       width: 300,
                       padding: const EdgeInsets.all(24),
@@ -739,13 +785,13 @@ class _ActivityFormPageState extends State<ActivityFormPage> {
                       ),
                     ),
                   ),
+      ],
                 ),
-              ],
-            ),
+  ),
           ),
         ),
-      ],
-    );
+              ],
+            );
   }
 
   Widget _buildMobileLayout(BuildContext context, Color activityColor) {

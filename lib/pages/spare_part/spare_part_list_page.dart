@@ -348,8 +348,12 @@ if (!mounted || _isDisposed) return;
         return GestureDetector(
   onTap: () {
     // ✅ SELECT MODE
-    if (widget.selectionMode) {
-  Navigator.pop(context, part);
+   if (widget.selectionMode) {
+  if (widget.onSelected != null) {
+    widget.onSelected!(part);
+  } else {
+    Navigator.pop(context, part);
+  }
   return;
 }
 

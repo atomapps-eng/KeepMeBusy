@@ -73,7 +73,7 @@ Widget build(BuildContext context) {
     extendBodyBehindAppBar: true,
     floatingActionButton: FloatingActionButton.extended(
   onPressed: () {
-    final overlay = Overlay.of(context);
+    final overlay = Overlay.of(context, rootOverlay: true);
 
     late OverlayEntry entry;
 
@@ -855,7 +855,7 @@ WidgetsBinding.instance.addPostFrameCallback((_) {
   final safeData = Map<String, dynamic>.from(data);
   safeData['id'] = doc.id;
 
-  final overlay = Overlay.of(context);
+  final overlay = Overlay.of(context, rootOverlay: true);
 
   late OverlayEntry entry;
 
@@ -874,7 +874,7 @@ WidgetsBinding.instance.addPostFrameCallback((_) {
               data: safeData,
               isSuperAdmin: widget.isSuperAdmin,
               onEdit: (editData) {
-  final overlay = Overlay.of(context);
+  final overlay = Overlay.of(context, rootOverlay: true);
 
   late OverlayEntry entry;
 

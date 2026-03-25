@@ -12,6 +12,8 @@ import '../../models/partner.dart';
 import '../models/activity_entry.dart';
 import '../models/factory_visit.dart';
 import '../../pages/partners/partner_list_page.dart';
+import '../../core/widgets/draggable_window.dart';
+import 'dart:async';
 
 class AttendanceInputPage extends StatefulWidget {
   final String employeeId;
@@ -35,7 +37,10 @@ class AttendanceInputPage extends StatefulWidget {
 
 class _AttendanceInputPageState extends State<AttendanceInputPage> {
   bool _isSaving = false;
-
+  bool _showCalendar = false;
+  bool _showCheckInPicker = false;
+bool _showCheckOutPicker = false;
+  bool _showStatusPicker = false;
   late DateTime _selectedDate;
 
   late AttendanceStatus status;
@@ -50,36 +55,81 @@ class _AttendanceInputPageState extends State<AttendanceInputPage> {
   TimeOfDay checkIn = const TimeOfDay(hour: 8, minute: 0);
   TimeOfDay checkOut = const TimeOfDay(hour: 17, minute: 0);
 
-  Future<bool> _showConfirmDialog({
-    required String title,
-    required String message,
-    String confirmText = 'Yes',
-    String cancelText = 'Cancel',
-    Color confirmColor = Colors.red,
-  }) async {
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(title),
-        content: Text(message),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(cancelText),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: confirmColor,
-            ),
-            onPressed: () => Navigator.pop(context, true),
-            child: Text(confirmText),
-          ),
-        ],
-      ),
-    );
+ Future<bool> _showConfirmDialog({
+  required String title,
+  required String message,
+  String confirmText = 'Yes',
+  String cancelText = 'Cancel',
+  Color confirmColor = Colors.red,
+}) async {
+  final completer = Completer<bool>();
 
-    return result ?? false;
-  }
+  final overlay = Overlay.of(context, rootOverlay: true);
+  late OverlayEntry entry;
+
+  entry = OverlayEntry(
+    builder: (context) {
+      return Positioned.fill(
+        child: Material(
+          color: Colors.black.withOpacity(0.4),
+          child: Center(
+            child: Container(
+              width: 400,
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(message),
+                  const SizedBox(height: 20),
+
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton(
+                        onPressed: () {
+                          entry.remove();
+                          completer.complete(false);
+                        },
+                        child: Text(cancelText),
+                      ),
+                      const SizedBox(width: 8),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: confirmColor,
+                        ),
+                        onPressed: () {
+                          entry.remove();
+                          completer.complete(true);
+                        },
+                        child: Text(confirmText),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    },
+  );
+
+  overlay.insert(entry);
+
+  return completer.future;
+}
 
   @override
   void initState() {
@@ -435,6 +485,84 @@ class _AttendanceInputPageState extends State<AttendanceInputPage> {
 
         const SizedBox(height: 16),
 
+        Container(
+  padding: const EdgeInsets.all(12),
+  decoration: BoxDecoration(
+    color: Colors.grey.withValues(alpha:0.05),
+    borderRadius: BorderRadius.circular(12),
+    border: Border.all(color: Colors.grey.shade300),
+  ),
+  child: Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      const Text(
+        'Date',
+        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+      ),
+      const SizedBox(height: 6),
+
+      InkWell(
+        onTap: () {
+          setState(() {
+            _showCalendar = !_showCalendar;
+          });
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          decoration: BoxDecoration(
+            color: Colors.blue.withValues(alpha:0.05),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.blue.withValues(alpha:0.3)),
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.calendar_today, size: 16, color: Colors.blue.shade700),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: Colors.blue.shade700,
+                  ),
+                ),
+              ),
+              Icon(
+                _showCalendar ? Icons.expand_less : Icons.expand_more,
+                color: Colors.grey.shade600,
+              ),
+            ],
+          ),
+        ),
+      ),
+
+      if (_showCalendar) ...[
+        const SizedBox(height: 12),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.grey.shade300),
+          ),
+          child: CalendarDatePicker(
+            initialDate: _selectedDate,
+            firstDate: DateTime(2020),
+            lastDate: DateTime(2100),
+            onDateChanged: (date) {
+              setState(() {
+                _selectedDate = date;
+                _showCalendar = false; // auto close
+              });
+            },
+          ),
+        ),
+      ],
+    ],
+  ),
+),
+
+const SizedBox(height: 16),
+
                 // Status Dropdown
                 Container(
                   padding: const EdgeInsets.all(12),
@@ -444,51 +572,119 @@ class _AttendanceInputPageState extends State<AttendanceInputPage> {
                     border: Border.all(color: Colors.grey.shade300),
                   ),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Status',
-                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
-                      ),
-                      const SizedBox(height: 4),
-                      DropdownButtonFormField<AttendanceStatus>(
-                        value: status,
-                        decoration: const InputDecoration(
-                          border: OutlineInputBorder(),
-                          contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        ),
-                        items: AttendanceStatus.values
-                            .map((s) => DropdownMenuItem(
-                                  value: s,
-                                  child: Row(
-                                    children: [
-                                      Container(
-                                        width: 10,
-                                        height: 10,
-                                        decoration: BoxDecoration(
-                                          color: _getStatusColor(s),
-                                          shape: BoxShape.circle,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Text(s.label),
-                                    ],
-                                  ),
-                                ))
-                            .toList(),
-                        onChanged: (v) {
-                          setState(() {
-                            status = v!;
-                            if (!_isPresent) {
-                              location = null;
-                              selectedCustomerId = null;
-                              factories.clear();
-                            }
-                          });
-                        },
-                      ),
-                    ],
+  crossAxisAlignment: CrossAxisAlignment.start,
+  children: [
+    const Text(
+      'Status',
+      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+    ),
+    const SizedBox(height: 6),
+
+    InkWell(
+      onTap: () {
+        setState(() {
+          _showCalendar = false;
+          _showStatusPicker = !_showStatusPicker;
+        });
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        decoration: BoxDecoration(
+          color: Colors.blue.withValues(alpha:0.05),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.blue.withValues(alpha:0.3)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 10,
+              height: 10,
+              decoration: BoxDecoration(
+                color: _getStatusColor(status),
+                shape: BoxShape.circle,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                status.label,
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: Colors.blue.shade700,
+                ),
+              ),
+            ),
+            Icon(
+              _showStatusPicker
+                  ? Icons.expand_less
+                  : Icons.expand_more,
+              color: Colors.grey.shade600,
+            ),
+          ],
+        ),
+      ),
+    ),
+
+    if (_showStatusPicker) ...[
+      const SizedBox(height: 10),
+
+      ...AttendanceStatus.values.map((s) {
+        final isSelected = s == status;
+
+        return InkWell(
+          onTap: () {
+            setState(() {
+              status = s;
+              _showStatusPicker = false;
+
+              if (status != AttendanceStatus.present) {
+                location = null;
+                selectedCustomerId = null;
+                factories.clear();
+              }
+            });
+          },
+          child: Container(
+            margin: const EdgeInsets.only(bottom: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: isSelected
+                  ? _getStatusColor(s).withValues(alpha:0.15)
+                  : Colors.transparent,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: isSelected
+                    ? _getStatusColor(s)
+                    : Colors.grey.shade300,
+              ),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 10,
+                  height: 10,
+                  decoration: BoxDecoration(
+                    color: _getStatusColor(s),
+                    shape: BoxShape.circle,
                   ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  s.label,
+                  style: TextStyle(
+                    fontWeight: isSelected
+                        ? FontWeight.bold
+                        : FontWeight.normal,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      }),
+    ],
+  ],
+),
                 ),
 
                 const SizedBox(height: 12),
@@ -554,22 +750,58 @@ class _AttendanceInputPageState extends State<AttendanceInputPage> {
                         const SizedBox(height: 8),
                         InkWell(
                           onTap: () async {
-                            final partner = await Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => const PartnerListPage(
-                                  selectionMode: true,
-                                ),
-                              ),
-                            );
+  final isDesktop = MediaQuery.of(context).size.width >= 900;
 
-                            if (partner != null && partner is Partner) {
-                              setState(() {
-                                selectedCustomerId = partner.id;
-                                selectedCustomerName = partner.name;
-                              });
-                            }
-                          },
+  if (isDesktop) {
+    final overlay = Overlay.of(context, rootOverlay: true);
+    late OverlayEntry entry;
+
+    entry = OverlayEntry(
+      builder: (context) {
+        return Positioned.fill(
+          child: Material(
+            color: Colors.transparent,
+            child: DraggableResizableWindow(
+              title: "Select Customer",
+              headerColor: Colors.blue,
+              onClose: () {
+                entry.remove();
+              },
+              child: PartnerListPage(
+                selectionMode: true,
+                onSelected: (partner) {
+                  setState(() {
+                    selectedCustomerId = partner.id;
+                    selectedCustomerName = partner.name;
+                  });
+                  entry.remove();
+                },
+              ),
+            ),
+          ),
+        );
+      },
+    );
+
+    overlay.insert(entry);
+  } else {
+    final partner = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const PartnerListPage(
+          selectionMode: true,
+        ),
+      ),
+    );
+
+    if (partner != null) {
+      setState(() {
+        selectedCustomerId = partner.id;
+        selectedCustomerName = partner.name;
+      });
+    }
+  }
+},
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                             decoration: BoxDecoration(
@@ -630,45 +862,25 @@ class _AttendanceInputPageState extends State<AttendanceInputPage> {
                           style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
                         ),
                         const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _buildTimePicker(
-                                'Check In',
-                                checkIn,
-                                Icons.login,
-                                Colors.green,
-                                () async {
-                                  final t = await showTimePicker(
-                                    context: context,
-                                    initialTime: checkIn,
-                                  );
-                                  if (t != null) {
-                                    setState(() => checkIn = t);
-                                  }
-                                },
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: _buildTimePicker(
-                                'Check Out',
-                                checkOut,
-                                Icons.logout,
-                                Colors.red,
-                                () async {
-                                  final t = await showTimePicker(
-                                    context: context,
-                                    initialTime: checkOut,
-                                  );
-                                  if (t != null) {
-                                    setState(() => checkOut = t);
-                                  }
-                                },
-                              ),
-                            ),
-                          ],
-                        ),
+                        Column(
+  children: [
+    _buildTimePickerDesktop(
+      'Check In',
+      checkIn,
+      Icons.login,
+      Colors.green,
+      true,
+    ),
+    const SizedBox(height: 12),
+    _buildTimePickerDesktop(
+      'Check Out',
+      checkOut,
+      Icons.logout,
+      Colors.red,
+      false,
+    ),
+  ],
+),
                       ],
                     ),
                   ),
@@ -808,29 +1020,47 @@ class _AttendanceInputPageState extends State<AttendanceInputPage> {
                           icon: const Icon(Icons.add),
                           label: const Text('Add Activity'),
                           onPressed: () async {
-                            if (selectedCustomerId == null) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Please select customer first'),
-                                ),
-                              );
-                              return;
-                            }
+  if (selectedCustomerId == null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Please select customer first'),
+      ),
+    );
+    return;
+  }
 
-                            final result = await Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => ActivityFormPage(
-                                  attendanceDate: _selectedDate,
-                                  customerId: selectedCustomerId!,
-                                ),
-                              ),
-                            );
+  final overlay = Overlay.of(context);
+  late OverlayEntry entry;
 
-                            if (result is ActivityEntry) {
-                              _addActivity(result);
-                            }
-                          },
+  entry = OverlayEntry(
+    builder: (context) {
+      return Positioned.fill(
+        child: Material(
+          color: Colors.transparent,
+          child: DraggableResizableWindow(
+            title: "Add Activity",
+            headerColor: Colors.blue,
+            onClose: () {
+              entry.remove();
+            },
+            child: ActivityFormPage(
+  attendanceDate: _selectedDate,
+  customerId: selectedCustomerId!,
+  onClose: () {
+    entry.remove();
+  },
+  onSaved: (activity) {
+    _addActivity(activity); // 🔥 INI YANG SEBELUMNYA HILANG
+  },
+),
+          ),
+        ),
+      );
+    },
+  );
+
+  overlay.insert(entry);
+},
                         ),
                       ),
                     ],
@@ -988,6 +1218,142 @@ class _AttendanceInputPageState extends State<AttendanceInputPage> {
     );
   }
 
+  Widget _buildTimePickerMobile(
+  String label,
+  TimeOfDay time,
+  IconData icon,
+  Color color,
+  VoidCallback onTap,
+) {
+  return InkWell(
+    onTap: onTap,
+    child: Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha:0.05),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withValues(alpha:0.3)),
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 14, color: color),
+              const SizedBox(width: 4),
+              Text(label, style: TextStyle(fontSize: 11, color: color)),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            time.format(context),
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+Widget _buildTimePickerDesktop(
+  String label,
+  TimeOfDay time,
+  IconData icon,
+  Color color,
+  bool isCheckIn,
+) {
+  final showPicker = isCheckIn ? _showCheckInPicker : _showCheckOutPicker;
+
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      InkWell(
+        onTap: () {
+          setState(() {
+            _showCalendar = false;
+            _showStatusPicker = false;
+
+            if (isCheckIn) {
+              _showCheckInPicker = !_showCheckInPicker;
+              _showCheckOutPicker = false;
+            } else {
+              _showCheckOutPicker = !_showCheckOutPicker;
+              _showCheckInPicker = false;
+            }
+          });
+        },
+        child: Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha:0.05),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: color.withValues(alpha:0.3)),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 14, color: color),
+              const SizedBox(width: 4),
+              Text(
+                time.format(context),
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: color,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+
+      if (showPicker) ...[
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(
+              child: _buildNumberPicker(
+                value: time.hour,
+                max: 23,
+                label: 'Hour',
+                onChanged: (val) {
+                  setState(() {
+                    if (isCheckIn) {
+                      checkIn = TimeOfDay(hour: val, minute: checkIn.minute);
+                    } else {
+                      checkOut = TimeOfDay(hour: val, minute: checkOut.minute);
+                    }
+                  });
+                },
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _buildNumberPicker(
+                value: time.minute,
+                max: 59,
+                label: 'Min',
+                onChanged: (val) {
+                  setState(() {
+                    if (isCheckIn) {
+                      checkIn = TimeOfDay(hour: checkIn.hour, minute: val);
+                    } else {
+                      checkOut = TimeOfDay(hour: checkOut.hour, minute: val);
+                    }
+                  });
+                },
+              ),
+            ),
+          ],
+        ),
+      ],
+    ],
+  );
+}
+
   Widget _buildMobileLayout(BuildContext context, Color statusColor) {
     return SingleChildScrollView(
       child: Column(
@@ -1142,35 +1508,35 @@ class _AttendanceInputPageState extends State<AttendanceInputPage> {
                   Row(
                     children: [
                       Expanded(
-                        child: _buildTimePicker(
-                          'Check In',
-                          checkIn,
-                          Icons.login,
-                          Colors.green,
-                          () async {
-                            final t = await showTimePicker(
-                              context: context,
-                              initialTime: checkIn,
-                            );
-                            if (t != null) setState(() => checkIn = t);
-                          },
-                        ),
+                        child: _buildTimePickerMobile(
+  'Check In',
+  checkIn,
+  Icons.login,
+  Colors.green,
+  () async {
+    final t = await showTimePicker(
+      context: context,
+      initialTime: checkIn,
+    );
+    if (t != null) setState(() => checkIn = t);
+  },
+),
                       ),
                       const SizedBox(width: 8),
                       Expanded(
-                        child: _buildTimePicker(
-                          'Check Out',
-                          checkOut,
-                          Icons.logout,
-                          Colors.red,
-                          () async {
-                            final t = await showTimePicker(
-                              context: context,
-                              initialTime: checkOut,
-                            );
-                            if (t != null) setState(() => checkOut = t);
-                          },
-                        ),
+                        child: _buildTimePickerMobile(
+  'Check Out',
+  checkOut,
+  Icons.logout,
+  Colors.red,
+  () async {
+    final t = await showTimePicker(
+      context: context,
+      initialTime: checkOut,
+    );
+    if (t != null) setState(() => checkOut = t);
+  },
+),
                       ),
                     ],
                   ),
@@ -1255,8 +1621,8 @@ class _AttendanceInputPageState extends State<AttendanceInputPage> {
                       final confirm = await _showConfirmDialog(
                         title: 'Save Attendance',
                         message: widget.existingDay != null
-                            ? 'Perubahan attendance akan disimpan.\n\nLanjutkan?'
-                            : 'Attendance baru akan dibuat.\n\nLanjutkan?',
+                            ? 'Changes will be saved.\n\nContinue?'
+                            : 'New attendance data will be made.\n\nContinue?',
                         confirmText: 'Save',
                         confirmColor: Colors.green,
                       );
@@ -1484,46 +1850,146 @@ class _AttendanceInputPageState extends State<AttendanceInputPage> {
     );
   }
 
-  Widget _buildTimePicker(String label, TimeOfDay time, IconData icon, Color color, VoidCallback onTap) {
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha:0.05),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: color.withValues(alpha:0.3)),
-        ),
-        child: Column(
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(icon, size: 14, color: color),
-                const SizedBox(width: 4),
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: color,
-                  ),
+  Widget _buildTimePicker(
+  String label,
+  TimeOfDay time,
+  IconData icon,
+  Color color,
+  bool isCheckIn,
+) {
+  final showPicker = isCheckIn ? _showCheckInPicker : _showCheckOutPicker;
+
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      InkWell(
+        onTap: () {
+          setState(() {
+            _showCalendar = false;
+            _showStatusPicker = false;
+
+            if (isCheckIn) {
+              _showCheckInPicker = !_showCheckInPicker;
+              _showCheckOutPicker = false;
+            } else {
+              _showCheckOutPicker = !_showCheckOutPicker;
+              _showCheckInPicker = false;
+            }
+          });
+        },
+        child: Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha:0.05),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: color.withValues(alpha:0.3)),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 14, color: color),
+              const SizedBox(width: 4),
+              Text(
+                time.format(context),
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: color,
                 ),
-              ],
+              ),
+            ],
+          ),
+        ),
+      ),
+
+      if (showPicker) ...[
+        const SizedBox(height: 8),
+
+        Row(
+          children: [
+            Expanded(
+              child: _buildNumberPicker(
+                value: time.hour,
+                max: 23,
+                label: 'Hour',
+                onChanged: (val) {
+                  setState(() {
+                    if (isCheckIn) {
+                      checkIn = TimeOfDay(hour: val, minute: checkIn.minute);
+                    } else {
+                      checkOut = TimeOfDay(hour: val, minute: checkOut.minute);
+                    }
+                  });
+                },
+              ),
             ),
-            const SizedBox(height: 4),
-            Text(
-              time.format(context),
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: color,
+            const SizedBox(width: 8),
+            Expanded(
+              child: _buildNumberPicker(
+                value: time.minute,
+                max: 59,
+                label: 'Min',
+                onChanged: (val) {
+                  setState(() {
+                    if (isCheckIn) {
+                      checkIn = TimeOfDay(hour: checkIn.hour, minute: val);
+                    } else {
+                      checkOut = TimeOfDay(hour: checkOut.hour, minute: val);
+                    }
+                  });
+                },
               ),
             ),
           ],
         ),
-      ),
-    );
-  }
+      ],
+    ],
+  );
+}
+
+Widget _buildNumberPicker({
+  required int value,
+  required int max,
+  required String label,
+  required Function(int) onChanged,
+}) {
+  return Container(
+    padding: const EdgeInsets.all(8),
+    decoration: BoxDecoration(
+      color: Colors.grey.withValues(alpha:0.05),
+      borderRadius: BorderRadius.circular(8),
+      border: Border.all(color: Colors.grey.shade300),
+    ),
+    child: Column(
+      children: [
+        Text(label, style: const TextStyle(fontSize: 11)),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.remove, size: 16),
+              onPressed: () {
+                final newVal = (value - 1).clamp(0, max);
+                onChanged(newVal);
+              },
+            ),
+            Text(
+              value.toString().padLeft(2, '0'),
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            IconButton(
+              icon: const Icon(Icons.add, size: 16),
+              onPressed: () {
+                final newVal = (value + 1).clamp(0, max);
+                onChanged(newVal);
+              },
+            ),
+          ],
+        ),
+      ],
+    ),
+  );
+}
 
   Widget _buildActivityCard(ActivityEntry a, FactoryVisit factory, int index) {
     return Container(

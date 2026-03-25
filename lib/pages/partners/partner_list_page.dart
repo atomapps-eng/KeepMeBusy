@@ -10,10 +10,12 @@ import '../../models/read_tracker_service.dart';
 
 class PartnerListPage extends StatefulWidget {
   final bool selectionMode;
+  final Function(dynamic)? onSelected;
 
   const PartnerListPage({
     super.key,
     this.selectionMode = false,
+    this.onSelected,
   });
   
 
@@ -308,10 +310,14 @@ class _PartnerListPageState extends State<PartnerListPage> with TickerProviderSt
     return InkWell(
       borderRadius: BorderRadius.circular(14),
      onTap: () async {
- if (widget.selectionMode) {
-  Navigator.pop(context, partner);
-  return;
-}
+  if (widget.selectionMode) {
+    if (widget.onSelected != null) {
+      widget.onSelected!(partner);
+    } else {
+      Navigator.pop(context, partner);
+    }
+    return;
+  }
 
   await Navigator.push(
     context,
