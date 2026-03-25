@@ -47,14 +47,21 @@ class OrderOutDesktop extends StatelessWidget {
   icon: Icons.add_box_rounded,
   title: "Create Order Out",
   onTap: () {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => const OrderOutMobile(
-          autoCreate: true,
-        ),
+    showGeneralDialog(
+  context: context,
+  barrierDismissible: false,
+  barrierLabel: "CreateOrderOut",
+  barrierColor: Colors.black.withValues(alpha: 0.35),
+  transitionDuration: const Duration(milliseconds: 200),
+  pageBuilder: (_, _, _) {
+    return DraggableResizableWindow(
+      title: "Create Order Out",
+      child: const OrderOutMobile(
+        autoCreate: true,
       ),
     );
+  },
+);
   },
 ),
 

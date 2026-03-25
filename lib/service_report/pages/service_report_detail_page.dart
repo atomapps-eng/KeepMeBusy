@@ -9,6 +9,7 @@ import '../../theme/app_theme.dart';
 import '../../pages/common/app_background_wrapper.dart';
 import '../../services/service_report_pdf_service.dart';
 import '../services/company_collection_resolver.dart';
+import '../../core/widgets/draggable_window.dart';
 
 class ServiceReportDetailPage extends StatefulWidget {
   final String reportId;
@@ -191,7 +192,28 @@ setState(() {
     }
   }
 
-  Future<void> _editReport() async {
+ Future<void> _editReport() async {
+  final isDesktop = MediaQuery.of(context).size.width >= 900;
+
+  if (isDesktop) {
+    final result = await showDialog(
+      context: context,
+      barrierDismissible: false,
+      barrierColor: Colors.transparent,
+      builder: (context) {
+        return DraggableResizableWindow(
+          title: "Edit Service Report",
+          child: ServiceReportFormPage(
+            reportId: widget.reportId,
+          ),
+        );
+      },
+    );
+
+    if (result == true) {
+      _loadReport();
+    }
+  } else {
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
@@ -200,11 +222,12 @@ setState(() {
         ),
       ),
     );
-    
+
     if (result == true) {
       _loadReport();
     }
   }
+}
 
   Future<void> _deleteReport() async {
     final confirm = await showDialog<bool>(
@@ -1163,12 +1186,16 @@ _buildDetailRow(
   }
 
   Widget _buildDesktopActionButtons() {
+  final data = _reportDoc?.data();
+  final isDraft = data?['status'] == 'Draft';
+
   return _glass(
     Row(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
+        // PRINT PDF (tetap ada kalau submitted)
         ElevatedButton.icon(
-          onPressed: _isSubmitting ? null : _printToPdf,
+          onPressed: (_isSubmitting || !isDraft) ? _printToPdf : null,
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.green,
             foregroundColor: Colors.white,
@@ -1177,39 +1204,51 @@ _buildDetailRow(
           icon: const Icon(Icons.picture_as_pdf),
           label: const Text("Print to PDF"),
         ),
+
         const SizedBox(width: 16),
-        ElevatedButton.icon(
-          onPressed: _isSubmitting ? null : _editReport,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.grey.shade200,
-            foregroundColor: Colors.black87,
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+
+        // EDIT (HANYA DRAFT)
+        if (isDraft)
+          ElevatedButton.icon(
+            onPressed: _isSubmitting ? null : _editReport,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.grey.shade200,
+              foregroundColor: Colors.black87,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            ),
+            icon: const Icon(Icons.edit),
+            label: const Text("Edit Draft"),
           ),
-          icon: const Icon(Icons.edit),
-          label: const Text("Edit Draft"),
-        ),
-        const SizedBox(width: 16),
-        ElevatedButton.icon(
-          onPressed: _isSubmitting ? null : _submitReport,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.blue,
-            foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+
+        if (isDraft) const SizedBox(width: 16),
+
+        // SUBMIT (HANYA DRAFT)
+        if (isDraft)
+          ElevatedButton.icon(
+            onPressed: _isSubmitting ? null : _submitReport,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.blue,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            ),
+            icon: const Icon(Icons.send),
+            label: const Text("Submit Report"),
           ),
-          icon: const Icon(Icons.send),
-          label: const Text("Submit Report"),
-        ),
-        const SizedBox(width: 16),
-        ElevatedButton.icon(
-          onPressed: _isSubmitting ? null : _deleteReport,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.red,
-            foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+
+        if (isDraft) const SizedBox(width: 16),
+
+        // DELETE (HANYA DRAFT)
+        if (isDraft)
+          ElevatedButton.icon(
+            onPressed: _isSubmitting ? null : _deleteReport,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            ),
+            icon: const Icon(Icons.delete),
+            label: const Text("Delete"),
           ),
-          icon: const Icon(Icons.delete),
-          label: const Text("Delete"),
-        ),
       ],
     ),
   );

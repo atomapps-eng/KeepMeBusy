@@ -23,6 +23,7 @@ import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:flutter/services.dart';
+import '../../../core/widgets/draggable_window.dart';
 //
 
 class TripDetailPage extends StatelessWidget {
@@ -557,25 +558,42 @@ _glass(
                         ),
 
                         TextButton(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => TransactionListPage(trip: trip),
-                              ),
-                            );
-                          },
-                          style: TextButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                          ),
-                          child: Row(
-                            children: const [
-                              Text("View All"),
-                              SizedBox(width: 4),
-                              Icon(Icons.arrow_forward, size: 16),
-                            ],
-                          ),
-                        ),
+  onPressed: () {
+    final isDesktop = MediaQuery.of(context).size.width >= 900;
+
+    if (isDesktop) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        barrierColor: Colors.transparent,
+        builder: (context) {
+          return DraggableResizableWindow(
+            title: "All Transactions",
+            headerColor: Colors.purple,
+            child: TransactionListPage(trip: trip),
+          );
+        },
+      );
+    } else {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => TransactionListPage(trip: trip),
+        ),
+      );
+    }
+  },
+  style: TextButton.styleFrom(
+    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+  ),
+  child: Row(
+    children: const [
+      Text("View All"),
+      SizedBox(width: 4),
+      Icon(Icons.arrow_forward, size: 16),
+    ],
+  ),
+),
                       ],
                     ),
                     const SizedBox(height: 12),
@@ -671,53 +689,133 @@ _glass(
         backgroundColor: Colors.blue,
         child: const Icon(Icons.add),
         onPressed: () {
-          showModalBottomSheet(
-            context: context,
-            shape: const RoundedRectangleBorder(
-              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+  final isDesktop = MediaQuery.of(context).size.width >= 900;
+
+  if (isDesktop) {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      barrierColor: Colors.transparent,
+      builder: (context) {
+        return Center(
+          child: Material(
+            color: Colors.transparent,
+            child: Container(
+              width: 280,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.2),
+                    blurRadius: 20,
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ListTile(
+                    leading: const Icon(Icons.arrow_downward, color: Colors.green),
+                    title: const Text('Add Transfer'),
+                    onTap: () {
+                      Navigator.pop(context);
+
+                      showDialog(
+                        context: context,
+                        barrierDismissible: false,
+                        barrierColor: Colors.transparent,
+                        builder: (context) {
+                          return DraggableResizableWindow(
+                            title: "Add Transfer",
+                            headerColor: Colors.green,
+                            child: AddTransferPage(
+                              tripId: trip.id,
+                            ),
+                          );
+                        },
+                      );
+                    },
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.arrow_upward, color: Colors.red),
+                    title: const Text('Add Expense'),
+                    onTap: () {
+                      Navigator.pop(context);
+
+                      showDialog(
+                        context: context,
+                        barrierDismissible: false,
+                        barrierColor: Colors.transparent,
+                        builder: (context) {
+                          return DraggableResizableWindow(
+                            title: "Add Expense",
+                            headerColor: Colors.red,
+                            child: AddExpensePage(
+                              tripId: trip.id,
+                            ),
+                          );
+                        },
+                      );
+                    },
+                  ),
+                ],
+              ),
             ),
-            builder: (context) {
-              return Container(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    ListTile(
-                      leading: const Icon(Icons.arrow_downward, color: Colors.green),
-                      title: const Text('Add Transfer'),
-                      onTap: () {
-                        Navigator.pop(context);
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => AddTransferPage(
-                              tripId: trip.id,
-                            ),
-                          ),
-                        );
-                      },
+          ),
+        );
+      },
+    );
+  } else {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.arrow_downward, color: Colors.green),
+                title: const Text('Add Transfer'),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => AddTransferPage(
+                        tripId: trip.id,
+                      ),
                     ),
-                    ListTile(
-                      leading: const Icon(Icons.arrow_upward, color: Colors.red),
-                      title: const Text('Add Expense'),
-                      onTap: () {
-                        Navigator.pop(context);
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => AddExpensePage(
-                              tripId: trip.id,
-                            ),
-                          ),
-                        );
-                      },
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.arrow_upward, color: Colors.red),
+                title: const Text('Add Expense'),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => AddExpensePage(
+                        tripId: trip.id,
+                      ),
                     ),
-                  ],
-                ),
-              );
-            },
-          );
-        },
+                  );
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
@@ -727,40 +825,80 @@ Widget _buildTransactionItem(BuildContext context, TripLedgerItem item) {
   return InkWell(
     onTap: () {
       if (item.type == 'expense') {
-        final expense = TripExpense(
-          id: item.id,
-          date: item.date,
-          employeeId: '',
-          amount: item.amount,
-          currency: item.currency,
-          category: item.title,
-          description: item.description ?? '',
-          receiptUrl: item.receiptUrl ?? '',
-          fingerprint: '',
-        );
+  final expense = TripExpense(
+    id: item.id,
+    date: item.date,
+    employeeId: '',
+    amount: item.amount,
+    currency: item.currency,
+    category: item.title,
+    description: item.description ?? '',
+    receiptUrl: item.receiptUrl ?? '',
+    fingerprint: '',
+  );
 
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => ExpenseDetailPage(
-              tripId: trip.id,
-              expense: expense,
-            ),
+  final isDesktop = MediaQuery.of(context).size.width >= 900;
+
+  if (isDesktop) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      barrierColor: Colors.transparent,
+      builder: (context) {
+        return DraggableResizableWindow(
+          title: "Expense Detail",
+          headerColor: Colors.red,
+          child: ExpenseDetailPage(
+            tripId: trip.id,
+            expense: expense,
           ),
         );
-      }
+      },
+    );
+  } else {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ExpenseDetailPage(
+          tripId: trip.id,
+          expense: expense,
+        ),
+      ),
+    );
+  }
+}
 
       if (item.type == 'transfer') {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => AddTransferPage(
-              tripId: trip.id,
-              transferId: item.id,
-            ),
+  final isDesktop = MediaQuery.of(context).size.width >= 900;
+
+  if (isDesktop) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      barrierColor: Colors.transparent,
+      builder: (context) {
+        return DraggableResizableWindow(
+          title: "Edit Transfer",
+          headerColor: Colors.green,
+          child: AddTransferPage(
+            tripId: trip.id,
+            transferId: item.id,
           ),
         );
-      }
+      },
+    );
+  } else {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AddTransferPage(
+          tripId: trip.id,
+          transferId: item.id,
+        ),
+      ),
+    );
+  }
+}
     },
     child: Container(
       margin: const EdgeInsets.only(bottom: 8),
@@ -1017,16 +1155,36 @@ Widget _buildTransactionItem(BuildContext context, TripLedgerItem item) {
                     );
                   }
                   if (item.type == 'transfer') {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => AddTransferPage(
-                          tripId: trip.id,
-                          transferId: item.id,
-                        ),
-                      ),
-                    );
-                  }
+  final isDesktop = MediaQuery.of(context).size.width >= 900;
+
+  if (isDesktop) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      barrierColor: Colors.transparent,
+      builder: (context) {
+        return DraggableResizableWindow(
+          title: "Edit Transfer",
+          headerColor: Colors.green,
+          child: AddTransferPage(
+            tripId: trip.id,
+            transferId: item.id,
+          ),
+        );
+      },
+    );
+  } else {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AddTransferPage(
+          tripId: trip.id,
+          transferId: item.id,
+        ),
+      ),
+    );
+  }
+}
                 }
               }
             },

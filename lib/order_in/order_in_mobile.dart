@@ -8,7 +8,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../pages/partners/partner_list_page.dart';
 import '../pages/order_in/order_in_detail_page.dart';
 import '../theme/app_theme.dart';
-
+import '../core/widgets/draggable_window.dart';
+//
 enum QtyDialogMode {
   orderIn,
   orderOut,
@@ -408,7 +409,31 @@ Future<void> _deleteOrder(
 
   // ================= ADD PART =================
   Future<void> _addPart() async {
-    final SparePart? selected = await Navigator.push(
+  final isDesktop = MediaQuery.of(context).size.width >= 900;
+
+  SparePart? selected;
+
+  if (isDesktop) {
+    // ===== DESKTOP (WINDOW) =====
+    selected = await showGeneralDialog<SparePart>(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: "SelectSparePart",
+      barrierColor: Colors.black.withValues(alpha: 0.35),
+      transitionDuration: const Duration(milliseconds: 200),
+      pageBuilder: (_, __, ___) {
+        return DraggableResizableWindow(
+          title: "Select Spare Part",
+          child: const SparePartListPage(
+            selectionMode: true,
+            isWindow: true,
+          ),
+        );
+      },
+    );
+  } else {
+    // ===== MOBILE (FULL SCREEN) =====
+    selected = await Navigator.push<SparePart>(
       context,
       MaterialPageRoute(
         builder: (_) => const SparePartListPage(
@@ -416,44 +441,43 @@ Future<void> _deleteOrder(
         ),
       ),
     );
-
-    if (selected == null) return;
-
-    final snap = await CompanyFirestore
-    .collection('spare_parts')
-    .doc(selected.id)
-    .get();
-
-final firestoreStock =
-    (snap['currentStock'] as num).toInt();
-
-final int? qty = await _showQtyDialog(
-  part: selected,
-  mode: QtyDialogMode.orderIn,
-  firestoreStock: firestoreStock,
-);
-
-
-    if (qty == null) return;
-
-    final existingIndex =
-    items.indexWhere((e) => e.part.id == selected.id);
-
-if (existingIndex != -1) {
-  setState(() {
-    final current = items[existingIndex];
-    items[existingIndex] = OrderInItem(
-      part: current.part,
-      qty: current.qty + qty,
-    );
-  });
-} else {
-  setState(() {
-    items.add(OrderInItem(part: selected, qty: qty));
-  });
-}
-
   }
+
+  if (selected == null) return;
+
+  final snap = await CompanyFirestore
+      .collection('spare_parts')
+      .doc(selected.id)
+      .get();
+
+  final firestoreStock =
+      (snap['currentStock'] as num).toInt();
+
+  final int? qty = await _showQtyDialog(
+    part: selected,
+    mode: QtyDialogMode.orderIn,
+    firestoreStock: firestoreStock,
+  );
+
+  if (qty == null) return;
+
+  final existingIndex =
+      items.indexWhere((e) => e.part.id == selected!.id);
+
+  if (existingIndex != -1) {
+    setState(() {
+      final current = items[existingIndex];
+      items[existingIndex] = OrderInItem(
+        part: current.part,
+        qty: current.qty + qty,
+      );
+    });
+  } else {
+    setState(() {
+      items.add(OrderInItem(part: selected!, qty: qty));
+    });
+  }
+}
   
 Future<void> _editItemAtIndex(int index) async {
   final current = items[index];

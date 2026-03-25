@@ -925,9 +925,21 @@ _buildMenuSection(
                           label: 'Service Report',
                           color: Colors.green,
                           onTap: () {
-                            Navigator.pop(context);
-                            setState(() => selectedSection = DesktopSection.reports);
-                          },
+  showGeneralDialog(
+    context: context,
+    barrierDismissible: true,
+    barrierLabel: "ServiceReport",
+    barrierColor: Colors.black.withValues(alpha: 0.35),
+    transitionDuration: const Duration(milliseconds: 200),
+    pageBuilder: (_, _, _) {
+      return DraggableResizableWindow(
+        title: "Service Reports",
+        headerColor: Colors.green,
+        child: const ServiceReportListPage(),
+      );
+    },
+  );
+},
                         ),
                         _MenuItem(
                           icon: Icons.flight_takeoff,
@@ -1455,29 +1467,43 @@ Widget _buildMenuItemCard(_MenuItem item) {
                       'Service Report',
                       Colors.green,
                       () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) =>
-                                 const ServiceReportListPage(),
-                          ),
-                        );
-                      },
+  showGeneralDialog(
+    context: context,
+    barrierDismissible: true,
+    barrierLabel: "ServiceReport",
+    barrierColor: Colors.black.withValues(alpha: 0.35),
+    transitionDuration: const Duration(milliseconds: 200),
+    pageBuilder: (_, _, _) {
+      return DraggableResizableWindow(
+        title: "Service Reports",
+        headerColor: Colors.green,
+        child: const ServiceReportListPage(),
+      );
+    },
+  );
+},
                     ),
                     _desktopMenuCard(
-                      Icons.flight_takeoff,
-                      'Buss. Trip Report',
-                      Colors.purple,
-                      () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) =>
-                                const TripMobilePage(),
-                          ),
-                        );
-                      },
-                    ),
+  Icons.flight_takeoff,
+  'Buss. Trip Report',
+  Colors.purple,
+  () {
+    showGeneralDialog(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: "TripReport",
+      barrierColor: Colors.black.withValues(alpha: 0.35),
+      transitionDuration: const Duration(milliseconds: 200),
+      pageBuilder: (_, _, _) {
+        return const DraggableResizableWindow(
+          title: "Business Trip Reports",
+          headerColor: Colors.purple,
+          child: TripMobilePage(),
+        );
+      },
+    );
+  },
+),
                   ],
                 ),
               ],

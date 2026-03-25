@@ -5,6 +5,7 @@ import '../../core/services/company_firestore.dart';
 import '../spare_part/spare_part_list_page.dart';
 import '../../models/spare_part.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../../core/widgets/draggable_window.dart';
 
 
 enum QtyDialogMode {
@@ -361,7 +362,29 @@ for (final entry in qtyMap.entries) {
 
   // ================= ADD PART =================
   Future<void> _addPart() async {
-    final SparePart? selected = await Navigator.push(
+  final isDesktop = MediaQuery.of(context).size.width >= 900;
+
+  SparePart? selected;
+
+  if (isDesktop) {
+    selected = await showGeneralDialog<SparePart>(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: "SelectSparePart",
+      barrierColor: Colors.black.withValues(alpha: 0.35),
+      transitionDuration: const Duration(milliseconds: 200),
+      pageBuilder: (_, __, ___) {
+        return DraggableResizableWindow(
+          title: "Select Spare Part",
+          child: const SparePartListPage(
+            selectionMode: true,
+            isWindow: true,
+          ),
+        );
+      },
+    );
+  } else {
+    selected = await Navigator.push<SparePart>(
       context,
       MaterialPageRoute(
         builder: (_) => const SparePartListPage(
@@ -369,31 +392,31 @@ for (final entry in qtyMap.entries) {
         ),
       ),
     );
-
-    if (selected == null) return;
-
-    final snap = await CompanyFirestore
-    .collection('spare_parts')
-    .doc(selected.id)
-    .get();
-
-final firestoreStock =
-    (snap['currentStock'] as num).toInt();
-
-final int? qty = await _showQtyDialog(
-  part: selected,
-  mode: QtyDialogMode.orderIn,
-  firestoreStock: firestoreStock,
-);
-
-
-    if (qty == null) return;
-    if (!mounted) return;
-
-    setState(() {
-      items.add(OrderInItem(part: selected, qty: qty));
-    });
   }
+
+  if (selected == null) return;
+
+  final snap = await CompanyFirestore
+      .collection('spare_parts')
+      .doc(selected.id)
+      .get();
+
+  final firestoreStock =
+      (snap['currentStock'] as num).toInt();
+
+  final int? qty = await _showQtyDialog(
+    part: selected,
+    mode: QtyDialogMode.orderIn,
+    firestoreStock: firestoreStock,
+  );
+
+  if (qty == null) return;
+  if (!mounted) return;
+
+  setState(() {
+    items.add(OrderInItem(part: selected!, qty: qty));
+  });
+}
   
 Future<void> _editItemAtIndex(int index) async {
   final current = items[index];

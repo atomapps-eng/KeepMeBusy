@@ -7,6 +7,7 @@ import '../../../pages/partners/partner_list_page.dart';
 import '../../../models/partner.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../pages/common/app_background_wrapper.dart';
+import '../../../core/widgets/draggable_window.dart';
 
 class CreateTripPage extends StatefulWidget {
   final Trip? trip;
@@ -302,22 +303,54 @@ class _CreateTripPageState extends State<CreateTripPage> {
                         const SizedBox(height: 12),
                         InkWell(
                           onTap: () async {
-                            final Partner? partner = await Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => const PartnerListPage(
-                                  selectionMode: true,
-                                ),
-                              ),
-                            );
+  final isDesktop = MediaQuery.of(context).size.width >= 900;
 
-                            if (partner != null) {
-                              setState(() {
-                                partnerId = partner.id;
-                                partnerName = partner.name;
-                              });
-                            }
-                          },
+  if (isDesktop) {
+    Partner? selectedPartner;
+
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      barrierColor: Colors.transparent,
+      builder: (context) {
+        return DraggableResizableWindow(
+          title: "Select Partner",
+          headerColor: Colors.green,
+          child: PartnerListPage(
+            selectionMode: true,
+            onSelected: (partner) {
+              selectedPartner = partner;
+              Navigator.pop(context);
+            },
+          ),
+        );
+      },
+    );
+
+    if (selectedPartner != null) {
+      setState(() {
+        partnerId = selectedPartner!.id;
+        partnerName = selectedPartner!.name;
+      });
+    }
+  } else {
+    final Partner? partner = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const PartnerListPage(
+          selectionMode: true,
+        ),
+      ),
+    );
+
+    if (partner != null) {
+      setState(() {
+        partnerId = partner.id;
+        partnerName = partner.name;
+      });
+    }
+  }
+},
                           child: Container(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 16,
@@ -725,8 +758,9 @@ class _CreateTripPageState extends State<CreateTripPage> {
                 const SizedBox(height: 20),
 
                 Expanded(
-                  child: Center(
-                    child: Container(
+  child: Center(
+    child: SingleChildScrollView(
+      child: Container(
                       width: 350,
                       padding: const EdgeInsets.all(24),
                       decoration: BoxDecoration(
@@ -909,6 +943,7 @@ class _CreateTripPageState extends State<CreateTripPage> {
                       ),
                     ),
                   ),
+                ),
                 ),
               ],
             ),

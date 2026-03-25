@@ -7,6 +7,7 @@ import 'trip_detail_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../../theme/app_theme.dart';
 import '../../../pages/common/app_background_wrapper.dart';
+import '../../../core/widgets/draggable_window.dart';
 
 class TripMobilePage extends StatelessWidget {
   const TripMobilePage({super.key});
@@ -131,13 +132,30 @@ class TripMobilePage extends StatelessWidget {
             child: IconButton(
               icon: const Icon(Icons.add, color: Colors.blue),
               onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const CreateTripPage(),
-                  ),
-                );
-              },
+  final isDesktop = MediaQuery.of(context).size.width >= 900;
+
+  if (isDesktop) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      barrierColor: Colors.transparent,
+      builder: (context) {
+        return DraggableResizableWindow(
+          title: "Create Trip",
+          headerColor: Colors.blue,
+          child: const CreateTripPage(),
+        );
+      },
+    );
+  } else {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const CreateTripPage(),
+      ),
+    );
+  }
+},
               tooltip: 'Create New Trip',
             ),
           ),
@@ -636,14 +654,33 @@ class TripMobilePage extends StatelessWidget {
           ),
           child: InkWell(
             onTap: canOpen
-                ? () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => TripDetailPage(trip: trip),
-                      ),
-                    );
-                  }
+    ? () {
+        final isDesktop = MediaQuery.of(context).size.width >= 900;
+
+        if (isDesktop) {
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            barrierColor: Colors.transparent,
+            builder: (context) {
+              return DraggableResizableWindow(
+                title: "Trip Detail",
+                headerColor: Colors.blue,
+                child: TripDetailPage(
+                  trip: trip,
+                ),
+              );
+            },
+          );
+        } else {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => TripDetailPage(trip: trip),
+            ),
+          );
+        }
+      }
                 : () {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(

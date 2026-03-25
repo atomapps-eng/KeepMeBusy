@@ -11,6 +11,7 @@ import '../../../pages/common/app_background_wrapper.dart';
 import '../pages/expense_detail_page.dart';
 import 'add_transfer_page.dart';
 import 'add_expense_page.dart';
+import '../../../core/widgets/draggable_window.dart';
 
 class TransactionListPage extends StatelessWidget {
   final Trip trip;
@@ -320,18 +321,39 @@ Widget _buildTransactionCard(BuildContext context, TripLedgerItem item) {
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
         onTap: () {
-          if (item.type == 'expense' && item.expense != null) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => ExpenseDetailPage(
-                  tripId: trip.id,
-                  expense: item.expense!,
-                ),
-              ),
-            );
-          }
+  if (item.type == 'expense' && item.expense != null) {
+
+    final isDesktop = MediaQuery.of(context).size.width >= 900;
+
+    if (isDesktop) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        barrierColor: Colors.transparent,
+        builder: (context) {
+          return DraggableResizableWindow(
+            title: "Expense Detail",
+            headerColor: Colors.red,
+            child: ExpenseDetailPage(
+              tripId: trip.id,
+              expense: item.expense!,
+            ),
+          );
         },
+      );
+    } else {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => ExpenseDetailPage(
+            tripId: trip.id,
+            expense: item.expense!,
+          ),
+        ),
+      );
+    }
+  }
+},
         child: Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(

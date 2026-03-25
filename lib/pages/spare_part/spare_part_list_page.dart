@@ -19,6 +19,7 @@ class SparePartListPage extends StatefulWidget {
   final bool selectionMode;
   final ValueChanged<SparePart>? onSelected;
   final bool selectMode;
+  final bool isWindow;
 
 
  const SparePartListPage({
@@ -28,6 +29,7 @@ class SparePartListPage extends StatefulWidget {
   this.selectionMode = false,
   this.onSelected,
   this.selectMode = false,
+    this.isWindow = false,
 });
 
 
@@ -242,60 +244,67 @@ if (!mounted || _isDisposed) return;
   }
 
   @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      behavior: HitTestBehavior.translucent,
-      onTap: () {
-        FocusScope.of(context).unfocus();
-      },
-      child: Scaffold(
-        floatingActionButton: widget.isCompact
-            ? null
-            : FloatingActionButton(
-                backgroundColor: Colors.blueGrey,
-                foregroundColor: Colors.white,
-                child: const Icon(Icons.add),
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const AddSparePartPage(),
-                    ),
-                  );
-                },
-              ),
-        body: Stack(
-          children: [
-            Container(
-              decoration: BoxDecoration(
-  gradient: AppTheme.backgroundGradient,
-),
-            ),
-            SafeArea(
-              child: Column(
-                children: [
-                  if (!widget.isCompact)
-                    Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: _buildHeader(context),
-                    ),
-                  if (!widget.isCompact)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: _buildSearchBar(context),
-                    ),
-                  if (!widget.isCompact) const SizedBox(height: 12),
-                  Expanded(
-                    child: _buildPartsList(),
-                  ),
-                ],
-              ),
-            ),
-          ],
+Widget build(BuildContext context) {
+  final content = GestureDetector(
+    behavior: HitTestBehavior.translucent,
+    onTap: () {
+      FocusScope.of(context).unfocus();
+    },
+    child: Stack(
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            gradient: AppTheme.backgroundGradient,
+          ),
         ),
-      ),
-    );
+        SafeArea(
+          child: Column(
+            children: [
+              if (!widget.isCompact)
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: _buildHeader(context),
+                ),
+              if (!widget.isCompact)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: _buildSearchBar(context),
+                ),
+              if (!widget.isCompact) const SizedBox(height: 12),
+              Expanded(
+                child: _buildPartsList(),
+              ),
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
+
+  // 🔥 INI KUNCI NYA
+  if (widget.isWindow) {
+    return content; // TANPA SCAFFOLD
   }
+
+  return Scaffold(
+    floatingActionButton: widget.isCompact
+        ? null
+        : FloatingActionButton(
+            backgroundColor: Colors.blueGrey,
+            foregroundColor: Colors.white,
+            child: const Icon(Icons.add),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const AddSparePartPage(),
+                ),
+              );
+            },
+          ),
+    body: content,
+  );
+}
 
   Widget _buildPartsList() {
     // Tentukan data yang akan ditampilkan

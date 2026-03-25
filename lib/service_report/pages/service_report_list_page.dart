@@ -10,6 +10,7 @@ import '../pages/service_report_detail_page.dart';
 import '../../theme/app_theme.dart';
 import '../../pages/common/app_background_wrapper.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../../core/widgets/draggable_window.dart';
 
 class ServiceReportListPage extends StatefulWidget {
   
@@ -242,37 +243,6 @@ class _ServiceReportListPageState extends State<ServiceReportListPage> {
 
     const SizedBox(width: 8),
 
-    /// ADD BUTTON
-    Container(
-      margin: const EdgeInsets.only(right: 16),
-      decoration: BoxDecoration(
-        color: Colors.green.withValues(alpha:0.1),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: IconButton(
-        tooltip: 'Add Report',
-        icon: const Icon(Icons.add, color: AppTheme.successColor),
-        onPressed: () {
-          if (_currentUser!.role != 'super_admin' &&
-              CompanySession.selectedCompanyId == null) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Please select a company first'),
-                backgroundColor: Colors.orange,
-              ),
-            );
-            return;
-          }
-
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => const ServiceReportFormPage(),
-            ),
-          );
-        },
-      ),
-    ),
   ],
 ),
       body: AppBackgroundWrapper(
@@ -619,55 +589,62 @@ class _ServiceReportListPageState extends State<ServiceReportListPage> {
   }
 
   Widget _buildDesktopActionButtons() {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha:0.2),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha:0.3)),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primaryColor,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 12),
-              ),
-              icon: const Icon(Icons.add),
-              label: const Text('Create Report'),
-              onPressed: () {
-                if (_currentUser!.role != 'super_admin' && 
-                    CompanySession.selectedCompanyId == null) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Please select a company first'),
-                      backgroundColor: Colors.orange,
-                    ),
-                  );
-                  return;
-                }
-                
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const ServiceReportFormPage(),
+  return Container(
+    padding: const EdgeInsets.all(12),
+    decoration: BoxDecoration(
+      color: Colors.white.withValues(alpha:0.2),
+      borderRadius: BorderRadius.circular(16),
+      border: Border.all(color: Colors.white.withValues(alpha:0.3)),
+    ),
+    child: Row(
+      children: [
+        Expanded(
+          child: ElevatedButton.icon(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.primaryColor,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 12),
+            ),
+            icon: const Icon(Icons.add),
+            label: const Text('Create Report'),
+            onPressed: () {
+              if (_currentUser!.role != 'super_admin' && 
+                  CompanySession.selectedCompanyId == null) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Please select a company first'),
+                    backgroundColor: Colors.orange,
                   ),
                 );
-              },
-            ),
+                return;
+              }
+
+              showDialog(
+                context: context,
+                barrierDismissible: false,
+                barrierColor: Colors.transparent,
+                builder: (context) {
+                  return DraggableResizableWindow(
+                    title: "Create Service Report",
+                    child: const ServiceReportFormPage(),
+                  );
+                },
+              );
+            },
           ),
-        ],
-      ),
-    );
-  }
+        ),
+      ],
+    ),
+  );
+}
 
  Widget _buildDesktopReportsList(
   List<QueryDocumentSnapshot<Map<String, dynamic>>> filteredDocs,
 ) {
   return _glass(
-    Column(
+  SizedBox(
+    height: double.infinity,
+    child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
@@ -695,69 +672,66 @@ class _ServiceReportListPageState extends State<ServiceReportListPage> {
         ),
 
         // TABLE
-        Container(
-          decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey.shade300),
-            borderRadius: BorderRadius.circular(8),
-            color: AppTheme.surfaceColor.withValues(alpha:0.3),
-          ),
-          height: 500,
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: Column(
+        Expanded(
+  child: Container(
+    decoration: BoxDecoration(
+      border: Border.all(color: Colors.grey.shade300),
+      borderRadius: BorderRadius.circular(8),
+      color: AppTheme.surfaceColor.withValues(alpha:0.3),
+    ),
+    child: ClipRRect(
+      borderRadius: BorderRadius.circular(8),
+      child: Column(
+        children: [
+          // HEADER (FIXED)
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+            color: Colors.grey.shade200,
+            child: Row(
               children: [
-                // HEADER ROW
-                Container(
-                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                  color: Colors.grey.shade200,
-                  child: Row(
-                    children: [
-                      const SizedBox(width: 12),
-                      const Expanded(flex: 2, child: Text('Sheet ID', style: TextStyle(fontWeight: FontWeight.w600))),
-                      const Expanded(flex: 2, child: Text('Factory / Machine', style: TextStyle(fontWeight: FontWeight.w600))),
-                      const Expanded(flex: 2, child: Center(child: Text('Start Date', style: TextStyle(fontWeight: FontWeight.w600)))),
-                      const Expanded(flex: 2, child: Center(child: Text('Technician', style: TextStyle(fontWeight: FontWeight.w600)))),
-                      const Expanded(flex: 1, child: Center(child: Text('Status', style: TextStyle(fontWeight: FontWeight.w600)))),
-                      const SizedBox(width: 24),
-                    ],
-                  ),
-                ),
-                
-                // LIST VIEW
-                Expanded(
-                  child: filteredDocs.isEmpty
-                      ? Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.inbox, size: 48, color: Colors.grey.shade400),
-                              const SizedBox(height: 12),
-                              Text('No reports found', style: TextStyle(color: Colors.grey.shade600)),
-                            ],
-                          ),
-                        )
-                      : ListView.builder(
-                          itemCount: filteredDocs.length,
-                          itemBuilder: (context, index) {
-                            final doc = filteredDocs[index];
-                            final data = doc.data();
-                            
-                            // 👇 DEFINISIKAN DI SINI, di dalam itemBuilder
-                            String factoryMachine = data['factory'] ?? '-';
-                            if (data['machine'] != null && data['machine'].toString().isNotEmpty) {
-                              factoryMachine += ' • ${data['machine']}';
-                            }
-                            
-                            return _buildTableRow(doc, factoryMachine); // 👈 KIRIMKAN KE FUNCTION
-                          },
-                        ),
-                ),
+                const SizedBox(width: 12),
+                const Expanded(flex: 2, child: Text('Sheet ID', style: TextStyle(fontWeight: FontWeight.w600))),
+                const Expanded(flex: 2, child: Text('Factory / Machine', style: TextStyle(fontWeight: FontWeight.w600))),
+                const Expanded(flex: 2, child: Center(child: Text('Start Date', style: TextStyle(fontWeight: FontWeight.w600)))),
+                const Expanded(flex: 2, child: Center(child: Text('Technician', style: TextStyle(fontWeight: FontWeight.w600)))),
+                const Expanded(flex: 1, child: Center(child: Text('Status', style: TextStyle(fontWeight: FontWeight.w600)))),
+                const SizedBox(width: 24),
               ],
             ),
           ),
-        ),
+
+          // 🔥 LIST SCROLLABLE (INI KUNCI)
+          Expanded(
+            child: filteredDocs.isEmpty
+                ? Center(
+                    child: Text(
+                      'No reports found',
+                      style: TextStyle(color: Colors.grey.shade600),
+                    ),
+                  )
+                : ListView.builder(
+                    itemCount: filteredDocs.length,
+                    itemBuilder: (context, index) {
+                      final doc = filteredDocs[index];
+                      final data = doc.data();
+
+                      String factoryMachine = data['factory'] ?? '-';
+                      if (data['machine'] != null && data['machine'].toString().isNotEmpty) {
+                        factoryMachine += ' • ${data['machine']}';
+                      }
+
+                      return _buildTableRow(doc, factoryMachine);
+                    },
+                  ),
+          ),
+        ],
+      ),
+    ),
+  ),
+)
       ],
     ),
+  ),
   );
 }
 
@@ -788,15 +762,34 @@ Widget _buildTableRow(
           return;
         }
 
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ServiceReportDetailPage(
-              reportId: doc.id,
-              companyId: companyId,
-            ),
-          ),
-        );
+        final isDesktop = MediaQuery.of(context).size.width >= 900;
+
+if (isDesktop) {
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    barrierColor: Colors.transparent,
+    builder: (context) {
+      return DraggableResizableWindow(
+        title: "Service Report Detail",
+        child: ServiceReportDetailPage(
+          reportId: doc.id,
+          companyId: companyId,
+        ),
+      );
+    },
+  );
+} else {
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (context) => ServiceReportDetailPage(
+        reportId: doc.id,
+        companyId: companyId,
+      ),
+    ),
+  );
+}
       },
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
@@ -961,24 +954,40 @@ Widget _buildTableRow(
             icon: const Icon(Icons.add),
             label: const Text('Create Report'),
             onPressed: () {
-              if (_currentUser!.role != 'super_admin' &&
-                  CompanySession.selectedCompanyId == null) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Please select a company first'),
-                    backgroundColor: Colors.orange,
-                  ),
-                );
-                return;
-              }
+  if (_currentUser!.role != 'super_admin' && 
+      CompanySession.selectedCompanyId == null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Please select a company first'),
+        backgroundColor: Colors.orange,
+      ),
+    );
+    return;
+  }
 
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const ServiceReportFormPage(),
-                ),
-              );
-            },
+  final isDesktop = MediaQuery.of(context).size.width >= 900;
+
+  if (isDesktop) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      barrierColor: Colors.transparent,
+      builder: (context) {
+        return DraggableResizableWindow(
+          title: "Create Service Report",
+          child: const ServiceReportFormPage(),
+        );
+      },
+    );
+  } else {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const ServiceReportFormPage(),
+      ),
+    );
+  }
+},
           ),
         ),
       ],
@@ -1102,15 +1111,34 @@ Widget _buildTableRow(
           return;
         }
 
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ServiceReportDetailPage(
-              reportId: doc.id,
-              companyId: companyId,
-            ),
-          ),
-        );
+        final isDesktop = MediaQuery.of(context).size.width >= 900;
+
+if (isDesktop) {
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    barrierColor: Colors.transparent,
+    builder: (context) {
+      return DraggableResizableWindow(
+        title: "Service Report Detail",
+        child: ServiceReportDetailPage(
+          reportId: doc.id,
+          companyId: companyId,
+        ),
+      );
+    },
+  );
+} else {
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (context) => ServiceReportDetailPage(
+        reportId: doc.id,
+        companyId: companyId,
+      ),
+    ),
+  );
+}
       },
     ),
   );

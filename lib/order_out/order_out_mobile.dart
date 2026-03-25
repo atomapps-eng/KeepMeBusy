@@ -9,6 +9,7 @@ import '../pages/partners/partner_list_page.dart';
 import '../pages/order_out/order_out_detail_page.dart';
 import '../theme/app_theme.dart';
 import '../../models/read_tracker_service.dart';
+import '../core/widgets/draggable_window.dart';
 
 
 class OrderOutMobile extends StatefulWidget {
@@ -341,8 +342,30 @@ for (final item in newItems) {
   }
 
   // ================= ADD PART =================
-  Future<void> _addPart() async {
-    final SparePart? selected = await Navigator.push(
+ Future<void> _addPart() async {
+  final isDesktop = MediaQuery.of(context).size.width >= 900;
+
+  SparePart? selected;
+
+  if (isDesktop) {
+    selected = await showGeneralDialog<SparePart>(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: "SelectSparePart",
+      barrierColor: Colors.black.withValues(alpha: 0.35),
+      transitionDuration: const Duration(milliseconds: 200),
+      pageBuilder: (_, __, ___) {
+        return DraggableResizableWindow(
+          title: "Select Spare Part",
+          child: const SparePartListPage(
+            selectionMode: true,
+            isWindow: true,
+          ),
+        );
+      },
+    );
+  } else {
+    selected = await Navigator.push<SparePart>(
       context,
       MaterialPageRoute(
         builder: (_) => const SparePartListPage(
@@ -350,17 +373,18 @@ for (final item in newItems) {
         ),
       ),
     );
-
-    if (selected == null) return;
-
-    final int? qty = await _showQtyDialog(selected);
-    if (qty == null) return;
-
-    setState(() {
-      items.add(OrderOutItem(part: selected, qty: qty));
-    });
   }
-  
+
+  if (selected == null) return;
+
+  final int? qty = await _showQtyDialog(selected);
+  if (qty == null) return;
+
+  setState(() {
+    items.add(OrderOutItem(part: selected!, qty: qty));
+  });
+}
+
 Future<void> _editItemAtIndex(int index) async {
   final current = items[index];
 
