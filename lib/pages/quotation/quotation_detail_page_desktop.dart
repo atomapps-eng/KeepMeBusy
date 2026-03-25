@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import '../../theme/app_theme.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../quotation/create_quotation_page.dart';
+import '../quotation/create_quotation_page_desktop.dart';
 
 class QuotationDetailPageDesktop extends StatelessWidget {
   final Map<String, dynamic> data;
@@ -108,9 +109,10 @@ final doc = snapshot.data!;
 final raw = doc.data();
 
 if (raw == null) {
-  return const Center(
-    child: Text("Quotation deleted"),
-  );
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    if (context.mounted) Navigator.pop(context);
+  });
+  return const SizedBox();
 }
 
 final newData = raw as Map<String, dynamic>;
@@ -500,28 +502,35 @@ final docId = doc.id;
                       ),
                       const SizedBox(height: 8),
                       _buildActionButton(
-                        icon: Icons.edit,
-                        label: 'Edit',
-                        color: Colors.orange,
-                        onPressed: () {
-  final safeData = Map<String, dynamic>.from(data);
+  icon: Icons.edit,
+  label: 'Edit',
+  color: Colors.orange,
+  onPressed: () async {
+    final safeData = Map<String, dynamic>.from(data);
+    safeData['id'] = docId;
 
-  // 🔽 pastikan semua string tidak null
-  safeData['quotationNumber'] = safeData['quotationNumber'] ?? '';
-  safeData['partnerName'] = safeData['partnerName'] ?? '';
-  safeData['partnerAddress'] = safeData['partnerAddress'] ?? '';
-  safeData['currency'] = safeData['currency'] ?? 'IDR';
+    // 🔽 pastikan semua string tidak null
+    safeData['quotationNumber'] = safeData['quotationNumber'] ?? '';
+    safeData['partnerName'] = safeData['partnerName'] ?? '';
+    safeData['partnerAddress'] = safeData['partnerAddress'] ?? '';
+    safeData['currency'] = safeData['currency'] ?? 'IDR';
 
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (_) => CreateQuotationPage(
-        initialData: safeData,
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => CreateQuotationPageDesktop(
+          initialData: safeData,
+        ),
       ),
-    ),
-  );
-},
-                      ),
+    );
+
+    if (result == true) {
+      if (context.mounted) {
+        Navigator.pop(context, true);
+      }
+    }
+  },
+),
                       const SizedBox(height: 8),
                       _buildActionButton(
                         icon: Icons.delete,
@@ -564,8 +573,7 @@ final docId = doc.id;
       .delete();
 
   if (context.mounted) {
-    if (Navigator.canPop(context)) {
-}// ← kirim signal ke list
+    Navigator.pop(context, true); // ← kirim signal ke list
   }
 }
                         },

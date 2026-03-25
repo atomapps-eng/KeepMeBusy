@@ -10,7 +10,6 @@ import 'quotation_detail_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'quotation_detail_page_desktop.dart';
 import 'create_quotation_page_desktop.dart';
-import '../../core/widgets/draggable_window.dart';
 
 class QuotationPageDesktop extends StatefulWidget {
   final String companyId;
@@ -27,10 +26,7 @@ class QuotationPageDesktop extends StatefulWidget {
 }
 
 class _QuotationPageDesktopState extends State<QuotationPageDesktop> {
-  bool _showCreateWindow = false;
-  Map<String, dynamic>? selectedData;
-  bool _showDetailWindow = false;
-  Map<String, dynamic>? detailData;
+  ValueNotifier<Map<String, dynamic>?> selectedDataNotifier = ValueNotifier(null);
   final TextEditingController searchController = TextEditingController();
   String selectedStatus = 'all';
   String selectedSort = 'newest';
@@ -111,21 +107,22 @@ class _QuotationPageDesktopState extends State<QuotationPageDesktop> {
       ),
       floatingActionButton: FloatingActionButton.extended(
   onPressed: () {
-    setState(() {
-      _showCreateWindow = true;
-    });
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const CreateQuotationPageDesktop(),
+      ),
+    );
   },
   icon: const Icon(Icons.add),
   label: const Text('New Quotation'),
   backgroundColor: const Color(0xFF2563EB),
 ),
-      body: Stack(
-  children: [
-    Container(
-      decoration: BoxDecoration(
-        gradient: AppTheme.backgroundGradient,
-      ),
-      child: Row(
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: AppTheme.backgroundGradient,
+        ),
+        child: Row(
           children: [
             // LEFT PANEL - Preview
             Expanded(
@@ -140,548 +137,420 @@ class _QuotationPageDesktopState extends State<QuotationPageDesktop> {
           ],
         ),
       ),
-      if (_showCreateWindow)
-  if (_showCreateWindow)
-  DraggableResizableWindow(
-    title: "Create Quotation",
-    headerColor: const Color(0xFF2563EB),
-    onClose: () {
-      setState(() {
-        _showCreateWindow = false;
-      });
-    },
-    child: CreateQuotationPageDesktop(
-  onClose: () {
-    setState(() {
-      _showCreateWindow = false;
-    });
-  },
-),
-  ),
-  if (_showDetailWindow && detailData != null)
-  DraggableResizableWindow(
-    title: "Quotation Detail",
-    headerColor: const Color(0xFF10B981),
-    onClose: () {
-      setState(() {
-        _showDetailWindow = false;
-        detailData = null;
-      });
-    },
-    child: QuotationDetailPageDesktop(
-      data: detailData!,
-      isSuperAdmin: widget.isSuperAdmin,
-    ),
-  ),
-  ],
-      ),
-      
     );
   }
 
   // ===============================
   // PREVIEW PANEL (Modern)
   // ===============================
-  Widget _buildPreviewPanel() {
-    if (selectedData == null) {
-      return Center(
-        child: Container(
-          margin: const EdgeInsets.all(24),
-          padding: const EdgeInsets.all(32),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.95),
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.grey.shade200.withOpacity(0.5),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFEFF6FF),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.request_quote,
-                  size: 48,
-                  color: Color(0xFF2563EB),
-                ),
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'No Quotation Selected',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF1F2937),
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Click on any quotation to view details',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey.shade600,
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    final docId = selectedData!['id'];
-
-    final data = selectedData!;
-    final format = NumberFormat.currency(
-      locale: 'id',
-      symbol: '${data['currency'] ?? ''} ',
-      decimalDigits: 0,
-    );
-    final status = data['status'] ?? 'draft';
-    final statusColor = _getStatusColor(status);
-
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        children: [
-          // Header Card
-          Container(
-            padding: const EdgeInsets.all(24),
+ Widget _buildPreviewPanel() {
+  return ValueListenableBuilder<Map<String, dynamic>?>(
+    valueListenable: selectedDataNotifier,
+    builder: (context, selectedData, _) {
+      if (selectedData == null) {
+        return Center(
+          child: Container(
+            margin: const EdgeInsets.all(24),
+            padding: const EdgeInsets.all(32),
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [statusColor, statusColor.withOpacity(0.8)],
-              ),
+              color: Colors.white.withOpacity(0.95),
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
-                  color: statusColor.withOpacity(0.3),
-                  blurRadius: 12,
+                  color: Colors.grey.shade200.withOpacity(0.5),
+                  blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
               ],
             ),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        _getStatusIcon(status),
-                        style: const TextStyle(fontSize: 24),
-                      ),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFEFF6FF),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.request_quote,
+                    size: 48,
+                    color: Color(0xFF2563EB),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'No Quotation Selected',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF1F2937),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Click on any quotation to view details',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      }
+
+      final data = selectedData;
+      final format = NumberFormat.currency(
+        locale: 'id',
+        symbol: '${data['currency'] ?? ''} ',
+        decimalDigits: 0,
+      );
+
+      final status = data['status'] ?? 'draft';
+      final statusColor = _getStatusColor(status);
+      final isDraft = status == 'draft';
+      final isSubmitted = status == 'submitted';
+      final validUntil = data['validUntil'];
+      bool isExpired = false;
+
+      if (validUntil != null) {
+        final expiryDate = (validUntil as Timestamp).toDate();
+        isExpired = DateTime.now().isAfter(expiryDate);
+      }
+
+      return RepaintBoundary(
+        child: KeyedSubtree(
+          key: ValueKey(data['id']),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              children: [
+                // ================= HEADER CARD =================
+                Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [statusColor, statusColor.withOpacity(0.8)],
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: statusColor.withOpacity(0.3),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
                         children: [
-                          Text(
-                            data['quotationNumber'] ?? '-',
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
                           Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 2,
-                            ),
+                            padding: const EdgeInsets.all(10),
                             decoration: BoxDecoration(
                               color: Colors.white.withOpacity(0.2),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Text(
-                              status.toUpperCase(),
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white,
-                              ),
+                              _getStatusIcon(status),
+                              style: const TextStyle(fontSize: 24),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  data['quotationNumber'] ?? '-',
+                                  style: const TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(0.2),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Text(
+                                    status.toUpperCase(),
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                                if (isExpired) ...[
+                                  const SizedBox(height: 4),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 2,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.red.withOpacity(0.8),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: const Text(
+                                      'EXPIRED',
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ],
                             ),
                           ),
                         ],
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ],
-            ),
-          ),
 
-          const SizedBox(height: 20),
+                const SizedBox(height: 20),
 
-          // Partner Info Card
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.95),
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.grey.shade200.withOpacity(0.5),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFEFF6FF),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: const Icon(
-                          Icons.business,
-                          size: 18,
-                          color: Color(0xFF2563EB),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      const Text(
-                        'Partner Information',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                        ),
+                // ================= PARTNER INFO CARD =================
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.95),
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.shade200.withOpacity(0.5),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16),
-                  Text(
-                    data['partnerName'] ?? '-',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF0F172A),
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFEFF6FF),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: const Icon(
+                                Icons.business,
+                                size: 18,
+                                color: Color(0xFF2563EB),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            const Text(
+                              'Partner Information',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          data['partnerName'] ?? '-',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF0F172A),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          data['partnerAddress'] ?? '-',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    data['partnerAddress'] ?? '-',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey.shade600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 16),
-
-          // Amount Card
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.95),
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.grey.shade200.withOpacity(0.5),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
                 ),
-              ],
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Total Amount',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Color(0xFF64748B),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    format.format(data['totalAmount'] ?? 0),
-                    style: const TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF2563EB),
-                    ),
-                  ),
-                  const Divider(height: 24),
-                  _infoRow(
-                    'Currency',
-                    data['currency'] ?? '-',
-                    Icons.attach_money,
-                  ),
-                  _infoRow(
-                    'Exchange Rate',
-                    '1 EUR = ${NumberFormat('#,###').format(data['exchangeRate'] ?? 0)}',
-                    Icons.currency_exchange,
-                  ),
-                ],
-              ),
-            ),
-          ),
 
-          const SizedBox(height: 16),
+                const SizedBox(height: 16),
 
-          // Details Card
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.95),
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.grey.shade200.withOpacity(0.5),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Details',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  _infoRow(
-                    'Created By',
-                    data['createdByName'] ?? '-',
-                    Icons.person,
-                  ),
-                  _infoRow(
-                    'Created At',
-                    data['createdAt'] != null
-                        ? DateFormat('dd MMM yyyy').format(
-                            (data['createdAt'] as Timestamp).toDate(),
-                          )
-                        : '-',
-                    Icons.calendar_today,
-                  ),
-                  if (data['approvedByName'] != null) ...[
-                    const SizedBox(height: 8),
-                    _infoRow(
-                      'Approved By',
-                      data['approvedByName'],
-                      Icons.verified,
-                      color: Colors.green,
-                    ),
-                  ],
-                  if (data['validUntil'] != null) ...[
-                    const SizedBox(height: 8),
-                    _infoRow(
-                      'Valid Until',
-                      DateFormat('dd MMM yyyy').format(
-                        (data['validUntil'] as Timestamp).toDate(),
-                      ),
-                      Icons.timer,
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 16),
-
-          // Action Buttons
-          if (data['status'] == 'draft' || (data['status'] == 'submitted' && widget.isSuperAdmin))
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.95),
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.shade200.withOpacity(0.5),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    if (data['status'] == 'draft')
-                      Expanded(
-                        child: _buildActionButton(
-                          icon: Icons.send,
-                          label: 'Submit',
-                          color: Colors.blue,
-                          onPressed: () async {
-                            final user = FirebaseAuth.instance.currentUser!;
-                            await QuotationService.submitQuotation(
-                              companyId: widget.companyId,
-                              quotationId: data['id'],
-                              userId: user.uid,
-                            );
-                          },
-                        ),
-                      ),
-                    if (data['status'] == 'submitted' && widget.isSuperAdmin) ...[
-                      Expanded(
-                        child: _buildActionButton(
-                          icon: Icons.check,
-                          label: 'Approve',
-                          color: Colors.green,
-                          onPressed: () async {
-                            final confirm = await showDialog<bool>(
-                              context: context,
-                              builder: (_) => AlertDialog(
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                title: const Text("Approve Quotation"),
-                                content: const Text(
-                                  "Are you sure you want to approve this quotation?",
-                                ),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () => Navigator.pop(context, false),
-                                    child: const Text("Cancel"),
-                                  ),
-                                  ElevatedButton(
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.green,
-                                      foregroundColor: Colors.white,
-                                    ),
-                                    onPressed: () => Navigator.pop(context, true),
-                                    child: const Text("Approve"),
-                                  ),
-                                ],
-                              ),
-                            );
-
-                            if (confirm == true) {
-                              final user = FirebaseAuth.instance.currentUser!;
-                              await QuotationService.approveQuotation(
-                                companyId: widget.companyId,
-                                quotationId: data['id'],
-                                userId: user.uid,
-                              );
-                            }
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _buildActionButton(
-                          icon: Icons.close,
-                          label: 'Reject',
-                          color: Colors.red,
-                          onPressed: () async {
-                            final controller = TextEditingController();
-
-                            final reason = await showDialog<String>(
-                              context: context,
-                              builder: (_) => AlertDialog(
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                title: const Text("Reject Quotation"),
-                                content: TextField(
-                                  controller: controller,
-                                  maxLines: 3,
-                                  decoration: const InputDecoration(
-                                    hintText: "Enter rejection reason...",
-                                    border: OutlineInputBorder(),
-                                  ),
-                                ),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () => Navigator.pop(context),
-                                    child: const Text("Cancel"),
-                                  ),
-                                  ElevatedButton(
-                                    onPressed: () {
-                                      if (controller.text.trim().isEmpty) return;
-                                      Navigator.pop(context, controller.text);
-                                    },
-                                    child: const Text("Submit"),
-                                  ),
-                                ],
-                              ),
-                            );
-
-                            if (reason == null || reason.trim().isEmpty) return;
-
-                            final confirm = await showDialog<bool>(
-                              context: context,
-                              builder: (_) => AlertDialog(
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                title: const Text("Confirm Rejection"),
-                                content: Text(
-                                  "Are you sure you want to reject this quotation?\n\nReason:\n$reason",
-                                ),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () => Navigator.pop(context, false),
-                                    child: const Text("Back"),
-                                  ),
-                                  ElevatedButton(
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.red,
-                                      foregroundColor: Colors.white,
-                                    ),
-                                    onPressed: () => Navigator.pop(context, true),
-                                    child: const Text("Reject"),
-                                  ),
-                                ],
-                              ),
-                            );
-
-                            if (confirm == true) {
-                              final user = FirebaseAuth.instance.currentUser!;
-                              await QuotationService.rejectQuotation(
-                                companyId: widget.companyId,
-                                quotationId: data['id'],
-                                userId: user.uid,
-                                note: reason,
-                              );
-                            }
-                          },
-                        ),
+                // ================= AMOUNT CARD =================
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.95),
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.shade200.withOpacity(0.5),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
                       ),
                     ],
-                  ],
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Total Amount',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFF64748B),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          format.format(data['totalAmount'] ?? 0),
+                          style: const TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF2563EB),
+                          ),
+                        ),
+                        const Divider(height: 24),
+                        _infoRow(
+                          'Currency',
+                          data['currency'] ?? '-',
+                          Icons.attach_money,
+                        ),
+                        _infoRow(
+                          'Exchange Rate',
+                          '1 EUR = ${NumberFormat('#,###').format(data['exchangeRate'] ?? 0)}',
+                          Icons.currency_exchange,
+                        ),
+                        if (data['validUntil'] != null)
+                          _infoRow(
+                            'Valid Until',
+                            DateFormat('dd MMM yyyy').format(
+                              (data['validUntil'] as Timestamp).toDate(),
+                            ),
+                            Icons.calendar_today,
+                          ),
+                      ],
+                    ),
+                  ),
                 ),
-              ),
+
+                const SizedBox(height: 16),
+
+                // ================= DETAILS CARD =================
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.95),
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.shade200.withOpacity(0.5),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFEFF6FF),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Icon(
+                                Icons.info_outline,
+                                size: 16,
+                                color: Color(0xFF2563EB),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            const Text(
+                              'Details',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        _infoRow(
+                          'Created By',
+                          data['createdByName'] ?? '-',
+                          Icons.person,
+                        ),
+                        _infoRow(
+                          'Created At',
+                          data['createdAt'] != null
+                              ? DateFormat('dd MMM yyyy').format(
+                                  (data['createdAt'] as Timestamp).toDate(),
+                                )
+                              : '-',
+                          Icons.calendar_today,
+                        ),
+                        if (data['approvedByName'] != null) ...[
+                          const SizedBox(height: 8),
+                          _infoRow(
+                            'Approved By',
+                            data['approvedByName'],
+                            Icons.verified,
+                            color: Colors.green,
+                          ),
+                        ],
+                        if (data['submittedByName'] != null) ...[
+                          const SizedBox(height: 8),
+                          _infoRow(
+                            'Submitted By',
+                            data['submittedByName'],
+                            Icons.send,
+                          ),
+                        ],
+                        if (data['rejectedReason'] != null) ...[
+                          const SizedBox(height: 8),
+                          _infoRow(
+                            'Rejection Reason',
+                            data['rejectedReason'],
+                            Icons.info_outline,
+                            color: Colors.red,
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                // ================= ACTION BUTTONS =================
+                
+              ],
             ),
-        ],
-      ),
-    );
-  }
+          ),
+        ),
+      );
+    },
+  );
+}
 
   // ===============================
   // LIST PANEL (Modern)
@@ -718,8 +587,8 @@ class _QuotationPageDesktopState extends State<QuotationPageDesktop> {
 
           var allDocs = snapshot.data!.docs;
           // 🔥 SYNC selectedData dengan firestore
-if (selectedData != null) {
-  final selectedId = selectedData!['id'];
+if (selectedDataNotifier.value != null) {
+  final selectedId = selectedDataNotifier.value!['id'];
 
   DocumentSnapshot? updatedDoc;
 
@@ -729,19 +598,18 @@ if (selectedData != null) {
     updatedDoc = null;
   }
 
-  if (updatedDoc != null) {
-    final newData = updatedDoc.data() as Map<String, dynamic>;
+ if (updatedDoc != null) {
+  final newData = updatedDoc.data() as Map<String, dynamic>;
 
-    if (newData['status'] != selectedData!['status']) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          setState(() {
-            selectedData = {...newData, 'id': updatedDoc!.id};
-          });
-        }
-      });
-    }
+  // 🔥 HANYA update kalau data benar-benar berubah
+  if (selectedDataNotifier.value?['updatedAt'] != newData['updatedAt']) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+
+      selectedDataNotifier.value = {...newData, 'id': updatedDoc!.id};
+    });
   }
+}
 }
 
 
@@ -783,13 +651,11 @@ if (selectedData != null) {
           });
 
           // Auto select first item
-          if (allDocs.isNotEmpty && selectedData == null) {
+          if (allDocs.isNotEmpty && selectedDataNotifier.value == null) {
             final first = allDocs.first;
             final firstData = first.data() as Map<String, dynamic>;
             WidgetsBinding.instance.addPostFrameCallback((_) {
-              setState(() {
-                selectedData = {...firstData, 'id': first.id};
-              });
+              selectedDataNotifier.value = {...firstData, 'id': first.id};
             });
           }
 
@@ -961,7 +827,7 @@ if (selectedData != null) {
                             decimalDigits: 0,
                           );
 
-                          final isSelected = selectedData?['id'] == doc.id;
+                          final isSelected = selectedDataNotifier.value?['id'] == doc.id;
 
                           return Container(
                             margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -973,16 +839,27 @@ if (selectedData != null) {
                               color: Colors.transparent,
                               child: InkWell(
                                 onTap: () {
-                                  setState(() {
-                                    selectedData = {...data, 'id': doc.id};
-                                  });
-                                },
-                               onDoubleTap: () {
-  setState(() {
-    detailData = {...data, 'id': doc.id};
-    _showDetailWindow = true;
-  });
+  if (selectedDataNotifier.value?['id'] == doc.id) return;
+
+  selectedDataNotifier.value = {...data, 'id': doc.id};
 },
+                                onDoubleTap: () {
+                                  final isDesktop = MediaQuery.of(context).size.width > 900;
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => isDesktop
+                                          ? QuotationDetailPageDesktop(
+                                              data: {...data, 'id': doc.id},
+                                              isSuperAdmin: widget.isSuperAdmin,
+                                            )
+                                          : QuotationDetailPage(
+                                              data: {...data, 'id': doc.id},
+                                              isSuperAdmin: widget.isSuperAdmin,
+                                            ),
+                                    ),
+                                  );
+                                },
                                 borderRadius: BorderRadius.circular(12),
                                 child: Padding(
                                   padding: const EdgeInsets.all(12),

@@ -9,16 +9,13 @@ import '../../pages/partners/partner_list_page.dart';
 import '../spare_part/spare_part_list_page.dart';
 import '../../services/exchange_rate_service.dart';
 import 'package:intl/intl.dart';
-import '../../core/widgets/draggable_window.dart';
 
 class CreateQuotationPageDesktop extends StatefulWidget {
   final Map<String, dynamic>? initialData;
-  final VoidCallback? onClose; // 🔥 TAMBAHAN
 
   const CreateQuotationPageDesktop({
     super.key,
     this.initialData,
-    this.onClose,
   });
 
   @override
@@ -28,7 +25,6 @@ class CreateQuotationPageDesktop extends StatefulWidget {
 
 class _CreateQuotationPageDesktopState
     extends State<CreateQuotationPageDesktop> {
-
   bool get isEditMode => widget.initialData != null;
   double? liveRate;
 
@@ -226,20 +222,20 @@ class _CreateQuotationPageDesktopState
               color: Colors.transparent,
               child: InkWell(
                 onTap: () async {
-  final result = await _openDraggable(
-    context,
-    const PartnerListPage(selectionMode: true),
-    "Select Partner",
-  );
-
-  if (result != null) {
-    setState(() {
-      selectedPartnerName = result.name;
-      selectedPartnerAddress = result.address;
-    });
-    _recalculateTotal(liveRate ?? rate);
-  }
-},
+                  final result = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const PartnerListPage(selectionMode: true),
+                    ),
+                  );
+                  if (result != null) {
+                    setState(() {
+                      selectedPartnerName = result.name;
+                      selectedPartnerAddress = result.address;
+                    });
+                    _recalculateTotal(liveRate ?? rate);
+                  }
+                },
                 borderRadius: BorderRadius.circular(16),
                 child: Padding(
                   padding: const EdgeInsets.all(20),
@@ -330,25 +326,25 @@ class _CreateQuotationPageDesktopState
               color: Colors.transparent,
               child: InkWell(
                 onTap: () async {
-  final result = await _openDraggable(
-    context,
-    const SparePartListPage(selectionMode: true),
-    "Select Spare Part",
-  );
-
-  if (result != null) {
-    setState(() {
-      selectedItems.add({
-        'partId': result.id,
-        'partName': result.name,
-        'qty': 1,
-        'stock': result.currentStock ?? 0,
-        'priceEur': result.basePriceEur,
-      });
-    });
-    _recalculateTotal(liveRate ?? rate);
-  }
-},
+                  final result = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const SparePartListPage(selectionMode: true),
+                    ),
+                  );
+                  if (result != null) {
+                    setState(() {
+                      selectedItems.add({
+                        'partId': result.id,
+                        'partName': result.name,
+                        'qty': 1,
+                        'stock': result.currentStock ?? 0,
+                        'priceEur': result.basePriceEur,
+                      });
+                    });
+                    _recalculateTotal(liveRate ?? rate);
+                  }
+                },
                 borderRadius: BorderRadius.circular(16),
                 child: const Padding(
                   padding: EdgeInsets.all(16),
@@ -809,78 +805,97 @@ class _CreateQuotationPageDesktopState
                 elevation: 0,
               ),
               onPressed: (selectedItems.isEmpty || selectedPartnerName == null || hasOverStock)
-                  ? null
-                  : () async {
-                      final user = FirebaseAuth.instance.currentUser!;
-                      final userDoc = await FirebaseFirestore.instance
-                          .collection('users')
-                          .doc(user.uid)
-                          .get();
-                      final username = userDoc['username'] ?? '-';
-                      final companyId = CompanySession.selectedCompanyId!;
-                      final config = QuotationService.getCurrencyConfig(companyId);
+    ? null
+    : () async {
+        try {
+          print("STEP A - BUTTON CLICKED");
 
-                      if (isEditMode) {
-                        // Edit mode logic
-                        await FirebaseFirestore.instance
-                            .collection('companies')
-                            .doc(companyId)
-                            .collection('quotations')
-                            .doc(widget.initialData!['id'])
-                            .update({
-                          'subtotal': subtotal,
-                          'discountPercent': double.tryParse(discountController.text) ?? 0,
-                          'discountAmount': discountAmount,
-                          'vatPercent': double.tryParse(vatController.text) ?? 0,
-                          'vatAmount': vatAmount,
-                          'totalAmount': totalAmount,
-                          'validUntil': Timestamp.fromDate(
-                            DateTime.now().add(
-                              Duration(days: int.tryParse(validityController.text) ?? 30),
-                            ),
-                          ),
-                          'items': selectedItems.map((item) {
-                            final priceLocal = item['priceEur'] * (liveRate ?? rate);
-                            return {
-                              'partId': item['partId'],
-                              'partName': item['partName'],
-                              'qty': item['qty'],
-                              'stock': item['stock'],
-                              'priceEur': item['priceEur'],
-                              'priceLocal': priceLocal,
-                              'total': priceLocal * item['qty'],
-                            };
-                          }).toList(),
-                          'partnerName': selectedPartnerName,
-                          'partnerAddress': selectedPartnerAddress,
-                          'updatedAt': FieldValue.serverTimestamp(),
-                        });
-                      } else {
-                        await QuotationService.createQuotation(
-                          companyId: companyId,
-                          userId: user.uid,
-                          userName: username,
-                          partnerName: selectedPartnerName!,
-                          partnerAddress: selectedPartnerAddress ?? '',
-                          currency: config['currency'],
-                          exchangeRate: liveRate ?? rate,
-                          items: selectedItems,
-                          priceValidityDays: int.tryParse(validityController.text) ?? 30,
-                          vatPercent: double.tryParse(vatController.text) ?? 0,
-                          discountPercent: double.tryParse(discountController.text) ?? 0,
-                          discountAmount: discountAmount,
-                          vatAmount: vatAmount,
-                        );
-                      }
+          final user = FirebaseAuth.instance.currentUser!;
+          print("STEP B - USER OK");
 
-                      if (context.mounted) {
-  if (widget.onClose != null) {
-    widget.onClose!();
-  } else {
-    Navigator.pop(context);
-  }
-}
-                    },
+          final userDoc = await FirebaseFirestore.instance
+              .collection('users')
+              .doc(user.uid)
+              .get();
+          print("STEP C - USER DOC OK");
+
+          final username = userDoc['username'] ?? '-';
+          final companyId = CompanySession.selectedCompanyId!;
+          final config = QuotationService.getCurrencyConfig(companyId);
+
+          print("STEP D - BEFORE SAVE");
+
+          if (isEditMode) {
+            print("STEP E - EDIT MODE");
+            print("DOC ID: ${widget.initialData!['id']}");
+print("COMPANY ID: $companyId");
+
+            await FirebaseFirestore.instance
+                .collection('companies')
+                .doc(companyId)
+                .collection('quotations')
+                .doc(widget.initialData!['id'])
+                .update({
+              'subtotal': subtotal,
+              'discountPercent': double.tryParse(discountController.text) ?? 0,
+              'discountAmount': discountAmount,
+              'vatPercent': double.tryParse(vatController.text) ?? 0,
+              'vatAmount': vatAmount,
+              'totalAmount': totalAmount,
+              'validUntil': Timestamp.fromDate(
+                DateTime.now().add(
+                  Duration(days: int.tryParse(validityController.text) ?? 30),
+                ),
+              ),
+              'items': selectedItems.map((item) {
+                final priceLocal = item['priceEur'] * (liveRate ?? rate);
+                return {
+                  'partId': item['partId'],
+                  'partName': item['partName'],
+                  'qty': item['qty'],
+                  'stock': item['stock'],
+                  'priceEur': item['priceEur'],
+                  'priceLocal': priceLocal,
+                  'total': priceLocal * item['qty'],
+                };
+              }).toList(),
+              'partnerName': selectedPartnerName,
+              'partnerAddress': selectedPartnerAddress,
+              'updatedAt': FieldValue.serverTimestamp(),
+            });
+
+            print("STEP F - UPDATE SUCCESS");
+          } else {
+            print("STEP E2 - CREATE MODE");
+
+            await QuotationService.createQuotation(
+              companyId: companyId,
+              userId: user.uid,
+              userName: username,
+              partnerName: selectedPartnerName!,
+              partnerAddress: selectedPartnerAddress ?? '',
+              currency: config['currency'],
+              exchangeRate: liveRate ?? rate,
+              items: selectedItems,
+              priceValidityDays: int.tryParse(validityController.text) ?? 30,
+              vatPercent: double.tryParse(vatController.text) ?? 0,
+              discountPercent: double.tryParse(discountController.text) ?? 0,
+              discountAmount: discountAmount,
+              vatAmount: vatAmount,
+            );
+
+            print("STEP F2 - CREATE SUCCESS");
+          }
+
+          print("STEP G - BEFORE POP");
+
+          if (context.mounted) Navigator.pop(context, true);
+
+        } catch (e, s) {
+          print("🔥 ERROR SAVE: $e");
+          print(s);
+        }
+      },
               child: Text(isEditMode ? 'Save Changes' : 'Create Quotation'),
             ),
           ),
@@ -915,34 +930,4 @@ class _CreateQuotationPageDesktopState
       ),
     );
   }
-
- Future<dynamic> _openDraggable(BuildContext context, Widget page, String title) async {
-  dynamic result;
-
-  await showDialog(
-    context: context,
-    barrierDismissible: false,
-    builder: (dialogContext) {
-      return Material(
-        color: Colors.transparent,
-        child: DraggableResizableWindow(
-          title: title,
-          headerColor: const Color(0xFF2563EB),
-          child: Navigator(
-            onGenerateRoute: (_) => MaterialPageRoute(
-              builder: (innerContext) {
-                return page;
-              },
-            ),
-          ),
-        ),
-      );
-    },
-  ).then((value) {
-    result = value;
-  });
-
-  return result;
-}
-
 }
