@@ -222,12 +222,19 @@ class _CreateQuotationPageDesktopState
               color: Colors.transparent,
               child: InkWell(
                 onTap: () async {
-                  final result = await Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const PartnerListPage(selectionMode: true),
-                    ),
-                  );
+                  final result = await showDialog(
+  context: context,
+  builder: (context) {
+    return Dialog(
+      insetPadding: const EdgeInsets.all(40),
+      child: SizedBox(
+        width: 800,
+        height: 600,
+        child: const PartnerListPage(selectionMode: true),
+      ),
+    );
+  },
+);
                   if (result != null) {
                     setState(() {
                       selectedPartnerName = result.name;
@@ -326,12 +333,19 @@ class _CreateQuotationPageDesktopState
               color: Colors.transparent,
               child: InkWell(
                 onTap: () async {
-                  final result = await Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const SparePartListPage(selectionMode: true),
-                    ),
-                  );
+                  final result = await showDialog(
+  context: context,
+  builder: (context) {
+    return Dialog(
+      insetPadding: const EdgeInsets.all(40),
+      child: SizedBox(
+        width: 900,
+        height: 600,
+        child: const SparePartListPage(selectionMode: true),
+      ),
+    );
+  },
+);
                   if (result != null) {
                     setState(() {
                       selectedItems.add({

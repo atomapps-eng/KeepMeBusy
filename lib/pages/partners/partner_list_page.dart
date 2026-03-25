@@ -308,11 +308,10 @@ class _PartnerListPageState extends State<PartnerListPage> with TickerProviderSt
     return InkWell(
       borderRadius: BorderRadius.circular(14),
      onTap: () async {
-  if (widget.selectionMode) {
-    Navigator.of(context).pop(); // pop inner navigator dulu
-Navigator.of(context, rootNavigator: true).pop(partner); // pop dialog + kirim data
-    return;
-  }
+ if (widget.selectionMode) {
+  Navigator.pop(context, partner);
+  return;
+}
 
   await Navigator.push(
     context,

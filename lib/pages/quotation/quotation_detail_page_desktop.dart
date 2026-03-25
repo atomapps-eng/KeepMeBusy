@@ -109,10 +109,9 @@ final doc = snapshot.data!;
 final raw = doc.data();
 
 if (raw == null) {
-  WidgetsBinding.instance.addPostFrameCallback((_) {
-    if (context.mounted) Navigator.pop(context);
-  });
-  return const SizedBox();
+  return const Center(
+    child: Text("Quotation deleted"),
+  );
 }
 
 final newData = raw as Map<String, dynamic>;
@@ -566,15 +565,58 @@ final docId = doc.id;
 
                          if (confirm == true) {
   await FirebaseFirestore.instance
-      .collection('companies')
-      .doc(data['companyId'])
-      .collection('quotations')
-     .doc(docId)
-      .delete();
+    .collection('companies')
+    .doc(data['companyId'])
+    .collection('quotations')
+    .doc(docId)
+    .delete();
 
-  if (context.mounted) {
-    Navigator.pop(context, true); // ← kirim signal ke list
-  }
+// 🔥 tampilkan dialog kecil
+showDialog(
+  context: context,
+  barrierDismissible: false,
+  builder: (_) {
+    return Center(
+      child: Container(
+        width: 280,
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.15),
+              blurRadius: 12,
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: const [
+            Icon(Icons.check_circle, color: Colors.green, size: 40),
+            SizedBox(height: 12),
+            Text(
+              "Quotation deleted",
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  },
+);
+
+// 🔥 delay 1 detik
+await Future.delayed(const Duration(seconds: 1));
+
+// 🔥 tutup dialog dulu
+if (context.mounted) Navigator.pop(context);
+
+// 🔥 baru balik ke list
+if (context.mounted) Navigator.pop(context, true);
 }
                         },
                       ),
