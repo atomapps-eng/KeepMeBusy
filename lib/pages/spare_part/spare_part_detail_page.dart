@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:ui';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../core/widgets/draggable_window.dart';
@@ -26,9 +27,6 @@ class SparePartDetailPage extends StatefulWidget {
 }
 
 class _SparePartDetailPageState extends State<SparePartDetailPage> {
-  // =========================
-  // ADMIN CHECK
-  // =========================
   Future<bool> _isAdmin() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null || user.email == null) return false;
@@ -41,9 +39,6 @@ class _SparePartDetailPageState extends State<SparePartDetailPage> {
     return doc.exists && doc.data()?['active'] == true;
   }
 
-  // =========================
-  // SHARE IMAGE WITH PART CODE
-  // =========================
   Future<void> _shareImageWithPartCode() async {
     if (widget.part.imageUrl.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -56,7 +51,6 @@ class _SparePartDetailPageState extends State<SparePartDetailPage> {
     }
 
     try {
-      // Tampilkan loading
       showDialog(
         context: context,
         barrierDismissible: false,
@@ -65,7 +59,6 @@ class _SparePartDetailPageState extends State<SparePartDetailPage> {
         ),
       );
 
-      // Download image
       final response = await http.get(Uri.parse(widget.part.imageUrl));
       if (response.statusCode != 200) {
         if (mounted) Navigator.pop(context);
@@ -78,24 +71,20 @@ class _SparePartDetailPageState extends State<SparePartDetailPage> {
         return;
       }
 
-      // Simpan ke temporary file
       final tempDir = await getTemporaryDirectory();
       final tempFile = File('${tempDir.path}/spare_part_${widget.part.partCode}.jpg');
       await tempFile.writeAsBytes(response.bodyBytes);
 
-      // Buat gambar dengan overlay part code
       final image = await _addTextToImage(
         FileImage(tempFile),
         'Part Code: ${widget.part.partCode}',
       );
 
-      // Simpan gambar yang sudah diberi text
       final finalFile = File('${tempDir.path}/share_${widget.part.partCode}.jpg');
       await finalFile.writeAsBytes(image);
 
-      if (mounted) Navigator.pop(context); // Tutup loading
+      if (mounted) Navigator.pop(context);
 
-      // Share file
       final xFile = XFile(finalFile.path);
       await Share.shareXFiles(
         [xFile],
@@ -113,382 +102,498 @@ class _SparePartDetailPageState extends State<SparePartDetailPage> {
     }
   }
 
-  // =========================
-// ADD TEXT TO IMAGE - DIPERBAIKI
-// =========================
-Future<Uint8List> _addTextToImage(ImageProvider imageProvider, String text) async {
-  final Completer<ui.Image> completer = Completer();
-  
-  final ImageStream stream = imageProvider.resolve(ImageConfiguration.empty);
-  stream.addListener(
-    ImageStreamListener(
-      (ImageInfo info, bool _) {
-        completer.complete(info.image);
-      },
-    ),
-  );
-  
-  final ui.Image originalImage = await completer.future;
-
-  final recorder = ui.PictureRecorder();
-  final canvas = Canvas(recorder);
-
-  // Gambar original
-  final paint = Paint();
-  canvas.drawImage(originalImage, Offset.zero, paint);
-
-  // Tambah overlay hitam transparan di bagian bawah
-  final overlayPaint = Paint()
-    ..color = Colors.black.withValues(alpha: 0.6);
-  
-  const overlayHeight = 60.0; // sudah double
-  canvas.drawRect(
-    Rect.fromLTWH(
-      0, 
-      originalImage.height - overlayHeight, 
-      originalImage.width.toDouble(), // Konversi ke double
-      overlayHeight
-    ),
-    overlayPaint,
-  );
-
-  // Tambah text part code
-  final textPainter = TextPainter(
-    text: TextSpan(
-      text: text,
-      style: const TextStyle(
-        color: Colors.white,
-        fontSize: 28,
-        fontWeight: FontWeight.bold,
+  Future<Uint8List> _addTextToImage(ImageProvider imageProvider, String text) async {
+    final Completer<ui.Image> completer = Completer();
+    
+    final ImageStream stream = imageProvider.resolve(ImageConfiguration.empty);
+    stream.addListener(
+      ImageStreamListener(
+        (ImageInfo info, bool _) {
+          completer.complete(info.image);
+        },
       ),
-    ),
-    textDirection: ui.TextDirection.ltr,
-  );
+    );
+    
+    final ui.Image originalImage = await completer.future;
 
-  textPainter.layout();
-  
-  final dx = (originalImage.width - textPainter.width) / 2;
-  final dy = originalImage.height - overlayHeight + (overlayHeight - textPainter.height) / 2;
-  
-  textPainter.paint(canvas, Offset(dx, dy));
+    final recorder = ui.PictureRecorder();
+    final canvas = Canvas(recorder);
 
-  // Convert ke PNG
-  final picture = recorder.endRecording();
-  final img = await picture.toImage(
-    originalImage.width, 
-    originalImage.height
-  );
-  final byteData = await img.toByteData(format: ui.ImageByteFormat.png);
-  
-  return byteData!.buffer.asUint8List();
-}
+    final paint = Paint();
+    canvas.drawImage(originalImage, Offset.zero, paint);
+
+    final overlayPaint = Paint()
+      ..color = Colors.black.withValues(alpha: 0.6);
+    
+    const overlayHeight = 60.0;
+    canvas.drawRect(
+      Rect.fromLTWH(
+        0, 
+        originalImage.height - overlayHeight, 
+        originalImage.width.toDouble(),
+        overlayHeight
+      ),
+      overlayPaint,
+    );
+
+    final textPainter = TextPainter(
+      text: TextSpan(
+        text: text,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 28,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      textDirection: ui.TextDirection.ltr,
+    );
+
+    textPainter.layout();
+    
+    final dx = (originalImage.width - textPainter.width) / 2;
+    final dy = originalImage.height - overlayHeight + (overlayHeight - textPainter.height) / 2;
+    
+    textPainter.paint(canvas, Offset(dx, dy));
+
+    final picture = recorder.endRecording();
+    final img = await picture.toImage(
+      originalImage.width, 
+      originalImage.height
+    );
+    final byteData = await img.toByteData(format: ui.ImageByteFormat.png);
+    
+    return byteData!.buffer.asUint8List();
+  }
 
   @override
   Widget build(BuildContext context) {
     final isDesktop = MediaQuery.of(context).size.width >= 900;
     final isMobile = MediaQuery.of(context).size.width < 600;
     
-    // Ukuran font yang konsisten berdasarkan device
-    final labelFontSize = isMobile ? 13.0 : 14.0;
+    final labelFontSize = isMobile ? 12.0 : 13.0;
     final valueFontSize = isMobile ? 14.0 : 15.0;
     final sectionSpacing = isMobile ? 20.0 : 24.0;
 
-    return Container(
-      decoration: BoxDecoration(
-  gradient: AppTheme.backgroundGradient,
-),
-      child: SafeArea(
-        child: SingleChildScrollView(
-          padding: EdgeInsets.all(isMobile ? 12 : 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // ===== HEADER =====
-              Row(
-                children: [
-                  if (!isDesktop)
-                    IconButton(
-                      icon: const Icon(Icons.arrow_back),
-                      onPressed: () => Navigator.pop(context),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                      iconSize: isMobile ? 20 : 24,
-                    ),
-                  if (!isDesktop) const SizedBox(width: 8),
-                  
-                  const Spacer(),
-                  
-                  // Tombol Share
-                  if (widget.part.imageUrl.isNotEmpty)
-                    IconButton(
-                      icon: Icon(
-                        Icons.share,
-                        size: isMobile ? 20 : 24,
-                        color: Colors.blueGrey,
-                      ),
-                      onPressed: _shareImageWithPartCode,
-                      tooltip: 'Share foto dengan Part Code',
-                    ),
-                ],
+    return Scaffold(
+      extendBodyBehindAppBar: true,
+      appBar: AppBar(
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(12),
               ),
-
-              SizedBox(height: isMobile ? 12 : 20),
-
-              // ===== HERO IMAGE =====
-              Center(
-                child: Hero(
-                  tag: 'spare-part-image-${widget.part.partCode}',
-                  child: _DetailImage(
-                    imageUrl: widget.part.imageUrl,
-                    isMobile: isMobile,
-                    partCode: widget.part.partCode,
+              child: const Icon(
+                Icons.inventory,
+                size: 20,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(width: 12),
+            const Text(
+              'Spare Part Detail',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        foregroundColor: Colors.white,
+        leading: Container(
+          margin: const EdgeInsets.only(left: 8),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.2),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => Navigator.pop(context),
+          ),
+        ),
+        actions: [
+          if (widget.part.imageUrl.isNotEmpty)
+            Container(
+              margin: const EdgeInsets.only(right: 8),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: IconButton(
+                icon: const Icon(Icons.share, color: Colors.white),
+                onPressed: _shareImageWithPartCode,
+                tooltip: 'Share with Part Code',
+              ),
+            ),
+        ],
+      ),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: AppTheme.backgroundGradient,
+        ),
+        child: SafeArea(
+          child: SingleChildScrollView(
+            padding: EdgeInsets.all(isMobile ? 16 : 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Hero Image
+                Center(
+                  child: Hero(
+                    tag: 'spare-part-image-${widget.part.partCode}',
+                    child: _DetailImage(
+                      imageUrl: widget.part.imageUrl,
+                      isMobile: isMobile,
+                      partCode: widget.part.partCode,
+                    ),
                   ),
                 ),
-              ),
 
-              SizedBox(height: isMobile ? 16 : 24),
+                SizedBox(height: isMobile ? 24 : 32),
 
-              // ===== INFO SECTIONS =====
-              _buildInfoSection(
-                children: [
-                  _infoRow('Part Code', widget.part.partCode,
-                      labelFontSize: labelFontSize,
-                      valueFontSize: valueFontSize),
-                  _infoRow('Name', widget.part.name,
-                      labelFontSize: labelFontSize,
-                      valueFontSize: valueFontSize),
-                  _infoRow('Name (EN)', widget.part.nameEn,
-                      labelFontSize: labelFontSize,
-                      valueFontSize: valueFontSize),
-                  _infoRow('Location', widget.part.location,
-                      labelFontSize: labelFontSize,
-                      valueFontSize: valueFontSize),
-                ],
-              ),
+                // Basic Info Card
+                _buildModernCard(
+                  title: 'BASIC INFORMATION',
+                  icon: Icons.info_outline,
+                  children: [
+                    _infoRow('Part Code', widget.part.partCode,
+                        labelFontSize: labelFontSize,
+                        valueFontSize: valueFontSize),
+                    _infoRow('Name', widget.part.name,
+                        labelFontSize: labelFontSize,
+                        valueFontSize: valueFontSize),
+                    _infoRow('Name (EN)', widget.part.nameEn,
+                        labelFontSize: labelFontSize,
+                        valueFontSize: valueFontSize),
+                    _infoRow('Location', widget.part.location,
+                        labelFontSize: labelFontSize,
+                        valueFontSize: valueFontSize),
+                  ],
+                ),
 
-              SizedBox(height: sectionSpacing),
+                SizedBox(height: sectionSpacing),
 
-              _buildInfoSection(
-                title: 'STOCK',
-                children: [
-                  _infoRow('Initial Stock', widget.part.initialStock.toString(),
-                      labelFontSize: labelFontSize,
-                      valueFontSize: valueFontSize),
-                  _infoRow('Current Stock', widget.part.currentStock.toString(),
-                      labelFontSize: labelFontSize,
-                      valueFontSize: valueFontSize),
-                  _infoRow('Minimum Stock', widget.part.minimumStock.toString(),
-                      labelFontSize: labelFontSize,
-                      valueFontSize: valueFontSize),
-                ],
-              ),
-
-              SizedBox(height: sectionSpacing),
-
-              _buildInfoSection(
-                title: 'CATEGORY',
-                children: [
-                  _infoRow('Category',
-                      widget.part.category.name.replaceAll('_', ' '),
-                      labelFontSize: labelFontSize,
-                      valueFontSize: valueFontSize),
-                  _infoRow('Origin', widget.part.origin.name.replaceAll('_', ' '),
-                      labelFontSize: labelFontSize,
-                      valueFontSize: valueFontSize),
-                ],
-              ),
-
-              SizedBox(height: sectionSpacing),
-
-              _buildInfoSection(
-                title: 'SPESIFICATION',
-                children: [
-                  _infoRow('Weight', '${widget.part.weight} ${widget.part.weightUnit}',
-                      labelFontSize: labelFontSize,
-                      valueFontSize: valueFontSize),
-                ],
-              ),
-
-              _buildInfoSection(
-                title: 'PRICE',
-                children: [
-                  _infoRow(
-  'Base Price',
-  eurFormat.format(widget.part.basePriceEur),
-  labelFontSize: labelFontSize,
-  valueFontSize: valueFontSize,
-),
-                ],
-              ),
-
-              SizedBox(height: isMobile ? 24 : 28),
-
-              // ===== ACTIONS =====
-              Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      icon: Icon(Icons.edit, size: isMobile ? 16 : 18),
-                      label: Text(
-                        'Edit',
-                        style: TextStyle(fontSize: isMobile ? 13 : 14),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blueGrey,
-                        padding: EdgeInsets.symmetric(
-                          vertical: isMobile ? 10 : 14,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                      ),
-                      onPressed: () async {
-                        final isDesktop = MediaQuery.of(context).size.width >= 900;
-
-                        if (isDesktop) {
-                          final parentContext = context;
-
-                          Navigator.pop(parentContext);
-
-                          await Future.delayed(const Duration(milliseconds: 200));
-
-                          showGeneralDialog(
-                            context: parentContext,
-                            barrierDismissible: false,
-                            barrierLabel: "EditSparePart",
-                            barrierColor: Colors.black.withValues(alpha: 0.35),
-                            transitionDuration: const Duration(milliseconds: 200),
-                            pageBuilder: (_, _, _) {
-                              return DraggableResizableWindow(
-                                title: "Edit Spare Part",
-                                headerColor: Colors.blueGrey,
-                                child: EditSparePartPage(part: widget.part),
-                              );
-                            },
-                          );
-                        } else {
-                         final result = await Navigator.push(
-  context,
-  MaterialPageRoute(
-    builder: (_) => EditSparePartPage(part: widget.part),
-  ),
-);
-
-if (result == true && context.mounted) {
-  Navigator.pop(context, true); // 🔥 forward ke list page
-}
-                        }
-                      },
+                // Stock Card
+                _buildModernCard(
+                  title: 'STOCK MANAGEMENT',
+                  icon: Icons.inventory_2,
+                  children: [
+                    _metricRow(
+                      'Initial Stock',
+                      widget.part.initialStock.toString(),
+                      'units',
+                      Colors.blue,
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      icon: Icon(Icons.delete, size: isMobile ? 16 : 18),
-                      label: Text(
-                        'Delete',
-                        style: TextStyle(fontSize: isMobile ? 13 : 14),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red,
-                        padding: EdgeInsets.symmetric(
-                          vertical: isMobile ? 10 : 14,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                      ),
-                      onPressed: () async {
-                        final isAdmin = await _isAdmin();
-                        if (!context.mounted) return;
+                    const SizedBox(height: 12),
+                    _metricRow(
+                      'Current Stock',
+                      widget.part.currentStock.toString(),
+                      'units',
+                      widget.part.currentStock <= widget.part.minimumStock
+                          ? Colors.red
+                          : Colors.green,
+                    ),
+                    const SizedBox(height: 12),
+                    _metricRow(
+                      'Minimum Stock',
+                      widget.part.minimumStock.toString(),
+                      'units',
+                      Colors.orange,
+                    ),
+                  ],
+                ),
 
-                        if (!isAdmin) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
+                SizedBox(height: sectionSpacing),
+
+                // Category & Origin Card
+                _buildModernCard(
+                  title: 'CLASSIFICATION',
+                  icon: Icons.category,
+                  children: [
+                    _infoRow('Category',
+                        widget.part.category.name.replaceAll('_', ' '),
+                        labelFontSize: labelFontSize,
+                        valueFontSize: valueFontSize),
+                    _infoRow('Origin', widget.part.origin.name.replaceAll('_', ' '),
+                        labelFontSize: labelFontSize,
+                        valueFontSize: valueFontSize),
+                  ],
+                ),
+
+                SizedBox(height: sectionSpacing),
+
+                // Specification Card
+                _buildModernCard(
+                  title: 'SPECIFICATIONS',
+                  icon: Icons.settings,
+                  children: [
+                    _infoRow('Weight', '${widget.part.weight} ${widget.part.weightUnit}',
+                        labelFontSize: labelFontSize,
+                        valueFontSize: valueFontSize),
+                  ],
+                ),
+
+                SizedBox(height: sectionSpacing),
+
+                // Price Card
+                _buildModernCard(
+                  title: 'PRICING',
+                  icon: Icons.attach_money,
+                  children: [
+                    _metricRow(
+                      'Base Price',
+                      eurFormat.format(widget.part.basePriceEur),
+                      'per unit',
+                      Colors.green,
+                      isCurrency: true,
+                    ),
+                  ],
+                ),
+
+                SizedBox(height: isMobile ? 24 : 32),
+
+                // Action Buttons
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildActionButton(
+                        icon: Icons.edit,
+                        label: 'Edit',
+                        color: const Color(0xFF3B82F6),
+                        onPressed: () async {
+                          final isDesktop = MediaQuery.of(context).size.width >= 900;
+
+                          if (isDesktop) {
+                            final parentContext = context;
+                            Navigator.pop(parentContext);
+                            await Future.delayed(const Duration(milliseconds: 200));
+                            showGeneralDialog(
+                              context: parentContext,
+                              barrierDismissible: false,
+                              barrierLabel: "EditSparePart",
+                              barrierColor: Colors.black.withOpacity(0.35),
+                              transitionDuration: const Duration(milliseconds: 200),
+                              pageBuilder: (_, _, _) {
+                                return DraggableResizableWindow(
+                                  title: "Edit Spare Part",
+                                  headerColor: Colors.blueGrey,
+                                  child: EditSparePartPage(part: widget.part),
+                                );
+                              },
+                            );
+                          } else {
+                            final result = await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => EditSparePartPage(part: widget.part),
+                              ),
+                            );
+                            if (result == true && context.mounted) {
+                              Navigator.pop(context, true);
+                            }
+                          }
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _buildActionButton(
+                        icon: Icons.delete,
+                        label: 'Delete',
+                        color: const Color(0xFFEF4444),
+                        onPressed: () async {
+                          final isAdmin = await _isAdmin();
+                          if (!context.mounted) return;
+
+                          if (!isAdmin) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('You don\'t have access to delete this part'),
+                                backgroundColor: Colors.orange,
+                              ),
+                            );
+                            return;
+                          }
+
+                          final confirm = await showDialog<bool>(
+                            context: context,
+                            builder: (_) => AlertDialog(
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              title: const Text('Delete Spare Part'),
                               content: Text(
-                                'You dont have access to delete this part',
+                                'Are you sure you want to delete "${widget.part.name}"?',
                               ),
-                              backgroundColor: Colors.orange,
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context, false),
+                                  child: const Text('Cancel'),
+                                ),
+                                ElevatedButton(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.red,
+                                    foregroundColor: Colors.white,
+                                  ),
+                                  onPressed: () => Navigator.pop(context, true),
+                                  child: const Text('Delete'),
+                                ),
+                              ],
                             ),
                           );
-                          return;
-                        }
 
-                        final confirm = await showDialog<bool>(
-                          context: context,
-                          builder: (_) => AlertDialog(
-                            title: const Text('Delete Spare Part'),
-                            content: Text(
-                              'Are you sure you want to delete?"${widget.part.name}"?',
-                            ),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.pop(context, false),
-                                child: const Text('Batal'),
-                              ),
-                              ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.red,
-                                ),
-                                onPressed: () => Navigator.pop(context, true),
-                                child: const Text('Delete'),
-                              ),
-                            ],
-                          ),
-                        );
+                          if (confirm != true) return;
 
-                        if (confirm != true) return;
+                          await CompanyFirestore
+                              .collection('spare_parts')
+                              .doc(widget.part.partCode)
+                              .delete();
 
-                        await CompanyFirestore
-                            .collection('spare_parts')
-                            .doc(widget.part.partCode)
-                            .delete();
-
-                        if (context.mounted) {
-                          Navigator.pop(context, true);
-                        }
-                      },
+                          if (context.mounted) {
+                            Navigator.pop(context, true);
+                          }
+                        },
+                      ),
                     ),
-                  ),
-                ],
-              ),
-            ],
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildInfoSection({
-    String? title,
+  Widget _buildModernCard({
+    required String title,
+    required IconData icon,
     required List<Widget> children,
   }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (title != null) ...[
-          Padding(
-            padding: const EdgeInsets.only(left: 4, bottom: 8),
-            child: Text(
-              title,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 0.5,
-                color: Colors.blueGrey.shade400,
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.95),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.shade200.withOpacity(0.5),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8FAFC),
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(20),
+                topRight: Radius.circular(20),
               ),
+              border: Border(
+                bottom: BorderSide(color: Colors.grey.shade200),
+              ),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEFF6FF),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(icon, size: 16, color: const Color(0xFF2563EB)),
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF1F2937),
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: children,
             ),
           ),
         ],
-        ...children,
-      ],
+      ),
+    );
+  }
+
+  Widget _metricRow(String label, String value, String unit, Color color, {bool isCurrency = false}) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [color.withOpacity(0.1), Colors.white],
+        ),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withOpacity(0.2)),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: Color(0xFF64748B),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      value,
+                      style: TextStyle(
+                        fontSize: isCurrency ? 20 : 18,
+                        fontWeight: FontWeight.bold,
+                        color: color,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      unit,
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: Color(0xFF64748B),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
   Widget _infoRow(String label, String value,
       {required double labelFontSize, required double valueFontSize}) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.only(bottom: 12),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -498,7 +603,7 @@ if (result == true && context.mounted) {
               label,
               style: TextStyle(
                 fontWeight: FontWeight.w600,
-                color: Colors.blueGrey,
+                color: const Color(0xFF64748B),
                 fontSize: labelFontSize,
               ),
             ),
@@ -508,6 +613,8 @@ if (result == true && context.mounted) {
               value,
               style: TextStyle(
                 fontSize: valueFontSize,
+                fontWeight: FontWeight.w500,
+                color: const Color(0xFF0F172A),
                 height: 1.3,
               ),
             ),
@@ -516,16 +623,40 @@ if (result == true && context.mounted) {
       ),
     );
   }
+
+  Widget _buildActionButton({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onPressed,
+  }) {
+    return ElevatedButton.icon(
+      icon: Icon(icon, size: 18),
+      label: Text(
+        label,
+        style: const TextStyle(fontSize: 14),
+      ),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: color.withOpacity(0.1),
+        foregroundColor: color,
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        elevation: 0,
+      ),
+      onPressed: onPressed,
+    );
+  }
+
   final eurFormat = NumberFormat.currency(
-  locale: 'en',
-  symbol: '€ ',
-  decimalDigits: 2,
-);
+    locale: 'en',
+    symbol: '€ ',
+    decimalDigits: 2,
+  );
 }
 
-// =========================
-// IMAGE WITH ZOOM AND PART CODE
-// =========================
+// Detail Image Widget (Modern)
 class _DetailImage extends StatelessWidget {
   final String imageUrl;
   final bool isMobile;
@@ -539,7 +670,7 @@ class _DetailImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final imageSize = isMobile ? 200.0 : 220.0;
+    final imageSize = isMobile ? 220.0 : 260.0;
 
     return GestureDetector(
       onTap: () {
@@ -553,51 +684,47 @@ class _DetailImage extends StatelessWidget {
                 children: [
                   Container(
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(20),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.5),
+                          color: Colors.black.withOpacity(0.5),
                           blurRadius: 30,
                           offset: const Offset(0, 4),
                         ),
                       ],
                     ),
                     child: ClipRRect(
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(20),
                       child: AspectRatio(
                         aspectRatio: 1,
                         child: imageUrl.isNotEmpty
                             ? CachedNetworkImage(
-  imageUrl: imageUrl,
-  fit: BoxFit.contain,
-  placeholder: (context, url) => Center(
-    child: CircularProgressIndicator(strokeWidth: 2),
-  ),
-  errorWidget: (context, url, error) => Container(
-    color: const Color.fromARGB(255, 243, 228, 172),
-    child: Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Icon(Icons.broken_image, size: 60),
-        SizedBox(height: 8),
-        Text('Gambar gagal dimuat'),
-      ],
-    ),
-  ),
-)
+                                imageUrl: imageUrl,
+                                fit: BoxFit.contain,
+                                placeholder: (context, url) => const Center(
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                ),
+                                errorWidget: (context, url, error) => Container(
+                                  color: const Color(0xFFF5F3EF),
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(Icons.broken_image, size: 60, color: Colors.grey),
+                                      const SizedBox(height: 8),
+                                      const Text('Failed to load image'),
+                                    ],
+                                  ),
+                                ),
+                              )
                             : Container(
-                                color: const Color.fromARGB(255, 243, 228, 172),
+                                color: const Color(0xFFF5F3EF),
                                 child: Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    Icon(
-                                      Icons.inventory,
-                                      size: 80,
-                                      color: Colors.grey.shade600,
-                                    ),
+                                    Icon(Icons.inventory, size: 80, color: Colors.grey.shade600),
                                     const SizedBox(height: 12),
                                     Text(
-                                      'Tidak ada gambar',
+                                      'No image available',
                                       style: TextStyle(
                                         color: Colors.grey.shade700,
                                         fontSize: 16,
@@ -610,13 +737,12 @@ class _DetailImage extends StatelessWidget {
                       ),
                     ),
                   ),
-                  
                   Positioned(
                     top: 8,
                     right: 8,
                     child: Container(
                       decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.5),
+                        color: Colors.black.withOpacity(0.5),
                         shape: BoxShape.circle,
                       ),
                       child: IconButton(
@@ -626,25 +752,21 @@ class _DetailImage extends StatelessWidget {
                       ),
                     ),
                   ),
-                  
                   Positioned(
                     bottom: 16,
                     left: 16,
                     right: 16,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 10,
-                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                       decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.6),
+                        color: Colors.black.withOpacity(0.6),
                         borderRadius: BorderRadius.circular(30),
                       ),
                       child: Text(
                         'Part Code: $partCode',
                         style: const TextStyle(
                           color: Colors.white,
-                          fontSize: 16,
+                          fontSize: 14,
                           fontWeight: FontWeight.w500,
                         ),
                         textAlign: TextAlign.center,
@@ -661,56 +783,55 @@ class _DetailImage extends StatelessWidget {
         width: imageSize,
         height: imageSize,
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(isMobile ? 12 : 16),
+          borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.35),
-              blurRadius: isMobile ? 16 : 24,
-              offset: const Offset(0, 2),
+              color: Colors.black.withOpacity(0.2),
+              blurRadius: 16,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(isMobile ? 12 : 16),
+          borderRadius: BorderRadius.circular(20),
           child: Container(
-            color: const Color.fromARGB(255, 243, 228, 172),
+            color: const Color(0xFFF5F3EF),
             child: Stack(
               children: [
                 AspectRatio(
                   aspectRatio: 1,
                   child: imageUrl.isNotEmpty
                       ? CachedNetworkImage(
-  imageUrl: imageUrl,
-  fit: BoxFit.contain,
-  placeholder: (context, url) => Center(
-    child: CircularProgressIndicator(strokeWidth: 2),
-  ),
-  errorWidget: (context, url, error) => Container(
-    color: const Color.fromARGB(255, 243, 228, 172),
-    child: Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Icon(Icons.broken_image, size: 60),
-        SizedBox(height: 8),
-        Text('Gambar gagal dimuat'),
-      ],
-    ),
-  ),
-)
+                          imageUrl: imageUrl,
+                          fit: BoxFit.contain,
+                          placeholder: (context, url) => const Center(
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                          errorWidget: (context, url, error) => Container(
+                            color: const Color(0xFFF5F3EF),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.broken_image, size: 48, color: Colors.grey),
+                                const SizedBox(height: 8),
+                                const Text('Failed to load'),
+                              ],
+                            ),
+                          ),
+                        )
                       : Icon(
                           Icons.inventory,
                           size: isMobile ? 48 : 56,
                           color: Colors.grey.shade600,
                         ),
                 ),
-                
                 Positioned(
                   bottom: 8,
                   right: 8,
                   child: Container(
                     padding: const EdgeInsets.all(6),
                     decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.5),
+                      color: Colors.black.withOpacity(0.5),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
