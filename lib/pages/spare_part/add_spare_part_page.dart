@@ -10,7 +10,12 @@ import '../../theme/app_theme.dart';
 
 
 class AddSparePartPage extends StatefulWidget {
-  const AddSparePartPage({super.key});
+  final bool isWindow;
+
+  const AddSparePartPage({
+    super.key,
+    this.isWindow = false,
+  });
 
   @override
   State<AddSparePartPage> createState() => _AddSparePartPageState();
@@ -268,148 +273,144 @@ request.fields['public_id'] = uniqueId;
 
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Stack(
-        children: [
-          Container(
-            decoration: BoxDecoration(
-  gradient: AppTheme.backgroundGradient,
-),
-          ),
-          SafeArea(
-  child: SingleChildScrollView(
-    padding: const EdgeInsets.only(bottom: 24),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-
-
-        // ===== FORM =====
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+Widget build(BuildContext context) {
+  final content = Stack(
+    children: [
+      Container(
+        decoration: BoxDecoration(
+          gradient: AppTheme.backgroundGradient,
+        ),
+      ),
+      SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.only(bottom: 24),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // IMAGE
-              GestureDetector(
-                onTap: showImageSourceDialog,
-                child: Container(
-                  height: 150,
-                  margin: const EdgeInsets.only(bottom: 16),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.25),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.35),
-                    ),
-                  ),
-                  child: selectedImage == null
-                      ? const Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.camera_alt,
-                                  size: 40, color: Colors.blueGrey),
-                              SizedBox(height: 8),
-                              Text(
-                                'Tap to add image',
-                                style:
-                                    TextStyle(color: Colors.blueGrey),
-                              ),
-                            ],
-                          ),
-                        )
-                      : ClipRRect(
+
+              // ===== FORM =====
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Column(
+                  children: [
+                    // IMAGE
+                    GestureDetector(
+                      onTap: showImageSourceDialog,
+                      child: Container(
+                        height: 150,
+                        margin: const EdgeInsets.only(bottom: 16),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.25),
                           borderRadius: BorderRadius.circular(14),
-                          child: Image.file(
-                            selectedImage!,
-                            fit: BoxFit.cover,
-                            width: double.infinity,
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.35),
                           ),
                         ),
-                ),
-              ),
-
-              TextField(
-                controller: partCodeController,
-                decoration:
-                    const InputDecoration(labelText: 'Part Code'),
-              ),
-              const SizedBox(height: 12),
-
-              TextField(
-                controller: nameController,
-                decoration:
-                    const InputDecoration(labelText: 'Name'),
-              ),
-              const SizedBox(height: 12),
-
-              TextField(
-                controller: nameEnController,
-                decoration:
-                    const InputDecoration(labelText: 'Name (English)'),
-              ),
-              const SizedBox(height: 12),
-
-              TextField(
-                controller: locationController,
-                decoration:
-                    const InputDecoration(labelText: 'Location'),
-              ),
-              const SizedBox(height: 12),
-
-              TextField(
-                controller: stockController,
-                keyboardType: TextInputType.number,
-                decoration:
-                    const InputDecoration(labelText: 'Stock'),
-              ),
-              const SizedBox(height: 12),
-
-              TextField(
-                controller: minimumStockController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'Minimum Stock',
-                  helperText:
-                      'Digunakan untuk status Low Stock',
-                ),
-              ),
-              const SizedBox(height: 12),
-
-              TextField(
-                controller: weightController,
-                keyboardType: TextInputType.number,
-                decoration:
-                    const InputDecoration(labelText: 'Weight'),
-              ),
-              const SizedBox(height: 12),
-
-              TextField(
-  controller: basePriceController,
-  keyboardType: TextInputType.numberWithOptions(decimal: true),
-  decoration: const InputDecoration(
-    labelText: 'Base Price (EUR)',
-    prefixText: '€ ',
-  ),
-),
-const SizedBox(height: 12),
-
-              DropdownButtonFormField<String>(
-                initialValue: weightUnit,
-                items: ['Kg', 'g', 'Ton']
-                    .map(
-                      (e) => DropdownMenuItem(
-                        value: e,
-                        child: Text(e),
+                        child: selectedImage == null
+                            ? const Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.camera_alt,
+                                        size: 40, color: Colors.blueGrey),
+                                    SizedBox(height: 8),
+                                    Text(
+                                      'Tap to add image',
+                                      style: TextStyle(color: Colors.blueGrey),
+                                    ),
+                                  ],
+                                ),
+                              )
+                            : ClipRRect(
+                                borderRadius: BorderRadius.circular(14),
+                                child: Image.file(
+                                  selectedImage!,
+                                  fit: BoxFit.cover,
+                                  width: double.infinity,
+                                ),
+                              ),
                       ),
-                    )
-                    .toList(),
-                onChanged: (v) =>
-                    setState(() => weightUnit = v!),
-                decoration:
-                    const InputDecoration(labelText: 'Weight Unit'),
-              ),
+                    ),
+
+                    TextField(
+                      controller: partCodeController,
+                      decoration:
+                          const InputDecoration(labelText: 'Part Code'),
+                    ),
+                    const SizedBox(height: 12),
+
+                    TextField(
+                      controller: nameController,
+                      decoration:
+                          const InputDecoration(labelText: 'Name'),
+                    ),
+                    const SizedBox(height: 12),
+
+                    TextField(
+                      controller: nameEnController,
+                      decoration:
+                          const InputDecoration(labelText: 'Name (English)'),
+                    ),
+                    const SizedBox(height: 12),
+
+                    TextField(
+                      controller: locationController,
+                      decoration:
+                          const InputDecoration(labelText: 'Location'),
+                    ),
+                    const SizedBox(height: 12),
+
+                    TextField(
+                      controller: stockController,
+                      keyboardType: TextInputType.number,
+                      decoration:
+                          const InputDecoration(labelText: 'Stock'),
+                    ),
+                    const SizedBox(height: 12),
+
+                    TextField(
+                      controller: minimumStockController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: 'Minimum Stock',
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    TextField(
+                      controller: weightController,
+                      keyboardType: TextInputType.number,
+                      decoration:
+                          const InputDecoration(labelText: 'Weight'),
+                    ),
+                    const SizedBox(height: 12),
+
+                    TextField(
+                      controller: basePriceController,
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
+                      decoration: const InputDecoration(
+                        labelText: 'Base Price (EUR)',
+                        prefixText: '€ ',
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    DropdownButtonFormField<String>(
+                      initialValue: weightUnit,
+                      items: ['Kg', 'g', 'Ton']
+                          .map((e) => DropdownMenuItem(
+                                value: e,
+                                child: Text(e),
+                              ))
+                          .toList(),
+                      onChanged: (v) =>
+                          setState(() => weightUnit = v!),
+                      decoration:
+                          const InputDecoration(labelText: 'Weight Unit'),
+                    ),
+
+                    const SizedBox(height: 24),
 
 DropdownButtonFormField<SparePartCategory>(
   initialValue: _selectedCategory,
@@ -417,12 +418,12 @@ DropdownButtonFormField<SparePartCategory>(
   items: SparePartCategory.values.map((e) {
     return DropdownMenuItem(
       value: e,
-      child: Text(e.toString()), // 🔑 PAKAI LABEL
+      child: Text(e.toString()),
     );
   }).toList(),
   selectedItemBuilder: (context) {
     return SparePartCategory.values.map((e) {
-      return Text(e.toString()); // 🔑 INI YANG MENGATASI autoCutting
+      return Text(e.toString());
     }).toList();
   },
   onChanged: (value) {
@@ -431,7 +432,6 @@ DropdownButtonFormField<SparePartCategory>(
     }
   },
 ),
-
 
 const SizedBox(height: 12),
 
@@ -456,56 +456,41 @@ DropdownButtonFormField<SparePartOrigin>(
   },
 ),
 
-
 const SizedBox(height: 12),
 
-
-              const SizedBox(height: 24),
-
-              // ===== SAVE BUTTON =====
-              Row(
-  children: [
-    // ===== CANCEL =====
-    Expanded(
-      child: OutlinedButton(
-        style: OutlinedButton.styleFrom(
-          foregroundColor: Colors.redAccent,
-          side: const BorderSide(color: Colors.redAccent),
-          padding: const EdgeInsets.symmetric(vertical: 14),
-        ),
-        onPressed: () {
-          Navigator.pop(context);
-        },
-        child: const Text('Cancel'),
-      ),
-    ),
-
-    const SizedBox(width: 12),
-
-    // ===== SAVE CANCEL BUTTON=====
-    Expanded(
-      child: ElevatedButton(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.green,
-          padding: const EdgeInsets.symmetric(vertical: 14),
-        ),
-        onPressed: saveData,
-        child: const Text('Save'),
-      ),
-    ),
-  ],
-),
-
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: const Text('Cancel'),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: saveData,
+                            child: const Text('Save'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
         ),
-      ],
-    ),
-  ),
-),
-
-        ],
       ),
-    );
+    ],
+  );
+
+  if (widget.isWindow) {
+    return content;
   }
+
+  return Scaffold(
+    body: content,
+  );
+}
 }

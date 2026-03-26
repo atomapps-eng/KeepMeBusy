@@ -11,6 +11,7 @@ import '../../core/widgets/draggable_window.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../core/session/company_session.dart';
 import '../../theme/app_theme.dart';
+import 'spare_part_detail_page_desktop.dart';
 
 
 class SparePartListPage extends StatefulWidget {
@@ -247,7 +248,7 @@ if (!mounted || _isDisposed) return;
 Widget build(BuildContext context) {
   final content = GestureDetector(
     behavior: HitTestBehavior.translucent,
-    onTap: () {
+    onTap: () async {
       FocusScope.of(context).unfocus();
     },
     child: Stack(
@@ -294,13 +295,30 @@ Widget build(BuildContext context) {
             foregroundColor: Colors.white,
             child: const Icon(Icons.add),
             onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const AddSparePartPage(),
-                ),
-              );
-            },
+  final isDesktop = MediaQuery.of(context).size.width >= 900;
+
+  if (isDesktop) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      barrierColor: Colors.transparent,
+      builder: (context) {
+        return DraggableResizableWindow(
+          title: "Add Spare Part",
+          headerColor: Colors.blueGrey,
+          child: const AddSparePartPage(isWindow: true),
+        );
+      },
+    );
+  } else {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const AddSparePartPage(),
+      ),
+    );
+  }
+},
           ),
     body: content,
   );
@@ -355,7 +373,7 @@ Widget build(BuildContext context) {
         final part = displayList[index];
 
         return GestureDetector(
-  onTap: () {
+  onTap: () async {
     // ✅ SELECT MODE
    if (widget.selectionMode) {
   if (widget.onSelected != null) {
@@ -372,28 +390,40 @@ Widget build(BuildContext context) {
     final isDesktop = MediaQuery.of(context).size.width >= 900;
 
     if (isDesktop) {
-      showGeneralDialog(
-        context: context,
-        barrierDismissible: true,
-        barrierLabel: "SparePartDetail",
-        barrierColor: Colors.black.withValues(alpha:0.35),
-        transitionDuration: const Duration(milliseconds: 200),
-        pageBuilder: (_, _, _) {
-          return DraggableResizableWindow(
-            title: "Spare Part Detail",
-            headerColor: Colors.blueGrey,
-            child: SparePartDetailPage(part: part),
-          );
-        },
+  final result = await showGeneralDialog(
+    context: context,
+    barrierDismissible: true,
+    barrierLabel: "SparePartDetail",
+    barrierColor: Colors.black.withValues(alpha:0.35),
+    transitionDuration: const Duration(milliseconds: 200),
+    pageBuilder: (_, _, _) {
+      return DraggableResizableWindow(
+        title: "Spare Part Detail",
+        headerColor: Colors.blueGrey,
+        child: SparePartDetailPageDesktop(part: part),
       );
-    } else {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => SparePartDetailPage(part: part),
-        ),
-      );
-    }
+    },
+  );
+
+  if (result == true) {
+    _loadInitialData(); // 🔥 refresh
+  }
+} else {
+ final result = await Navigator.push(
+  context,
+  MaterialPageRoute(
+    builder: (_) => SparePartDetailPage(part: part),
+  ),
+);
+
+if (result == true && mounted) {
+  if (_isSearching && _currentSearchKeyword.isNotEmpty) {
+    await _performSearch(_currentSearchKeyword); // 🔥 refresh search result
+  } else {
+    await _loadInitialData(); // normal reload
+  }
+}
+}
   },
   child: _GlassCard(
     child: widget.isCompact

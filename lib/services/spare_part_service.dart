@@ -270,6 +270,23 @@ class SparePartService {
       return null;
     }
   }
+
+  Future<SparePart?> getByPartCode(String partCode) async {
+  try {
+    final doc = await CompanyFirestore
+        .collection('spare_parts')
+        .doc(partCode)
+        .get();
+
+    if (!doc.exists) return null;
+
+    return SparePart.fromFirestore(doc);
+  } catch (e) {
+    print('Error getByPartCode: $e');
+    return null;
+  }
+}
+
 }
 
 class _CombinedQuerySnapshot implements QuerySnapshot {

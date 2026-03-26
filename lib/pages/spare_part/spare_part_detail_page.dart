@@ -367,12 +367,16 @@ Future<Uint8List> _addTextToImage(ImageProvider imageProvider, String text) asyn
                             },
                           );
                         } else {
-                          await Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => EditSparePartPage(part: widget.part),
-                            ),
-                          );
+                         final result = await Navigator.push(
+  context,
+  MaterialPageRoute(
+    builder: (_) => EditSparePartPage(part: widget.part),
+  ),
+);
+
+if (result == true && context.mounted) {
+  Navigator.pop(context, true); // 🔥 forward ke list page
+}
                         }
                       },
                     ),

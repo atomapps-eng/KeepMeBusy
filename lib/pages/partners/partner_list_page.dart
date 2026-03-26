@@ -11,11 +11,13 @@ import '../../models/read_tracker_service.dart';
 class PartnerListPage extends StatefulWidget {
   final bool selectionMode;
   final Function(dynamic)? onSelected;
+   final bool isWindow;
 
   const PartnerListPage({
     super.key,
     this.selectionMode = false,
     this.onSelected,
+    this.isWindow = false,
   });
   
 

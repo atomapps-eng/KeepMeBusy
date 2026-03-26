@@ -24,6 +24,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:flutter/services.dart';
 import '../../../core/widgets/draggable_window.dart';
+import 'package:flutter/foundation.dart';
 //
 
 class TripDetailPage extends StatelessWidget {
@@ -2060,7 +2061,17 @@ pdf.addPage(
 // ATTACHMENT_PAGE END
 // ==========================
 
-    final dir = await getTemporaryDirectory();
+Directory dir;
+
+if (kIsWeb) {
+  throw Exception("Web tidak support save file seperti ini");
+} else if (defaultTargetPlatform == TargetPlatform.windows ||
+           defaultTargetPlatform == TargetPlatform.linux ||
+           defaultTargetPlatform == TargetPlatform.macOS) {
+  dir = Directory.systemTemp;
+} else {
+  dir = await getTemporaryDirectory();
+}
     final tripDate =
     "${trip.startDate.day}-${trip.startDate.month}-${trip.startDate.year}";
 
@@ -2073,6 +2084,7 @@ final file = File(
     Navigator.pop(context);
 
     await OpenFilex.open(file.path);
+    
   } catch (e) {
     Navigator.pop(context);
 

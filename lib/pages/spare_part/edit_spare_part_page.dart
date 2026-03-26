@@ -353,17 +353,6 @@ await CompanyFirestore
     .doc(widget.part.partCode)
     .update(updatePayload);
 
-// 🔥 hanya super_admin boleh update base price
-if (isSuperAdmin) {
-  updatePayload['basePriceEur'] = basePrice;
-}
-
-// 🔥 FINAL UPDATE
-await CompanyFirestore
-    .collection('spare_parts')
-    .doc(widget.part.partCode)
-    .update(updatePayload);
-
     if (oldLocationKey != newLocationKey) {
       await CompanyFirestore
           .collection('locations')
@@ -387,35 +376,48 @@ await CompanyFirestore
 
     await Future.delayed(const Duration(milliseconds: 600));
     if (!mounted) return;
-    navigator.pop();
+    navigator.pop(true);
   }
 
   Future<void> deleteData() async {
-    final navigator = Navigator.of(context);
-    final messenger = ScaffoldMessenger.of(context);
+  final navigator = Navigator.of(context);
+  final messenger = ScaffoldMessenger.of(context);
 
-    final locationKey = normalizeLocation(widget.part.location);
+  final isAdmin = await _isAdmin();
 
-    await CompanyFirestore
-        .collection('spare_parts')
-        .doc(widget.part.partCode)
-        .delete();
-
-    await CompanyFirestore
-        .collection('locations')
-        .doc(locationKey)
-        .delete();
-
+  if (!isAdmin) {
     if (!mounted) return;
-
     messenger.showSnackBar(
-      const SnackBar(content: Text('Spare part berhasil dihapus')),
+      const SnackBar(
+        content: Text('You dont have access to delete this part'),
+        backgroundColor: Colors.orange,
+      ),
     );
-
-    await Future.delayed(const Duration(milliseconds: 600));
-    if (!mounted) return;
-    navigator.pop();
+    return;
   }
+
+  final locationKey = normalizeLocation(widget.part.location);
+
+  await CompanyFirestore
+      .collection('spare_parts')
+      .doc(widget.part.partCode)
+      .delete();
+
+  await CompanyFirestore
+      .collection('locations')
+      .doc(locationKey)
+      .delete();
+
+  if (!mounted) return;
+
+  messenger.showSnackBar(
+    const SnackBar(content: Text('Spare part berhasil dihapus')),
+  );
+
+  await Future.delayed(const Duration(milliseconds: 600));
+  if (!mounted) return;
+  navigator.pop(true);
+}
 
   Future<void> showDeleteDialog() async {
     showDialog(
@@ -1024,6 +1026,18 @@ Future<void> _loadRole() async {
     isSuperAdmin = result;
      isLoadingRole = false;
   });
+}
+
+Future<bool> _isAdmin() async {
+  final user = FirebaseAuth.instance.currentUser;
+  if (user == null || user.email == null) return false;
+
+  final doc = await FirebaseFirestore.instance
+      .collection('admin_whitelist')
+      .doc(user.email!.toLowerCase())
+      .get();
+
+  return doc.exists && doc.data()?['active'] == true;
 }
 
 }
