@@ -12,6 +12,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../core/session/company_session.dart';
 import '../../theme/app_theme.dart';
 import 'spare_part_detail_page_desktop.dart';
+import '../../core/cache/spare_part_cache.dart';
 
 class SparePartListPage extends StatefulWidget {
   final bool isCompact;
@@ -61,6 +62,7 @@ bool get wantKeepAlive => true;
   @override
   void initState() {
     super.initState();
+    _loadFromCache();
     
     if (widget.searchKeyword != null && widget.searchKeyword!.isNotEmpty) {
       searchController.text = widget.searchKeyword!;
@@ -190,6 +192,7 @@ bool get wantKeepAlive => true;
       if (snapshot.docs.isNotEmpty) {
         _lastDocument = snapshot.docs.last;
         _parts = snapshot.docs.map((doc) => SparePart.fromFirestore(doc)).toList();
+        await SparePartCache().save(_parts);
       }
       _hasMore = snapshot.docs.length == _limit;
     } catch (e) {
@@ -211,8 +214,10 @@ bool get wantKeepAlive => true;
       if (snapshot.docs.isNotEmpty) {
         _lastDocument = snapshot.docs.last;
         _parts.addAll(
-          snapshot.docs.map((doc) => SparePart.fromFirestore(doc)),
-        );
+  snapshot.docs.map((doc) => SparePart.fromFirestore(doc)),
+);
+
+await SparePartCache().save(_parts);
       }
      _hasMore = snapshot.docs.length == _limit;
     } catch (e) {
@@ -565,6 +570,16 @@ Widget build(BuildContext context) {
       ),
     );
   }
+  Future<void> _loadFromCache() async {
+  final cache = SparePartCache();
+  final cachedData = await cache.load();
+
+  if (cachedData.isNotEmpty) {
+    setState(() {
+      _parts = cachedData;
+    });
+  }
+}
 }
 
 // =====================================================

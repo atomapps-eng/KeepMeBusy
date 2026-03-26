@@ -79,6 +79,65 @@ class SparePart {
   return SparePart.fromMap(data, doc.id);
 }
 
+factory SparePart.fromJson(Map<String, dynamic> json) {
+  return SparePart(
+    id: json['id'],
+    partCode: json['partCode'],
+    name: json['name'],
+    nameEn: json['nameEn'],
+    location: json['location'],
+
+    stock: json['stock'] ?? 0,
+    initialStock: json['initialStock'] ?? 0,
+    currentStock: json['currentStock'] ?? 0,
+    minimumStock: json['minimumStock'] ?? 0,
+
+    weight: (json['weight'] ?? 0).toDouble(),
+    weightUnit: json['weightUnit'] ?? 'Kg',
+
+    basePriceEur: (json['basePriceEur'] ?? 0).toDouble(),
+
+    imageUrl: json['imageUrl'] ?? '',
+    imageVersion: json['imageVersion'] ?? 0,
+
+    category: SparePartCategory.values.firstWhere(
+      (e) => e.name == json['category'],
+      orElse: () => SparePartCategory.autoCutting,
+    ),
+
+    origin: SparePartOrigin.values.firstWhere(
+      (e) => e.name == json['origin'],
+      orElse: () => SparePartOrigin.local,
+    ),
+  );
+}
+
+Map<String, dynamic> toJson() {
+  return {
+    'id': id,
+    'partCode': partCode,
+    'name': name,
+    'nameEn': nameEn,
+    'location': location,
+
+    'stock': stock,
+    'initialStock': initialStock,
+    'currentStock': currentStock,
+    'minimumStock': minimumStock,
+
+    'weight': weight,
+    'weightUnit': weightUnit,
+
+    'basePriceEur': basePriceEur,
+
+    'imageUrl': imageUrl,
+    'imageVersion': imageVersion,
+
+    'category': category.name,
+    'origin': origin.name,
+  };
+}
+
   factory SparePart.fromMap(Map<String, dynamic> data, String id) {
     return SparePart(
       id: id,
