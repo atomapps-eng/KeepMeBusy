@@ -38,10 +38,27 @@ int safeInt(dynamic value) => (value ?? 0) as int;
 double safeDouble(dynamic value) => (value ?? 0).toDouble();
   
   bool get hasOverStock {
-    return selectedItems.any(
-      (item) => item['qty'] > item['stock'],
-    );
+  final Map<String, int> totalQtyPerPart = {};
+
+  for (var item in selectedItems) {
+    final partId = item['partId'];
+    final qty = item['qty'] as int;
+
+    totalQtyPerPart[partId] =
+        (totalQtyPerPart[partId] ?? 0) + qty;
   }
+
+  for (var item in selectedItems) {
+    final partId = item['partId'];
+    final stock = item['stock'] as int;
+
+    if ((totalQtyPerPart[partId] ?? 0) > stock) {
+      return true;
+    }
+  }
+
+  return false;
+}
 
   double totalAmount = 0;
   double subtotal = 0;
@@ -355,14 +372,33 @@ double safeDouble(dynamic value) => (value ?? 0).toDouble();
               final part = result;
               setState(() {
                 qtyControllers[part.id] = TextEditingController(text: '1');
-                selectedItems.add({
-                  'partId': part.id,
-                  'partCode': part.partCode,
-                  'partName': part.name,
-                  'qty': 1,
-                  'stock': (part.currentStock ?? 0) as int,
-                  'priceEur': part.basePriceEur,
-                });
+                final existingIndex = selectedItems.indexWhere(
+  (e) => e['partId'] == part.id,
+);
+
+if (existingIndex != -1) {
+  // kalau sudah ada → tambah qty
+  final existingItem = selectedItems[existingIndex];
+
+  if (existingItem['qty'] < existingItem['stock']) {
+    existingItem['qty']++;
+    qtyControllers[part.id]!.text =
+        existingItem['qty'].toString();
+  }
+} else {
+  // kalau belum ada → add baru
+  qtyControllers[part.id] =
+      TextEditingController(text: '1');
+
+  selectedItems.add({
+    'partId': part.id,
+    'partCode': part.partCode,
+    'partName': part.name,
+    'qty': 1,
+    'stock': (part.currentStock ?? 0) as int,
+    'priceEur': part.basePriceEur,
+  });
+}
               });
               final companyId = CompanySession.selectedCompanyId!;
               final config = QuotationService.getCurrencyConfig(companyId);

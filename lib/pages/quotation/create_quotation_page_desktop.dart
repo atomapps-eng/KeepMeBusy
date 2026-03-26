@@ -143,53 +143,14 @@ class _CreateQuotationPageDesktopState
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
-        automaticallyImplyLeading: false,
-  title: isEditMode
-      ? const SizedBox() // 🔥 kosongkan di edit mode
-      : Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Icon(
-                Icons.add,
-                size: 20,
-                color: Colors.white,
-              ),
-            ),
-            const SizedBox(width: 12),
-            const Text(
-              'Create Quotation',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
+  automaticallyImplyLeading: false,
+  title: const SizedBox(),
   backgroundColor: Colors.transparent,
   elevation: 0,
-  scrolledUnderElevation: 0, // 🔥 INI WAJIB
-  surfaceTintColor: Colors.transparent, // 🔥 INI WAJIB
+  scrolledUnderElevation: 0,
+  surfaceTintColor: Colors.transparent,
   foregroundColor: Colors.white,
-
-  // 🔥 hilangkan tombol back saat edit mode
-  leading: isEditMode
-      ? null
-      : Container(
-          margin: const EdgeInsets.only(left: 8),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.2),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: IconButton(
-            icon: const Icon(Icons.arrow_back),
-            onPressed: () => Navigator.pop(context),
-          ),
-        ),
+  leading: null,
 ),
       body: Container(
         decoration: BoxDecoration(
@@ -407,7 +368,20 @@ class _CreateQuotationPageDesktopState
   });
 
   if (result != null) {
-    setState(() {
+  setState(() {
+    final existingIndex = selectedItems.indexWhere(
+      (e) => e['partId'] == result.id,
+    );
+
+    if (existingIndex != -1) {
+      // sudah ada → tambah qty
+      final existingItem = selectedItems[existingIndex];
+
+      if (existingItem['qty'] < existingItem['stock']) {
+        existingItem['qty']++;
+      }
+    } else {
+      // belum ada → add baru
       selectedItems.add({
         'partId': result.id,
         'partName': result.name,
@@ -415,9 +389,11 @@ class _CreateQuotationPageDesktopState
         'stock': result.currentStock ?? 0,
         'priceEur': result.basePriceEur,
       });
-    });
-    _recalculateTotal(liveRate ?? rate);
-  }
+    }
+  });
+
+  _recalculateTotal(liveRate ?? rate);
+}
 },
                 borderRadius: BorderRadius.circular(16),
                 child: const Padding(
@@ -617,7 +593,9 @@ class _CreateQuotationPageDesktopState
                                       icon: const Icon(Icons.add, size: 16),
                                       onPressed: () {
                                         setState(() {
-                                          item['qty']++;
+                                          if (item['qty'] < item['stock']) {
+  item['qty']++;
+}
                                         });
                                         _recalculateTotal(liveRate ?? rate);
                                       },

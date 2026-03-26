@@ -25,6 +25,7 @@ import 'package:open_filex/open_filex.dart';
 import 'package:flutter/services.dart';
 import '../../../core/widgets/draggable_window.dart';
 import 'package:flutter/foundation.dart';
+import 'package:universal_html/html.dart' as html;
 //
 
 class TripDetailPage extends StatelessWidget {
@@ -1969,121 +1970,43 @@ pw.Wrap(
       ),
     );
 
-// ==========================
-// ATTACHMENT_PAGE START
-// ==========================
-pdf.addPage(
-  pw.MultiPage(
-    pageFormat: PdfPageFormat.a4,
-    margin: const pw.EdgeInsets.all(24),
-    build: (context) => [
 
-      pw.Text(
-        "ATTACHMENTS",
-        style: pw.TextStyle(
-          fontSize: 18,
-          fontWeight: pw.FontWeight.bold,
-        ),
-      ),
+final pdfBytes = await pdf.save();
 
-      pw.SizedBox(height: 10),
-
-      ...attachments.map((att) {
-        final bytes = attachmentBytes[att["id"]];
-
-        return pw.Container(
-          margin: const pw.EdgeInsets.only(bottom: 12),
-          padding: const pw.EdgeInsets.all(10),
-          decoration: pw.BoxDecoration(
-            border: pw.Border.all(color: PdfColors.grey300),
-            borderRadius: pw.BorderRadius.circular(8),
-          ),
-          child: pw.Row(
-            crossAxisAlignment: pw.CrossAxisAlignment.start,
-            children: [
-
-              /// PREVIEW (IMAGE / LABEL PDF)
-              pw.Container(
-                width: 80,
-                height: 80,
-                child: att["isPdf"]
-                    ? pw.Center(
-                        child: pw.Text(
-                          "PDF",
-                          style: pw.TextStyle(
-                            color: PdfColors.red,
-                            fontWeight: pw.FontWeight.bold,
-                          ),
-                        ),
-                      )
-                    : (bytes != null
-                        ? pw.Image(pw.MemoryImage(bytes), fit: pw.BoxFit.cover)
-                        : pw.Text("No Image")),
-              ),
-
-              pw.SizedBox(width: 10),
-
-              /// INFO + DOWNLOAD LINK
-              pw.Expanded(
-                child: pw.Column(
-                  crossAxisAlignment: pw.CrossAxisAlignment.start,
-                  children: [
-                    pw.Text("Date: ${_formatDate(att["date"])}"),
-
-                    pw.Text(
-                      "Amount: ${currencyFormat.format(att["amount"])} ${att["currency"]}",
-                    ),
-
-                    pw.SizedBox(height: 6),
-
-                    /// 🔥 CLICKABLE DOWNLOAD
-                    pw.UrlLink(
-                      destination: att["url"],
-                      child: pw.Text(
-                        "Download File",
-                        style: pw.TextStyle(
-                          color: PdfColors.blue,
-                          decoration: pw.TextDecoration.underline,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        );
-      }),
-    ],
-  ),
-);
-// ==========================
-// ATTACHMENT_PAGE END
-// ==========================
-
-Directory dir;
+final tripDate =
+    "${trip.startDate.day}-${trip.startDate.month}-${trip.startDate.year}";
+final fileName = "${trip.country},$tripDate.pdf";
 
 if (kIsWeb) {
-  throw Exception("Web tidak support save file seperti ini");
-} else if (defaultTargetPlatform == TargetPlatform.windows ||
-           defaultTargetPlatform == TargetPlatform.linux ||
-           defaultTargetPlatform == TargetPlatform.macOS) {
-  dir = Directory.systemTemp;
+  final blob = html.Blob([pdfBytes]);
+  final url = html.Url.createObjectUrlFromBlob(blob);
+
+  final anchor = html.AnchorElement(href: url)
+    ..setAttribute("download", fileName)
+    ..click();
+
+  html.Url.revokeObjectUrl(url);
+
+  Navigator.pop(context);
 } else {
-  dir = await getTemporaryDirectory();
+  Directory dir;
+
+  if (defaultTargetPlatform == TargetPlatform.windows ||
+      defaultTargetPlatform == TargetPlatform.linux ||
+      defaultTargetPlatform == TargetPlatform.macOS) {
+    dir = Directory.systemTemp;
+  } else {
+    dir = await getTemporaryDirectory();
+  }
+
+  final file = File("${dir.path}/$fileName");
+
+  await file.writeAsBytes(pdfBytes);
+
+  Navigator.pop(context);
+
+  await OpenFilex.open(file.path);
 }
-    final tripDate =
-    "${trip.startDate.day}-${trip.startDate.month}-${trip.startDate.year}";
-
-final file = File(
-  "${dir.path}/${trip.country},$tripDate.pdf",
-);
-
-    await file.writeAsBytes(await pdf.save());
-
-    Navigator.pop(context);
-
-    await OpenFilex.open(file.path);
     
   } catch (e) {
     Navigator.pop(context);
