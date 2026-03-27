@@ -1,12 +1,17 @@
 import 'package:hive/hive.dart';
 import '../../models/spare_part.dart';
+import '../../core/session/company_session.dart';
 
 class SparePartCache {
-  static const String _boxName = 'spare_parts_cache';
+  String _getBoxName() {
+  final companyId = CompanySession.currentCompanyId;
+  return 'spare_parts_cache_$companyId';
+}
 
   Future<Box> _openBox() async {
-    return await Hive.openBox(_boxName);
-  }
+  final boxName = _getBoxName();
+  return await Hive.openBox(boxName);
+}
 
   Future<void> save(List<SparePart> parts) async {
     final box = await _openBox();
@@ -33,4 +38,18 @@ class SparePartCache {
     final box = await _openBox();
     await box.clear();
   }
+
+  Future<bool> isExpired({int minutes = 5}) async {
+  final box = await _openBox();
+
+  final lastUpdated = box.get('lastUpdated');
+
+  if (lastUpdated == null) return true;
+
+  final lastTime = DateTime.parse(lastUpdated);
+  final now = DateTime.now();
+
+  return now.difference(lastTime).inMinutes > minutes;
+}
+
 }

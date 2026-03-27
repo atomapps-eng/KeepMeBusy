@@ -21,4 +21,12 @@ class CompanySession {
     await prefs.remove(_key);
     selectedCompanyId = null;
   }
+
+  static String get currentCompanyId {
+  if (selectedCompanyId == null) {
+    throw Exception('Company belum dipilih / belum load');
+  }
+  return selectedCompanyId!;
+}
+
 }

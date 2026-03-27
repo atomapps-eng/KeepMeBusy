@@ -188,7 +188,7 @@ class _SparePartDetailPageState extends State<SparePartDetailPage> {
               child: const Icon(
                 Icons.inventory,
                 size: 20,
-                color: Colors.white,
+                color: Colors.green,
               ),
             ),
             const SizedBox(width: 12),
@@ -224,7 +224,7 @@ class _SparePartDetailPageState extends State<SparePartDetailPage> {
                 borderRadius: BorderRadius.circular(12),
               ),
               child: IconButton(
-                icon: const Icon(Icons.share, color: Colors.white),
+                icon: const Icon(Icons.share, color: Colors.blue),
                 onPressed: _shareImageWithPartCode,
                 tooltip: 'Share with Part Code',
               ),

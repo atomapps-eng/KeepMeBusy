@@ -65,11 +65,11 @@ bool get wantKeepAlive => true;
     _loadFromCache();
     
     if (widget.searchKeyword != null && widget.searchKeyword!.isNotEmpty) {
-      searchController.text = widget.searchKeyword!;
-      _performSearch(widget.searchKeyword!);
-    } else {
-      _loadInitialData();
-    }
+  searchController.text = widget.searchKeyword!;
+  _performSearch(widget.searchKeyword!);
+} else {
+  _loadFromCache(); // 🔥 hanya ini
+}
 
     _scrollController.addListener(() {
   if (_isFetchingMore) return;
@@ -570,16 +570,25 @@ Widget build(BuildContext context) {
       ),
     );
   }
+
   Future<void> _loadFromCache() async {
   final cache = SparePartCache();
+
   final cachedData = await cache.load();
+  final isExpired = await cache.isExpired();
 
   if (cachedData.isNotEmpty) {
     setState(() {
       _parts = cachedData;
     });
   }
+
+  // 🔥 hanya fetch kalau expired
+  if (isExpired) {
+    _loadInitialData();
+  }
 }
+  
 }
 
 // =====================================================
