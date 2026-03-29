@@ -396,7 +396,33 @@ class OrderInDetailPage extends StatelessWidget {
                                     icon: Icons.edit,
                                     label: 'Edit',
                                     color: const Color(0xFF3B82F6),
-                                    onPressed: () => Navigator.pop(context, data),
+onPressed: () async {
+  final confirm = await showDialog<bool>(
+    context: context,
+    builder: (_) => AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      title: const Text('Edit Order'),
+      content: const Text('Are you sure you want to edit this order?'),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, false),
+          child: const Text('Cancel'),
+        ),
+        ElevatedButton(
+          onPressed: () => Navigator.pop(context, true),
+          child: const Text('Edit'),
+        ),
+      ],
+    ),
+  );
+
+  if (confirm == true) {
+    Navigator.pop(context, {
+      ...data,
+      'id': data['id'],
+    });
+  }
+},
                                   ),
                                 ),
                                 if (isAdmin) const SizedBox(width: 12),

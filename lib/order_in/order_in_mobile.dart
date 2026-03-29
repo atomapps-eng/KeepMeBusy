@@ -182,6 +182,27 @@ class _OrderInPageState extends State<OrderInMobile> {
     final firestoreStock = (snap['currentStock'] as num).toInt();
     final rollbackStock = firestoreStock - current.qty;
 
+    final confirm = await showDialog<bool>(
+  context: context,
+  builder: (_) => AlertDialog(
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+    title: const Text('Edit Quantity'),
+    content: const Text('Do you want to change the quantity of this item?'),
+    actions: [
+      TextButton(
+        onPressed: () => Navigator.pop(context, false),
+        child: const Text('Cancel'),
+      ),
+      ElevatedButton(
+        onPressed: () => Navigator.pop(context, true),
+        child: const Text('Continue'),
+      ),
+    ],
+  ),
+);
+
+if (confirm != true) return;
+
     final partForEdit = SparePart(
       id: current.part.id,
       partCode: current.part.partCode,
@@ -286,6 +307,28 @@ class _OrderInPageState extends State<OrderInMobile> {
   }
 
   Future<void> _commitOrderIn() async {
+
+    final confirm = await showDialog<bool>(
+  context: context,
+  builder: (_) => AlertDialog(
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+    title: const Text('Save Order'),
+    content: const Text('Are you sure you want to save this order?'),
+    actions: [
+      TextButton(
+        onPressed: () => Navigator.pop(context, false),
+        child: const Text('Cancel'),
+      ),
+      ElevatedButton(
+        onPressed: () => Navigator.pop(context, true),
+        child: const Text('Save'),
+      ),
+    ],
+  ),
+);
+
+if (confirm != true) return;
+
     if (_isSaving) return;
     setState(() => _isSaving = true);
 
@@ -391,19 +434,36 @@ class _OrderInPageState extends State<OrderInMobile> {
           tx.update(CompanyFirestore.collection('spare_parts').doc(entry.key), { 'currentStock': entry.value });
         }
 
-        tx.update(orderRef, {
-          'orderDate': Timestamp.fromDate(orderDate!),
-          'client': selectedClient,
-          'poNumber': poController.text.trim().toUpperCase(),
-          'items': items.map((e) => ({
-            'partId': e.part.id,
-            'partCode': e.part.partCode,
-            'nameEn': e.part.nameEn,
-            'qty': e.qty,
-            'location': e.part.location,
-          })).toList(),
-          'updatedAt': FieldValue.serverTimestamp(),
-        });
+        // 🔥 HITUNG ULANG SUMMARY
+int totalItem = items.length;
+int totalQty = 0;
+double totalWeight = 0;
+
+for (final item in items) {
+  totalQty += item.qty;
+  totalWeight += item.part.weight * item.qty;
+}
+
+tx.update(orderRef, {
+  'orderDate': Timestamp.fromDate(orderDate!),
+  'client': selectedClient,
+  'poNumber': poController.text.trim().toUpperCase(),
+
+  'items': items.map((e) => ({
+    'partId': e.part.id,
+    'partCode': e.part.partCode,
+    'nameEn': e.part.nameEn,
+    'qty': e.qty,
+    'location': e.part.location,
+  })).toList(),
+
+  // 🔥 INI YANG SEBELUMNYA HILANG
+  'totalItem': totalItem,
+  'totalQty': totalQty,
+  'totalWeight': totalWeight,
+
+  'updatedAt': FieldValue.serverTimestamp(),
+});
       });
 
       if (!mounted) return;
@@ -684,9 +744,43 @@ class _OrderInPageState extends State<OrderInMobile> {
                     child: isCreateMode ? _buildCreateForm() : _OrderInListView(
                       searchKeyword: fullscreenSearchController.text, filterDate: fullscreenFilterDate,
                       onTap: (context, data) async {
-                        final result = await Navigator.push(context, MaterialPageRoute(builder: (_) => OrderInDetailPage(data: data)));
-                        if (result != null && context.mounted) _openEditOrder(result);
-                      },
+                   
+  final isDesktop = MediaQuery.of(context).size.width >= 900;
+
+  final dataWithId = {
+    ...data,
+    'id': data['id'],
+  };
+
+  Map<String, dynamic>? result;
+
+  if (isDesktop) {
+    result = await showGeneralDialog<Map<String, dynamic>>(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: "OrderInDetail",
+      barrierColor: Colors.black.withOpacity(0.35),
+      transitionDuration: const Duration(milliseconds: 200),
+      pageBuilder: (_, __, ___) {
+        return DraggableResizableWindow(
+          title: "Order In Detail",
+          child: OrderInDetailPage(data: dataWithId),
+        );
+      },
+    );
+  } else {
+    result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => OrderInDetailPage(data: dataWithId),
+      ),
+    );
+  }
+
+  if (result != null && context.mounted) {
+    _openEditOrder(result);
+  }
+},
                       onDelete: (orderId, data) => _deleteOrder(context, orderId, data),
                       onEdit: (data) async {
                         final confirm = await _confirmEditOrder(context);
@@ -742,7 +836,12 @@ class _OrderInListView extends StatelessWidget {
             final data = docs[i].data() as Map<String, dynamic>;
             final orderId = docs[i].id;
             return InkWell(
-              onTap: () => onTap(context, data),
+              onTap: () {
+  onTap(context, {
+    ...data,
+    'id': orderId,
+  });
+},
               child: _OrderHistoryCard(data: {...data, 'id': orderId}, isFullscreen: true, onDelete: () => onDelete(orderId, data), onEdit: () => onEdit({...data, 'id': orderId})),
             );
           },

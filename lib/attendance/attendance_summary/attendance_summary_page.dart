@@ -183,36 +183,24 @@ class _AttendanceSummaryPageState extends State<AttendanceSummaryPage> {
                               ),
                             ),
                             const SizedBox(width: 4),
-                            PopupMenuButton<String>(
-                              offset: const Offset(0, 40),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              onSelected: _changePeriod,
-                              itemBuilder: (context) {
-                                return _availablePeriods.map((period) {
-                                  return PopupMenuItem<String>(
-                                    value: period,
-                                    child: Text(
-                                      period,
-                                      style: TextStyle(
-                                        fontWeight: period == _selectedPeriod 
-                                            ? FontWeight.bold 
-                                            : FontWeight.normal,
-                                        color: period == _selectedPeriod 
-                                            ? AppTheme.primaryColor 
-                                            : null,
-                                      ),
-                                    ),
-                                  );
-                                }).toList();
-                              },
-                              child: Icon(
-                                Icons.arrow_drop_down,
-                                size: 20,
-                                color: AppTheme.primaryColor,
-                              ),
-                            ),
+                            Builder(
+  builder: (ctx) {
+    return GestureDetector(
+      onTap: () {
+        _showPeriodDropdown(ctx);
+      },
+      child: Row(
+        children: [
+          Icon(
+            Icons.arrow_drop_down,
+            size: 20,
+            color: AppTheme.primaryColor,
+          ),
+        ],
+      ),
+    );
+  },
+)
                           ],
                         ),
                       ),
@@ -1409,6 +1397,59 @@ class _AttendanceSummaryPageState extends State<AttendanceSummaryPage> {
       ],
     ),
   );
+}
+
+void _showPeriodDropdown(BuildContext context) {
+  final overlay = Overlay.of(context, rootOverlay: true);
+  late OverlayEntry entry;
+
+  final renderBox = context.findRenderObject() as RenderBox;
+  final position = renderBox.localToGlobal(Offset.zero);
+
+  entry = OverlayEntry(
+    builder: (context) {
+      return Positioned(
+        left: position.dx,
+        top: position.dy + renderBox.size.height + 4,
+        width: 200,
+        child: Material(
+          elevation: 8,
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            constraints: const BoxConstraints(maxHeight: 300),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: ListView(
+              shrinkWrap: true,
+              children: _availablePeriods.map((period) {
+                return ListTile(
+                  title: Text(
+                    period,
+                    style: TextStyle(
+                      fontWeight: period == _selectedPeriod
+                          ? FontWeight.bold
+                          : FontWeight.normal,
+                      color: period == _selectedPeriod
+                          ? AppTheme.primaryColor
+                          : null,
+                    ),
+                  ),
+                  onTap: () {
+                    _changePeriod(period);
+                    entry.remove();
+                  },
+                );
+              }).toList(),
+            ),
+          ),
+        ),
+      );
+    },
+  );
+
+  overlay.insert(entry);
 }
 
 }

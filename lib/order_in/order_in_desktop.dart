@@ -81,10 +81,7 @@ class OrderInDesktop extends StatelessWidget {
                             return DraggableResizableWindow(
                               title: "Order History",
                               child: OrderInDesktopHistory(
-                                onEdit: (context, data) {
-
-                                  Navigator.pop(context); // tutup history
-
+                                onEdit: (context, data) { // tutup history
                                   showGeneralDialog(
                                     context: context,
                                     barrierDismissible: false,

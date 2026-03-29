@@ -8,6 +8,8 @@ import '../../theme/app_theme.dart';
 import '../../services/partner_service.dart';
 import '../../models/partner.dart';
 import '../models/activity_entry.dart';
+import '../../core/widgets/draggable_window.dart';
+import 'dart:async';
 
 class ActivityDetailPage extends StatelessWidget {
   final String employeeId;
@@ -919,26 +921,53 @@ if (createdAt != null)
   Future<void> _editActivity(BuildContext context) async {
     final navigator = Navigator.of(context);
 
-    final result = await navigator.push(
-      MaterialPageRoute(
-  builder: (_) => ActivityFormPage(
-    attendanceDate: (activity['date'] as Timestamp).toDate(),
-    customerId: activity['customerId'] ?? '',
-    existingActivity: ActivityEntry(
-      date: (activity['date'] as Timestamp).toDate(),
-      factoryId: activity['factoryId'] ?? '',
-      factoryClient: activity['factoryClient'] ?? '',
-      customerId: activity['customerId'] ?? '',
-      machine: activity['machine'] ?? '',
-      serialNumber: activity['serialNumber'] ?? '',
-      activityType: activity['activityType'] ?? '',
-      description: activity['description'] ?? '',
-      status: activity['status'] ?? '',
-      note: activity['note'] ?? '',
-    ),
-  ),
-),
-    );
+    final isDesktop = MediaQuery.of(context).size.width >= 900;
+
+dynamic result;
+
+if (isDesktop) {
+  final overlay = Overlay.of(context, rootOverlay: true);
+  late OverlayEntry entry;
+
+  final completer = Completer<dynamic>();
+
+  entry = OverlayEntry(
+    builder: (context) {
+      return Positioned.fill(
+        child: Material(
+          color: Colors.transparent,
+          child: DraggableResizableWindow(
+            title: "Edit Activity",
+            headerColor: Colors.blue,
+            onClose: () {
+              entry.remove();
+              completer.complete(null);
+            },
+            child: ActivityFormPage(
+              attendanceDate: (activity['date'] as Timestamp).toDate(),
+              customerId: activity['customerId'] ?? '',
+              existingActivity: ActivityEntry(
+                date: (activity['date'] as Timestamp).toDate(),
+                factoryId: activity['factoryId'] ?? '',
+                factoryClient: activity['factoryClient'] ?? '',
+                customerId: activity['customerId'] ?? '',
+                machine: activity['machine'] ?? '',
+                serialNumber: activity['serialNumber'] ?? '',
+                activityType: activity['activityType'] ?? '',
+                description: activity['description'] ?? '',
+                status: activity['status'] ?? '',
+                note: activity['note'] ?? '',
+              ),
+            ),
+          ),
+        ),
+      );
+    },
+  );
+
+  overlay.insert(entry);
+  result = await completer.future;
+}
 
     if (result == null) return;
     if (!context.mounted) return;

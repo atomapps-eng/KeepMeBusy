@@ -12,11 +12,15 @@ import '../../core/services/firestore_tracker.dart';
 
 class OrderOutDetailPage extends StatefulWidget {
   final Map<String, dynamic> data;
+  final bool isWindow;
+final Function(Map<String, dynamic>)? onEdit;
 
   const OrderOutDetailPage({
-    super.key,
-    required this.data,
-  });
+  super.key,
+  required this.data,
+  this.isWindow = false,
+  this.onEdit,
+});
 
   @override
   State<OrderOutDetailPage> createState() => _OrderOutDetailPageState();
@@ -71,7 +75,7 @@ class _OrderOutDetailPageState extends State<OrderOutDetailPage> {
     final totalWeight = (data['totalWeight'] ?? 0).toDouble();
     final date = data['orderDate'] != null ? (data['orderDate'] as Timestamp).toDate() : null;
 
-    return Scaffold(
+    final scaffold = Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         title: Row(
@@ -447,7 +451,38 @@ class _OrderOutDetailPageState extends State<OrderOutDetailPage> {
                                     icon: Icons.edit,
                                     label: 'Edit',
                                     color: const Color(0xFF3B82F6),
-                                    onPressed: () => Navigator.pop(context, data),
+onPressed: () async {
+  final confirm = await showDialog<bool>(
+    context: context,
+    builder: (_) => AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      title: const Text('Edit Order'),
+      content: const Text('Are you sure you want to edit this order?'),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, false),
+          child: const Text('Cancel'),
+        ),
+        ElevatedButton(
+          onPressed: () => Navigator.pop(context, true),
+          child: const Text('Edit'),
+        ),
+      ],
+    ),
+  );
+
+ if (widget.onEdit != null) {
+  widget.onEdit!({
+    ...data,
+    'id': widget.data['id'],
+  });
+} else {
+  Navigator.pop(context, {
+    ...data,
+    'id': widget.data['id'],
+  });
+}
+},
                                   ),
                                 ),
                                 if (isAdmin) const SizedBox(width: 12),
@@ -493,6 +528,11 @@ class _OrderOutDetailPageState extends State<OrderOutDetailPage> {
         ),
       ),
     );
+    if (widget.isWindow) {
+  return scaffold.body!;
+}
+
+return scaffold;
   }
 
   Widget _infoRow(String label, String value, IconData icon) {

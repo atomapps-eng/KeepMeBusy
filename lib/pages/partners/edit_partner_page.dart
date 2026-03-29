@@ -9,8 +9,13 @@ import '../../theme/app_theme.dart';
 
 class EditPartnerPage extends StatefulWidget {
   final Partner partner;
+  final bool isWindow;
 
-  const EditPartnerPage({super.key, required this.partner});
+  const EditPartnerPage({
+    super.key,
+    required this.partner,
+    this.isWindow = false,
+  });
 
   @override
   State<EditPartnerPage> createState() => _EditPartnerPageState();
@@ -26,7 +31,7 @@ class _EditPartnerPageState extends State<EditPartnerPage> with TickerProviderSt
   late TextEditingController phoneController;
   late TextEditingController emailController;
   late TextEditingController cityController;
-late TextEditingController countryController;
+  late TextEditingController countryController;
 
   File? selectedImage;
   late String currentLogoUrl;
@@ -60,11 +65,10 @@ late TextEditingController countryController;
         text: widget.partner.phone ?? '');
     emailController = TextEditingController(
         text: widget.partner.email ?? '');
-        cityController = TextEditingController(
-    text: widget.partner.city ?? '');
-
-countryController = TextEditingController(
-    text: widget.partner.country ?? '');
+    cityController = TextEditingController(
+        text: widget.partner.city ?? '');
+    countryController = TextEditingController(
+        text: widget.partner.country ?? '');
     currentLogoUrl = widget.partner.logoUrl;
   }
 
@@ -99,7 +103,7 @@ countryController = TextEditingController(
     phoneController.dispose();
     emailController.dispose();
     cityController.dispose();
-countryController.dispose();
+    countryController.dispose();
     _animationController.dispose();
     super.dispose();
   }
@@ -135,30 +139,30 @@ countryController.dispose();
       }
 
       await service.updatePartner(
-  id: widget.partner.id,
-  name: nameController.text.trim(),
-  address: addressController.text.trim(),
-  category: widget.partner.category,
-  lat: latController.text.isEmpty
-      ? null
-      : double.tryParse(latController.text),
-  lng: lngController.text.isEmpty
-      ? null
-      : double.tryParse(lngController.text),
-  phone: phoneController.text.trim().isEmpty
-      ? null
-      : phoneController.text.trim(),
-  email: emailController.text.trim().isEmpty
-      ? null
-      : emailController.text.trim(),
-  city: cityController.text.trim().isEmpty
-      ? null
-      : cityController.text.trim(),
-  country: countryController.text.trim().isEmpty
-      ? null
-      : countryController.text.trim(),
-  logoUrl: logoUrl ?? '',
-);
+        id: widget.partner.id,
+        name: nameController.text.trim(),
+        address: addressController.text.trim(),
+        category: widget.partner.category,
+        lat: latController.text.isEmpty
+            ? null
+            : double.tryParse(latController.text),
+        lng: lngController.text.isEmpty
+            ? null
+            : double.tryParse(lngController.text),
+        phone: phoneController.text.trim().isEmpty
+            ? null
+            : phoneController.text.trim(),
+        email: emailController.text.trim().isEmpty
+            ? null
+            : emailController.text.trim(),
+        city: cityController.text.trim().isEmpty
+            ? null
+            : cityController.text.trim(),
+        country: countryController.text.trim().isEmpty
+            ? null
+            : countryController.text.trim(),
+        logoUrl: logoUrl ?? '',
+      );
 
       if (!mounted) return;
       
@@ -202,7 +206,7 @@ countryController.dispose();
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
+              backgroundColor: const Color(0xFFEF4444),
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
@@ -226,7 +230,7 @@ countryController.dispose();
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.green.withValues(alpha:0.1),
+                color: Colors.green.withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
@@ -241,13 +245,14 @@ countryController.dispose();
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
+                color: Color(0xFF0F172A),
               ),
             ),
             const SizedBox(height: 8),
             const Text(
               'Partner has been updated successfully',
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.black54),
+              style: TextStyle(color: Color(0xFF64748B)),
             ),
             const SizedBox(height: 16),
             ElevatedButton(
@@ -256,7 +261,7 @@ countryController.dispose();
                 Navigator.pop(context);
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blueGrey,
+                backgroundColor: const Color(0xFF2563EB),
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                 minimumSize: const Size(double.infinity, 45),
@@ -282,7 +287,7 @@ countryController.dispose();
             Expanded(child: Text(msg)),
           ],
         ),
-        backgroundColor: isError ? Colors.red : Colors.green,
+        backgroundColor: isError ? const Color(0xFFEF4444) : const Color(0xFF10B981),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         margin: const EdgeInsets.all(16),
@@ -292,260 +297,277 @@ countryController.dispose();
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => FocusScope.of(context).unfocus(),
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        body: Stack(
-          children: [
-            // ===== MODERN BACKGROUND =====
-            Container(
-              decoration: BoxDecoration(
-  gradient: AppTheme.backgroundGradient,
-),
+    final scaffold = Scaffold(
+      backgroundColor: Colors.transparent,
+      body: Stack(
+        children: [
+          // Background Gradient
+          Container(
+            decoration: BoxDecoration(
+              gradient: AppTheme.backgroundGradient,
             ),
-
-            SafeArea(
-              child: Column(
-                children: [
-                  // ===== HEADER =====
-                  FadeTransition(
+          ),
+          SafeArea(
+            child: Column(
+              children: [
+                FadeTransition(
+                  opacity: _fadeAnimation,
+                  child: _buildModernHeader(),
+                ),
+                Expanded(
+                  child: FadeTransition(
                     opacity: _fadeAnimation,
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: _buildModernHeader(),
-                    ),
-                  ),
-
-                  // ===== MAIN CONTENT =====
-                  Expanded(
-                    child: FadeTransition(
-                      opacity: _fadeAnimation,
-                      child: SlideTransition(
-                        position: _slideAnimation,
-                        child: SingleChildScrollView(
-                          physics: const BouncingScrollPhysics(),
-                          padding: const EdgeInsets.all(16),
-                          child: Form(
-                            key: _formKey,
-                            child: Column(
-                              children: [
-                                _buildLogoSection(),
-                                const SizedBox(height: 24),
-                                _buildFormSections(),
-                                const SizedBox(height: 24),
-                                _buildActionButtons(),
-                                const SizedBox(height: 20),
-                              ],
+                    child: SlideTransition(
+                      position: _slideAnimation,
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.all(20),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.95),
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.grey.shade200.withOpacity(0.5),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(24),
+                            child: Form(
+                              key: _formKey,
+                              child: Column(
+                                children: [
+                                  _buildModernLogoSec(),
+                                  const SizedBox(height: 24),
+                                  _buildModernFormSections(),
+                                  const SizedBox(height: 32),
+                                  _buildModernActionButtons(),
+                                  const SizedBox(height: 8),
+                                ],
+                              ),
                             ),
                           ),
                         ),
                       ),
                     ),
                   ),
-                ],
-              ),
-            ),
-
-            // ===== LOADING OVERLAY =====
-            if (isSaving || isDeleting)
-              Container(
-                color: Colors.black.withValues(alpha:0.3),
-                child: Center(
-                  child: _buildLoadingIndicator(),
                 ),
-              ),
-          ],
-        ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
+
+    final content = GestureDetector(
+      onTap: () => FocusScope.of(context).unfocus(),
+      child: scaffold,
+    );
+
+    if (widget.isWindow) {
+      return scaffold.body!;
+    }
+
+    return content;
   }
 
   Widget _buildModernHeader() {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(20),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha:0.2),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.white.withValues(alpha:0.3)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha:0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+      child: Row(
+        children: [
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: IconButton(
+              icon: const Icon(Icons.arrow_back, color: Color(0xFF0F172A)),
+              onPressed: () => Navigator.pop(context),
+            ),
           ),
-          child: Row(
-            children: [
-              Container(
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white.withValues(alpha:0.3),
-                ),
-                child: IconButton(
-                  icon: const Icon(Icons.arrow_back, color: Colors.black87),
-                  onPressed: () => Navigator.pop(context),
-                ),
-              ),
-              const SizedBox(width: 12),
-              const Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Edit Partner',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Text(
-                    'Update partner information',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.black54,
-                    ),
-                  ),
-                ],
-              ),
-              const Spacer(),
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha:0.3),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(Icons.edit_note, size: 20),
-              ),
-            ],
+          const SizedBox(width: 12),
+          const Text(
+            'Edit Partner',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF0F172A),
+            ),
           ),
-        ),
+          const Spacer(),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: const Color(0xFFEFF6FF),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.edit_note, size: 16, color: Color(0xFF2563EB)),
+                const SizedBox(width: 6),
+                Text(
+                  widget.partner.category.toUpperCase(),
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                    color: Color(0xFF2563EB),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildLogoSection() {
+  Widget _buildModernLogoSec() {
     return Center(
-      child: GestureDetector(
-        onTap: pickLogo,
-        child: Stack(
-          children: [
-            Container(
-              width: 140,
-              height: 140,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha:0.1),
-                    blurRadius: 20,
-                    offset: const Offset(0, 8),
+      child: Column(
+        children: [
+          GestureDetector(
+            onTap: pickLogo,
+            child: Stack(
+              children: [
+                Container(
+                  width: 120,
+                  height: 120,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(60),
+                    border: Border.all(
+                      color: Colors.grey.shade200,
+                      width: 2,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.shade100,
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-              child: ClipOval(
-                child: Container(
-                  color: Colors.white.withValues(alpha:0.3),
-                  child: selectedImage != null
-                      ? Image.file(selectedImage!, fit: BoxFit.cover)
-                      : (currentLogoUrl.isNotEmpty
-                          ? Image.network(currentLogoUrl, fit: BoxFit.cover)
-                          : Container(
-                              color: Colors.blueGrey.withValues(alpha:0.1),
-                              child: const Icon(
-                                Icons.business,
-                                size: 50,
-                                color: Colors.blueGrey,
-                              ),
-                            )),
+                  child: ClipOval(
+                    child: selectedImage != null
+                        ? Image.file(selectedImage!, fit: BoxFit.cover)
+                        : (currentLogoUrl.isNotEmpty
+                            ? Image.network(currentLogoUrl, fit: BoxFit.cover)
+                            : Container(
+                                color: const Color(0xFFEFF6FF),
+                                child: const Icon(
+                                  Icons.business,
+                                  size: 50,
+                                  color: Color(0xFF2563EB),
+                                ),
+                              )),
+                  ),
                 ),
-              ),
+                Positioned(
+                  bottom: 0,
+                  right: 0,
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF2563EB),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 3),
+                    ),
+                    child: const Icon(
+                      Icons.camera_alt,
+                      color: Colors.white,
+                      size: 16,
+                    ),
+                  ),
+                ),
+              ],
             ),
-            Positioned(
-              bottom: 0,
-              right: 0,
-              child: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.blueGrey,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white, width: 2),
-                ),
-                child: const Icon(
-                  Icons.camera_alt,
-                  color: Colors.white,
-                  size: 20,
-                ),
-              ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Company Logo',
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.grey.shade500,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildFormSections() {
+  Widget _buildModernFormSections() {
     return Column(
       children: [
-        _buildSectionCard(
-          icon: Icons.business,
+        _buildModernSectionCard(
+          icon: Icons.business_outlined,
           title: 'Basic Information',
           children: [
             _buildModernInput(
               controller: nameController,
               label: 'Partner Name',
-              icon: Icons.business,
+              icon: Icons.business_outlined,
               required: true,
             ),
+            const SizedBox(height: 16),
             _buildModernInput(
               controller: addressController,
               label: 'Address',
-              icon: Icons.location_on,
+              icon: Icons.location_on_outlined,
               maxLines: 2,
             ),
-            _buildModernInput(
-  controller: cityController,
-  label: 'City',
-  icon: Icons.location_city,
-),
-
-_buildModernInput(
-  controller: countryController,
-  label: 'Country',
-  icon: Icons.public,
-),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildModernInput(
+                    controller: cityController,
+                    label: 'City',
+                    icon: Icons.location_city_outlined,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: _buildModernInput(
+                    controller: countryController,
+                    label: 'Country',
+                    icon: Icons.public_outlined,
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
         
-        const SizedBox(height: 16),
+        const SizedBox(height: 20),
         
-        _buildSectionCard(
-          icon: Icons.contact_page,
+        _buildModernSectionCard(
+          icon: Icons.contact_phone_outlined,
           title: 'Contact Information',
           children: [
             _buildModernInput(
               controller: phoneController,
               label: 'Phone Number',
-              icon: Icons.phone,
+              icon: Icons.phone_outlined,
               keyboard: TextInputType.phone,
             ),
+            const SizedBox(height: 16),
             _buildModernInput(
               controller: emailController,
               label: 'Email Address',
-              icon: Icons.email,
+              icon: Icons.email_outlined,
               keyboard: TextInputType.emailAddress,
             ),
           ],
         ),
         
-        const SizedBox(height: 16),
+        const SizedBox(height: 20),
         
-        _buildSectionCard(
-          icon: Icons.map,
+        _buildModernSectionCard(
+          icon: Icons.map_outlined,
           title: 'Location Coordinates',
           children: [
             Row(
@@ -558,7 +580,7 @@ _buildModernInput(
                     keyboard: const TextInputType.numberWithOptions(decimal: true),
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 16),
                 Expanded(
                   child: _buildModernInput(
                     controller: lngController,
@@ -575,55 +597,50 @@ _buildModernInput(
     );
   }
 
-  Widget _buildSectionCard({
+  Widget _buildModernSectionCard({
     required IconData icon,
     required String title,
     required List<Widget> children,
   }) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(20),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-        child: Container(
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha:0.2),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.white.withValues(alpha:0.3)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.blueGrey.withValues(alpha:0.2),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Icon(icon, size: 18, color: Colors.blueGrey),
-                    ),
-                    const SizedBox(width: 12),
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade100),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEFF6FF),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(icon, size: 18, color: const Color(0xFF2563EB)),
                 ),
-              ),
-              const Divider(height: 1, thickness: 0.5),
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(children: children),
-              ),
-            ],
+                const SizedBox(width: 12),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF0F172A),
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
+          const Divider(height: 1, color: Color(0xFFE2E8F0)),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(children: children),
+          ),
+        ],
       ),
     );
   }
@@ -636,172 +653,118 @@ _buildModernInput(
     int maxLines = 1,
     TextInputType keyboard = TextInputType.text,
   }) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: TextFormField(
-        controller: controller,
-        maxLines: maxLines,
-        keyboardType: keyboard,
-        validator: required
-            ? (v) => v == null || v.isEmpty ? 'This field is required' : null
-            : null,
-        style: const TextStyle(fontSize: 14),
-        decoration: InputDecoration(
-          labelText: label,
-          labelStyle: const TextStyle(color: Colors.black54),
-          prefixIcon: icon != null ? Icon(icon, size: 18, color: Colors.blueGrey) : null,
-          filled: true,
-          fillColor: Colors.white.withValues(alpha:0.3),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide.none,
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: Colors.white.withValues(alpha:0.5)),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Colors.blueGrey, width: 2),
-          ),
-          errorBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: Colors.red.shade300),
-          ),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildActionButtons() {
-    return Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(
-          child: Container(
-            height: 50,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.blueGrey.withValues(alpha:0.3),
-                  blurRadius: 8,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: ElevatedButton(
-              onPressed: isSaving ? null : updatePartner,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blueGrey.shade700,
-                foregroundColor: Colors.white,
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  if (!isSaving) const Icon(Icons.save, size: 18),
-                  if (isSaving)
-                    const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(
-                        color: Colors.white,
-                        strokeWidth: 2,
-                      ),
-                    ),
-                  const SizedBox(width: 8),
-                  Text(isSaving ? 'Saving...' : 'Save Changes'),
-                ],
+        Row(
+          children: [
+            if (icon != null) ...[
+              Icon(icon, size: 14, color: const Color(0xFF64748B)),
+              const SizedBox(width: 6),
+            ],
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                color: Color(0xFF475569),
               ),
             ),
-          ),
+            if (required)
+              const Text(
+                ' *',
+                style: TextStyle(color: Color(0xFFEF4444), fontSize: 12),
+              ),
+          ],
         ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Container(
-            height: 50,
-            decoration: BoxDecoration(
+        const SizedBox(height: 6),
+        TextFormField(
+          controller: controller,
+          maxLines: maxLines,
+          keyboardType: keyboard,
+          validator: required
+              ? (v) => v == null || v.isEmpty ? 'Required' : null
+              : null,
+          style: const TextStyle(fontSize: 14, color: Color(0xFF0F172A)),
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: Colors.white,
+            border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.red.withValues(alpha:0.3),
-                  blurRadius: 8,
-                  offset: const Offset(0, 4),
-                ),
-              ],
+              borderSide: BorderSide.none,
             ),
-            child: ElevatedButton(
-              onPressed: isDeleting ? null : deletePartner,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red.shade400,
-                foregroundColor: Colors.white,
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  if (!isDeleting) const Icon(Icons.delete_outline, size: 18),
-                  if (isDeleting)
-                    const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(
-                        color: Colors.white,
-                        strokeWidth: 2,
-                      ),
-                    ),
-                  const SizedBox(width: 8),
-                  Text(isDeleting ? 'Deleting...' : 'Delete'),
-                ],
-              ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey.shade200),
             ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xFF2563EB), width: 2),
+            ),
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xFFEF4444)),
+            ),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildLoadingIndicator() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha:0.9),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha:0.1),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const SizedBox(
-            width: 40,
-            height: 40,
-            child: CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(Colors.blueGrey),
+  Widget _buildModernActionButtons() {
+    return Row(
+      children: [
+        Expanded(
+          child: ElevatedButton.icon(
+            onPressed: isSaving ? null : updatePartner,
+            icon: isSaving
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  )
+                : const Icon(Icons.save_outlined, size: 18),
+            label: Text(isSaving ? 'Saving...' : 'Save Changes'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF2563EB),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
           ),
-          const SizedBox(height: 16),
-          Text(
-            isSaving ? 'Updating partner...' : 'Deleting partner...',
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: OutlinedButton.icon(
+            onPressed: isDeleting ? null : deletePartner,
+            icon: isDeleting
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFEF4444)),
+                    ),
+                  )
+                : const Icon(Icons.delete_outline, size: 18),
+            label: Text(isDeleting ? 'Deleting...' : 'Delete'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: const Color(0xFFEF4444),
+              side: const BorderSide(color: Color(0xFFEF4444)),
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

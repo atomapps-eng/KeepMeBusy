@@ -21,6 +21,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../models/activity_entry.dart';
 import '../../core/services/firestore_tracker.dart';
 import '../../core/widgets/draggable_window.dart';
+import 'package:dropdown_button2/dropdown_button2.dart';
 
 class AttendancePage extends StatefulWidget {
   final String employeeId;
@@ -2231,49 +2232,36 @@ overlay2.insert(entry2);
                 color: AppTheme.primaryColor.withValues(alpha:0.3),
               ),
             ),
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<String>(
-                value: currentValue,
-                isExpanded: true,
-                icon: const Icon(Icons.keyboard_arrow_down_rounded),
-                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Colors.black87),
-                items: [
-                  const DropdownMenuItem(
-                    value: 'ALL',
-                    child: Row(
-                      children: [
-                        Icon(Icons.all_inclusive, size: 16, color: Colors.grey),
-                        SizedBox(width: 8),
-                        Text('All Period'),
-                      ],
-                    ),
-                  ),
-                  ...availablePeriods.map(
-                    (p) => DropdownMenuItem(
-                      value: p,
-                      child: Row(
-                        children: [
-                          Icon(Icons.calendar_month, size: 16, color: AppTheme.primaryColor),
-                          SizedBox(width: 8),
-                          Text(_formatPeriod(p)),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-                onChanged: (value) {
-                  if (value == null) return;
-                  setState(() {
-                    if (value == 'ALL') {
-                      _isAllPeriod = true;
-                    } else {
-                      _isAllPeriod = false;
-                      _selectedPeriod = value;
-                    }
-                  });
-                },
+            child: Builder(
+  builder: (ctx) {
+    return GestureDetector(
+      onTap: () {
+        _showPeriodDropdown(ctx, availablePeriods);
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey.shade300),
+          color: Colors.white.withValues(alpha: 0.7),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                currentValue == 'ALL'
+                    ? 'All Period'
+                    : _formatPeriod(currentValue ?? ''),
+                style: const TextStyle(fontSize: 14),
               ),
             ),
+            const Icon(Icons.keyboard_arrow_down),
+          ],
+        ),
+      ),
+    );
+  },
+)
           ),
         ],
       ),
@@ -2506,6 +2494,63 @@ void _updateProgress(double value, String text) {
     _progress = value;
     _progressText = text;
   });
+}
+
+void _showPeriodDropdown(BuildContext context, List<String> availablePeriods) {
+  final overlay = Overlay.of(context, rootOverlay: true);
+  late OverlayEntry entry;
+
+  final renderBox = context.findRenderObject() as RenderBox;
+  final position = renderBox.localToGlobal(Offset.zero);
+
+  entry = OverlayEntry(
+    builder: (context) {
+      return Positioned(
+        left: position.dx,
+        top: position.dy + renderBox.size.height + 4,
+        width: renderBox.size.width,
+        child: Material(
+          elevation: 8,
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            constraints: const BoxConstraints(maxHeight: 300),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: ListView(
+              shrinkWrap: true,
+              children: [
+                ListTile(
+                  title: const Text('All Period'),
+                  onTap: () {
+                    setState(() {
+                      _isAllPeriod = true;
+                    });
+                    entry.remove();
+                  },
+                ),
+                ...availablePeriods.map(
+                  (p) => ListTile(
+                    title: Text(_formatPeriod(p)),
+                    onTap: () {
+                      setState(() {
+                        _isAllPeriod = false;
+                        _selectedPeriod = p;
+                      });
+                      entry.remove();
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    },
+  );
+
+  overlay.insert(entry);
 }
 
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'dart:ui';
 import '../../../models/trip_model.dart';
 import '../models/trip_ledger_item.dart';
@@ -18,6 +19,9 @@ class TransactionListPage extends StatelessWidget {
 
   final TripTransferService transferService = TripTransferService();
   final TripExpenseService expenseService = TripExpenseService();
+
+  final NumberFormat _currencyFormatter =
+    NumberFormat('#,##0', 'id_ID');
 
   TransactionListPage({super.key, required this.trip});
 
@@ -473,7 +477,7 @@ Widget _buildTransactionCard(BuildContext context, TripLedgerItem item) {
                   border: Border.all(color: color.withValues(alpha:0.3)),
                 ),
                 child: Text(
-                  '${isDebit ? '+' : '-'} ${item.amount.toStringAsFixed(2)}',
+                  '${isDebit ? '+' : '-'} ${_currencyFormatter.format(item.amount)}',
                   style: TextStyle(
                     color: color,
                     fontWeight: FontWeight.w600,

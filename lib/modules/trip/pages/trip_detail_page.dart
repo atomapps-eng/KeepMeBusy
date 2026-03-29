@@ -45,7 +45,7 @@ class TripDetailPage extends StatelessWidget {
   }
 
   final NumberFormat _currencyFormatter =
-    NumberFormat.currency(locale: 'id_ID', symbol: '', decimalDigits: 2);
+    NumberFormat.currency(locale: 'id_ID', symbol: '', decimalDigits: 0);
 
   @override
   Widget build(BuildContext context) {
@@ -1438,7 +1438,7 @@ if (total == 0) {
 
     final pdf = pw.Document();
     final currencyFormat =
-        NumberFormat.currency(locale: 'id_ID', symbol: '', decimalDigits: 2);
+        NumberFormat.currency(locale: 'id_ID', symbol: '', decimalDigits: 0);
 
     // Cache thumbnail receipts
     final Map<String, pw.MemoryImage> receiptThumbs = {};

@@ -5,6 +5,7 @@ import 'activity_detail_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../core/session/company_session.dart';
 import '../../theme/app_theme.dart';
+import '../../core/widgets/draggable_window.dart';
 
 class ActivityListPage extends StatelessWidget {
   final String employeeId;
@@ -508,19 +509,39 @@ data['dayDocId'] = doc.reference.parent.parent?.parent?.parent?.id;
       ),
       child: InkWell(
         onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => ActivityDetailPage(
-                employeeId: employeeId,
-                dayDocId: activity['dayDocId'],
-                factoryId: activity['factoryId'],
-                activityId: activity['activityId'],
-                activity: activity,
-              ),
+  final isDesktop = MediaQuery.of(context).size.width >= 900;
+
+ if (isDesktop) {
+  final overlay = Overlay.of(context, rootOverlay: true);
+  late OverlayEntry entry;
+
+  entry = OverlayEntry(
+    builder: (context) {
+      return Positioned.fill(
+        child: Material(
+          color: Colors.transparent,
+          child: DraggableResizableWindow(
+            title: "Activity Detail",
+            headerColor: Colors.blue,
+            onClose: () {
+              entry.remove();
+            },
+            child: ActivityDetailPage(
+              employeeId: employeeId,
+              dayDocId: activity['dayDocId'],
+              factoryId: activity['factoryId'],
+              activityId: activity['activityId'],
+              activity: activity,
             ),
-          );
-        },
+          ),
+        ),
+      );
+    },
+  );
+
+  overlay.insert(entry);
+}
+},
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
           child: Row(

@@ -67,7 +67,7 @@ class _OrderOutPageState extends State<OrderOutMobile> {
   String? selectedClient;
   final TextEditingController poController = TextEditingController();
   final FocusNode fullscreenSearchFocusNode = FocusNode();
-  final List<OrderOutItem> items = [];
+  List<OrderOutItem> items = [];
 
   @override
   void initState() {
@@ -94,6 +94,11 @@ class _OrderOutPageState extends State<OrderOutMobile> {
   void _openEditOrder(Map<String, dynamic> data) {
     editingOrderId = data['id'];
     final orderItems = data['items'] as List<dynamic>;
+
+    if (data['id'] == null) {
+  _showError('Order ID missing (OrderOut)');
+  return;
+}
 
     setState(() {
       isCreateMode = true;
@@ -336,6 +341,27 @@ class _OrderOutPageState extends State<OrderOutMobile> {
     final current = items[index];
     final snap = await CompanyFirestore.collection('spare_parts').doc(current.part.id).get();
 
+    final confirm = await showDialog<bool>(
+  context: context,
+  builder: (_) => AlertDialog(
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+    title: const Text('Edit Quantity'),
+    content: const Text('Do you want to change the quantity of this item?'),
+    actions: [
+      TextButton(
+        onPressed: () => Navigator.pop(context, false),
+        child: const Text('Cancel'),
+      ),
+      ElevatedButton(
+        onPressed: () => Navigator.pop(context, true),
+        child: const Text('Continue'),
+      ),
+    ],
+  ),
+);
+
+if (confirm != true) return;
+
     if (!snap.exists) {
       _showError('Spare part tidak ditemukan');
       return;
@@ -363,11 +389,15 @@ class _OrderOutPageState extends State<OrderOutMobile> {
     if (newQty == null) return;
 
     setState(() {
-      items[index] = OrderOutItem(
-        part: current.part,
-        qty: newQty,
-      );
-    });
+  final newList = List<OrderOutItem>.from(items);
+
+  newList[index] = OrderOutItem(
+    part: current.part,
+    qty: newQty,
+  );
+
+  items = newList; // 🔥 penting
+});
   }
 
   void _removeItemAtIndex(int index) async {
@@ -489,6 +519,28 @@ class _OrderOutPageState extends State<OrderOutMobile> {
 
   // ================= COMMIT FIRESTORE =================
   Future<void> _commitOrderOut() async {
+
+    final confirm = await showDialog<bool>(
+  context: context,
+  builder: (_) => AlertDialog(
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+    title: const Text('Save Order'),
+    content: const Text('Are you sure you want to save this order?'),
+    actions: [
+      TextButton(
+        onPressed: () => Navigator.pop(context, false),
+        child: const Text('Cancel'),
+      ),
+      ElevatedButton(
+        onPressed: () => Navigator.pop(context, true),
+        child: const Text('Save'),
+      ),
+    ],
+  ),
+);
+
+if (confirm != true) return;
+
     if (_isSaving) return;
     setState(() => _isSaving = true);
 
@@ -513,15 +565,21 @@ class _OrderOutPageState extends State<OrderOutMobile> {
       );
 
       setState(() {
-        isCreateMode = false;
-        isEditMode = false;
-        editingOrderId = null;
-        items.clear();
-        orderDate = null;
-        selectedClient = null;
-        poController.clear();
-        _isSaving = false;
-      });
+  isCreateMode = false;
+  isEditMode = false;
+  editingOrderId = null;
+  items.clear();
+  orderDate = null;
+  selectedClient = null;
+  poController.clear();
+  _isSaving = false;
+});
+
+// 🔥 FORCE REFRESH LIST
+await Future.delayed(const Duration(milliseconds: 200));
+if (mounted) {
+  setState(() {}); // trigger rebuild parent
+}
 
       if (!mounted) return;
 
@@ -617,12 +675,42 @@ class _OrderOutPageState extends State<OrderOutMobile> {
                                 operation: 'open_detail',
                                 documentsCount: 1,
                               );
-                              final result = await Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => OrderOutDetailPage(data: data),
-                                ),
-                              );
+                              final isDesktop = MediaQuery.of(context).size.width >= 900;
+
+dynamic result;
+
+if (isDesktop) {
+  await showDialog(
+    context: context,
+    barrierDismissible: false,
+    barrierColor: Colors.transparent,
+    builder: (context) {
+      return DraggableResizableWindow(
+        title: "Order Out Detail",
+        headerColor: Colors.red,
+        child: OrderOutDetailPage(
+  data: data,
+  isWindow: true,
+  onEdit: (editData) {
+    Navigator.of(context).pop();
+    _openEditOrder(editData);
+  },
+),
+      );
+    },
+  );
+} else {
+  result = await Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (_) => OrderOutDetailPage(data: data),
+    ),
+  );
+}
+
+if (result != null && result is Map<String, dynamic>) {
+  _openEditOrder(result);
+}
                               if (result != null && result is Map<String, dynamic>) {
                                 _openEditOrder(result);
                               }
@@ -689,16 +777,24 @@ class _OrderOutPageState extends State<OrderOutMobile> {
                       isEditMode: isEditMode,
                     ),
                     const SizedBox(height: 10),
-                    if (items.isNotEmpty)
-                      Row(
-                        children: [
-                          _summaryChip(Icons.list_alt, '$totalItem Item'),
-                          const SizedBox(width: 8),
-                          _summaryChip(Icons.inventory_2, '$totalQty Qty'),
-                          const SizedBox(width: 8),
-                          _summaryChip(Icons.scale, '${totalWeight.toStringAsFixed(2)} kg'),
-                        ],
-                      ),
+if (items.isNotEmpty)
+  Builder(
+    builder: (_) {
+      final qty = totalQty;
+      final itemCount = totalItem;
+      final weight = totalWeight;
+
+      return Row(
+        children: [
+          _summaryChip(Icons.list_alt, '$itemCount Item'),
+          const SizedBox(width: 8),
+          _summaryChip(Icons.inventory_2, '$qty Qty'),
+          const SizedBox(width: 8),
+          _summaryChip(Icons.scale, '${weight.toStringAsFixed(2)} kg'),
+        ],
+      );
+    },
+  ),
                   ],
                 ),
               ),
@@ -1317,13 +1413,16 @@ _hasMore = !_isFiltering && snapshot.docs.length == _limit;
     }
   }
 
-  @override
+ @override
 void didUpdateWidget(covariant _OrderOutListView oldWidget) {
   super.didUpdateWidget(oldWidget);
 
+  // 🔥 FORCE RELOAD SETIAP ADA PERUBAHAN
+  _loadInitial();
+
   if (oldWidget.searchKeyword != widget.searchKeyword ||
       oldWidget.filterDate != widget.filterDate) {
-    _loadInitial(); // reload data saat filter berubah
+    _loadInitial();
   }
 }
 
