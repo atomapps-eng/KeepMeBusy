@@ -2065,25 +2065,70 @@ Widget _buildNumberPicker({
               IconButton(
                 icon: const Icon(Icons.edit, size: 18, color: Colors.blue),
                 onPressed: () async {
-                  final result = await Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => ActivityFormPage(
-                        attendanceDate: _selectedDate,
-                        customerId: a.customerId,
-                        existingActivity: a,
-                      ),
-                    ),
-                  );
+  final isDesktop = MediaQuery.of(context).size.width >= 900;
 
-                  if (result is ActivityEntry) {
-                    setState(() {
-                      factory.activities.removeAt(index);
-                      _cleanupFactories();
-                      _addActivity(result);
-                    });
-                  }
+  ActivityEntry? result;
+
+  if (isDesktop) {
+    final overlay = Overlay.of(context, rootOverlay: true);
+    late OverlayEntry entry;
+
+    final completer = Completer<ActivityEntry?>();
+
+    entry = OverlayEntry(
+      builder: (context) {
+        return Positioned.fill(
+          child: Material(
+            color: Colors.transparent,
+            child: DraggableResizableWindow(
+              title: "Edit Activity",
+              headerColor: Colors.blue,
+              onClose: () {
+                entry.remove();
+                completer.complete(null);
+              },
+              child: ActivityFormPage(
+                attendanceDate: _selectedDate,
+                customerId: a.customerId,
+                existingActivity: a,
+                onClose: () {
+                  entry.remove();
+                  completer.complete(null);
                 },
+                onSaved: (activity) {
+                  entry.remove();
+                  completer.complete(activity);
+                },
+              ),
+            ),
+          ),
+        );
+      },
+    );
+
+    overlay.insert(entry);
+    result = await completer.future;
+  } else {
+    result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ActivityFormPage(
+          attendanceDate: _selectedDate,
+          customerId: a.customerId,
+          existingActivity: a,
+        ),
+      ),
+    );
+  }
+
+  if (result != null) {
+    setState(() {
+      factory.activities.removeAt(index);
+      _cleanupFactories();
+      _addActivity(result!);
+    });
+  }
+},
               ),
               IconButton(
                 icon: const Icon(Icons.delete, size: 18, color: Colors.red),

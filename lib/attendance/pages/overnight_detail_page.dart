@@ -350,16 +350,7 @@ class OvernightDetailPage extends StatelessWidget {
                   color: Colors.transparent,
                   child: InkWell(
                     onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => OvernightItemDetailPage(
-                            employeeId: employeeId,
-                            docId: doc.id,
-                            period: period,
-                          ),
-                        ),
-                      );
+                      
                     },
                     borderRadius: BorderRadius.circular(16),
                     child: Padding(

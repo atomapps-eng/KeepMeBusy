@@ -11,6 +11,7 @@ import '../theme/app_theme.dart';
 import '../../models/read_tracker_service.dart';
 import '../core/widgets/draggable_window.dart';
 import '../core/cache/order_out_cache.dart';
+import 'dart:async';
 
 class OrderOutMobile extends StatefulWidget {
   final String? searchKeyword;
@@ -233,10 +234,13 @@ class _OrderOutPageState extends State<OrderOutMobile> {
   }
 
   Widget _buildFullscreenHeader() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-      child: Row(
-        children: [
+  final isDesktop = MediaQuery.of(context).size.width >= 900;
+
+  return Padding(
+    padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+    child: Row(
+      children: [
+        if (!isDesktop)
           Container(
             margin: const EdgeInsets.only(right: 8),
             decoration: BoxDecoration(
@@ -248,18 +252,18 @@ class _OrderOutPageState extends State<OrderOutMobile> {
               onPressed: () => Navigator.pop(context),
             ),
           ),
-          const SizedBox(width: 8),
-          const Text(
-            'Order Out',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
+        const SizedBox(width: 8),
+        const Text(
+          'Order Out',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
           ),
-        ],
-      ),
-    );
-  }
+        ),
+      ],
+    ),
+  );
+}
 
   // ================= FULLSCREEN SEARCH & FILTER =================
   final TextEditingController fullscreenSearchController = TextEditingController();
@@ -975,16 +979,56 @@ if (items.isNotEmpty)
             label: 'Client *',
             child: InkWell(
               onTap: () async {
-                final partner = await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const PartnerListPage(selectionMode: true),
-                  ),
-                );
-                if (partner != null) {
-                  setState(() => selectedClient = partner.name);
-                }
+  final isDesktop = MediaQuery.of(context).size.width >= 900;
+
+  dynamic partner;
+
+  if (isDesktop) {
+    final overlay = Overlay.of(context, rootOverlay: true);
+    late OverlayEntry entry;
+
+    final completer = Completer<dynamic>();
+
+    entry = OverlayEntry(
+      builder: (context) {
+        return Positioned.fill(
+          child: Material(
+            color: Colors.transparent,
+            child: DraggableResizableWindow(
+              title: "Select Partner",
+              headerColor: Colors.red,
+              onClose: () {
+                entry.remove();
+                completer.complete(null);
               },
+              child: PartnerListPage(
+                selectionMode: true,
+                onSelected: (p) {
+                  entry.remove();
+                  completer.complete(p);
+                },
+              ),
+            ),
+          ),
+        );
+      },
+    );
+
+    overlay.insert(entry);
+    partner = await completer.future;
+  } else {
+    partner = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const PartnerListPage(selectionMode: true),
+      ),
+    );
+  }
+
+  if (partner != null) {
+    setState(() => selectedClient = partner.name);
+  }
+},
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                 decoration: BoxDecoration(
@@ -1587,98 +1631,104 @@ class _OrderHeader extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.95),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.shade200.withOpacity(0.5),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Row(
-            children: [
+Widget build(BuildContext context) {
+  final isDesktop = MediaQuery.of(context).size.width >= 900;
+
+  return Container(
+    padding: const EdgeInsets.all(20),
+    decoration: BoxDecoration(
+      color: Colors.white.withOpacity(0.95),
+      borderRadius: BorderRadius.circular(20),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.grey.shade200.withOpacity(0.5),
+          blurRadius: 10,
+          offset: const Offset(0, 4),
+        ),
+      ],
+    ),
+    child: Column(
+      children: [
+        Row(
+          children: [
+            if (!isDesktop)
               IconButton(
                 icon: const Icon(Icons.arrow_back),
                 onPressed: onBack,
               ),
-              const SizedBox(width: 8),
-              const Text(
-                'Order Out',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
+            const SizedBox(width: 8),
+            const Text(
+              'Order Out',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        _formField(
+          label: 'Order Date',
+          child: InkWell(
+            onTap: onPickDate,
+            child: _box(
+              orderDate == null
+                  ? 'Select date'
+                  : '${orderDate!.day}/${orderDate!.month}/${orderDate!.year}',
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        _formField(
+          label: 'Client',
+          child: InkWell(
+            onTap: () async {
+              final partner = await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const PartnerListPage(selectionMode: true),
                 ),
+              );
+              if (partner != null) {
+                onClientChanged(partner.name);
+              }
+            },
+            child: _box(selectedClient ?? 'Select Partner'),
+          ),
+        ),
+        const SizedBox(height: 12),
+        _formField(
+          label: 'PO Number',
+          child: TextField(
+            controller: poController,
+            readOnly: isEditMode,
+            decoration: InputDecoration(
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
               ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          _formField(
-            label: 'Order Date',
-            child: InkWell(
-              onTap: onPickDate,
-              child: _box(
-                orderDate == null
-                    ? 'Select date'
-                    : '${orderDate!.day}/${orderDate!.month}/${orderDate!.year}',
-              ),
+              suffixIcon:
+                  isEditMode ? const Icon(Icons.lock, size: 18) : null,
             ),
           ),
-          const SizedBox(height: 12),
-          _formField(
-            label: 'Client',
-            child: InkWell(
-              onTap: () async {
-                final partner = await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const PartnerListPage(selectionMode: true),
-                  ),
-                );
-                if (partner != null) {
-                  onClientChanged(partner.name);
-                }
-              },
-              child: _box(selectedClient ?? 'Select Partner'),
-            ),
+        ),
+        const SizedBox(height: 20),
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton(
+            onPressed: (isFormValid && !isSaving) ? onSave : null,
+            child: isSaving
+                ? const SizedBox(
+                    height: 18,
+                    width: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Text('Save Order Out'),
           ),
-          const SizedBox(height: 12),
-          _formField(
-            label: 'PO Number',
-            child: TextField(
-              controller: poController,
-              readOnly: isEditMode,
-              decoration: InputDecoration(
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                suffixIcon: isEditMode ? const Icon(Icons.lock, size: 18) : null,
-              ),
-            ),
-          ),
-          const SizedBox(height: 20),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: (isFormValid && !isSaving) ? onSave : null,
-              child: isSaving
-                  ? const SizedBox(
-                      height: 18,
-                      width: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Text('Save Order Out'),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+        ),
+      ],
+    ),
+  );
+}
 
   Widget _formField({required String label, required Widget child}) {
     return Column(

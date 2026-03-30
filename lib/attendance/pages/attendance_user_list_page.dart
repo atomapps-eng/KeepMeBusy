@@ -96,23 +96,25 @@ class AttendanceUserListPage extends StatelessWidget {
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: Container(
-          margin: const EdgeInsets.only(left: 8),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha:0.2),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: IconButton(
-            icon: const Icon(Icons.arrow_back),
-            onPressed: () {
-  if (onClose != null) {
-    onClose!();
-  } else {
-    Navigator.pop(context);
-  }
-},
-          ),
+        leading: isDesktop
+    ? null
+    : Container(
+        margin: const EdgeInsets.only(left: 8),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha:0.2),
+          borderRadius: BorderRadius.circular(12),
         ),
+        child: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            if (onClose != null) {
+              onClose!();
+            } else {
+              Navigator.pop(context);
+            }
+          },
+        ),
+      ),
       ),
       body: AppBackgroundWrapper(
         padding: const EdgeInsets.all(16),

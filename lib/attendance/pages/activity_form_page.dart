@@ -6,6 +6,7 @@ import '../../models/partner.dart';
 import '../../pages/partners/partner_list_page.dart';
 import '../../theme/app_theme.dart';
 import '../../core/widgets/draggable_window.dart';
+import 'dart:async';
 
 class ActivityFormPage extends StatefulWidget {
   final DateTime attendanceDate;
@@ -17,7 +18,7 @@ class ActivityFormPage extends StatefulWidget {
   const ActivityFormPage({
     super.key,
     required this.attendanceDate,
-    required this.customerId,
+    required this.customerId, 
     this.existingActivity,
     this.onClose,
     this.onSaved,
@@ -127,7 +128,7 @@ class _ActivityFormPageState extends State<ActivityFormPage> {
   }
 }
 
-void _save() {
+Future<void> _save() async {
   if (factoryId == null) {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
@@ -136,6 +137,79 @@ void _save() {
     );
     return;
   }
+
+  final overlay = Overlay.of(context, rootOverlay: true);
+late OverlayEntry entry;
+
+final completer = Completer<bool>();
+
+entry = OverlayEntry(
+  builder: (context) {
+    return Positioned.fill(
+      child: Material(
+        color: Colors.black.withOpacity(0.4),
+        child: Center(
+          child: Container(
+            width: 420,
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'Save Activity',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  'Are you sure you want to save this activity?',
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 20),
+
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextButton(
+                        onPressed: () {
+                          entry.remove();
+                          completer.complete(false);
+                        },
+                        child: const Text('Cancel'),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          entry.remove();
+                          completer.complete(true);
+                        },
+                        child: const Text('Yes, Save'),
+                      ),
+                    ),
+                  ],
+                )
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  },
+);
+
+overlay.insert(entry);
+
+final confirm = await completer.future;
+
+if (confirm != true) return;
 
   final activity = ActivityEntry(
     date: date,
@@ -152,16 +226,11 @@ void _save() {
 
   final isDesktop = MediaQuery.of(context).size.width >= 900;
 
-  if (isDesktop) {
-    if (widget.onSaved != null) {
-      widget.onSaved!(activity);
-    }
-    if (widget.onClose != null) {
-      widget.onClose!();
-    }
-  } else {
-    Navigator.pop(context, activity);
-  }
+ if (isDesktop) {
+  widget.onSaved?.call(activity);
+} else {
+  Navigator.pop(context, activity);
+}
 }
 
 
@@ -235,17 +304,14 @@ void _save() {
           ),
           backgroundColor: Colors.transparent,
           elevation: 0,
-          leading: Container(
-            margin: const EdgeInsets.only(left: 8),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha:0.2),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: IconButton(
-              icon: const Icon(Icons.arrow_back),
-              onPressed: () => Navigator.pop(context),
-            ),
-          ),
+          leading: isDesktop
+    ? null
+    : IconButton(
+        icon: const Icon(Icons.arrow_back),
+        onPressed: () {
+          Navigator.pop(context);
+        },
+      ),
         ),
         body: AppBackgroundWrapper(
           padding: const EdgeInsets.all(16),
@@ -258,6 +324,7 @@ void _save() {
   }
 
   Widget _buildDesktopLayout(BuildContext context, Color activityColor) {
+    final isDesktop = MediaQuery.of(context).size.width >= 900;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -636,7 +703,13 @@ void _save() {
                   ),
                   icon: const Icon(Icons.cancel),
                   label: const Text('Cancel'),
-                  onPressed: () => Navigator.pop(context),
+                  onPressed: () {
+  if (isDesktop) {
+    widget.onClose?.call();
+  } else {
+    Navigator.pop(context);
+  }
+},
                 ),
               ),
               const SizedBox(width: 12),

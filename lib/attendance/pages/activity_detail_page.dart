@@ -11,7 +11,7 @@ import '../models/activity_entry.dart';
 import '../../core/widgets/draggable_window.dart';
 import 'dart:async';
 
-class ActivityDetailPage extends StatelessWidget {
+class ActivityDetailPage extends StatefulWidget {
   final String employeeId;
   final String dayDocId;
   final String factoryId;
@@ -26,6 +26,20 @@ class ActivityDetailPage extends StatelessWidget {
     required this.activityId,
     required this.activity,
   });
+
+  @override
+  State<ActivityDetailPage> createState() => _ActivityDetailPageState();
+}
+
+class _ActivityDetailPageState extends State<ActivityDetailPage> {
+  late Map<String, dynamic> activity;
+
+  @override
+  void initState() {
+    super.initState();
+    activity = Map<String, dynamic>.from(widget.activity);
+  }
+
 
   Future<void> _deleteActivity(BuildContext context) async {
     // Show confirmation dialog
@@ -53,13 +67,13 @@ class ActivityDetailPage extends StatelessWidget {
     try {
       await CompanyFirestore
           .collection('attendance')
-          .doc(employeeId)
+          .doc(widget.employeeId)
           .collection('days')
-          .doc(dayDocId)
+          .doc(widget.dayDocId)
           .collection('factories')
-          .doc(factoryId)
+          .doc(widget.factoryId)
           .collection('activities')
-          .doc(activityId)
+          .doc(widget.activityId)
           .delete();
 
       if (!context.mounted) return;
@@ -161,17 +175,19 @@ class ActivityDetailPage extends StatelessWidget {
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: Container(
-          margin: const EdgeInsets.only(left: 8),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha:0.2),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: IconButton(
-            icon: const Icon(Icons.arrow_back),
-            onPressed: () => Navigator.pop(context),
-          ),
+        leading: isDesktop
+    ? null
+    : Container(
+        margin: const EdgeInsets.only(left: 8),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha:0.2),
+          borderRadius: BorderRadius.circular(12),
         ),
+        child: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
         actions: [
           // Timestamp info
           if (createdAt != null && isDesktop)
@@ -923,6 +939,79 @@ if (createdAt != null)
 
     final isDesktop = MediaQuery.of(context).size.width >= 900;
 
+   final overlay = Overlay.of(context, rootOverlay: true);
+late OverlayEntry entry;
+
+final completer = Completer<bool>();
+
+entry = OverlayEntry(
+  builder: (context) {
+    return Positioned.fill(
+      child: Material(
+        color: Colors.black.withOpacity(0.4),
+        child: Center(
+          child: Container(
+            width: 400,
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'Edit Activity',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  'Are you sure you want to edit this activity?',
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 20),
+
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextButton(
+                        onPressed: () {
+                          entry.remove();
+                          completer.complete(false);
+                        },
+                        child: const Text('Cancel'),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          entry.remove();
+                          completer.complete(true);
+                        },
+                        child: const Text('Yes, Edit'),
+                      ),
+                    ),
+                  ],
+                )
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  },
+);
+
+overlay.insert(entry);
+
+final confirm = await completer.future;
+
+if (confirm != true) return;
+
 dynamic result;
 
 if (isDesktop) {
@@ -943,22 +1032,34 @@ if (isDesktop) {
               entry.remove();
               completer.complete(null);
             },
-            child: ActivityFormPage(
-              attendanceDate: (activity['date'] as Timestamp).toDate(),
-              customerId: activity['customerId'] ?? '',
-              existingActivity: ActivityEntry(
-                date: (activity['date'] as Timestamp).toDate(),
-                factoryId: activity['factoryId'] ?? '',
-                factoryClient: activity['factoryClient'] ?? '',
-                customerId: activity['customerId'] ?? '',
-                machine: activity['machine'] ?? '',
-                serialNumber: activity['serialNumber'] ?? '',
-                activityType: activity['activityType'] ?? '',
-                description: activity['description'] ?? '',
-                status: activity['status'] ?? '',
-                note: activity['note'] ?? '',
-              ),
-            ),
+child: Builder(
+  builder: (context) {
+    return ActivityFormPage(
+      attendanceDate: (activity['date'] as Timestamp).toDate(),
+      customerId: activity['customerId'] ?? '',
+      existingActivity: ActivityEntry(
+        date: (activity['date'] as Timestamp).toDate(),
+        factoryId: activity['factoryId'] ?? '',
+        factoryClient: activity['factoryClient'] ?? '',
+        customerId: activity['customerId'] ?? '',
+        machine: activity['machine'] ?? '',
+        serialNumber: activity['serialNumber'] ?? '',
+        activityType: activity['activityType'] ?? '',
+        description: activity['description'] ?? '',
+        status: activity['status'] ?? '',
+        note: activity['note'] ?? '',
+      ),
+      onSaved: (result) {
+        entry.remove();
+        completer.complete(result);
+      },
+      onClose: () {
+        entry.remove();
+        completer.complete(null);
+      },
+    );
+  },
+),
           ),
         ),
       );
@@ -967,42 +1068,69 @@ if (isDesktop) {
 
   overlay.insert(entry);
   result = await completer.future;
-}
 
-    if (result == null) return;
+  if (result != null && result is ActivityEntry) {
+  try {
+    await CompanyFirestore
+        .collection('attendance')
+        .doc(widget.employeeId)
+        .collection('days')
+        .doc(widget.dayDocId)
+        .collection('factories')
+        .doc(widget.factoryId)
+        .collection('activities')
+        .doc(widget.activityId)
+        .set(result.toMap(), SetOptions(merge: true));
+
     if (!context.mounted) return;
 
-    try {
-      await CompanyFirestore
-          .collection('attendance')
-          .doc(employeeId)
-          .collection('days')
-          .doc(dayDocId)
-          .collection('factories')
-          .doc(factoryId)
-          .collection('activities')
-          .doc(activityId)
-          .set(result.toMap(), SetOptions(merge: true));
+    setState(() {
+  activity = {
+    ...activity,
+    ...result.toMap(),
+  };
+});
 
-      if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Activity updated successfully'),
+        backgroundColor: Colors.green,
+      ),
+    );
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Activity updated successfully'),
-          backgroundColor: Colors.green,
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Error updating activity: $e'),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
+}
+
+} else {
+  result = await Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (_) => ActivityFormPage(
+        attendanceDate: (activity['date'] as Timestamp).toDate(),
+        customerId: activity['customerId'] ?? '',
+        existingActivity: ActivityEntry(
+          date: (activity['date'] as Timestamp).toDate(),
+          factoryId: activity['factoryId'] ?? '',
+          factoryClient: activity['factoryClient'] ?? '',
+          customerId: activity['customerId'] ?? '',
+          machine: activity['machine'] ?? '',
+          serialNumber: activity['serialNumber'] ?? '',
+          activityType: activity['activityType'] ?? '',
+          description: activity['description'] ?? '',
+          status: activity['status'] ?? '',
+          note: activity['note'] ?? '',
         ),
-      );
-
-      navigator.pop();
-    } catch (e) {
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error updating activity: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
+      ),
+    ),
+  );
+}
   }
 
 Widget _buildPartnerSection() {

@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/spare_part.dart';
 import '../core/services/company_firestore.dart';
 import '../../core/services/firestore_tracker.dart';
+import '../core/session/company_session.dart';
 
 class SparePartService {
   // Gunakan method yang sudah ada
@@ -24,6 +25,26 @@ class SparePartService {
   collection: 'spare_parts',
 );
   }
+
+  Future<QuerySnapshot> fetchLowStockParts({
+  DocumentSnapshot? lastDoc,
+}) async {
+  final companyId = CompanySession.currentCompanyId;
+
+  Query query = FirebaseFirestore.instance
+      .collection('companies')
+      .doc(companyId)
+      .collection('spare_parts')
+      .where('currentStock', isLessThanOrEqualTo: 0) // 🔥 LOW STOCK
+      .orderBy('currentStock')
+      .limit(50);
+
+  if (lastDoc != null) {
+    query = query.startAfterDocument(lastDoc);
+  }
+
+  return await query.get();
+}
 
   // Stream untuk real-time updates (pertahankan)
   Stream<List<SparePart>> getSpareParts() {

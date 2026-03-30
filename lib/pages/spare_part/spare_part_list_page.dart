@@ -13,6 +13,14 @@ import '../../core/session/company_session.dart';
 import '../../theme/app_theme.dart';
 import 'spare_part_detail_page_desktop.dart';
 import '../../core/cache/spare_part_cache.dart';
+import 'dart:io';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:path_provider/path_provider.dart';
+import 'package:open_filex/open_filex.dart';
+import 'package:flutter/foundation.dart';
+import 'package:universal_html/html.dart' as html;
+import 'package:flutter/services.dart';
+import 'package:pdf/pdf.dart';
 
 class SparePartListPage extends StatefulWidget {
   final bool isCompact;
@@ -52,12 +60,15 @@ bool get wantKeepAlive => true;
 
   final ScrollController _scrollController = ScrollController();
   List<SparePart> _parts = [];
+  bool _showLowStockOnly = false;
   DocumentSnapshot? _lastDocument;
   bool _isLoading = false;
   bool _hasMore = true;
   bool _isLoadingMore = false;
   bool _isFetchingMore = false;
   bool _isDisposed = false;
+  bool _isGeneratingPdf = false;
+double _pdfProgress = 0.0;
 
   @override
   void initState() {
@@ -202,6 +213,35 @@ bool get wantKeepAlive => true;
     }
   }
 
+  Future<void> _loadLowStockData() async {
+  setState(() {
+    _isLoading = true;
+    _parts.clear();
+    _lastDocument = null;
+    _hasMore = true;
+  });
+
+  try {
+    final service = SparePartService();
+    final snapshot = await service.fetchLowStockParts();
+
+    if (!mounted || _isDisposed) return;
+
+    if (snapshot.docs.isNotEmpty) {
+      _lastDocument = snapshot.docs.last;
+      _parts = snapshot.docs
+          .map((doc) => SparePart.fromFirestore(doc))
+          .toList();
+    }
+
+    _hasMore = snapshot.docs.length == _limit;
+  } catch (e) {
+  } finally {
+    if (!mounted || _isDisposed) return;
+    setState(() => _isLoading = false);
+  }
+}
+
   Future<void> _loadMore() async {
    if (_lastDocument == null || _isLoadingMore || !_hasMore) return;
 
@@ -253,6 +293,7 @@ Widget build(BuildContext context) {
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: _buildSearchBar(context),
                   ),
+          
                 if (!widget.isCompact) const SizedBox(height: 12),
                 Expanded(
                   child: _buildPartsList(),
@@ -306,7 +347,15 @@ Widget build(BuildContext context) {
   }
 
   Widget _buildPartsList() {
-    final displayList = _isSearching ? _searchResults : _parts;
+    List<SparePart> displayList;
+
+if (_isSearching) {
+  displayList = _searchResults;
+} else if (_showLowStockOnly) {
+  displayList = _parts.where((p) => p.currentStock <= 0).toList();
+} else {
+  displayList = _parts;
+}
     final hasMoreData = _hasMore;
 
     if (displayList.isEmpty && _isLoading) {
@@ -490,34 +539,134 @@ Widget build(BuildContext context) {
             border: Border.all(color: Colors.white.withOpacity(0.4)),
           ),
           child: Row(
-            children: [
-              Container(
-                margin: const EdgeInsets.only(right: 8),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: IconButton(
-                  icon: const Icon(Icons.arrow_back),
-                  onPressed: () => Navigator.pop(context),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                widget.selectionMode
-                    ? 'Select Spare Part'
-                    : 'Spare Part Database',
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
+  children: [
+    Container(
+      margin: const EdgeInsets.only(right: 8),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: IconButton(
+        icon: const Icon(Icons.arrow_back),
+        onPressed: () => Navigator.pop(context),
+      ),
+    ),
+    const SizedBox(width: 8),
+    Text(
+      widget.selectionMode
+          ? 'Select Spare Part'
+          : 'Spare Part Database',
+      style: const TextStyle(
+        fontSize: 18,
+        fontWeight: FontWeight.w600,
+      ),
+    ),
+
+    const Spacer(),
+
+    // 🔥 LOW STOCK ICON
+    GestureDetector(
+  onTap: () async {
+    setState(() {
+      _showLowStockOnly = !_showLowStockOnly;
+    });
+
+    if (_showLowStockOnly) {
+      await _loadLowStockData();
+    } else {
+      await _loadInitialData();
+    }
+  },
+  child: Container(
+    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+    decoration: BoxDecoration(
+      color: _showLowStockOnly
+          ? Colors.red.withOpacity(0.2)
+          : Colors.white.withOpacity(0.2),
+      borderRadius: BorderRadius.circular(12),
+    ),
+    child: Row(
+      children: [
+        Icon(
+          Icons.warning_amber_rounded,
+          size: 18,
+          color: _showLowStockOnly ? Colors.red : Colors.black87,
+        ),
+        const SizedBox(width: 6),
+        Text(
+          'Low Stock',
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: _showLowStockOnly ? Colors.red : Colors.black87,
           ),
+        ),
+      ],
+    ),
+  ),
+),
+
+const SizedBox(width: 8),
+
+GestureDetector(
+  onTap: () async {
+  final confirm = await _confirmPrintPdf();
+  if (!confirm) return;
+
+  await _generateLowStockPdf();
+},
+  child: Container(
+    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+    decoration: BoxDecoration(
+      color: Colors.white.withOpacity(0.2),
+      borderRadius: BorderRadius.circular(12),
+    ),
+    child: Row(
+      children: const [
+        Icon(Icons.picture_as_pdf, size: 18),
+        SizedBox(width: 6),
+        Text(
+          'PDF',
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
+    ),
+  ),
+),
+
+  ],
+)
         ),
       ),
     );
   }
+
+  void _showProgressDialog() {
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (_) {
+      return StatefulBuilder(
+        builder: (context, setStateDialog) {
+          return AlertDialog(
+            title: const Text('Generating PDF'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                LinearProgressIndicator(value: _pdfProgress),
+                const SizedBox(height: 12),
+                Text('${(_pdfProgress * 100).toStringAsFixed(0)} %'),
+              ],
+            ),
+          );
+        },
+      );
+    },
+  );
+}
 
   Widget _buildSearchBar(BuildContext context) {
     return Container(
@@ -587,6 +736,169 @@ Widget build(BuildContext context) {
   if (isExpired) {
     _loadInitialData();
   }
+}
+
+Future<void> _generateLowStockPdf() async {
+  setState(() {
+    _isGeneratingPdf = true;
+    _pdfProgress = 0.0;
+  });
+
+  _showProgressDialog();
+
+  final service = SparePartService();
+
+  final snapshot = await service.fetchLowStockParts();
+
+  final parts = snapshot.docs
+      .map((doc) => SparePart.fromFirestore(doc))
+      .toList();
+
+  final tableData = <List<String>>[];
+
+for (int i = 0; i < parts.length; i++) {
+  final p = parts[i];
+
+  tableData.add([
+    (i + 1).toString(), // 🔥 nomor
+    p.partCode,
+    p.name,
+    p.currentStock.toString(),
+    p.location,
+  ]);
+
+  // 🔥 progress tetap jalan
+  _pdfProgress = (i + 1) / parts.length;
+  setState(() {});
+  await Future.delayed(const Duration(milliseconds: 5));
+}
+
+  final pdf = pw.Document();
+
+  final regularFont = pw.Font.ttf(
+    await rootBundle.load('assets/fonts/Roboto-Regular.ttf'),
+  );
+
+  final boldFont = pw.Font.ttf(
+    await rootBundle.load('assets/fonts/Roboto-Bold.ttf'),
+  );
+
+  final logo = pw.MemoryImage(
+    (await rootBundle.load('assets/images/Atom.png'))
+        .buffer
+        .asUint8List(),
+  );
+
+  _pdfProgress = 0.2;
+  setState(() {});
+
+  pdf.addPage(
+    pw.MultiPage(
+      build: (context) {
+        _pdfProgress = 0.5;
+        return [
+          pw.Row(
+            children: [
+              pw.Image(logo, width: 40, height: 40),
+              pw.SizedBox(width: 10),
+              pw.Text(
+                'Low Stock Report',
+                style: pw.TextStyle(font: boldFont, fontSize: 20),
+              ),
+            ],
+          ),
+          pw.SizedBox(height: 16),
+
+          pw.Table.fromTextArray(
+  headers: ['No', 'Code', 'Name', 'Stock', 'Location'],
+
+  data: tableData,
+
+  headerStyle: pw.TextStyle(
+    font: boldFont,
+    color: PdfColors.white,
+  ),
+
+  headerDecoration: const pw.BoxDecoration(
+    color: PdfColors.orange,
+  ),
+
+  cellStyle: pw.TextStyle(
+    font: regularFont,
+    fontSize: 10,
+  ),
+
+  columnWidths: {
+    0: const pw.FixedColumnWidth(30), // No
+    1: const pw.FlexColumnWidth(2),   // Code
+    2: const pw.FlexColumnWidth(4),   // Name
+    3: const pw.FlexColumnWidth(2),   // Stock
+    4: const pw.FlexColumnWidth(3),   // Location
+  },
+),
+        ];
+      },
+    ),
+  );
+
+  _pdfProgress = 0.8;
+  setState(() {});
+
+  final bytes = await pdf.save();
+
+  if (kIsWeb) {
+    final blob = html.Blob([bytes], 'application/pdf');
+    final url = html.Url.createObjectUrlFromBlob(blob);
+
+    html.AnchorElement(href: url)
+      ..setAttribute("download", "low_stock_report.pdf")
+      ..click();
+
+    html.Url.revokeObjectUrl(url);
+  } else {
+    final dir = await getApplicationDocumentsDirectory();
+    final file = File('${dir.path}/low_stock_report.pdf');
+
+    await file.writeAsBytes(bytes);
+
+    await OpenFilex.open(file.path);
+  }
+
+  _pdfProgress = 1.0;
+  setState(() {});
+
+  Navigator.pop(context); // close progress dialog
+
+  setState(() {
+    _isGeneratingPdf = false;
+  });
+}
+
+Future<bool> _confirmPrintPdf() async {
+  final result = await showDialog<bool>(
+    context: context,
+    barrierDismissible: false,
+    builder: (context) {
+      return AlertDialog(
+        title: const Text('Generate PDF'),
+        content: const Text(
+          'Do you want to generate a low stock report as PDF?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Generate'),
+          ),
+        ],
+      );
+    },
+  );
+
+  return result ?? false;
 }
   
 }

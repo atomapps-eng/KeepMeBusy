@@ -9,6 +9,7 @@ import '../pages/partners/partner_list_page.dart';
 import '../pages/order_in/order_in_detail_page.dart';
 import '../theme/app_theme.dart';
 import '../core/widgets/draggable_window.dart';
+import 'dart:async';
 
 enum QtyDialogMode {
   orderIn,
@@ -524,21 +525,33 @@ tx.update(orderRef, {
   }
 
   Widget _buildFullscreenHeader() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-      child: Row(
-        children: [
+  final isDesktop = MediaQuery.of(context).size.width >= 900;
+
+  return Padding(
+    padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+    child: Row(
+      children: [
+        if (!isDesktop)
           Container(
             margin: const EdgeInsets.only(right: 8),
-            decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(12)),
-            child: IconButton(icon: const Icon(Icons.arrow_back), onPressed: () => Navigator.pop(context)),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: IconButton(
+              icon: const Icon(Icons.arrow_back),
+              onPressed: () => Navigator.pop(context),
+            ),
           ),
-          const SizedBox(width: 8),
-          const Text('Order In', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-        ],
-      ),
-    );
-  }
+        const SizedBox(width: 8),
+        const Text(
+          'Order In',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+      ],
+    ),
+  );
+}
 
   Widget _buildDesktopFormPanel() {
     return SingleChildScrollView(
@@ -558,9 +571,56 @@ tx.update(orderRef, {
           const SizedBox(height: 16),
           _buildFormField(label: 'Client *', child: InkWell(
             onTap: () async {
-              final partner = await Navigator.push(context, MaterialPageRoute(builder: (_) => const PartnerListPage(selectionMode: true)));
-              if (partner != null) setState(() => selectedClient = partner.name);
-            },
+  final isDesktop = MediaQuery.of(context).size.width >= 900;
+
+  dynamic partner;
+
+  if (isDesktop) {
+    final overlay = Overlay.of(context, rootOverlay: true);
+    late OverlayEntry entry;
+
+    final completer = Completer<dynamic>();
+
+    entry = OverlayEntry(
+      builder: (context) {
+        return Positioned.fill(
+          child: Material(
+            color: Colors.transparent,
+            child: DraggableResizableWindow(
+              title: "Select Partner",
+              headerColor: Colors.green,
+              onClose: () {
+                entry.remove();
+                completer.complete(null);
+              },
+              child: PartnerListPage(
+                selectionMode: true,
+                onSelected: (p) {
+                  entry.remove();
+                  completer.complete(p);
+                },
+              ),
+            ),
+          ),
+        );
+      },
+    );
+
+    overlay.insert(entry);
+    partner = await completer.future;
+  } else {
+    partner = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const PartnerListPage(selectionMode: true),
+      ),
+    );
+  }
+
+  if (partner != null) {
+  setState(() => selectedClient = partner.name);
+}
+},
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
               decoration: BoxDecoration(border: Border.all(color: Colors.grey.shade300), borderRadius: BorderRadius.circular(12)),
@@ -934,23 +994,81 @@ class _OrderHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDesktop = MediaQuery.of(context).size.width >= 900;
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(color: Colors.white.withOpacity(0.95), borderRadius: BorderRadius.circular(20), boxShadow: [BoxShadow(color: Colors.grey.shade200.withOpacity(0.5), blurRadius: 10, offset: const Offset(0, 4))]),
       child: Column(
         children: [
-          Row(children: [
-            IconButton(icon: const Icon(Icons.arrow_back), onPressed: onBack),
-            const SizedBox(width: 8), const Text('Order In', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-          ]),
+          Row(
+  children: [
+    if (!isDesktop)
+      IconButton(
+        icon: const Icon(Icons.arrow_back),
+        onPressed: onBack,
+      ),
+    const SizedBox(width: 8),
+    const Text(
+      'Order In',
+      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+    ),
+  ],
+),
           const SizedBox(height: 16),
           _formField(label: 'Order Date', child: InkWell(onTap: onPickDate, child: _box(orderDate == null ? 'Select date' : '${orderDate!.day}/${orderDate!.month}/${orderDate!.year}'))),
           const SizedBox(height: 12),
           _formField(label: 'Client', child: InkWell(
             onTap: () async {
-              final partner = await Navigator.push(context, MaterialPageRoute(builder: (_) => const PartnerListPage(selectionMode: true)));
-              if (partner != null) onClientChanged(partner.name);
-            },
+  final isDesktop = MediaQuery.of(context).size.width >= 900;
+
+  dynamic partner;
+
+  if (isDesktop) {
+    final overlay = Overlay.of(context, rootOverlay: true);
+    late OverlayEntry entry;
+
+    final completer = Completer<dynamic>();
+
+    entry = OverlayEntry(
+      builder: (context) {
+        return Positioned.fill(
+          child: Material(
+            color: Colors.transparent,
+            child: DraggableResizableWindow(
+              title: "Select Partner",
+              headerColor: Colors.green,
+              onClose: () {
+                entry.remove();
+                completer.complete(null);
+              },
+              child: PartnerListPage(
+                selectionMode: true,
+                onSelected: (p) {
+                  entry.remove();
+                  completer.complete(p);
+                },
+              ),
+            ),
+          ),
+        );
+      },
+    );
+
+    overlay.insert(entry);
+    partner = await completer.future;
+  } else {
+    partner = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const PartnerListPage(selectionMode: true),
+      ),
+    );
+  }
+
+  if (partner != null) {
+  onClientChanged(partner.name);
+}
+},
             child: _box(selectedClient ?? 'Select Partner'),
           )),
           const SizedBox(height: 12),

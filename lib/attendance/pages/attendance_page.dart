@@ -250,7 +250,7 @@ class _AttendancePageState extends State<AttendancePage> {
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
-        titleSpacing: 0,
+        titleSpacing: isDesktop ? 12 : 0,
         centerTitle: false,
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -944,16 +944,46 @@ class _AttendancePageState extends State<AttendancePage> {
                     ),
                   ),
                   onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => AddOvernightPage(
-                          employeeId: widget.employeeId,
-                          period: widget.period,
-                        ),
-                      ),
-                    );
-                  },
+  final isDesktop = MediaQuery.of(context).size.width >= 900;
+
+  if (isDesktop) {
+    final overlay = Overlay.of(context, rootOverlay: true);
+    late OverlayEntry entry;
+
+    entry = OverlayEntry(
+      builder: (context) {
+        return Positioned.fill(
+          child: Material(
+            color: Colors.transparent,
+            child: DraggableResizableWindow(
+              title: "Add Overnight",
+              headerColor: Colors.purple,
+              onClose: () {
+                entry.remove();
+              },
+              child: AddOvernightPage(
+                employeeId: widget.employeeId,
+                period: widget.period,
+              ),
+            ),
+          ),
+        );
+      },
+    );
+
+    overlay.insert(entry);
+  } else {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AddOvernightPage(
+          employeeId: widget.employeeId,
+          period: widget.period,
+        ),
+      ),
+    );
+  }
+},
                   child: const Text('+ Add Overnight'),
                 ),
               ),
@@ -971,16 +1001,46 @@ class _AttendancePageState extends State<AttendancePage> {
               ),
             ),
             onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => OvernightDetailPage(
-                    employeeId: widget.employeeId,
-                    period: _isAllPeriod ? 'ALL' : _selectedPeriod,
-                  ),
-                ),
-              );
-            },
+  final isDesktop = MediaQuery.of(context).size.width >= 900;
+
+  if (isDesktop) {
+    final overlay = Overlay.of(context, rootOverlay: true);
+    late OverlayEntry entry;
+
+    entry = OverlayEntry(
+      builder: (context) {
+        return Positioned.fill(
+          child: Material(
+            color: Colors.transparent,
+            child: DraggableResizableWindow(
+              title: "Overnight List",
+              headerColor: Colors.purple,
+              onClose: () {
+                entry.remove();
+              },
+              child: OvernightDetailPage(
+                employeeId: widget.employeeId,
+                period: _isAllPeriod ? 'ALL' : _selectedPeriod,
+              ),
+            ),
+          ),
+        );
+      },
+    );
+
+    overlay.insert(entry);
+  } else {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => OvernightDetailPage(
+          employeeId: widget.employeeId,
+          period: _isAllPeriod ? 'ALL' : _selectedPeriod,
+        ),
+      ),
+    );
+  }
+},
             child: const Text('View All Overnight'),
           ),
         ],
@@ -1179,22 +1239,46 @@ Widget _buildDesktopAttendanceList(List<AttendanceDay> filtered) {
 
           // TABLE
           Expanded(
-            child: Container(
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey.shade300),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(16),
-                child: ListView.builder(
-                  itemCount: filtered.length,
-                  itemBuilder: (context, index) {
-                    return _buildTableRow(filtered[index]);
-                  },
-                ),
-              ),
+  child: Container(
+    decoration: BoxDecoration(
+      border: Border.all(color: Colors.grey.shade300),
+      borderRadius: BorderRadius.circular(16),
+    ),
+    child: Column(
+      children: [
+        // 🔥 HEADER TABLE
+        Container(
+  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+  decoration: BoxDecoration(
+    color: Colors.grey.withValues(alpha: 0.1),
+    borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+  ),
+  child: Row(
+    children: const [
+      Expanded(flex: 2, child: Text('Date', style: TextStyle(fontWeight: FontWeight.bold))),
+      Expanded(flex: 2, child: Center(child: Text('Status', style: TextStyle(fontWeight: FontWeight.bold)))),
+      Expanded(flex: 2, child: Center(child: Text('Time', style: TextStyle(fontWeight: FontWeight.bold)))),
+      Expanded(flex: 2, child: Center(child: Text('Notes', style: TextStyle(fontWeight: FontWeight.bold)))),
+    ],
+  ),
+),
+
+        // 🔥 LIST
+        Expanded(
+          child: ClipRRect(
+            borderRadius: const BorderRadius.vertical(bottom: Radius.circular(16)),
+            child: ListView.builder(
+              itemCount: filtered.length,
+              itemBuilder: (context, index) {
+                return _buildTableRow(filtered[index]);
+              },
             ),
           ),
+        ),
+      ],
+    ),
+  ),
+)
         ],
       ),
     ),
@@ -1290,8 +1374,6 @@ overlay2.insert(entry2);
 },
         child: Padding(
   padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-  child: SingleChildScrollView(
-    scrollDirection: Axis.horizontal,
     child: Row(
       children: [
               // Color bar
@@ -1310,8 +1392,8 @@ overlay2.insert(entry2);
               const SizedBox(width: 12),
 
               // Date/Location
-              SizedBox(
-  width: 180,
+              Expanded(
+  flex: 3,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -1335,12 +1417,12 @@ overlay2.insert(entry2);
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(Icons.access_time, size: 10, color: Colors.red.shade700),
+                                Icon(Icons.access_time, size: 8, color: Colors.red.shade700),
                                 const SizedBox(width: 2),
                                 Text(
                                   'OT',
                                   style: TextStyle(
-                                    fontSize: 9,
+                                    fontSize: 8,
                                     color: Colors.red.shade700,
                                     fontWeight: FontWeight.w600,
                                   ),
@@ -1354,7 +1436,7 @@ overlay2.insert(entry2);
                             if (snapshot.hasData && snapshot.data == true) {
                               return Container(
                                 margin: const EdgeInsets.only(left: 4),
-                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
                                 decoration: BoxDecoration(
                                   gradient: LinearGradient(
                                     colors: [Colors.blue.withValues(alpha:0.2), Colors.blue.withValues(alpha:0.1)],
@@ -1408,111 +1490,132 @@ overlay2.insert(entry2);
               ),
 
               // Status
-              SizedBox(
-  width: 180,
-                child: Center(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [color.withValues(alpha:0.15), color.withValues(alpha:0.05)],
-                      ),
-                      borderRadius: BorderRadius.circular(30),
-                      border: Border.all(color: color.withValues(alpha:0.3)),
-                    ),
-                    child: Text(
-                      day.status.label,
-                      style: TextStyle(color: color, fontSize: 13, fontWeight: FontWeight.w600),
-                    ),
-                  ),
-                ),
-              ),
+             Expanded(
+  flex: 2,
+  child: Container(
+    alignment: Alignment.center,
+    child: Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            color.withValues(alpha: 0.15),
+            color.withValues(alpha: 0.05),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(30),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+      ),
+      child: Text(
+        day.status.label,
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          color: color,
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    ),
+  ),
+),
 
               // Check In/Out
-              SizedBox(
-  width: 180,
-                child: Center(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (checkInTime.isNotEmpty)
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [Colors.green.withValues(alpha:0.15), Colors.green.withValues(alpha:0.05)],
-                            ),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Colors.green.withValues(alpha:0.3)),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.login, size: 10, color: Colors.green.shade700),
-                              const SizedBox(width: 2),
-                              Text(
-                                checkInTime,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.green.shade700,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      if (checkInTime.isNotEmpty && checkOutTime.isNotEmpty)
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 4),
-                          child: Container(
-                            width: 4,
-                            height: 4,
-                            decoration: BoxDecoration(
-                              color: Colors.grey.shade400,
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                        ),
-                      if (checkOutTime.isNotEmpty)
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [Colors.red.withValues(alpha:0.15), Colors.red.withValues(alpha:0.05)],
-                            ),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Colors.red.withValues(alpha:0.3)),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.logout, size: 10, color: Colors.red.shade700),
-                              const SizedBox(width: 2),
-                              Text(
-                                checkOutTime,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.red.shade700,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      if (checkInTime.isEmpty && checkOutTime.isEmpty)
-                        Text(
-                          '-',
-                          style: TextStyle(fontSize: 14, color: Colors.grey.shade400),
-                        ),
-                    ],
+              // Check In/Out
+Expanded(
+  flex: 2,
+  child: Center(
+    child: FittedBox(
+      fit: BoxFit.scaleDown,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (checkInTime.isNotEmpty)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Colors.green.withValues(alpha: 0.15),
+                    Colors.green.withValues(alpha: 0.05),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.login, size: 9, color: Colors.green.shade700),
+                  const SizedBox(width: 2),
+                  Text(
+                    checkInTime,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.green.shade700,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
+                ],
+              ),
+            ),
+
+          if (checkInTime.isNotEmpty && checkOutTime.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: Container(
+                width: 4,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade400,
+                  shape: BoxShape.circle,
                 ),
               ),
+            ),
+
+          if (checkOutTime.isNotEmpty)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Colors.red.withValues(alpha: 0.15),
+                    Colors.red.withValues(alpha: 0.05),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.logout, size: 10, color: Colors.red.shade700),
+                  const SizedBox(width: 2),
+                  Text(
+                    checkOutTime,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.red.shade700,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+          if (checkInTime.isEmpty && checkOutTime.isEmpty)
+            Text(
+              '-',
+              style: TextStyle(fontSize: 13, color: Colors.grey.shade400),
+            ),
+        ],
+      ),
+    ),
+  ),
+),
 
               // Notes + Activity Button
-              SizedBox(
-  width: 180,
+              Expanded(
+  flex: 2,
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -1560,8 +1663,7 @@ overlay2.insert(entry2);
           ),
         ),
       ),
-      ),
-    );
+      );
   }
 
   Color _getStatusColor(AttendanceStatus status) {
@@ -1851,16 +1953,46 @@ overlay2.insert(entry2);
                         icon: const Icon(Icons.add, size: 16),
                         label: const Text('Add', style: TextStyle(fontSize: 13)),
                         onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => AddOvernightPage(
-                                employeeId: widget.employeeId,
-                                period: widget.period,
-                              ),
-                            ),
-                          );
-                        },
+  final isDesktop = MediaQuery.of(context).size.width >= 900;
+
+  if (isDesktop) {
+    final overlay = Overlay.of(context, rootOverlay: true);
+    late OverlayEntry entry;
+
+    entry = OverlayEntry(
+      builder: (context) {
+        return Positioned.fill(
+          child: Material(
+            color: Colors.transparent,
+            child: DraggableResizableWindow(
+              title: "Add Overnight",
+              headerColor: Colors.purple,
+              onClose: () {
+                entry.remove();
+              },
+              child: AddOvernightPage(
+                employeeId: widget.employeeId,
+                period: widget.period,
+              ),
+            ),
+          ),
+        );
+      },
+    );
+
+    overlay.insert(entry);
+  } else {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AddOvernightPage(
+          employeeId: widget.employeeId,
+          period: widget.period,
+        ),
+      ),
+    );
+  }
+}
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -1877,16 +2009,46 @@ overlay2.insert(entry2);
                         icon: const Icon(Icons.visibility, size: 16),
                         label: const Text('View', style: TextStyle(fontSize: 13)),
                         onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => OvernightDetailPage(
-                                employeeId: widget.employeeId,
-                                period: _isAllPeriod ? 'ALL' : _selectedPeriod,
-                              ),
-                            ),
-                          );
-                        },
+  final isDesktop = MediaQuery.of(context).size.width >= 900;
+
+  if (isDesktop) {
+    final overlay = Overlay.of(context, rootOverlay: true);
+    late OverlayEntry entry;
+
+    entry = OverlayEntry(
+      builder: (context) {
+        return Positioned.fill(
+          child: Material(
+            color: Colors.transparent,
+            child: DraggableResizableWindow(
+              title: "Overnight List",
+              headerColor: Colors.purple,
+              onClose: () {
+                entry.remove();
+              },
+              child: OvernightDetailPage(
+                employeeId: widget.employeeId,
+                period: _isAllPeriod ? 'ALL' : _selectedPeriod,
+              ),
+            ),
+          ),
+        );
+      },
+    );
+
+    overlay.insert(entry);
+  } else {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => OvernightDetailPage(
+          employeeId: widget.employeeId,
+          period: _isAllPeriod ? 'ALL' : _selectedPeriod,
+        ),
+      ),
+    );
+  }
+}
                       ),
                     ),
                   ],
