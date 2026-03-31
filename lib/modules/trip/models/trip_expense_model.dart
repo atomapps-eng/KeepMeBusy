@@ -1,5 +1,5 @@
 class TripExpense {
-
+//
   final String id;
   final DateTime date;
   final String employeeId;

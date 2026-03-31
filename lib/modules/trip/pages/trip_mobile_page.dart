@@ -8,7 +8,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../../../theme/app_theme.dart';
 import '../../../pages/common/app_background_wrapper.dart';
 import '../../../core/widgets/draggable_window.dart';
-
+//
 class TripMobilePage extends StatelessWidget {
   const TripMobilePage({super.key});
 

@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../../models/trip_model.dart';
-
+//
 class TripService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
