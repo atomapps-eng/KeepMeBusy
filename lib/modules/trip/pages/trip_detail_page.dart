@@ -26,7 +26,7 @@ import 'package:flutter/services.dart';
 import '../../../core/widgets/draggable_window.dart';
 import 'package:flutter/foundation.dart';
 import 'package:universal_html/html.dart' as html;
-//
+
 
 class TripDetailPage extends StatelessWidget {
   final TripTransferService transferService = TripTransferService();
