@@ -27,18 +27,29 @@ import '../../../core/widgets/draggable_window.dart';
 import 'package:flutter/foundation.dart';
 import 'package:universal_html/html.dart' as html;
 
+class TripDetailPage extends StatefulWidget {
+  final Trip trip;
 
-class TripDetailPage extends StatelessWidget {
+  const TripDetailPage({
+    super.key,
+    required this.trip,
+  });
+
+  @override
+  State<TripDetailPage> createState() => _TripDetailPageState();
+}
+
+class _TripDetailPageState extends State<TripDetailPage> {
   final TripTransferService transferService = TripTransferService();
   final TripExpenseService expenseService = TripExpenseService();
   final TripService tripService = TripService();
 
-  final Trip trip;
-
-  TripDetailPage({
-    super.key,
-    required this.trip,
-  });
+  bool _isFabOpen = false;
+  @override
+void dispose() {
+  _isFabOpen = false;
+  super.dispose();
+}
 
   String _formatDate(DateTime date) {
     return '${date.day}/${date.month}/${date.year}';
@@ -50,6 +61,7 @@ class TripDetailPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      floatingActionButtonAnimator: FloatingActionButtonAnimator.scaling,
       extendBodyBehindAppBar: true,
       appBar: AppBar(
   title: Row(
@@ -185,7 +197,7 @@ class TripDetailPage extends StatelessWidget {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (_) => CreateTripPage(trip: trip),
+                builder: (_) => CreateTripPage(trip: widget.trip),
               ),
             );
           }
@@ -225,7 +237,7 @@ class TripDetailPage extends StatelessWidget {
             );
 
             if (confirm == true) {
-              await tripService.deleteTrip(trip.id);
+              await tripService.deleteTrip(widget.trip.id);
               if (context.mounted) Navigator.pop(context);
             }
           }
@@ -258,11 +270,14 @@ class TripDetailPage extends StatelessWidget {
 
   ],
 ),
-      body: AppBackgroundWrapper(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+      body: Stack(
+  children: [
+
+    AppBackgroundWrapper(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+  crossAxisAlignment: CrossAxisAlignment.start,
+  children: [
             // Trip Info Card - Compact version
             _glass(
               Row(
@@ -272,7 +287,7 @@ class TripDetailPage extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          trip.title,
+                          widget.trip.title,
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -282,7 +297,7 @@ class TripDetailPage extends StatelessWidget {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          '${trip.partnerName} • ${trip.country}',
+                          '${widget.trip.partnerName} • ${widget.trip.country}',
                           style: TextStyle(
                             fontSize: 12,
                             color: Colors.grey.shade600,
@@ -290,7 +305,7 @@ class TripDetailPage extends StatelessWidget {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          '${_formatDate(trip.startDate)} - ${_formatDate(trip.endDate)}',
+                          '${_formatDate(widget.trip.startDate)} - ${_formatDate(widget.trip.endDate)}',
                           style: TextStyle(
                             fontSize: 11,
                             color: Colors.grey.shade500,
@@ -313,7 +328,7 @@ class TripDetailPage extends StatelessWidget {
                       border: Border.all(color: Colors.green.withValues(alpha:0.3)),
                     ),
                     child: Text(
-                      trip.status,
+                      widget.trip.status,
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
@@ -362,7 +377,7 @@ _glass(
       ),
       const SizedBox(height: 10),
       StreamBuilder<List<TripTransfer>>(
-        stream: transferService.streamTransfers(trip.id),
+        stream: transferService.streamTransfers(widget.trip.id),
         builder: (context, transferSnapshot) {
           if (!transferSnapshot.hasData) {
             return const SizedBox(
@@ -374,7 +389,7 @@ _glass(
           final transfers = transferSnapshot.data!;
 
           return StreamBuilder<List<TripExpense>>(
-            stream: expenseService.streamExpenses(trip.id),
+            stream: expenseService.streamExpenses(widget.trip.id),
             builder: (context, expenseSnapshot) {
               if (!expenseSnapshot.hasData) {
                 return const SizedBox(
@@ -533,12 +548,12 @@ _glass(
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: StreamBuilder<List<TripTransfer>>(
-                                stream: transferService.streamTransfers(trip.id),
+                                stream: transferService.streamTransfers(widget.trip.id),
                                 builder: (context, transferSnapshot) {
                                   if (!transferSnapshot.hasData) return const Text('0');
                                   final transfers = transferSnapshot.data!;
                                   return StreamBuilder<List<TripExpense>>(
-                                    stream: expenseService.streamExpenses(trip.id),
+                                    stream: expenseService.streamExpenses(widget.trip.id),
                                     builder: (context, expenseSnapshot) {
                                       if (!expenseSnapshot.hasData) return Text('${transfers.length}');
                                       final expenses = expenseSnapshot.data!;
@@ -572,7 +587,7 @@ _glass(
           return DraggableResizableWindow(
             title: "All Transactions",
             headerColor: Colors.purple,
-            child: TransactionListPage(trip: trip),
+            child: TransactionListPage(trip: widget.trip),
           );
         },
       );
@@ -580,7 +595,7 @@ _glass(
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => TransactionListPage(trip: trip),
+          builder: (_) => TransactionListPage(trip: widget.trip),
         ),
       );
     }
@@ -602,7 +617,7 @@ _glass(
 
                     Expanded(
                       child: StreamBuilder<List<TripTransfer>>(
-                        stream: transferService.streamTransfers(trip.id),
+                        stream: transferService.streamTransfers(widget.trip.id),
                         builder: (context, transferSnapshot) {
                           if (!transferSnapshot.hasData) {
                             return const Center(
@@ -616,7 +631,7 @@ _glass(
                           final transfers = transferSnapshot.data!;
 
                           return StreamBuilder<List<TripExpense>>(
-                            stream: expenseService.streamExpenses(trip.id),
+                            stream: expenseService.streamExpenses(widget.trip.id),
                             builder: (context, expenseSnapshot) {
                               if (!expenseSnapshot.hasData) {
                                 return const Center(
@@ -664,6 +679,7 @@ _glass(
                                       ),
                                     ],
                                   ),
+                                  
                                 );
                               }
 
@@ -683,145 +699,184 @@ _glass(
                 ),
               ),
             ),
-          ],
+                    ],
         ),
       ),
+          /// 🔥 OVERLAY BLUR + BLOCK TAP
+    if (_isFabOpen)
+      Positioned.fill(
+        child: Stack(
+  children: [
 
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: Colors.blue,
-        child: const Icon(Icons.add),
-        onPressed: () {
-  final isDesktop = MediaQuery.of(context).size.width >= 900;
+    /// BLOCK BACKGROUND (TIDAK TEMBUS)
+    ModalBarrier(
+      dismissible: false,
+      color: Colors.black.withOpacity(0.2),
+    ),
 
-  if (isDesktop) {
-    showDialog(
-      context: context,
-      barrierDismissible: true,
-      barrierColor: Colors.transparent,
-      builder: (context) {
-        return Center(
-          child: Material(
-            color: Colors.transparent,
-            child: Container(
-              width: 280,
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.2),
-                    blurRadius: 20,
-                  ),
-                ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  ListTile(
-                    leading: const Icon(Icons.arrow_downward, color: Colors.green),
-                    title: const Text('Add Transfer'),
-                    onTap: () {
-                      Navigator.pop(context);
+    /// BLUR
+    BackdropFilter(
+      filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
+      child: Container(color: Colors.transparent),
+    ),
 
-                      showDialog(
-                        context: context,
-                        barrierDismissible: false,
-                        barrierColor: Colors.transparent,
-                        builder: (context) {
-                          return DraggableResizableWindow(
-                            title: "Add Transfer",
-                            headerColor: Colors.green,
-                            child: AddTransferPage(
-                              tripId: trip.id,
-                            ),
-                          );
-                        },
-                      );
-                    },
-                  ),
-                  ListTile(
-                    leading: const Icon(Icons.arrow_upward, color: Colors.red),
-                    title: const Text('Add Expense'),
-                    onTap: () {
-                      Navigator.pop(context);
-
-                      showDialog(
-                        context: context,
-                        barrierDismissible: false,
-                        barrierColor: Colors.transparent,
-                        builder: (context) {
-                          return DraggableResizableWindow(
-                            title: "Add Expense",
-                            headerColor: Colors.red,
-                            child: AddExpensePage(
-                              tripId: trip.id,
-                            ),
-                          );
-                        },
-                      );
-                    },
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
+    /// TAP CLOSE (INI SEKARANG AKAN WORK)
+    GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () {
+        setState(() {
+          _isFabOpen = false;
+        });
       },
-    );
-  } else {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      child: Container(color: Colors.transparent),
+    ),
+  ],
+)
       ),
-      builder: (context) {
-        return Container(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: const Icon(Icons.arrow_downward, color: Colors.green),
-                title: const Text('Add Transfer'),
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => AddTransferPage(
-                        tripId: trip.id,
-                      ),
-                    ),
-                  );
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.arrow_upward, color: Colors.red),
-                title: const Text('Add Expense'),
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => AddExpensePage(
-                        tripId: trip.id,
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-}
-      ),
+  ],
+    ),
+
+
+      
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+
+floatingActionButton: Column(
+  mainAxisSize: MainAxisSize.min,
+  crossAxisAlignment: CrossAxisAlignment.end,
+  children: [
+
+    /// 🔥 ADD TRANSFER
+    _buildAnimatedFabItem(
+      index: 0,
+      child: FloatingActionButton.extended(
+        heroTag: "transfer",
+        backgroundColor: Colors.green,
+        icon: const Icon(Icons.arrow_downward, size: 18),
+        label: const Text("Add Transfer"),
+        onPressed: () async {
+          setState(() => _isFabOpen = false);
+          await Future.delayed(const Duration(milliseconds: 200));
+
+          final isDesktop = MediaQuery.of(context).size.width >= 900;
+
+          if (isDesktop) {
+            showDialog(
+              context: context,
+              barrierDismissible: false,
+              barrierColor: Colors.transparent,
+              builder: (context) {
+                return DraggableResizableWindow(
+                  title: "Add Transfer",
+                  headerColor: Colors.green,
+                  child: AddTransferPage(
+                    tripId: widget.trip.id,
+                  ),
+                );
+              },
+            );
+          } else {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => AddTransferPage(
+                  tripId: widget.trip.id,
+                ),
+              ),
+            );
+          }
+        },
+      ),
+    ),
+
+    const SizedBox(height: 10),
+
+    /// 🔥 ADD EXPENSE
+    _buildAnimatedFabItem(
+      index: 1,
+      child: FloatingActionButton.extended(
+        heroTag: "expense",
+        backgroundColor: Colors.red,
+        icon: const Icon(Icons.arrow_upward, size: 18),
+        label: const Text("Add Expense"),
+        onPressed: () async {
+          setState(() => _isFabOpen = false);
+          await Future.delayed(const Duration(milliseconds: 200));
+
+          final isDesktop = MediaQuery.of(context).size.width >= 900;
+
+          if (isDesktop) {
+            showDialog(
+              context: context,
+              barrierDismissible: false,
+              barrierColor: Colors.transparent,
+              builder: (context) {
+                return DraggableResizableWindow(
+                  title: "Add Expense",
+                  headerColor: Colors.red,
+                  child: AddExpensePage(
+                    tripId: widget.trip.id,
+                  ),
+                );
+              },
+            );
+          } else {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => AddExpensePage(
+                  tripId: widget.trip.id,
+                ),
+              ),
+            );
+          }
+        },
+      ),
+    ),
+
+    const SizedBox(height: 10),
+
+    /// 🔥 MAIN FAB (TOGGLE)
+    FloatingActionButton(
+      heroTag: "main_fab",
+      backgroundColor: Colors.blue,
+      child: Icon(_isFabOpen ? Icons.close : Icons.add),
+      onPressed: () {
+        setState(() {
+          _isFabOpen = !_isFabOpen;
+        });
+      },
+    ),
+  ],
+),
     );
   }
+
+  final Duration _fabAnimDuration = const Duration(milliseconds: 220);
+final Curve _fabAnimCurve = Curves.easeOut;
+
+Widget _buildAnimatedFabItem({
+  required int index,
+  required Widget child,
+}) {
+  final delay = index * 50;
+
+  return IgnorePointer(
+  ignoring: !_isFabOpen,
+  child: AnimatedOpacity(
+    duration: _fabAnimDuration,
+    curve: _fabAnimCurve,
+    opacity: _isFabOpen ? 1 : 0,
+    child: AnimatedSlide(
+      duration: _fabAnimDuration,
+      curve: _fabAnimCurve,
+      offset: _isFabOpen
+          ? Offset.zero
+          : Offset(0, 0.3 + (0.1 * index)),
+      child: child,
+    ),
+  ),
+);
+}
 
 Widget _buildTransactionItem(BuildContext context, TripLedgerItem item) {
   return InkWell(
@@ -851,7 +906,7 @@ Widget _buildTransactionItem(BuildContext context, TripLedgerItem item) {
           title: "Expense Detail",
           headerColor: Colors.red,
           child: ExpenseDetailPage(
-            tripId: trip.id,
+            tripId: widget.trip.id,
             expense: expense,
           ),
         );
@@ -862,7 +917,7 @@ Widget _buildTransactionItem(BuildContext context, TripLedgerItem item) {
       context,
       MaterialPageRoute(
         builder: (_) => ExpenseDetailPage(
-          tripId: trip.id,
+          tripId: widget.trip.id,
           expense: expense,
         ),
       ),
@@ -883,7 +938,7 @@ Widget _buildTransactionItem(BuildContext context, TripLedgerItem item) {
           title: "Edit Transfer",
           headerColor: Colors.green,
           child: AddTransferPage(
-            tripId: trip.id,
+            tripId: widget.trip.id,
             transferId: item.id,
           ),
         );
@@ -894,7 +949,7 @@ Widget _buildTransactionItem(BuildContext context, TripLedgerItem item) {
       context,
       MaterialPageRoute(
         builder: (_) => AddTransferPage(
-          tripId: trip.id,
+          tripId: widget.trip.id,
           transferId: item.id,
         ),
       ),
@@ -1112,10 +1167,10 @@ Widget _buildTransactionItem(BuildContext context, TripLedgerItem item) {
 
                 if (confirm == true) {
                   if (item.type == 'expense') {
-                    await expenseService.deleteExpense(trip.id, item.id);
+                    await expenseService.deleteExpense(widget.trip.id, item.id);
                   }
                   if (item.type == 'transfer') {
-                    await transferService.deleteTransfer(trip.id, item.id);
+                    await transferService.deleteTransfer(widget.trip.id, item.id);
                   }
                 }
               }
@@ -1150,7 +1205,7 @@ Widget _buildTransactionItem(BuildContext context, TripLedgerItem item) {
                       context,
                       MaterialPageRoute(
                         builder: (_) => AddExpensePage(
-                          tripId: trip.id,
+                          tripId: widget.trip.id,
                           expenseId: item.id,
                         ),
                       ),
@@ -1169,7 +1224,7 @@ Widget _buildTransactionItem(BuildContext context, TripLedgerItem item) {
           title: "Edit Transfer",
           headerColor: Colors.green,
           child: AddTransferPage(
-            tripId: trip.id,
+            tripId: widget.trip.id,
             transferId: item.id,
           ),
         );
@@ -1180,7 +1235,7 @@ Widget _buildTransactionItem(BuildContext context, TripLedgerItem item) {
       context,
       MaterialPageRoute(
         builder: (_) => AddTransferPage(
-          tripId: trip.id,
+          tripId: widget.trip.id,
           transferId: item.id,
         ),
       ),
@@ -1229,7 +1284,7 @@ Widget _buildTransactionItem(BuildContext context, TripLedgerItem item) {
     /// TRANSFERS (DEBIT)
     for (var transfer in transfers) {
       for (var item in transfer.transfers) {
-        final currency = item['currency'];
+        final currency = item['currency'] ?? 'UNKNOWN';
         final amount = (item['amount'] as num).toDouble();
         balance[currency] = (balance[currency] ?? 0) + amount;
       }
@@ -1255,7 +1310,7 @@ Widget _buildTransactionItem(BuildContext context, TripLedgerItem item) {
       for (var item in t.transfers) {
         ledger.add(
           TripLedgerItem(
-            id: t.id,
+            id: "${t.id}_${item['currency']}_${item['amount']}",
             type: 'transfer',
             date: t.date,
             title: 'Admin Transfer',
@@ -1364,8 +1419,8 @@ Widget _buildTransactionItem(BuildContext context, TripLedgerItem item) {
 },
     );
 
-    final transfers = await transferService.getTransfers(trip.id);
-    final expenses = await expenseService.getExpenses(trip.id);
+    final transfers = await transferService.getTransfers(widget.trip.id);
+    final expenses = await expenseService.getExpenses(widget.trip.id);
 
     final ledger = buildLedger(transfers, expenses);
     final balances = calculateBalance(transfers, expenses);
@@ -1441,7 +1496,11 @@ if (total == 0) {
         NumberFormat.currency(locale: 'id_ID', symbol: '', decimalDigits: 0);
 
     // Cache thumbnail receipts
-    final Map<String, pw.MemoryImage> receiptThumbs = {};
+   final Map<String, pw.MemoryImage> receiptThumbs = {};
+
+attachmentBytes.forEach((id, bytes) {
+  receiptThumbs[id] = pw.MemoryImage(bytes);
+});
     for (var item in ledger) {
       if (item.receiptUrl != null &&
           item.receiptUrl!.isNotEmpty &&
@@ -1487,7 +1546,7 @@ if (total == 0) {
                             ),
                           ),
                           pw.Text(
-                            "Trip ID: ${trip.id.substring(0, 8)}...",
+                            "Trip ID: ${widget.trip.id.substring(0, 8)}...",
                             style: pw.TextStyle(
                               fontSize: 10,
                               color: PdfColors.grey600,
@@ -1583,9 +1642,9 @@ if (total == 0) {
                       child: pw.Column(
                         crossAxisAlignment: pw.CrossAxisAlignment.start,
                         children: [
-                          _infoRow("Title", trip.title),
-                          _infoRow("Partner", trip.partnerName),
-                          _infoRow("Country", trip.country),
+                          _infoRow("Title", widget.trip.title),
+                          _infoRow("Partner", widget.trip.partnerName),
+                          _infoRow("Country", widget.trip.country),
                         ],
                       ),
                     ),
@@ -1594,11 +1653,11 @@ if (total == 0) {
                       child: pw.Column(
                         crossAxisAlignment: pw.CrossAxisAlignment.start,
                         children: [
-                          _infoRow("Status", trip.status),
-                          _infoRow("Created By", trip.createdByName),
+                          _infoRow("Status", widget.trip.status),
+                          _infoRow("Created By", widget.trip.createdByName),
                           _infoRow(
                             "Trip Date",
-                            "${_formatDate(trip.startDate)} - ${_formatDate(trip.endDate)}",
+                            "${_formatDate(widget.trip.startDate)} - ${_formatDate(widget.trip.endDate)}",
                           ),
                         ],
                       ),
@@ -1974,8 +2033,8 @@ pw.Wrap(
 final pdfBytes = await pdf.save();
 
 final tripDate =
-    "${trip.startDate.day}-${trip.startDate.month}-${trip.startDate.year}";
-final fileName = "${trip.country},$tripDate.pdf";
+    "${widget.trip.startDate.day}-${widget.trip.startDate.month}-${widget.trip.startDate.year}";
+final fileName = "${widget.trip.country},$tripDate.pdf";
 
 if (kIsWeb) {
   final blob = html.Blob([pdfBytes]);
