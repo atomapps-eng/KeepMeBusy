@@ -35,6 +35,21 @@ class _AddExpensePageState extends State<AddExpensePage> {
   DateTime date = DateTime.now();
 
   String currency = 'AUD';
+  IconData _getCurrencyIcon(String currency) {
+  switch (currency) {
+    case 'IDR':
+      return Icons.payments;
+    case 'JPY':
+      return Icons.currency_yen;
+    case 'CNY':
+      return Icons.currency_yuan;
+    case 'AUD':
+    case 'SGD':
+    case 'MYR':
+    default:
+      return Icons.attach_money;
+  }
+}
   String category = 'Hotel';
   String fingerprint = '';
 
@@ -535,18 +550,7 @@ Future<void> scanReceipt() async {
 
                   const SizedBox(height: 16),
 
-                  // Amount
-                  _buildDesktopTextField(
-                    label: 'Amount',
-                    icon: Icons.attach_money,
-                    controller: amountController,
-                    keyboardType: TextInputType.number,
-                    hint: '0.00',
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // Currency and Category
+                   // Currency and Category
                   Row(
                     children: [
                       // Currency
@@ -586,6 +590,17 @@ Future<void> scanReceipt() async {
                         ),
                       ),
                     ],
+                  ),
+
+                   const SizedBox(height: 16),
+
+                  // Amount
+                  _buildDesktopTextField(
+                    label: 'Amount',
+                    icon: Icons.attach_money,
+                    controller: amountController,
+                    keyboardType: TextInputType.number,
+                    hint: '0.00',
                   ),
 
                   const SizedBox(height: 16),
@@ -1049,45 +1064,46 @@ Future<void> scanReceipt() async {
                 const SizedBox(height: 16),
 
                 // Amount
-                TextField(
-                  controller: amountController,
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(
-                    labelText: 'Amount',
-                    prefixIcon: const Icon(Icons.attach_money, size: 20),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    hintText: '0.00',
-                  ),
-                ),
+                // Currency (dipindah ke atas)
+DropdownButtonFormField<String>(
+  value: currency,
+  decoration: InputDecoration(
+    labelText: 'Currency',
+    prefixIcon: const Icon(Icons.currency_exchange, size: 20),
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+    ),
+  ),
+  items: const [
+    'AUD', 'JPY', 'MYR', 'SGD', 'IDR', 'CNY'
+  ].map((c) {
+    return DropdownMenuItem(
+      value: c,
+      child: Text(c),
+    );
+  }).toList(),
+  onChanged: (v) {
+    if (v != null) {
+      setState(() => currency = v);
+    }
+  },
+),
 
-                const SizedBox(height: 12),
+const SizedBox(height: 12),
 
-                // Currency
-                DropdownButtonFormField<String>(
-                  value: currency,
-                  decoration: InputDecoration(
-                    labelText: 'Currency',
-                    prefixIcon: const Icon(Icons.currency_exchange, size: 20),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  items: const [
-                    'AUD', 'JPY', 'MYR', 'SGD', 'IDR'
-                  ].map((c) {
-                    return DropdownMenuItem(
-                      value: c,
-                      child: Text(c),
-                    );
-                  }).toList(),
-                  onChanged: (v) {
-                    if (v != null) {
-                      setState(() => currency = v);
-                    }
-                  },
-                ),
+// Amount (icon dynamic)
+TextField(
+  controller: amountController,
+  keyboardType: TextInputType.number,
+  decoration: InputDecoration(
+    labelText: 'Amount',
+    prefixIcon: Icon(_getCurrencyIcon(currency), size: 20),
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+    ),
+    hintText: '0.00',
+  ),
+),
 
                 const SizedBox(height: 12),
 

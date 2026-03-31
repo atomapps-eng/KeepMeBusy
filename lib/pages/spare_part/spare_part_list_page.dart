@@ -68,7 +68,11 @@ bool get wantKeepAlive => true;
   bool _isFetchingMore = false;
   bool _isDisposed = false;
   bool _isGeneratingPdf = false;
+  bool _isFabOpen = false;
 double _pdfProgress = 0.0;
+
+final Duration _fabAnimDuration = const Duration(milliseconds: 220);
+final Curve _fabAnimCurve = Curves.easeOut;
 
   @override
   void initState() {
@@ -280,6 +284,7 @@ Widget build(BuildContext context) {
               gradient: AppTheme.backgroundGradient,
             ),
           ),
+
           SafeArea(
             child: Column(
               children: [
@@ -301,6 +306,35 @@ Widget build(BuildContext context) {
               ],
             ),
           ),
+          if (_isFabOpen)
+  Positioned.fill(
+    child: Stack(
+      children: [
+        // 🔥 1. BLOCK TAP KE BAWAH
+        ModalBarrier(
+          dismissible: false,
+          color: Colors.black.withOpacity(0.2),
+        ),
+
+        // 🔥 2. BLUR
+        BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
+          child: Container(color: Colors.transparent),
+        ),
+
+        // 🔥 3. TAP UNTUK CLOSE
+        GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () {
+            setState(() {
+              _isFabOpen = false;
+            });
+          },
+          child: Container(color: Colors.transparent),
+        ),
+      ],
+    ),
+  ),
         ],
       ),
     );
@@ -310,40 +344,131 @@ Widget build(BuildContext context) {
     }
 
     return Scaffold(
-      floatingActionButton: widget.isCompact
-          ? null
-          : FloatingActionButton.extended(
-              backgroundColor: const Color(0xFF2563EB),
-              foregroundColor: Colors.white,
-              icon: const Icon(Icons.add, size: 18),
-              label: const Text('New Spare Part'),
-              onPressed: () {
-                final isDesktop = MediaQuery.of(context).size.width >= 900;
-                if (isDesktop) {
-                  showDialog(
-                    context: context,
-                    barrierDismissible: false,
-                    barrierColor: Colors.transparent,
-                    builder: (context) {
-                      return DraggableResizableWindow(
-                        title: "Add Spare Part",
-                        headerColor: Colors.blueGrey,
-                        child: const AddSparePartPage(isWindow: true),
-                      );
-                    },
-                  );
-                } else {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const AddSparePartPage(),
-                    ),
-                  );
-                }
-              },
+  floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+
+floatingActionButton: widget.isCompact
+    ? null
+    : Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+
+          // 🔥 CHILD BUTTONS (muncul kalau open)
+           ...[
+  _buildAnimatedFabItem(
+    index: 0,
+    child: FloatingActionButton.extended(
+  heroTag: "low_stock",
+  backgroundColor: _showLowStockOnly
+      ? Colors.green
+      : Colors.red,
+  foregroundColor: Colors.white,
+  elevation: _showLowStockOnly ? 6 : 2,
+  icon: Icon(
+    _showLowStockOnly
+        ? Icons.list
+        : Icons.warning_amber_rounded,
+    size: 18,
+  ),
+  label: Text(
+    _showLowStockOnly
+        ? 'Show All Stock'
+        : 'Show Low Stock',
+  ),
+  onPressed: () async {
+    setState(() {
+      _showLowStockOnly = !_showLowStockOnly;
+      _isFabOpen = false;
+    });
+
+    if (_showLowStockOnly) {
+      await _loadLowStockData();
+    } else {
+      await _loadInitialData();
+    }
+  },
+)
+  ),
+
+  const SizedBox(height: 10),
+
+  _buildAnimatedFabItem(
+    index: 1,
+    child: FloatingActionButton.extended(
+      heroTag: "pdf",
+      backgroundColor: const Color(0xFF0EA5E9),
+      foregroundColor: Colors.white,
+      icon: const Icon(Icons.picture_as_pdf, size: 18),
+      label: const Text('Print PDF Low Stock'),
+      onPressed: () async {
+        setState(() => _isFabOpen = false);
+
+        final confirm = await _confirmPrintPdf();
+        if (!confirm) return;
+
+        await _generateLowStockPdf();
+      },
+    ),
+  ),
+
+  const SizedBox(height: 10),
+
+  _buildAnimatedFabItem(
+    index: 2,
+    child: FloatingActionButton.extended(
+      heroTag: "add",
+      backgroundColor: const Color(0xFF2563EB),
+      foregroundColor: Colors.white,
+      icon: const Icon(Icons.add, size: 18),
+      label: const Text('New Spare Part'),
+      onPressed: () {
+        setState(() => _isFabOpen = false);
+
+        final isDesktop = MediaQuery.of(context).size.width >= 900;
+        if (isDesktop) {
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            barrierColor: Colors.transparent,
+            builder: (context) {
+              return DraggableResizableWindow(
+                title: "Add Spare Part",
+                headerColor: Colors.blueGrey,
+                child: const AddSparePartPage(isWindow: true),
+              );
+            },
+          );
+        } else {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => const AddSparePartPage(),
             ),
-      body: content,
-    );
+          );
+        }
+      },
+    ),
+  ),
+
+  const SizedBox(height: 10),
+],
+
+          // 🔥 MAIN BUTTON (toggle)
+          FloatingActionButton(
+            heroTag: "main_fab",
+            backgroundColor: const Color(0xFF2563EB),
+            child: Icon(_isFabOpen ? Icons.close : Icons.menu),
+            onPressed: () {
+              setState(() {
+                _isFabOpen = !_isFabOpen;
+              });
+            },
+          ),
+        ],
+      ),
+
+  body: content,
+);
   }
 
   Widget _buildPartsList() {
@@ -552,91 +677,36 @@ if (_isSearching) {
       ),
     ),
     const SizedBox(width: 8),
-    Text(
-      widget.selectionMode
-          ? 'Select Spare Part'
-          : 'Spare Part Database',
-      style: const TextStyle(
-        fontSize: 18,
-        fontWeight: FontWeight.w600,
+
+Expanded(
+  child: Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(
+        widget.selectionMode
+            ? 'Select Spare Part'
+            : 'Spare Part Database',
+        style: const TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.w600,
+        ),
       ),
-    ),
-
-    const Spacer(),
-
-    // 🔥 LOW STOCK ICON
-    GestureDetector(
-  onTap: () async {
-    setState(() {
-      _showLowStockOnly = !_showLowStockOnly;
-    });
-
-    if (_showLowStockOnly) {
-      await _loadLowStockData();
-    } else {
-      await _loadInitialData();
-    }
-  },
-  child: Container(
-    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-    decoration: BoxDecoration(
-      color: _showLowStockOnly
-          ? Colors.red.withOpacity(0.2)
-          : Colors.white.withOpacity(0.2),
-      borderRadius: BorderRadius.circular(12),
-    ),
-    child: Row(
-      children: [
-        Icon(
-          Icons.warning_amber_rounded,
-          size: 18,
-          color: _showLowStockOnly ? Colors.red : Colors.black87,
-        ),
-        const SizedBox(width: 6),
-        Text(
-          'Low Stock',
+      const SizedBox(height: 2),
+      AnimatedSwitcher(
+        duration: const Duration(milliseconds: 250),
+        child: Text(
+          _showLowStockOnly ? 'Low Stock' : 'All Stock',
+          key: ValueKey(_showLowStockOnly),
           style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            color: _showLowStockOnly ? Colors.red : Colors.black87,
+            fontSize: 15,
+            fontWeight: FontWeight.w500,
+            color: _showLowStockOnly ? Colors.red : Colors.green,
           ),
         ),
-      ],
-    ),
+      ),
+    ],
   ),
 ),
-
-const SizedBox(width: 8),
-
-GestureDetector(
-  onTap: () async {
-  final confirm = await _confirmPrintPdf();
-  if (!confirm) return;
-
-  await _generateLowStockPdf();
-},
-  child: Container(
-    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-    decoration: BoxDecoration(
-      color: Colors.white.withOpacity(0.2),
-      borderRadius: BorderRadius.circular(12),
-    ),
-    child: Row(
-      children: const [
-        Icon(Icons.picture_as_pdf, size: 18),
-        SizedBox(width: 6),
-        Text(
-          'PDF',
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ],
-    ),
-  ),
-),
-
   ],
 )
         ),
@@ -899,6 +969,30 @@ Future<bool> _confirmPrintPdf() async {
   );
 
   return result ?? false;
+}
+
+Widget _buildAnimatedFabItem({
+  required int index,
+  required Widget child,
+}) {
+  final delay = index * 50;
+
+  return AnimatedOpacity(
+    duration: _fabAnimDuration,
+    curve: _fabAnimCurve,
+    opacity: _isFabOpen ? 1 : 0,
+    child: AnimatedSlide(
+      duration: _fabAnimDuration,
+      curve: _fabAnimCurve,
+      offset: _isFabOpen
+          ? Offset.zero
+          : Offset(0, 0.3 + (0.1 * index)),
+      child: Padding(
+        padding: EdgeInsets.only(bottom: delay.toDouble() * 0.1),
+        child: child,
+      ),
+    ),
+  );
 }
   
 }

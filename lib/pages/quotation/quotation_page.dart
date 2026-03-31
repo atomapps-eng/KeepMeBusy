@@ -72,7 +72,8 @@ return _buildQuotationContent(
     bool isSuperAdmin,
   ) {
     return Scaffold(
-      extendBodyBehindAppBar: true,
+      extendBodyBehindAppBar: false,
+      backgroundColor: AppTheme.backgroundGradient.colors.first,
       appBar: AppBar(
         title: Row(
           children: [
@@ -241,7 +242,7 @@ return _buildQuotationContent(
 
             return ListView.builder(
               padding: EdgeInsets.only(
-  top: MediaQuery.of(context).padding.top + 40,
+  top: MediaQuery.of(context).padding.top + 10,
   left: 16,
   right: 16,
   bottom: 100,

@@ -608,11 +608,13 @@ class _CreateTripPageState extends State<CreateTripPage> {
                                   contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                                 ),
                                 items: const [
-                                  DropdownMenuItem(value: 'Japan', child: Text('Japan 🇯🇵')),
-                                  DropdownMenuItem(value: 'Australia', child: Text('Australia 🇦🇺')),
-                                  DropdownMenuItem(value: 'Malaysia', child: Text('Malaysia 🇲🇾')),
-                                  DropdownMenuItem(value: 'Singapore', child: Text('Singapore 🇸🇬')),
-                                ],
+  DropdownMenuItem(value: 'Japan', child: Text('Japan 🇯🇵')),
+  DropdownMenuItem(value: 'Australia', child: Text('Australia 🇦🇺')),
+  DropdownMenuItem(value: 'Malaysia', child: Text('Malaysia 🇲🇾')),
+  DropdownMenuItem(value: 'Singapore', child: Text('Singapore 🇸🇬')),
+  DropdownMenuItem(value: 'Indonesia', child: Text('Indonesia 🇮🇩')),
+  DropdownMenuItem(value: 'China', child: Text('China 🇨🇳')),
+],
                                 onChanged: (v) {
                                   setState(() {
                                     country = v!;
@@ -658,12 +660,14 @@ class _CreateTripPageState extends State<CreateTripPage> {
                                   border: OutlineInputBorder(),
                                   contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                                 ),
-                                items: const [
-                                  DropdownMenuItem(value: 'JPY', child: Text('JPY 💴')),
-                                  DropdownMenuItem(value: 'AUD', child: Text('AUD 💵')),
-                                  DropdownMenuItem(value: 'MYR', child: Text('MYR 💵')),
-                                  DropdownMenuItem(value: 'SGD', child: Text('SGD 💵')),
-                                ],
+                               items: const [
+  DropdownMenuItem(value: 'JPY', child: Text('JPY 💴')),
+  DropdownMenuItem(value: 'AUD', child: Text('AUD 💵')),
+  DropdownMenuItem(value: 'MYR', child: Text('MYR 💵')),
+  DropdownMenuItem(value: 'SGD', child: Text('SGD 💵')),
+  DropdownMenuItem(value: 'IDR', child: Text('IDR 💵')),
+  DropdownMenuItem(value: 'CNY', child: Text('CNY 💴')),
+],
                                 onChanged: (v) {
                                   setState(() {
                                     currency = v!;
@@ -1234,11 +1238,13 @@ class _CreateTripPageState extends State<CreateTripPage> {
                     ),
                   ),
                   items: const [
-                    DropdownMenuItem(value: 'Japan', child: Text('Japan 🇯🇵')),
-                    DropdownMenuItem(value: 'Australia', child: Text('Australia 🇦🇺')),
-                    DropdownMenuItem(value: 'Malaysia', child: Text('Malaysia 🇲🇾')),
-                    DropdownMenuItem(value: 'Singapore', child: Text('Singapore 🇸🇬')),
-                  ],
+  DropdownMenuItem(value: 'Japan', child: Text('Japan 🇯🇵')),
+  DropdownMenuItem(value: 'Australia', child: Text('Australia 🇦🇺')),
+  DropdownMenuItem(value: 'Malaysia', child: Text('Malaysia 🇲🇾')),
+  DropdownMenuItem(value: 'Singapore', child: Text('Singapore 🇸🇬')),
+  DropdownMenuItem(value: 'Indonesia', child: Text('Indonesia 🇮🇩')),
+  DropdownMenuItem(value: 'China', child: Text('China 🇨🇳')),
+],
                   onChanged: (v) {
                     setState(() {
                       country = v!;
@@ -1259,11 +1265,13 @@ class _CreateTripPageState extends State<CreateTripPage> {
                     ),
                   ),
                   items: const [
-                    DropdownMenuItem(value: 'JPY', child: Text('JPY 💴')),
-                    DropdownMenuItem(value: 'AUD', child: Text('AUD 💵')),
-                    DropdownMenuItem(value: 'MYR', child: Text('MYR 💵')),
-                    DropdownMenuItem(value: 'SGD', child: Text('SGD 💵')),
-                  ],
+  DropdownMenuItem(value: 'JPY', child: Text('JPY 💴')),
+  DropdownMenuItem(value: 'AUD', child: Text('AUD 💵')),
+  DropdownMenuItem(value: 'MYR', child: Text('MYR 💵')),
+  DropdownMenuItem(value: 'SGD', child: Text('SGD 💵')),
+  DropdownMenuItem(value: 'IDR', child: Text('IDR 💵')),
+  DropdownMenuItem(value: 'CNY', child: Text('CNY 💴')),
+],
                   onChanged: (v) {
                     setState(() {
                       currency = v!;
