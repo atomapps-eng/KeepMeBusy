@@ -103,6 +103,7 @@ class _HomeMobileState extends State<HomeMobile> {
 
   @override
   Widget build(BuildContext context) {
+    final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
     final user = FirebaseAuth.instance.currentUser;
     final displayName =
         user?.displayName?.isNotEmpty == true ? user!.displayName! : 'User';
@@ -127,7 +128,7 @@ class _HomeMobileState extends State<HomeMobile> {
         ),
         child: SafeArea(
           child: SizedBox(
-            height: 60,
+  height: isTablet ? 75 : 60,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
@@ -1079,57 +1080,61 @@ Widget _buildSettingsPage() {
 
   // Widget untuk Navigation Item
   Widget _buildNavItem({
-    required IconData icon,
-    required String label,
-    required bool isSelected,
-    required VoidCallback onTap,
-  }) {
-    return Expanded(
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(12),
-          child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  icon,
-                  size: 22,
+  required IconData icon,
+  required String label,
+  required bool isSelected,
+  required VoidCallback onTap,
+}) {
+  final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
+
+  return Expanded(
+    child: Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: EdgeInsets.symmetric(vertical: isTablet ? 6 : 8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                icon,
+                size: isTablet ? 28 : 22,
+                color: isSelected 
+                    ? const Color(0xFF667EEA) 
+                    : Colors.grey.shade600,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                maxLines: 1,
+overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: isTablet ? 13 : 10,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                   color: isSelected 
                       ? const Color(0xFF667EEA) 
                       : Colors.grey.shade600,
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                    color: isSelected 
-                        ? const Color(0xFF667EEA) 
-                        : Colors.grey.shade600,
+              ),
+              if (isSelected)
+                Container(
+                  margin: const EdgeInsets.only(top: 2),
+                  width: 20,
+                  height: 2,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF667EEA),
+                    borderRadius: BorderRadius.circular(2),
                   ),
                 ),
-                if (isSelected)
-                  Container(
-                    margin: const EdgeInsets.only(top: 2),
-                    width: 20,
-                    height: 2,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF667EEA),
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-              ],
-            ),
+            ],
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   // ================= HEADER =================
   Widget _buildHeader(String displayName, String email) {
@@ -1329,6 +1334,7 @@ class _CategorySection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
     if (FirebaseAuth.instance.currentUser == null) {
       return const SizedBox.shrink();
     }
@@ -1379,8 +1385,9 @@ class _MenuCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bool isTablet = MediaQuery.of(context).size.width >= 700;
-    final double sizeIcon = iconSize ?? (isTablet ? 36 : 30);
+    final bool isTablet = MediaQuery.of(context).size.shortestSide >= 600;
+    final double sizeIcon = iconSize ?? (isTablet ? 48 : 30);
+    final double cardSize = isTablet ? 110 : 70;
 
     return Center(
   child: Material(
@@ -1389,8 +1396,8 @@ class _MenuCard extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
       child: SizedBox(
-        width: 70,
-        height: 70,
+  width: cardSize,
+  height: cardSize,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -1405,8 +1412,8 @@ class _MenuCard extends StatelessWidget {
               textAlign: TextAlign.center,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                fontSize: 11,
+              style: TextStyle(
+  fontSize: isTablet ? 14 : 11,
                 fontWeight: FontWeight.w500,
                 color: Colors.black87,
               ),

@@ -756,7 +756,7 @@ static pw.Widget _buildModernNoteSection(Map<String, dynamic> data, pw.Font bold
               ),
               pw.SizedBox(height: 4),
               pw.Text(
-                safeText(note, maxChars: 200),
+                note ?? "-",
                 style: pw.TextStyle(
                   fontSize: 8,
                   fontStyle: pw.FontStyle.italic,

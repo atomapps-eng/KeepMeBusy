@@ -588,15 +588,13 @@ class TripMobilePage extends StatelessWidget {
                                   ),
                                 ),
                                 child: Row(
-                                  children: const [
-                                    SizedBox(width: 40), // Untuk status indicator
-                                    Expanded(flex: 3, child: Text('Trip Details', style: TextStyle(fontWeight: FontWeight.w600))),
-                                    Expanded(flex: 2, child: Center(child: Text('Partner / Country', style: TextStyle(fontWeight: FontWeight.w600)))),
-                                    Expanded(flex: 2, child: Center(child: Text('Budget', style: TextStyle(fontWeight: FontWeight.w600)))),
-                                    Expanded(flex: 2, child: Center(child: Text('Status', style: TextStyle(fontWeight: FontWeight.w600)))),
-                                    SizedBox(width: 24),
-                                  ],
-                                ),
+  children: const [
+    SizedBox(width: 40),
+    Expanded(flex: 4, child: Text('Trip Details', style: TextStyle(fontWeight: FontWeight.w600))),
+    Expanded(flex: 2, child: Center(child: Text('Partner / Country', style: TextStyle(fontWeight: FontWeight.w600)))),
+    SizedBox(width: 24),
+  ],
+),
                               ),
 
                               // List View
@@ -800,31 +798,6 @@ class TripMobilePage extends StatelessWidget {
                             ),
                           ),
                         ],
-                      ),
-                    ),
-                  ),
-
-                  // Status
-                  Expanded(
-                    flex: 2,
-                    child: Center(
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [statusColor.withValues(alpha:0.15), statusColor.withValues(alpha:0.05)],
-                          ),
-                          borderRadius: BorderRadius.circular(30),
-                          border: Border.all(color: statusColor.withValues(alpha:0.3)),
-                        ),
-                        child: Text(
-                          trip.status ?? 'Draft',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: statusColor,
-                          ),
-                        ),
                       ),
                     ),
                   ),

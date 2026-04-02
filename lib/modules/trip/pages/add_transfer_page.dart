@@ -24,6 +24,8 @@ class AddTransferPage extends StatefulWidget {
 }
 
 class _AddTransferPageState extends State<AddTransferPage> {
+  bool isUploading = false;
+double uploadProgress = 0;
   TripTransfer? existingTransfer;
   DateTime date = DateTime.now();
   final amountController = TextEditingController();
@@ -84,43 +86,115 @@ final String uploadPreset = 'Receipt';
   }
 
     Future<void> saveTransfer() async {
-  final user = FirebaseAuth.instance.currentUser!;
+
+  if (isUploading) return;
+
+  final user = FirebaseAuth.instance.currentUser;
+
+  if (user == null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("User not authenticated"),
+        backgroundColor: Colors.red,
+      ),
+    );
+    return;
+  }
+
+  if (amountController.text.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("Amount cannot be empty"),
+        backgroundColor: Colors.orange,
+      ),
+    );
+    return;
+  }
+
+  setState(() {
+    isUploading = true;
+    uploadProgress = 0;
+  });
 
   String photoUrl = existingImageUrl ?? '';
 
-  if (transferImage != null) {
-    photoUrl = await uploadImageToCloudinary();
-  }
+  try {
 
-  final transfer = TripTransfer(
-    id: '',
-    date: date,
-    createdBy: user.uid,
-    transfers: [
-      {
-        'employeeId': user.uid,
-        'amount': double.tryParse(amountController.text) ?? 0,
-        'currency': currency,
-      }
-    ],
-    note: noteController.text,
-    receiptUrl: photoUrl, // tambahkan field ini di model
-  );
+    /// ======================
+    /// UPLOAD IMAGE
+    /// ======================
+    if (transferImage != null) {
+      photoUrl = await uploadImageToCloudinary();
+    }
 
-  if (widget.transferId == null) {
-    await transferService.createTransfer(
-      widget.tripId,
-      transfer,
+    /// ======================
+    /// CREATE MODEL
+    /// ======================
+    final transfer = TripTransfer(
+      id: '',
+      date: date,
+      createdBy: user.uid,
+      transfers: [
+        {
+          'employeeId': user.uid,
+          'amount': double.tryParse(
+  amountController.text.replaceAll(',', '')
+) ?? 0,
+          'currency': currency,
+        }
+      ],
+      note: noteController.text,
+      receiptUrl: photoUrl,
     );
-  } else {
-    await transferService.updateTransfer(
-      widget.tripId,
-      widget.transferId!,
-      transfer,
-    );
-  }
 
-  Navigator.pop(context);
+    /// ======================
+    /// SAVE FIRESTORE
+    /// ======================
+    if (widget.transferId == null) {
+      await transferService.createTransfer(
+        widget.tripId,
+        transfer,
+      );
+    } else {
+      await transferService.updateTransfer(
+        widget.tripId,
+        widget.transferId!,
+        transfer,
+      );
+    }
+
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("Transfer saved successfully"),
+        backgroundColor: Colors.green,
+      ),
+    );
+
+    Navigator.pop(context);
+
+  } on SocketException {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("No internet connection"),
+        backgroundColor: Colors.red,
+      ),
+    );
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text("Failed to save transfer: $e"),
+        backgroundColor: Colors.red,
+      ),
+    );
+  } finally {
+    if (mounted) {
+      setState(() {
+        isUploading = false;
+      });
+    }
+  }
 }
 
   String _formatDate(DateTime date) {
@@ -204,16 +278,50 @@ final String uploadPreset = 'Receipt';
           ),
           child: IconButton(
             icon: const Icon(Icons.arrow_back),
-            onPressed: () => Navigator.pop(context),
+            onPressed: isUploading ? null : () => Navigator.pop(context),
           ),
         ),
       ),
-      body: AppBackgroundWrapper(
-        padding: const EdgeInsets.all(16),
-        child: isDesktop
-            ? _buildDesktopLayout(isEditing)
-            : _buildMobileLayout(isEditing),
+      body: Stack(
+  children: [
+
+    AppBackgroundWrapper(
+      padding: const EdgeInsets.all(16),
+      child: isDesktop
+          ? _buildDesktopLayout(isEditing)
+          : _buildMobileLayout(isEditing),
+    ),
+
+    if (isUploading)
+      Container(
+        color: Colors.black.withValues(alpha: 0.4),
+        child: Center(
+          child: Container(
+            width: 280,
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: const [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text(
+                  "Saving Transfer...",
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
+
+  ],
+),
     );
   }
 
@@ -432,7 +540,34 @@ if (transferImage != null || (existingImageUrl?.isNotEmpty ?? false)) ...[
                             ),
                             elevation: 0,
                           ),
-                          onPressed: saveTransfer,
+                          onPressed: isUploading
+    ? null
+    : () async {
+        final confirm = await showDialog<bool>(
+          context: context,
+          builder: (context) {
+            return AlertDialog(
+              title: const Text("Confirm"),
+              content: const Text(
+                  "Are you sure you want to save this transfer?"),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: const Text("Cancel"),
+                ),
+                ElevatedButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  child: const Text("Yes, Save"),
+                ),
+              ],
+            );
+          },
+        );
+
+        if (confirm == true) {
+          await saveTransfer();
+        }
+      },
                           child: Text(isEditing ? 'UPDATE' : 'SAVE'),
                         ),
                       ),
@@ -541,8 +676,8 @@ if (transferImage != null || (existingImageUrl?.isNotEmpty ?? false)) ...[
                           // Amount
                           Text(
                             amountController.text.isEmpty
-      ? '0'
-      : formatNumber(double.tryParse(amountController.text) ?? 0),
+    ? '0'
+    : amountController.text,
                             style: TextStyle(
                               fontSize: 36,
                               fontWeight: FontWeight.bold,
@@ -726,6 +861,16 @@ const SizedBox(height: 12),
 TextField(
   controller: amountController,
   keyboardType: TextInputType.number,
+  onChanged: (value) {
+    final formatted = formatNumber(value);
+
+    if (value != formatted) {
+      amountController.value = TextEditingValue(
+        text: formatted,
+        selection: TextSelection.collapsed(offset: formatted.length),
+      );
+    }
+  },
   decoration: InputDecoration(
     labelText: 'Amount',
     prefixIcon: Icon(_getCurrencyIcon(currency), size: 20),
@@ -863,7 +1008,34 @@ if (transferImage != null) ...[
                       ),
                       elevation: 0,
                     ),
-                    onPressed: saveTransfer,
+                    onPressed: isUploading
+    ? null
+    : () async {
+        final confirm = await showDialog<bool>(
+          context: context,
+          builder: (context) {
+            return AlertDialog(
+              title: const Text("Confirm"),
+              content: const Text(
+                  "Are you sure you want to save this transfer?"),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: const Text("Cancel"),
+                ),
+                ElevatedButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  child: const Text("Yes, Save"),
+                ),
+              ],
+            );
+          },
+        );
+
+        if (confirm == true) {
+          await saveTransfer();
+        }
+      },
                     child: Text(isEditing ? 'UPDATE' : 'SAVE'),
                   ),
                 ),
@@ -1225,12 +1397,20 @@ Future<String> uploadImageToCloudinary() async {
   }
 }
 
-String formatNumber(num value) {
-  if (value % 1 == 0) {
-    return value.toInt().toString();
-  } else {
-    return value.toString();
-  }
+String formatNumber(String value) {
+  if (value.isEmpty) return '';
+
+  final number = value.replaceAll(',', '');
+
+  final parsed = int.tryParse(number);
+  if (parsed == null) return value;
+
+  final result = parsed.toString().replaceAllMapped(
+    RegExp(r'\B(?=(\d{3})+(?!\d))'),
+    (match) => ',',
+  );
+
+  return result;
 }
 
 }

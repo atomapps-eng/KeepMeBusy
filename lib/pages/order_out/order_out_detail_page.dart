@@ -471,6 +471,10 @@ onPressed: () async {
     ),
   );
 
+  if (confirm != true) return;
+
+await _generatePdfWithLoading(context, data);
+
  if (widget.onEdit != null) {
   widget.onEdit!({
     ...data,
@@ -491,7 +495,7 @@ onPressed: () async {
                                     child: _buildActionButton(
                                       icon: Icons.delete,
                                       label: 'Delete',
-                                      color: const Color(0xFFEF4444),
+                                      color: const Color.fromARGB(255, 243, 24, 24),
                                       onPressed: () async {
                                         final confirm = await _confirmDelete(context);
                                         if (!confirm) return;
@@ -503,19 +507,69 @@ onPressed: () async {
                               ],
                             ),
                             const SizedBox(height: 12),
-                            _buildActionButton(
-                              icon: Icons.picture_as_pdf,
-                              label: 'Download PDF',
-                              color: const Color(0xFFDC2626),
-                              onPressed: () async {
-                                final pdfData = await OrderOutPdfGenerator.generate(data: data);
-                                final dir = await getApplicationDocumentsDirectory();
-                                final file = File('${dir.path}/OrderOut-${data['poNumber']}.pdf');
-                                await file.writeAsBytes(pdfData, flush: true);
-                                await OpenFilex.open(file.path);
-                              },
-                              isOutlined: true,
-                            ),
+                            GestureDetector(
+  onTap: () async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Download PDF'),
+        content: const Text('Do you want to download this PDF file?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Download'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    await _generatePdfWithLoading(context, data);
+  },
+  child: Container(
+    width: double.infinity,
+    padding: const EdgeInsets.symmetric(vertical: 14),
+    decoration: BoxDecoration(
+      gradient: const LinearGradient(
+        colors: [
+          Color(0xFFEF4444),
+          Color(0xFFDC2626),
+        ],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ),
+      borderRadius: BorderRadius.circular(14),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.red.withOpacity(0.35),
+          blurRadius: 12,
+          offset: const Offset(0, 6),
+        ),
+      ],
+    ),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: const [
+        Icon(Icons.picture_as_pdf, color: Colors.white, size: 18),
+        SizedBox(width: 8),
+        Text(
+          "Download PDF",
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w600,
+            fontSize: 14,
+          ),
+        ),
+      ],
+    ),
+  ),
+),
                           ],
                         );
                       },
@@ -629,6 +683,97 @@ return scaffold;
   String _formatDate(DateTime date) {
     return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
   }
+
+  Future<void> _generatePdfWithLoading(BuildContext context, Map<String, dynamic> data) async {
+  double progress = 0;
+  Function(void Function())? updateDialog;
+
+  try {
+    showDialog(
+  context: context,
+  barrierDismissible: false,
+  builder: (context) {
+    return StatefulBuilder(
+      builder: (context, setStateDialog) {
+        updateDialog = setStateDialog;
+
+        return Center(
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              child: Container(
+                width: 260,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.9),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.grey.shade300),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text("Generating PDF"),
+                    const SizedBox(height: 12),
+                    LinearProgressIndicator(value: progress),
+                    const SizedBox(height: 8),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: Text("${(progress * 100).toStringAsFixed(0)}%"),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  },
+);
+
+/// 🔥 WAJIB: kasih waktu UI render
+await Future.delayed(const Duration(milliseconds: 100));
+
+    /// STEP 1 — start progress
+    progress = 0.2;
+    if (updateDialog != null) updateDialog!(() {});
+
+    final safePoNumber = (data['poNumber'] ?? 'no-po')
+        .toString()
+        .replaceAll(RegExp(r'[^\w\s-]'), '-')
+        .replaceAll(' ', '_');
+
+    /// STEP 2 — generate PDF
+    final pdfData = await OrderOutPdfGenerator.generate(data: data);
+
+    progress = 0.6;
+    if (updateDialog != null) updateDialog!(() {});
+
+    /// STEP 3 — save file
+    final dir = await getApplicationDocumentsDirectory();
+    final file = File('${dir.path}/OrderOut-$safePoNumber.pdf');
+
+    await file.writeAsBytes(pdfData, flush: true);
+
+    progress = 1.0;
+    if (updateDialog != null) updateDialog!(() {});
+
+    Navigator.pop(context);
+
+    /// STEP 4 — open file
+    await OpenFilex.open(file.path);
+
+  } catch (e) {
+    Navigator.pop(context);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("PDF error: $e")),
+    );
+  }
+}
+
 }
 
 Future<void> _deleteOrderOut(BuildContext context, String orderId) async {

@@ -6,6 +6,7 @@ import '../services/overnight_service.dart';
 import '../models/overnight_entry.dart';
 import '../../models/partner.dart';
 import '../../pages/partners/partner_list_page.dart';
+import 'dart:async';
 
 class AddOvernightPage extends StatefulWidget {
   final String employeeId;
@@ -286,12 +287,10 @@ class _AddOvernightPageState extends State<AddOvernightPage> {
                   icon: Icons.calendar_today,
                   color: Colors.blue,
                   onTap: () async {
-                    final d = await showDatePicker(
-                      context: context,
-                      initialDate: startDate ?? DateTime.now(),
-                      firstDate: DateTime(2020),
-                      lastDate: DateTime(2035),
-                    );
+                    final d = await showDatePickerOverlay(
+  context: context,
+  initialDate: startDate ?? DateTime.now(),
+);
                     if (d != null) setState(() => startDate = d);
                   },
                 ),
@@ -305,12 +304,10 @@ class _AddOvernightPageState extends State<AddOvernightPage> {
                   icon: Icons.calendar_month,
                   color: Colors.orange,
                   onTap: () async {
-                    final d = await showDatePicker(
-                      context: context,
-                      initialDate: endDate ?? DateTime.now(),
-                      firstDate: DateTime(2020),
-                      lastDate: DateTime(2035),
-                    );
+                   final d = await showDatePickerOverlay(
+  context: context,
+  initialDate: endDate ?? DateTime.now(),
+);
                     if (d != null) setState(() => endDate = d);
                   },
                 ),
@@ -549,9 +546,10 @@ class _AddOvernightPageState extends State<AddOvernightPage> {
         // RIGHT CONTENT - PREVIEW
         Expanded(
           child: _glass(
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
+  SingleChildScrollView(
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
                 Row(
                   children: [
                     Container(
@@ -718,6 +716,7 @@ class _AddOvernightPageState extends State<AddOvernightPage> {
             ),
           ),
         ),
+        ),
       ],
     );
   }
@@ -769,12 +768,26 @@ class _AddOvernightPageState extends State<AddOvernightPage> {
                   icon: Icons.calendar_today,
                   color: Colors.blue,
                   onTap: () async {
-                    final d = await showDatePicker(
-                      context: context,
-                      initialDate: startDate ?? DateTime.now(),
-                      firstDate: DateTime(2020),
-                      lastDate: DateTime(2035),
-                    );
+                    final d = await showDialog<DateTime>(
+  context: context,
+  useRootNavigator: true,
+  barrierDismissible: true,
+  builder: (context) {
+    return Center(
+      child: Material(
+        color: Colors.transparent,
+        child: SizedBox(
+          width: 400,
+          child: DatePickerDialog(
+            initialDate: startDate ?? DateTime.now(),
+            firstDate: DateTime(2020),
+            lastDate: DateTime(2035),
+          ),
+        ),
+      ),
+    );
+  },
+);
                     if (d != null) setState(() => startDate = d);
                   },
                 ),
@@ -788,12 +801,26 @@ class _AddOvernightPageState extends State<AddOvernightPage> {
                   icon: Icons.calendar_month,
                   color: Colors.orange,
                   onTap: () async {
-                    final d = await showDatePicker(
-                      context: context,
-                      initialDate: endDate ?? DateTime.now(),
-                      firstDate: DateTime(2020),
-                      lastDate: DateTime(2035),
-                    );
+                    final d = await showDialog<DateTime>(
+  context: context,
+  useRootNavigator: true,
+  barrierDismissible: true,
+  builder: (context) {
+    return Center(
+      child: Material(
+        color: Colors.transparent,
+        child: SizedBox(
+          width: 400,
+          child: DatePickerDialog(
+            initialDate: endDate ?? DateTime.now(),
+            firstDate: DateTime(2020),
+            lastDate: DateTime(2035),
+          ),
+        ),
+      ),
+    );
+  },
+);
                     if (d != null) setState(() => endDate = d);
                   },
                 ),
@@ -1178,6 +1205,58 @@ InkWell(
       ),
     );
   }
+
+  Future<DateTime?> showDatePickerOverlay({
+  required BuildContext context,
+  required DateTime initialDate,
+}) async {
+  final overlay = Overlay.of(context, rootOverlay: true);
+  late OverlayEntry entry;
+
+  DateTime? selectedDate;
+
+  entry = OverlayEntry(
+    builder: (context) {
+      return Positioned.fill(
+        child: Material(
+          color: Colors.black.withOpacity(0.3),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(
+                maxWidth: 400,
+                maxHeight: 500,
+              ),
+              child: Material(
+                borderRadius: BorderRadius.circular(16),
+                clipBehavior: Clip.antiAlias,
+                child: DatePickerDialog(
+                  initialDate: initialDate,
+                  firstDate: DateTime(2020),
+                  lastDate: DateTime(2035),
+                  onDatePickerModeChange: (_) {},
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    },
+  );
+
+  overlay.insert(entry);
+
+  // 🔥 Tunggu user pilih dari Navigator root
+  final result = await Navigator.of(context, rootNavigator: true).push(
+    PageRouteBuilder(
+      opaque: false,
+      pageBuilder: (_, __, ___) => const SizedBox.shrink(),
+    ),
+  );
+
+  entry.remove();
+
+  return result as DateTime?;
+}
 
   Widget _buildDesktopDateField({
     required String label,

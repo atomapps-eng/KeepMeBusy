@@ -1310,7 +1310,7 @@ Widget _buildTransactionItem(BuildContext context, TripLedgerItem item) {
       for (var item in t.transfers) {
         ledger.add(
           TripLedgerItem(
-            id: "${t.id}_${item['currency']}_${item['amount']}",
+            id: t.id,
             type: 'transfer',
             date: t.date,
             title: 'Admin Transfer',
@@ -1498,8 +1498,25 @@ if (total == 0) {
     // Cache thumbnail receipts
    final Map<String, pw.MemoryImage> receiptThumbs = {};
 
+bool isValidImage(Uint8List bytes) {
+  if (bytes.length < 4) return false;
+
+  // JPG: FF D8
+  if (bytes[0] == 0xFF && bytes[1] == 0xD8) return true;
+
+  // PNG: 89 50 4E 47
+  if (bytes[0] == 0x89 &&
+      bytes[1] == 0x50 &&
+      bytes[2] == 0x4E &&
+      bytes[3] == 0x47) return true;
+
+  return false;
+}
+
 attachmentBytes.forEach((id, bytes) {
-  receiptThumbs[id] = pw.MemoryImage(bytes);
+  if (isValidImage(bytes)) {
+    receiptThumbs[id] = pw.MemoryImage(bytes);
+  }
 });
     for (var item in ledger) {
       if (item.receiptUrl != null &&
@@ -1795,111 +1812,64 @@ attachmentBytes.forEach((id, bytes) {
           pw.SizedBox(height: 10),
 
           /// TRANSACTION TABLE
-          pw.Container(
-            decoration: pw.BoxDecoration(
-              border: pw.Border.all(color: PdfColors.grey300),
-              borderRadius: pw.BorderRadius.circular(8),
-            ),
-            child: pw.Table(
-              border: pw.TableBorder.all(color: PdfColors.grey300),
-              columnWidths: {
-               0: const pw.FractionColumnWidth(0.1),   // Date - 10%
-      1: const pw.FractionColumnWidth(0.08),  // Type - 8%
-      2: const pw.FractionColumnWidth(0.15),  // Title - 15%
-      3: const pw.FractionColumnWidth(0.25),  // Description - 25%
-      4: const pw.FractionColumnWidth(0.12),  // Amount - 12%
-      5: const pw.FractionColumnWidth(0.08),  // Currency - 8%
-      6: const pw.FractionColumnWidth(0.12),
-              },
-              children: [
-                /// HEADER
-                pw.TableRow(
-                  decoration: pw.BoxDecoration(
-                    color: PdfColors.grey200,
-                  ),
-                  children: [
-                    _headerCell("Date"),
-                    _headerCell("Type"),
-                    _headerCell("Title"),
-                    _headerCell("Description"),
-                    _headerCell("Amount"),
-                    _headerCell("Curr"),
-                    _headerCell("Receipt"),
-                  ],
-                ),
+          pw.Table.fromTextArray(
+  border: pw.TableBorder.all(color: PdfColors.grey300),
 
-                /// DATA
-                ...ledger.asMap().entries.map((entry) {
-                  final index = entry.key;
-                  final e = entry.value;
-                  final color =
-                      e.isDebit ? PdfColors.green700 : PdfColors.red700;
+  headerStyle: pw.TextStyle(
+    fontSize: 10,
+    fontWeight: pw.FontWeight.bold,
+    color: PdfColors.blue900,
+  ),
 
-                  return pw.TableRow(
-                    decoration: pw.BoxDecoration(
-                      color: index.isEven ? PdfColors.white : PdfColors.grey50,
-                    ),
-                    children: [
-                      _cell(_formatDate(e.date)),
-                      _cell(e.type, color: color),
-                      _cell(e.title),
-                      _cell(e.description ?? "-"),
-                      pw.Container(
-                        padding: const pw.EdgeInsets.all(6),
-                        alignment: pw.Alignment.centerRight,
-                        child: pw.Text(
-                          "${e.isDebit ? "+" : "-"}${currencyFormat.format(e.amount)}",
-                          style: pw.TextStyle(
-                            color: color,
-                            fontWeight: pw.FontWeight.bold,
-                            fontSize: 10,
-                          ),
-                        ),
-                      ),
-                      _cell(e.currency),
-                      pw.Container(
-                        padding: const pw.EdgeInsets.all(4),
-                        alignment: pw.Alignment.center,
-                        child: receiptThumbs.containsKey(e.id)
-                            ? pw.Container(
-                                width: 40,
-                                height: 30,
-                                child: pw.Image(
-                                  receiptThumbs[e.id]!,
-                                  fit: pw.BoxFit.cover,
-                                ),
-                              )
-                            : pw.Container(
-                                padding: const pw.EdgeInsets.all(4),
-                                decoration: pw.BoxDecoration(
-                                  color: e.receiptUrl != null &&
-                                          e.receiptUrl!.endsWith(".pdf")
-                                      ? PdfColors.red50
-                                      : PdfColors.grey100,
-                                  borderRadius: pw.BorderRadius.circular(4),
-                                ),
-                                child: pw.Text(
-                                  e.receiptUrl != null &&
-                                          e.receiptUrl!.endsWith(".pdf")
-                                      ? "PDF"
-                                      : "-",
-                                  style: pw.TextStyle(
-                                    fontSize: 8,
-                                    color: e.receiptUrl != null &&
-                                            e.receiptUrl!.endsWith(".pdf")
-                                        ? PdfColors.red700
-                                        : PdfColors.grey600,
-                                    fontWeight: pw.FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                      ),
-                    ],
-                  );
-                }),
-              ],
-            ),
-          ),
+  headerDecoration: const pw.BoxDecoration(
+    color: PdfColors.grey200,
+  ),
+
+  cellStyle: const pw.TextStyle(
+    fontSize: 9,
+  ),
+
+  cellAlignments: {
+    0: pw.Alignment.centerLeft,
+    1: pw.Alignment.centerLeft,
+    2: pw.Alignment.centerLeft,
+    3: pw.Alignment.centerLeft,
+    4: pw.Alignment.centerRight,
+    5: pw.Alignment.center,
+  },
+
+  columnWidths: {
+    0: const pw.FractionColumnWidth(0.12),
+    1: const pw.FractionColumnWidth(0.10),
+    2: const pw.FractionColumnWidth(0.18),
+    3: const pw.FractionColumnWidth(0.30),
+    4: const pw.FractionColumnWidth(0.15),
+    5: const pw.FractionColumnWidth(0.10),
+  },
+
+  headers: [
+    "Date",
+    "Type",
+    "Title",
+    "Description",
+    "Amount",
+    "Curr",
+  ],
+
+  data: ledger.map((e) {
+    final amountText =
+        "${e.isDebit ? "+" : "-"}${currencyFormat.format(e.amount)}";
+
+    return [
+      _formatDate(e.date),
+      e.type,
+      e.title,
+      e.description ?? "-",
+      amountText,
+      e.currency,
+    ];
+  }).toList(),
+),
 
           // ==========================
 // ATTACHMENT INLINE START

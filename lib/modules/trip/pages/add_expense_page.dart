@@ -103,7 +103,7 @@ class _AddExpensePageState extends State<AddExpensePage> {
 
   /// SAVE EXPENSE
   Future<void> saveExpense() async {
-
+  if (isUploading) return;
   if (amountController.text.isEmpty) {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
@@ -413,7 +413,7 @@ Future<void> scanReceipt() async {
           ),
           child: IconButton(
             icon: const Icon(Icons.arrow_back),
-            onPressed: () => Navigator.pop(context),
+           onPressed: isUploading ? null : () => Navigator.pop(context),
           ),
         ),
       ),
@@ -443,12 +443,12 @@ Future<void> scanReceipt() async {
           children: [
 
             const Text(
-              "Uploading Receipt",
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+  "Saving Expense...",
+  style: TextStyle(
+    fontSize: 16,
+    fontWeight: FontWeight.bold,
+  ),
+),
 
             const SizedBox(height: 20),
 
@@ -782,7 +782,34 @@ Future<void> scanReceipt() async {
                             ),
                             elevation: 0,
                           ),
-                          onPressed: isUploading ? null : saveExpense,
+                          onPressed: isUploading
+    ? null
+    : () async {
+        final confirm = await showDialog<bool>(
+          context: context,
+          builder: (context) {
+            return AlertDialog(
+              title: const Text("Confirm"),
+              content: const Text(
+                  "Are you sure you want to save this expense?"),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: const Text("Cancel"),
+                ),
+                ElevatedButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  child: const Text("Yes, Save"),
+                ),
+              ],
+            );
+          },
+        );
+
+        if (confirm == true) {
+          await saveExpense();
+        }
+      },
                           child: Text(isEditing ? 'UPDATE' : 'SAVE'),
                         ),
                       ),
@@ -1095,6 +1122,16 @@ const SizedBox(height: 12),
 TextField(
   controller: amountController,
   keyboardType: TextInputType.number,
+  onChanged: (value) {
+    final formatted = formatNumber(value);
+
+    if (value != formatted) {
+      amountController.value = TextEditingValue(
+        text: formatted,
+        selection: TextSelection.collapsed(offset: formatted.length),
+      );
+    }
+  },
   decoration: InputDecoration(
     labelText: 'Amount',
     prefixIcon: Icon(_getCurrencyIcon(currency), size: 20),
@@ -1347,7 +1384,34 @@ TextField(
                       ),
                       elevation: 0,
                     ),
-                    onPressed: isUploading ? null : saveExpense,
+                    onPressed: isUploading
+    ? null
+    : () async {
+        final confirm = await showDialog<bool>(
+          context: context,
+          builder: (context) {
+            return AlertDialog(
+              title: const Text("Confirm"),
+              content: const Text(
+                  "Are you sure you want to save this expense?"),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: const Text("Cancel"),
+                ),
+                ElevatedButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  child: const Text("Yes, Save"),
+                ),
+              ],
+            );
+          },
+        );
+
+        if (confirm == true) {
+          await saveExpense();
+        }
+      },
                     child: Text(isEditing ? 'UPDATE' : 'SAVE'),
                   ),
                 ),
@@ -1560,6 +1624,22 @@ Future<void> pickPdf() async {
   });
 }
 
+}
+
+String formatNumber(String value) {
+  if (value.isEmpty) return '';
+
+  final number = value.replaceAll(',', '');
+
+  final parsed = int.tryParse(number);
+  if (parsed == null) return value;
+
+  final result = parsed.toString().replaceAllMapped(
+    RegExp(r'\B(?=(\d{3})+(?!\d))'),
+    (match) => ',',
+  );
+
+  return result;
 }
 
 // =======================================================
