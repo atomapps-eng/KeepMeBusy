@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../services/trip_service.dart';
 import 'dart:ui';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/trip_transfer_model.dart';
@@ -54,15 +56,52 @@ final String uploadPreset = 'Receipt';
 }
 
   final transferService = TripTransferService();
+  final tripService = TripService();
+List<String> allowedCurrencies = [];
 
   @override
-  void initState() {
-    super.initState();
+void initState() {
+  super.initState();
 
-    if (widget.transferId != null) {
-      loadTransfer();
-    }
+  loadAllowedCurrencies();
+
+  if (widget.transferId != null) {
+    loadTransfer();
   }
+}
+
+Future<void> loadAllowedCurrencies() async {
+  final companyId = await tripService.getCompanyId();
+
+  final tripDoc = await FirebaseFirestore.instance
+      .collection('companies')
+      .doc(companyId)
+      .collection('trips')
+      .doc(widget.tripId)
+      .get();
+
+  final tripCurrency = tripDoc.data()?['currency'] ?? 'IDR';
+
+  List<String> baseCurrencies = [];
+
+  if (companyId == 'atomIndonesia') {
+    baseCurrencies = ['IDR'];
+  } else if (companyId == 'atomIndia') {
+    baseCurrencies = ['INR'];
+  } else if (companyId == 'atomVietnam') {
+    baseCurrencies = ['VND'];
+  }
+
+  final result = <String>{...baseCurrencies, tripCurrency}.toList();
+
+  setState(() {
+    allowedCurrencies = result;
+
+    if (!allowedCurrencies.contains(currency)) {
+      currency = allowedCurrencies.first;
+    }
+  });
+}
 
   Future<void> loadTransfer() async {
     final doc = await transferService.getTransfer(
@@ -77,7 +116,8 @@ final String uploadPreset = 'Receipt';
 
       final transfer = doc.transfers.first;
 
-      amountController.text = transfer['amount'].toString();
+      amountController.text =
+    formatNumber(transfer['amount'].toInt().toString());
       currency = transfer['currency'];
       noteController.text = doc.note;
       date = doc.date;
@@ -138,7 +178,7 @@ final String uploadPreset = 'Receipt';
         {
           'employeeId': user.uid,
           'amount': double.tryParse(
-  amountController.text.replaceAll(',', '')
+  amountController.text.replaceAll('.', '')
 ) ?? 0,
           'currency': currency,
         }
@@ -404,11 +444,13 @@ final String uploadPreset = 'Receipt';
                   // Currency
 _buildDesktopDropdown(
   label: 'Currency',
-  value: currency,
+  value: allowedCurrencies.isNotEmpty
+    ? (allowedCurrencies.contains(currency)
+        ? currency
+        : allowedCurrencies.first)
+    : '',
   icon: Icons.currency_exchange,
-  items: const [
-    'AUD', 'JPY', 'MYR', 'SGD', 'IDR', 'CNY'
-  ],
+  items: allowedCurrencies,
   itemBuilder: (value) => value,
   onChanged: (v) {
     if (v != null) {
@@ -832,7 +874,11 @@ if (transferImage != null || (existingImageUrl?.isNotEmpty ?? false)) ...[
                 // Amount
                 // Currency (dipindah ke atas)
 DropdownButtonFormField<String>(
-  value: currency,
+  value: allowedCurrencies.isNotEmpty
+    ? (allowedCurrencies.contains(currency)
+        ? currency
+        : allowedCurrencies.first)
+    : '',
   decoration: InputDecoration(
     labelText: 'Currency',
     prefixIcon: const Icon(Icons.currency_exchange, size: 20),
@@ -840,9 +886,7 @@ DropdownButtonFormField<String>(
       borderRadius: BorderRadius.circular(12),
     ),
   ),
-  items: const [
-    'AUD', 'JPY', 'MYR', 'SGD', 'IDR', 'CNY'
-  ].map((c) {
+  items: allowedCurrencies.map((c) {
     return DropdownMenuItem(
       value: c,
       child: Text(c),
@@ -1194,16 +1238,19 @@ if (transferImage != null) ...[
           ),
           const SizedBox(height: 8),
           TextField(
-            controller: controller,
-            keyboardType: keyboardType,
-            maxLines: maxLines,
-            decoration: InputDecoration(
-              hintText: hint,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-            ),
+  controller: controller,
+  keyboardType: keyboardType,
+  maxLines: maxLines,
+  onChanged: (value) {
+    final formatted = formatNumber(value);
+
+    if (value != formatted) {
+      controller.value = TextEditingValue(
+        text: formatted,
+        selection: TextSelection.collapsed(offset: formatted.length),
+      );
+    }
+  },
           ),
         ],
       ),
@@ -1400,17 +1447,16 @@ Future<String> uploadImageToCloudinary() async {
 String formatNumber(String value) {
   if (value.isEmpty) return '';
 
-  final number = value.replaceAll(',', '');
+  final clean = value.replaceAll(RegExp(r'[^0-9]'), '');
 
-  final parsed = int.tryParse(number);
-  if (parsed == null) return value;
+  if (clean.isEmpty) return '';
 
-  final result = parsed.toString().replaceAllMapped(
+  final parsed = int.parse(clean);
+
+  return parsed.toString().replaceAllMapped(
     RegExp(r'\B(?=(\d{3})+(?!\d))'),
-    (match) => ',',
+    (match) => '.',
   );
-
-  return result;
 }
 
 }

@@ -45,16 +45,16 @@ class TripTransferService {
 }
 
 Future<void> deleteTransfer(String tripId, String transferId) async {
+  final companyId = await tripService.getCompanyId();
 
   await FirebaseFirestore.instance
       .collection('companies')
-      .doc('atomIndonesia')
+      .doc(companyId)
       .collection('trips')
       .doc(tripId)
       .collection('transfers')
       .doc(transferId)
       .delete();
-
 }
 
 Future<TripTransfer?> getTransfer(

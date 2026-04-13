@@ -26,6 +26,8 @@ import 'package:flutter/services.dart';
 import '../../../core/widgets/draggable_window.dart';
 import 'package:flutter/foundation.dart';
 import 'package:universal_html/html.dart' as html;
+import 'transfer_detail_page.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class TripDetailPage extends StatefulWidget {
   final Trip trip;
@@ -885,7 +887,7 @@ Widget _buildTransactionItem(BuildContext context, TripLedgerItem item) {
   final expense = TripExpense(
     id: item.id,
     date: item.date,
-    employeeId: '',
+    employeeId: FirebaseAuth.instance.currentUser?.uid ?? '',
     amount: item.amount,
     currency: item.currency,
     category: item.title,
@@ -925,36 +927,41 @@ Widget _buildTransactionItem(BuildContext context, TripLedgerItem item) {
   }
 }
 
-      if (item.type == 'transfer') {
+if (item.type == 'transfer') {
   final isDesktop = MediaQuery.of(context).size.width >= 900;
 
-  if (isDesktop) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      barrierColor: Colors.transparent,
-      builder: (context) {
-        return DraggableResizableWindow(
-          title: "Edit Transfer",
-          headerColor: Colors.green,
-          child: AddTransferPage(
+  /// 🔥 ANCHOR: ambil object transfer dari service
+  transferService.getTransfer(widget.trip.id, item.id).then((doc) {
+    if (doc == null) return;
+
+    if (isDesktop) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        barrierColor: Colors.transparent,
+        builder: (context) {
+          return DraggableResizableWindow(
+            title: "Transfer Detail",
+            headerColor: Colors.green,
+            child: TransferDetailPage(
+              tripId: widget.trip.id,
+              transfer: doc,
+            ),
+          );
+        },
+      );
+    } else {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => TransferDetailPage(
             tripId: widget.trip.id,
-            transferId: item.id,
+            transfer: doc,
           ),
-        );
-      },
-    );
-  } else {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => AddTransferPage(
-          tripId: widget.trip.id,
-          transferId: item.id,
         ),
-      ),
-    );
-  }
+      );
+    }
+  });
 }
     },
     child: Container(

@@ -1,56 +1,47 @@
 import 'package:flutter/material.dart';
 import 'dart:ui';
-import '../models/trip_expense_model.dart';
+import '../models/trip_transfer_model.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../pages/common/app_background_wrapper.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../services/trip_expense_service.dart';
-import 'add_expense_page.dart';
+import '../services/trip_transfer_service.dart';
+import 'add_transfer_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-
-class ExpenseDetailPage extends StatelessWidget {
-  final TripExpense expense;
+class TransferDetailPage extends StatelessWidget {
+  final TripTransfer transfer;
   final String tripId;
 
-  const ExpenseDetailPage({
+  const TransferDetailPage({
     super.key,
-    required this.expense,
+    required this.transfer,
     required this.tripId,
-  }); 
+  });
 
-Future<void> downloadFile(String url) async {
-  final uri = Uri.parse(url);
+  Future<void> downloadFile(String url) async {
+    final uri = Uri.parse(url);
 
-  await launchUrl(
-    uri,
-    mode: LaunchMode.externalApplication,
-  );
-}
+    await launchUrl(
+      uri,
+      mode: LaunchMode.externalApplication,
+    );
+  }
 
   String _formatDate(DateTime date) {
     return '${date.day}/${date.month}/${date.year}';
   }
 
-  Color _getCategoryColor(String category) {
-    switch (category) {
-      case 'Hotel':
-        return Colors.blue;
-      case 'Meal':
-        return Colors.green;
-      case 'Transportation':
-        return Colors.orange;
-      case 'Other':
-        return Colors.purple;
-      default:
-        return Colors.red;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    final isPdf = expense.receiptUrl.contains(".pdf");
-    final categoryColor = _getCategoryColor(expense.category);
+    final isPdf = transfer.receiptUrl.contains(".pdf");
+
+    /// 🔥 ANCHOR CODE
+    /// ini penting → ambil data dari transfer.transfers[0]
+    final data = transfer.transfers.first;
+
+    final amount = data['amount'] ?? 0;
+    final currency = data['currency'] ?? '';
+    final employeeId = data['employeeId'] ?? '';
 
     return Scaffold(
       extendBodyBehindAppBar: true,
@@ -63,8 +54,8 @@ Future<void> downloadFile(String url) async {
       final confirm = await showDialog<bool>(
         context: context,
         builder: (_) => AlertDialog(
-          title: const Text("Edit Expense"),
-          content: const Text("Do you want to edit this expense?"),
+          title: const Text("Edit Transfer"),
+          content: const Text("Do you want to edit this transfer?"),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),
@@ -82,9 +73,9 @@ Future<void> downloadFile(String url) async {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => AddExpensePage(
+            builder: (_) => AddTransferPage(
               tripId: tripId,
-              expenseId: expense.id,
+              transferId: transfer.id,
             ),
           ),
         );
@@ -99,9 +90,9 @@ Future<void> downloadFile(String url) async {
       final confirm = await showDialog<bool>(
         context: context,
         builder: (_) => AlertDialog(
-          title: const Text("Delete Expense"),
+          title: const Text("Delete Transfer"),
           content: const Text(
-              "Are you sure you want to delete this expense?"),
+              "Are you sure you want to delete this transfer?"),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),
@@ -119,7 +110,7 @@ Future<void> downloadFile(String url) async {
       );
 
       if (confirm == true) {
-        await TripExpenseService().deleteExpense(tripId, expense.id);
+        await TripTransferService().deleteTransfer(tripId, transfer.id);
 
         if (context.mounted) {
           Navigator.pop(context);
@@ -135,49 +126,29 @@ Future<void> downloadFile(String url) async {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    categoryColor.withValues(alpha:0.2),
-                    categoryColor.withValues(alpha:0.1),
+                    Colors.green.withValues(alpha: 0.2),
+                    Colors.green.withValues(alpha: 0.1),
                   ],
                 ),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: categoryColor.withValues(alpha:0.3),
+                  color: Colors.green.withValues(alpha: 0.3),
                   width: 1,
                 ),
               ),
-              child: Icon(
-                Icons.receipt,
-                color: categoryColor,
+              child: const Icon(
+                Icons.arrow_downward,
+                color: Colors.green,
                 size: 24,
               ),
             ),
             const SizedBox(width: 12),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Expense Detail',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: categoryColor.withValues(alpha:0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    expense.category,
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: categoryColor,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ],
+            const Text(
+              'Transfer Detail',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ],
         ),
@@ -188,12 +159,12 @@ Future<void> downloadFile(String url) async {
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
-                Colors.white.withValues(alpha:0.2),
-                Colors.white.withValues(alpha:0.1),
+                Colors.white.withValues(alpha: 0.2),
+                Colors.white.withValues(alpha: 0.1),
               ],
             ),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.white.withValues(alpha:0.3)),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
           ),
           child: IconButton(
             icon: const Icon(Icons.arrow_back),
@@ -206,7 +177,9 @@ Future<void> downloadFile(String url) async {
         child: SingleChildScrollView(
           child: Column(
             children: [
-              // Info Card
+              /// ======================
+              /// INFO CARD
+              /// ======================
               _glass(
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -218,21 +191,21 @@ Future<void> downloadFile(String url) async {
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
                               colors: [
-                                categoryColor.withValues(alpha:0.2),
-                                categoryColor.withValues(alpha:0.1),
+                                Colors.green.withValues(alpha: 0.2),
+                                Colors.green.withValues(alpha: 0.1),
                               ],
                             ),
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          child: Icon(
+                          child: const Icon(
                             Icons.info_outline,
-                            color: categoryColor,
+                            color: Colors.green,
                             size: 18,
                           ),
                         ),
                         const SizedBox(width: 10),
                         const Text(
-                          'Expense Information',
+                          'Transfer Information',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -242,28 +215,24 @@ Future<void> downloadFile(String url) async {
                     ),
                     const SizedBox(height: 16),
 
-                    _buildInfoTile(
-                      icon: Icons.category,
-                      label: 'Category',
-                      value: expense.category,
-                      color: categoryColor,
-                    ),
-
+                    /// Amount
                     _buildInfoTile(
                       icon: Icons.attach_money,
                       label: 'Amount',
-                      value: '${expense.currency} ${formatCurrency(expense.amount)}',
+                      value: '$currency ${formatCurrency(amount)}',
                       color: Colors.green,
                     ),
 
+                    /// Date
                     _buildInfoTile(
                       icon: Icons.calendar_today,
                       label: 'Date',
-                      value: _formatDate(expense.date),
+                      value: _formatDate(transfer.date),
                       color: Colors.blue,
                     ),
 
-                   FutureBuilder<String>(
+                    /// Employee
+                    FutureBuilder<String>(
   future: _getTripCreatorName(),
   builder: (context, snapshot) {
     final name = snapshot.data ?? 'Loading...';
@@ -276,11 +245,11 @@ Future<void> downloadFile(String url) async {
     );
   },
 ),
-
                     const Divider(height: 24),
 
+                    /// Note
                     const Text(
-                      'Description',
+                      'Note',
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
@@ -291,12 +260,14 @@ Future<void> downloadFile(String url) async {
                       width: double.infinity,
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.grey.withValues(alpha:0.05),
+                        color: Colors.grey.withValues(alpha: 0.05),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: Colors.grey.shade300),
                       ),
                       child: Text(
-                        expense.description.isEmpty ? 'No description' : expense.description,
+                        transfer.note.isEmpty
+                            ? 'No note'
+                            : transfer.note,
                         style: const TextStyle(fontSize: 14),
                       ),
                     ),
@@ -306,8 +277,10 @@ Future<void> downloadFile(String url) async {
 
               const SizedBox(height: 16),
 
-              // Receipt Card
-              if (expense.receiptUrl.isNotEmpty) ...[
+              /// ======================
+              /// RECEIPT CARD
+              /// ======================
+              if (transfer.receiptUrl.isNotEmpty)
                 _glass(
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -319,8 +292,8 @@ Future<void> downloadFile(String url) async {
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
                                 colors: [
-                                  Colors.orange.withValues(alpha:0.2),
-                                  Colors.orange.withValues(alpha:0.1),
+                                  Colors.orange.withValues(alpha: 0.2),
+                                  Colors.orange.withValues(alpha: 0.1),
                                 ],
                               ),
                               borderRadius: BorderRadius.circular(10),
@@ -348,7 +321,7 @@ Future<void> downloadFile(String url) async {
                           constraints: const BoxConstraints(maxHeight: 300),
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: Colors.grey.withValues(alpha:0.05),
+                            color: Colors.grey.withValues(alpha: 0.05),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(color: Colors.grey.shade300),
                           ),
@@ -359,12 +332,12 @@ Future<void> downloadFile(String url) async {
                                   borderRadius: BorderRadius.circular(8),
                                   child: GestureDetector(
   onTap: () {
-    _openImagePreview(context, expense.receiptUrl);
+    _openImagePreview(context, transfer.receiptUrl);
   },
   child: ClipRRect(
     borderRadius: BorderRadius.circular(8),
     child: Image.network(
-      expense.receiptUrl,
+      transfer.receiptUrl,
       height: 200,
       fit: BoxFit.contain,
     ),
@@ -376,27 +349,14 @@ Future<void> downloadFile(String url) async {
                                 Container(
                                   height: 150,
                                   decoration: BoxDecoration(
-                                    color: Colors.red.withValues(alpha:0.05),
+                                    color: Colors.red.withValues(alpha: 0.05),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: const Center(
-                                    child: Column(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        Icon(
-                                          Icons.picture_as_pdf,
-                                          size: 50,
-                                          color: Colors.red,
-                                        ),
-                                        SizedBox(height: 4),
-                                        Text(
-                                          'PDF Document',
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color: Colors.red,
-                                          ),
-                                        ),
-                                      ],
+                                    child: Icon(
+                                      Icons.picture_as_pdf,
+                                      size: 50,
+                                      color: Colors.red,
                                     ),
                                   ),
                                 ),
@@ -407,15 +367,11 @@ Future<void> downloadFile(String url) async {
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.blue,
                                   foregroundColor: Colors.white,
-                                  minimumSize: const Size(double.infinity, 40),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
                                 ),
-                                icon: const Icon(Icons.download, size: 18),
+                                icon: const Icon(Icons.download),
                                 label: const Text('Download Receipt'),
                                 onPressed: () {
-                                  downloadFile(expense.receiptUrl);
+                                  downloadFile(transfer.receiptUrl);
                                 },
                               ),
                             ],
@@ -425,7 +381,6 @@ Future<void> downloadFile(String url) async {
                     ],
                   ),
                 ),
-              ]
             ],
           ),
         ),
@@ -453,9 +408,37 @@ Future<void> downloadFile(String url) async {
   );
 }
 
+  Widget _buildInfoTile({
+    required IconData icon,
+    required String label,
+    required String value,
+    required Color color,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        children: [
+          Icon(icon, color: color),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label),
+                Text(
+                  value,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<String> _getTripCreatorName() async {
   try {
-    /// ambil trip
     final tripDoc = await FirebaseFirestore.instance
         .collection('companies')
         .doc(await _getCompanyId())
@@ -467,7 +450,6 @@ Future<void> downloadFile(String url) async {
 
     if (createdBy == null) return '-';
 
-    /// ambil user
     final userDoc = await FirebaseFirestore.instance
         .collection('users')
         .doc(createdBy)
@@ -494,61 +476,16 @@ Future<String> _getCompanyId() async {
   return companyIds.isNotEmpty ? companyIds.first : '';
 }
 
-  Widget _buildInfoTile({
-    required IconData icon,
-    required String label,
-    required String value,
-    required Color color,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha:0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(icon, size: 16, color: color),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: Colors.grey.shade600,
-                  ),
-                ),
-                Text(
-                  value,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+  String formatCurrency(double value) {
+    final number = value.toInt().toString();
+
+    return number.replaceAllMapped(
+      RegExp(r'\B(?=(\d{3})+(?!\d))'),
+      (match) => '.',
     );
   }
 
-  String formatCurrency(double value) {
-  final number = value.toInt().toString();
-
-  return number.replaceAllMapped(
-    RegExp(r'\B(?=(\d{3})+(?!\d))'),
-    (match) => '.',
-  );
-}
-
-Future<String> _getUserName(String uid) async {
+  Future<String> _getUserName(String uid) async {
   try {
     final doc = await FirebaseFirestore.instance
         .collection('users')
@@ -567,9 +504,7 @@ Future<String> _getUserName(String uid) async {
 
 }
 
-// =======================================================
-// UI HELPERS
-// =======================================================
+/// GLASS HELPER (copy dari expense)
 Widget _glass(Widget child) {
   return ClipRRect(
     borderRadius: BorderRadius.circular(20),
@@ -579,16 +514,7 @@ Widget _glass(Widget child) {
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Colors.white.withValues(alpha:0.3),
-              Colors.white.withValues(alpha:0.15),
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.white.withValues(alpha:0.4)),
         ),
         child: child,
       ),

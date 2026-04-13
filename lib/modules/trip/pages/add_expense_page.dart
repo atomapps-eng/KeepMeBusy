@@ -31,6 +31,7 @@ class _AddExpensePageState extends State<AddExpensePage> {
   final amountController = TextEditingController();
   final descController = TextEditingController();
   final tripService = TripService();
+  List<String> allowedCurrencies = [];
   TripExpense? existingExpense;
   DateTime date = DateTime.now();
 
@@ -61,13 +62,49 @@ class _AddExpensePageState extends State<AddExpensePage> {
   final expenseService = TripExpenseService();
 
   @override
-  void initState() {
-    super.initState();
+void initState() {
+  super.initState();
 
-    if (widget.expenseId != null) {
-      loadExpense();
-    }
+  loadAllowedCurrencies();
+
+  if (widget.expenseId != null) {
+    loadExpense();
   }
+}
+
+Future<void> loadAllowedCurrencies() async {
+  final companyId = await tripService.getCompanyId();
+
+  final tripDoc = await FirebaseFirestore.instance
+      .collection('companies')
+      .doc(companyId)
+      .collection('trips')
+      .doc(widget.tripId)
+      .get();
+
+  final tripCurrency = tripDoc.data()?['currency'] ?? 'IDR';
+
+  List<String> baseCurrencies = [];
+
+  if (companyId == 'atomIndonesia') {
+    baseCurrencies = ['IDR'];
+  } else if (companyId == 'atomIndia') {
+    baseCurrencies = ['INR'];
+  } else if (companyId == 'atomVietnam') {
+    baseCurrencies = ['VND'];
+  }
+
+  final result = <String>{...baseCurrencies, tripCurrency}.toList();
+
+  setState(() {
+    allowedCurrencies = result;
+
+    // default selection
+    if (!allowedCurrencies.contains(currency)) {
+      currency = allowedCurrencies.first;
+    }
+  });
+}
 
   Future<void> loadExpense() async {
     final companyId = await tripService.getCompanyId();
@@ -88,7 +125,8 @@ class _AddExpensePageState extends State<AddExpensePage> {
     setState(() {
       existingExpense = expense;
 
-      amountController.text = expense.amount.toString();
+      amountController.text =
+    formatNumber(expense.amount.toInt().toString());
       currency = expense.currency;
       category = expense.category;
       descController.text = expense.description;
@@ -114,7 +152,8 @@ class _AddExpensePageState extends State<AddExpensePage> {
     return;
   }
 
-  final amount = double.tryParse(amountController.text);
+ final rawAmount = amountController.text.replaceAll('.', '');
+final amount = double.tryParse(rawAmount);
 
   if (amount == null) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -152,7 +191,7 @@ class _AddExpensePageState extends State<AddExpensePage> {
 
     if (receiptImage != null) {
 
-      final url = await GithubStorageService.uploadFile(
+  final url = await GithubStorageService.uploadFile(
   receiptImage!,
   onProgress: (progress) {
     if (mounted) {
@@ -160,6 +199,11 @@ class _AddExpensePageState extends State<AddExpensePage> {
         uploadProgress = progress;
       });
     }
+  },
+).timeout(
+  const Duration(seconds: 20),
+  onTimeout: () {
+    throw Exception("Upload timeout");
   },
 );
 
@@ -217,13 +261,23 @@ class _AddExpensePageState extends State<AddExpensePage> {
     /// ===============================
 
     if (widget.expenseId == null) {
-      await expenseService.createExpense(widget.tripId, expense);
+      await expenseService
+    .createExpense(widget.tripId, expense)
+    .timeout(
+  const Duration(seconds: 10),
+  onTimeout: () {
+    throw Exception("Save timeout (check internet connection)");
+  },
+);
     } else {
-      await expenseService.updateExpense(
-        widget.tripId,
-        widget.expenseId!,
-        expense,
-      );
+      await expenseService
+    .updateExpense(widget.tripId, widget.expenseId!, expense)
+    .timeout(
+  const Duration(seconds: 10),
+  onTimeout: () {
+    throw Exception("Update timeout (check internet connection)");
+  },
+);
     }
 
     if (!mounted) return;
@@ -235,7 +289,17 @@ class _AddExpensePageState extends State<AddExpensePage> {
       ),
     );
 
-    Navigator.pop(context);
+// ✅ WAJIB: matikan loading dulu
+if (mounted) {
+  setState(() {
+    isUploading = false;
+  });
+}
+
+// baru pop
+if (Navigator.canPop(context)) {
+  Navigator.of(context, rootNavigator: true).pop();
+}
 
   }
 
@@ -557,11 +621,13 @@ Future<void> scanReceipt() async {
                       Expanded(
                         child: _buildDesktopDropdown(
                           label: 'Currency',
-                          value: currency,
+                          value: allowedCurrencies.isNotEmpty
+    ? (allowedCurrencies.contains(currency)
+        ? currency
+        : allowedCurrencies.first)
+    : '',
                           icon: Icons.currency_exchange,
-                          items: const [
-                            'AUD', 'JPY', 'MYR', 'SGD', 'IDR'
-                          ],
+                          items: allowedCurrencies.map((c) => c).toList(),
                           itemBuilder: (value) => value,
                           onChanged: (v) {
                             if (v != null) {
@@ -1093,7 +1159,11 @@ Future<void> scanReceipt() async {
                 // Amount
                 // Currency (dipindah ke atas)
 DropdownButtonFormField<String>(
-  value: currency,
+  value: allowedCurrencies.isNotEmpty
+    ? (allowedCurrencies.contains(currency)
+        ? currency
+        : allowedCurrencies.first)
+    : '',
   decoration: InputDecoration(
     labelText: 'Currency',
     prefixIcon: const Icon(Icons.currency_exchange, size: 20),
@@ -1101,9 +1171,7 @@ DropdownButtonFormField<String>(
       borderRadius: BorderRadius.circular(12),
     ),
   ),
-  items: const [
-    'AUD', 'JPY', 'MYR', 'SGD', 'IDR', 'CNY'
-  ].map((c) {
+  items: allowedCurrencies.map((c) {
     return DropdownMenuItem(
       value: c,
       child: Text(c),
@@ -1624,22 +1692,22 @@ Future<void> pickPdf() async {
   });
 }
 
-}
-
 String formatNumber(String value) {
   if (value.isEmpty) return '';
 
-  final number = value.replaceAll(',', '');
+  // hapus SEMUA non digit
+  final clean = value.replaceAll(RegExp(r'[^0-9]'), '');
 
-  final parsed = int.tryParse(number);
-  if (parsed == null) return value;
+  if (clean.isEmpty) return '';
 
-  final result = parsed.toString().replaceAllMapped(
+  final parsed = int.parse(clean);
+
+  return parsed.toString().replaceAllMapped(
     RegExp(r'\B(?=(\d{3})+(?!\d))'),
-    (match) => ',',
+    (match) => '.',
   );
+}
 
-  return result;
 }
 
 // =======================================================

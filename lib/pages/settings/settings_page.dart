@@ -21,6 +21,7 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> with TickerProviderStateMixin {
+  static const String _resetPassword = "301219"; // ganti sesuai kebutuhan
   bool isAdmin = false;
   bool _isCheckingAdmin = true;
   String? _userEmail;
@@ -40,7 +41,7 @@ class _SettingsPageState extends State<SettingsPage> with TickerProviderStateMix
   int resetTotal = 0;
 
   // ===== EXPANDED SECTIONS =====
-  bool _isTestingExpanded = true;
+  bool _isTestingExpanded = false;
   bool _isDataManagementExpanded = false;
   bool _isDangerZoneExpanded = false;
 
@@ -254,11 +255,10 @@ return data['role'] == 'super_admin';
       builder: (_) => AlertDialog(
         title: Row(
   children: const [
-    Icon(Icons.warning_amber_rounded, color: Colors.red, size: 28),
     SizedBox(width: 8),
     Expanded(
       child: Text(
-        '⚠️ RESET SEMUA DATA',
+        '⚠️ RESET ALL DATA',
         overflow: TextOverflow.ellipsis,
       ),
     ),
@@ -271,7 +271,7 @@ return data['role'] == 'super_admin';
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
-                'Aksi ini akan MENGHAPUS:',
+                'This action will be WIPE OUT:',
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 12),
@@ -292,7 +292,7 @@ return data['role'] == 'super_admin';
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'Tindakan ini TIDAK BISA DIBATALKAN',
+                        'This action CAN NOT BE UNDONE',
                         style: TextStyle(
                           color: Colors.red.shade700,
                           fontWeight: FontWeight.bold,
@@ -308,7 +308,7 @@ return data['role'] == 'super_admin';
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('BATAL'),
+            child: const Text('CANCEL'),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -324,6 +324,52 @@ return data['role'] == 'super_admin';
     );
 
     if (confirm != true) return;
+
+// ===== PASSWORD VALIDATION =====
+final TextEditingController passwordController = TextEditingController();
+
+final passwordConfirm = await showDialog<bool>(
+  context: context,
+  builder: (_) => AlertDialog(
+    title: const Text('Enter Password'),
+    content: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const Text('Enter Password To Reset All Data'),
+        const SizedBox(height: 12),
+        TextField(
+          controller: passwordController,
+          obscureText: true,
+          decoration: const InputDecoration(
+            labelText: 'Password',
+            border: OutlineInputBorder(),
+          ),
+        ),
+      ],
+    ),
+    actions: [
+      TextButton(
+        onPressed: () => Navigator.pop(context, false),
+        child: const Text('CANCEL'),
+      ),
+      ElevatedButton(
+        onPressed: () {
+          if (passwordController.text == _resetPassword) {
+            Navigator.pop(context, true);
+          } else {
+            Navigator.pop(context, false);
+          }
+        },
+        child: const Text('CONFIRM'),
+      ),
+    ],
+  ),
+);
+
+if (passwordConfirm != true) {
+  _showStyledSnackbar('Wrong password / canceled', isError: true);
+  return;
+}
 
     setState(() {
       isResetting = true;
@@ -971,11 +1017,11 @@ _buildActionButton(
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context, false),
-          child: const Text('BATAL'),
+          child: const Text('CANCEL'),
         ),
         ElevatedButton(
           onPressed: () => Navigator.pop(context, true),
-          child: const Text('JALANKAN'),
+          child: const Text('RUN'),
         ),
       ],
     ),
