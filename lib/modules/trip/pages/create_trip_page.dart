@@ -614,6 +614,9 @@ class _CreateTripPageState extends State<CreateTripPage> {
   DropdownMenuItem(value: 'Singapore', child: Text('Singapore 🇸🇬')),
   DropdownMenuItem(value: 'Indonesia', child: Text('Indonesia 🇮🇩')),
   DropdownMenuItem(value: 'China', child: Text('China 🇨🇳')),
+  DropdownMenuItem(value: 'India', child: Text('India 🇮🇳')),
+  DropdownMenuItem(value: 'Taiwan', child: Text('Taiwan 🇹🇼')),
+
 ],
                                 onChanged: (v) {
                                   setState(() {
@@ -667,6 +670,8 @@ class _CreateTripPageState extends State<CreateTripPage> {
   DropdownMenuItem(value: 'SGD', child: Text('SGD 💵')),
   DropdownMenuItem(value: 'IDR', child: Text('IDR 💵')),
   DropdownMenuItem(value: 'CNY', child: Text('CNY 💴')),
+  DropdownMenuItem(value: 'INR', child: Text('INR 💵')),
+  DropdownMenuItem(value: 'TWD', child: Text('TWD 💵')),
 ],
                                 onChanged: (v) {
                                   setState(() {
@@ -1244,6 +1249,8 @@ class _CreateTripPageState extends State<CreateTripPage> {
   DropdownMenuItem(value: 'Singapore', child: Text('Singapore 🇸🇬')),
   DropdownMenuItem(value: 'Indonesia', child: Text('Indonesia 🇮🇩')),
   DropdownMenuItem(value: 'China', child: Text('China 🇨🇳')),
+  DropdownMenuItem(value: 'India', child: Text('India 🇮🇳')),
+  DropdownMenuItem(value: 'Taiwan', child: Text('Taiwan 🇹🇼')),
 ],
                   onChanged: (v) {
                     setState(() {
@@ -1271,6 +1278,8 @@ class _CreateTripPageState extends State<CreateTripPage> {
   DropdownMenuItem(value: 'SGD', child: Text('SGD 💵')),
   DropdownMenuItem(value: 'IDR', child: Text('IDR 💵')),
   DropdownMenuItem(value: 'CNY', child: Text('CNY 💴')),
+  DropdownMenuItem(value: 'INR', child: Text('INR 💵')),
+  DropdownMenuItem(value: 'TWD', child: Text('TWD 💵')),
 ],
                   onChanged: (v) {
                     setState(() {
