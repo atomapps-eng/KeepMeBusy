@@ -17,28 +17,27 @@ class OvernightDetailPage extends StatelessWidget {
   });
 
   Stream<List<QueryDocumentSnapshot<Map<String, dynamic>>>> _stream() {
-  return CompanyFirestore
-      .collection('attendance')
-      .doc(employeeId)
-      .collection('overnight')
-      .orderBy('startDate', descending: true)
-      .snapshots()
-      .map((snap) {
-    if (period == 'ALL') {
-      return snap.docs;
-    }
+    return CompanyFirestore.collection('attendance')
+        .doc(employeeId)
+        .collection('overnight')
+        .orderBy('startDate', descending: true)
+        .snapshots()
+        .map((snap) {
+          if (period == 'ALL') {
+            return snap.docs;
+          }
 
-    return snap.docs.where((doc) {
-      final data = doc.data();
-      final startDate = (data['startDate'] as Timestamp).toDate();
+          return snap.docs.where((doc) {
+            final data = doc.data();
+            final startDate = (data['startDate'] as Timestamp).toDate();
 
-      final month = startDate.month.toString().padLeft(2, '0');
-      final docPeriod = '${startDate.year}-$month';
+            final month = startDate.month.toString().padLeft(2, '0');
+            final docPeriod = '${startDate.year}-$month';
 
-      return docPeriod == period;
-    }).toList();
-  });
-}
+            return docPeriod == period;
+          }).toList();
+        });
+  }
 
   String _formatDate(DateTime date) {
     return "${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}";
@@ -82,14 +81,10 @@ class OvernightDetailPage extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha:0.2),
+                color: Colors.white.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Icon(
-                Icons.hotel,
-                size: 20,
-                color: Colors.white,
-              ),
+              child: const Icon(Icons.hotel, size: 20, color: Colors.white),
             ),
             const SizedBox(width: 12),
             Column(
@@ -97,10 +92,7 @@ class OvernightDetailPage extends StatelessWidget {
               children: [
                 const Text(
                   'Overnight Stays',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                  ),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
                 ),
                 Text(
                   period,
@@ -180,7 +172,7 @@ class OvernightDetailPage extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha:0.9),
+                        color: Colors.white.withValues(alpha: 0.9),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(
@@ -201,9 +193,7 @@ class OvernightDetailPage extends StatelessWidget {
                     const SizedBox(height: 8),
                     Text(
                       'No overnight records found for this period',
-                      style: TextStyle(
-                        color: const Color(0xFF64748B),
-                      ),
+                      style: TextStyle(color: const Color(0xFF64748B)),
                     ),
                   ],
                 ),
@@ -218,7 +208,9 @@ class OvernightDetailPage extends StatelessWidget {
     );
   }
 
-  Widget _buildModernList(List<QueryDocumentSnapshot<Map<String, dynamic>>> docs) {
+  Widget _buildModernList(
+    List<QueryDocumentSnapshot<Map<String, dynamic>>> docs,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -230,15 +222,12 @@ class OvernightDetailPage extends StatelessWidget {
             gradient: const LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [
-                Color(0xFF2563EB),
-                Color(0xFF3B82F6),
-              ],
+              colors: [Color(0xFF2563EB), Color(0xFF3B82F6)],
             ),
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF2563EB).withValues(alpha:0.3),
+                color: const Color(0xFF2563EB).withValues(alpha: 0.3),
                 blurRadius: 12,
                 offset: const Offset(0, 4),
               ),
@@ -249,14 +238,10 @@ class OvernightDetailPage extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha:0.2),
+                  color: Colors.white.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(
-                  Icons.hotel,
-                  color: Colors.white,
-                  size: 24,
-                ),
+                child: const Icon(Icons.hotel, color: Colors.white, size: 24),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -265,10 +250,7 @@ class OvernightDetailPage extends StatelessWidget {
                   children: [
                     const Text(
                       'Total Overnight Stays',
-                      style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: 14,
-                      ),
+                      style: TextStyle(color: Colors.white70, fontSize: 14),
                     ),
                     const SizedBox(height: 4),
                     Text(
@@ -301,7 +283,10 @@ class OvernightDetailPage extends StatelessWidget {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFFEFF6FF),
                   borderRadius: BorderRadius.circular(20),
@@ -328,19 +313,19 @@ class OvernightDetailPage extends StatelessWidget {
               final data = doc.data();
               final startDate = (data['startDate'] as Timestamp).toDate();
               final endDate = (data['endDate'] as Timestamp).toDate();
-              final totalNights = data['totalNights'] ?? 
-                  endDate.difference(startDate).inDays;
+              final totalNights =
+                  data['totalNights'] ?? endDate.difference(startDate).inDays;
               final category = data['customerCategory'] ?? 'Unknown';
               final categoryColor = _getCategoryColor(category);
 
               return Container(
                 margin: const EdgeInsets.only(bottom: 12),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha:0.95),
+                  color: Colors.white.withValues(alpha: 0.95),
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.grey.shade200.withValues(alpha:0.5),
+                      color: Colors.grey.shade200.withValues(alpha: 0.5),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
@@ -350,7 +335,16 @@ class OvernightDetailPage extends StatelessWidget {
                   color: Colors.transparent,
                   child: InkWell(
                     onTap: () {
-                      
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => OvernightItemDetailPage(
+                            employeeId: employeeId,
+                            docId: doc.id,
+                            period: period,
+                          ),
+                        ),
+                      );
                     },
                     borderRadius: BorderRadius.circular(16),
                     child: Padding(
@@ -367,7 +361,7 @@ class OvernightDetailPage extends StatelessWidget {
                                 end: Alignment.bottomRight,
                                 colors: [
                                   categoryColor,
-                                  categoryColor.withValues(alpha:0.8),
+                                  categoryColor.withValues(alpha: 0.8),
                                 ],
                               ),
                               borderRadius: BorderRadius.circular(12),
@@ -401,7 +395,7 @@ class OvernightDetailPage extends StatelessWidget {
                                     vertical: 2,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: categoryColor.withValues(alpha:0.1),
+                                    color: categoryColor.withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: Text(

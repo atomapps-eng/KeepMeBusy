@@ -38,55 +38,60 @@ class _LoginMobileState extends State<LoginMobile> {
     passwordController.text = prefs.getString('saved_password') ?? '';
   }
 
- Future<void> _handleLogin() async {
-  if (!_formKey.currentState!.validate()) return;
+  Future<void> _handleLogin() async {
+    if (!_formKey.currentState!.validate()) return;
 
-  setState(() => _isLoading = true);
+    setState(() => _isLoading = true);
 
-  try {
-    await FirebaseAuth.instance.signInWithEmailAndPassword(
-      email: emailController.text.trim(),
-      password: passwordController.text.trim(),
-    );
+    try {
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: emailController.text.trim(),
+        password: passwordController.text.trim(),
+      );
 
-    if (!mounted) return;
+      if (!mounted) return;
 
-    final uid = FirebaseAuth.instance.currentUser!.uid;
+      final uid = FirebaseAuth.instance.currentUser!.uid;
 
-    final userDoc = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(uid)
-        .get();
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .get();
 
-    final companyIds =
-        List<String>.from(userDoc['companyIds'] ?? []);
+      final companyIds = List<String>.from(userDoc['companyIds'] ?? []);
 
-    // 🔥 LOGIC COMPANY ROUTING
-    if (CompanySession.selectedCompanyId == null) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (_) => SelectCompanyPage(
-            companyIds: companyIds,
+      // 🔥 LOGIC COMPANY ROUTING
+      if (CompanySession.selectedCompanyId == null) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => SelectCompanyPage(companyIds: companyIds),
           ),
-        ),
-      );
-    } else {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (_) => const AuthGate(),
-        ),
-      );
-    }
-
-  } catch (e) {
-  } finally {
-    if (mounted) {
-      setState(() => _isLoading = false);
+        );
+      } else {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const AuthGate()),
+        );
+      }
+    } on FirebaseAuthException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(e.message ?? 'Login gagal')));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Terjadi kesalahan: $e')));
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
-}
 
   @override
   Widget build(BuildContext context) {
@@ -101,10 +106,7 @@ class _LoginMobileState extends State<LoginMobile> {
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [
-                  Color(0xFFFFE0B2),
-                  Color(0xFFFFFFFF),
-                ],
+                colors: [Color(0xFFFFE0B2), Color(0xFFFFFFFF)],
               ),
             ),
           ),
@@ -153,29 +155,29 @@ class _LoginMobileState extends State<LoginMobile> {
       ),
     );
   }
+
   Future<void> _forgotPassword() async {
-  final email = emailController.text.trim();
+    final email = emailController.text.trim();
 
-  if (email.isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Masukkan email terlebih dahulu')),
-    );
-    return;
+    if (email.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Masukkan email terlebih dahulu')),
+      );
+      return;
+    }
+
+    try {
+      await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Email reset terkirim')));
+    } on FirebaseAuthException catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.message ?? 'Terjadi kesalahan')));
+    }
   }
-
-  try {
-    await FirebaseAuth.instance
-        .sendPasswordResetEmail(email: email);
-
-    if (!mounted) return;
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Email reset terkirim')),
-    );
-  } on FirebaseAuthException catch (e) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(e.message ?? 'Terjadi kesalahan')),
-    );
-  }
-}
 }

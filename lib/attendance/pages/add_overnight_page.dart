@@ -44,12 +44,19 @@ class _AddOvernightPageState extends State<AddOvernightPage> {
       startDate = widget.existingEntry!.startDate;
       endDate = widget.existingEntry!.endDate;
       selectedCustomerName = widget.existingEntry!.customerName;
+      selectedPartner = Partner(
+        id: '',
+        name: widget.existingEntry!.customerName,
+        address: '',
+        category: widget.existingEntry!.customerCategory,
+        logoUrl: '',
+      );
     }
   }
 
   Future<void> _save() async {
     // ===== VALIDASI =====
-    if (startDate == null || endDate == null || selectedPartner == null) {
+    if (startDate == null || endDate == null || selectedCustomerName == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Please complete all fields'),
@@ -74,12 +81,10 @@ class _AddOvernightPageState extends State<AddOvernightPage> {
       id: widget.docId ?? '',
       startDate: startDate!,
       endDate: endDate!,
-      totalNights: OvernightHelper.calculateTotalNights(
-        startDate!,
-        endDate!,
-      ),
-      customerName: selectedPartner!.name,
-      customerCategory: selectedPartner!.category,
+      totalNights: OvernightHelper.calculateTotalNights(startDate!, endDate!),
+      customerName: selectedPartner?.name ?? selectedCustomerName!,
+      customerCategory:
+          selectedPartner?.category ?? widget.existingEntry!.customerCategory,
       period: widget.period,
     );
 
@@ -103,26 +108,23 @@ class _AddOvernightPageState extends State<AddOvernightPage> {
       }
 
       if (!mounted) return;
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            widget.docId == null 
-                ? 'Overnight added successfully' 
-                : 'Overnight updated successfully'
+            widget.docId == null
+                ? 'Overnight added successfully'
+                : 'Overnight updated successfully',
           ),
           backgroundColor: Colors.green,
         ),
       );
-      
+
       Navigator.pop(context);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error: $e'),
-          backgroundColor: Colors.red,
-        ),
+        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
       );
       setState(() => isSaving = false);
     }
@@ -160,21 +162,17 @@ class _AddOvernightPageState extends State<AddOvernightPage> {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    Colors.purple.withValues(alpha:0.2),
-                    Colors.purple.withValues(alpha:0.1),
+                    Colors.purple.withValues(alpha: 0.2),
+                    Colors.purple.withValues(alpha: 0.1),
                   ],
                 ),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: Colors.purple.withValues(alpha:0.3),
+                  color: Colors.purple.withValues(alpha: 0.3),
                   width: 1,
                 ),
               ),
-              child: const Icon(
-                Icons.hotel,
-                color: Colors.purple,
-                size: 24,
-              ),
+              child: const Icon(Icons.hotel, color: Colors.purple, size: 24),
             ),
             const SizedBox(width: 12),
             Column(
@@ -190,9 +188,12 @@ class _AddOvernightPageState extends State<AddOvernightPage> {
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
-                    color: Colors.purple.withValues(alpha:0.1),
+                    color: Colors.purple.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
@@ -215,12 +216,12 @@ class _AddOvernightPageState extends State<AddOvernightPage> {
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
-                Colors.white.withValues(alpha:0.2),
-                Colors.white.withValues(alpha:0.1),
+                Colors.white.withValues(alpha: 0.2),
+                Colors.white.withValues(alpha: 0.1),
               ],
             ),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.white.withValues(alpha:0.3)),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
           ),
           child: IconButton(
             icon: const Icon(Icons.arrow_back),
@@ -230,7 +231,7 @@ class _AddOvernightPageState extends State<AddOvernightPage> {
       ),
       body: AppBackgroundWrapper(
         padding: const EdgeInsets.all(16),
-        child: isDesktop 
+        child: isDesktop
             ? _buildDesktopLayout(categoryColor, nights)
             : _buildMobileLayout(categoryColor, nights),
       ),
@@ -256,8 +257,8 @@ class _AddOvernightPageState extends State<AddOvernightPage> {
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
-                            Colors.purple.withValues(alpha:0.2),
-                            Colors.purple.withValues(alpha:0.1),
+                            Colors.purple.withValues(alpha: 0.2),
+                            Colors.purple.withValues(alpha: 0.1),
                           ],
                         ),
                         borderRadius: BorderRadius.circular(10),
@@ -288,9 +289,9 @@ class _AddOvernightPageState extends State<AddOvernightPage> {
                   color: Colors.blue,
                   onTap: () async {
                     final d = await showDatePickerOverlay(
-  context: context,
-  initialDate: startDate ?? DateTime.now(),
-);
+                      context: context,
+                      initialDate: startDate ?? DateTime.now(),
+                    );
                     if (d != null) setState(() => startDate = d);
                   },
                 ),
@@ -304,10 +305,10 @@ class _AddOvernightPageState extends State<AddOvernightPage> {
                   icon: Icons.calendar_month,
                   color: Colors.orange,
                   onTap: () async {
-                   final d = await showDatePickerOverlay(
-  context: context,
-  initialDate: endDate ?? DateTime.now(),
-);
+                    final d = await showDatePickerOverlay(
+                      context: context,
+                      initialDate: endDate ?? DateTime.now(),
+                    );
                     if (d != null) setState(() => endDate = d);
                   },
                 ),
@@ -320,13 +321,13 @@ class _AddOvernightPageState extends State<AddOvernightPage> {
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
-                        categoryColor.withValues(alpha:0.1),
-                        categoryColor.withValues(alpha:0.05),
+                        categoryColor.withValues(alpha: 0.1),
+                        categoryColor.withValues(alpha: 0.05),
                       ],
                     ),
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: categoryColor.withValues(alpha:0.3),
+                      color: categoryColor.withValues(alpha: 0.3),
                       width: 1.5,
                     ),
                   ),
@@ -353,9 +354,8 @@ class _AddOvernightPageState extends State<AddOvernightPage> {
                           final partner = await Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => const PartnerListPage(
-                                selectionMode: true,
-                              ),
+                              builder: (_) =>
+                                  const PartnerListPage(selectionMode: true),
                             ),
                           );
 
@@ -372,10 +372,10 @@ class _AddOvernightPageState extends State<AddOvernightPage> {
                             vertical: 14,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha:0.2),
+                            color: Colors.white.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                              color: categoryColor.withValues(alpha:0.3),
+                              color: categoryColor.withValues(alpha: 0.3),
                             ),
                           ),
                           child: Row(
@@ -396,8 +396,12 @@ class _AddOvernightPageState extends State<AddOvernightPage> {
                                       Row(
                                         children: [
                                           Text(
-                                            _getCategoryIcon(selectedPartner!.category),
-                                            style: const TextStyle(fontSize: 12),
+                                            _getCategoryIcon(
+                                              selectedPartner!.category,
+                                            ),
+                                            style: const TextStyle(
+                                              fontSize: 12,
+                                            ),
                                           ),
                                           const SizedBox(width: 4),
                                           Text(
@@ -415,7 +419,12 @@ class _AddOvernightPageState extends State<AddOvernightPage> {
                                         'Select Customer',
                                         style: TextStyle(
                                           fontSize: 14,
-                                          color: Color.fromARGB(255, 197, 234, 150),
+                                          color: Color.fromARGB(
+                                            255,
+                                            197,
+                                            234,
+                                            150,
+                                          ),
                                         ),
                                       ),
                                   ],
@@ -442,13 +451,13 @@ class _AddOvernightPageState extends State<AddOvernightPage> {
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
-                        Colors.purple.withValues(alpha:0.1),
-                        Colors.purple.withValues(alpha:0.05),
+                        Colors.purple.withValues(alpha: 0.1),
+                        Colors.purple.withValues(alpha: 0.05),
                       ],
                     ),
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: Colors.purple.withValues(alpha:0.3),
+                      color: Colors.purple.withValues(alpha: 0.3),
                     ),
                   ),
                   child: Row(
@@ -456,7 +465,7 @@ class _AddOvernightPageState extends State<AddOvernightPage> {
                       Container(
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: Colors.purple.withValues(alpha:0.2),
+                          color: Colors.purple.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Icon(
@@ -546,176 +555,176 @@ class _AddOvernightPageState extends State<AddOvernightPage> {
         // RIGHT CONTENT - PREVIEW
         Expanded(
           child: _glass(
-  SingleChildScrollView(
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            Colors.purple.withValues(alpha:0.2),
-                            Colors.purple.withValues(alpha:0.1),
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: const Icon(
-                        Icons.visibility,
-                        color: Colors.purple,
-                        size: 18,
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    const Text(
-                      'Preview',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-
-                Expanded(
-                  child: Center(
-                    child: Container(
-                      width: 320,
-                      padding: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            Colors.purple.withValues(alpha:0.1),
-                            Colors.purple.withValues(alpha:0.05),
-                          ],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.circular(24),
-                        border: Border.all(
-                          color: Colors.purple.withValues(alpha:0.3),
-                          width: 2,
-                        ),
-                      ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(20),
-                            decoration: BoxDecoration(
-                              color: Colors.purple.withValues(alpha:0.15),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(
-                              Icons.hotel,
-                              size: 48,
-                              color: Colors.purple.shade700,
-                            ),
+            SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              Colors.purple.withValues(alpha: 0.2),
+                              Colors.purple.withValues(alpha: 0.1),
+                            ],
                           ),
-                          const SizedBox(height: 20),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(
+                          Icons.visibility,
+                          color: Colors.purple,
+                          size: 18,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      const Text(
+                        'Preview',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
 
-                          if (startDate != null && endDate != null) ...[
-                            Text(
-                              '${startDate!.day}/${startDate!.month}/${startDate!.year}',
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            const Icon(
-                              Icons.arrow_downward,
-                              size: 16,
-                              color: Colors.grey,
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              '${endDate!.day}/${endDate!.month}/${endDate!.year}',
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            const SizedBox(height: 12),
+                  Expanded(
+                    child: Center(
+                      child: Container(
+                        width: 320,
+                        padding: const EdgeInsets.all(24),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              Colors.purple.withValues(alpha: 0.1),
+                              Colors.purple.withValues(alpha: 0.05),
+                            ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(24),
+                          border: Border.all(
+                            color: Colors.purple.withValues(alpha: 0.3),
+                            width: 2,
+                          ),
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
                             Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 8,
-                              ),
+                              padding: const EdgeInsets.all(20),
                               decoration: BoxDecoration(
-                                color: Colors.purple.withValues(alpha:0.2),
-                                borderRadius: BorderRadius.circular(30),
+                                color: Colors.purple.withValues(alpha: 0.15),
+                                shape: BoxShape.circle,
                               ),
-                              child: Text(
-                                '$nights nights',
-                                style: TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.purple.shade700,
-                                ),
+                              child: Icon(
+                                Icons.hotel,
+                                size: 48,
+                                color: Colors.purple.shade700,
                               ),
                             ),
-                          ] else
-                            const Text(
-                              'Select dates to see preview',
-                              style: TextStyle(
-                                color: Colors.grey,
-                                fontSize: 14,
-                              ),
-                            ),
+                            const SizedBox(height: 20),
 
-                          const SizedBox(height: 16),
-                          const Divider(),
-                          const SizedBox(height: 16),
-
-                          if (selectedPartner != null) ...[
-                            Text(
-                              selectedPartner!.name,
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                            const SizedBox(height: 4),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: categoryColor.withValues(alpha:0.15),
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: Text(
-                                selectedPartner!.category,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: categoryColor,
+                            if (startDate != null && endDate != null) ...[
+                              Text(
+                                '${startDate!.day}/${startDate!.month}/${startDate!.year}',
+                                style: const TextStyle(
+                                  fontSize: 18,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
-                            ),
-                          ] else
-                            const Text(
-                              'Select a customer',
-                              style: TextStyle(
+                              const Icon(
+                                Icons.arrow_downward,
+                                size: 16,
                                 color: Colors.grey,
-                                fontSize: 14,
                               ),
-                            ),
-                        ],
+                              const SizedBox(height: 4),
+                              Text(
+                                '${endDate!.day}/${endDate!.month}/${endDate!.year}',
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 8,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.purple.withValues(alpha: 0.2),
+                                  borderRadius: BorderRadius.circular(30),
+                                ),
+                                child: Text(
+                                  '$nights nights',
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.purple.shade700,
+                                  ),
+                                ),
+                              ),
+                            ] else
+                              const Text(
+                                'Select dates to see preview',
+                                style: TextStyle(
+                                  color: Colors.grey,
+                                  fontSize: 14,
+                                ),
+                              ),
+
+                            const SizedBox(height: 16),
+                            const Divider(),
+                            const SizedBox(height: 16),
+
+                            if (selectedPartner != null) ...[
+                              Text(
+                                selectedPartner!.name,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                              const SizedBox(height: 4),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: categoryColor.withValues(alpha: 0.15),
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Text(
+                                  selectedPartner!.category,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: categoryColor,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ] else
+                              const Text(
+                                'Select a customer',
+                                style: TextStyle(
+                                  color: Colors.grey,
+                                  fontSize: 14,
+                                ),
+                              ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
-        ),
         ),
       ],
     );
@@ -737,8 +746,8 @@ class _AddOvernightPageState extends State<AddOvernightPage> {
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
-                            Colors.purple.withValues(alpha:0.2),
-                            Colors.purple.withValues(alpha:0.1),
+                            Colors.purple.withValues(alpha: 0.2),
+                            Colors.purple.withValues(alpha: 0.1),
                           ],
                         ),
                         borderRadius: BorderRadius.circular(10),
@@ -769,25 +778,25 @@ class _AddOvernightPageState extends State<AddOvernightPage> {
                   color: Colors.blue,
                   onTap: () async {
                     final d = await showDialog<DateTime>(
-  context: context,
-  useRootNavigator: true,
-  barrierDismissible: true,
-  builder: (context) {
-    return Center(
-      child: Material(
-        color: Colors.transparent,
-        child: SizedBox(
-          width: 400,
-          child: DatePickerDialog(
-            initialDate: startDate ?? DateTime.now(),
-            firstDate: DateTime(2020),
-            lastDate: DateTime(2035),
-          ),
-        ),
-      ),
-    );
-  },
-);
+                      context: context,
+                      useRootNavigator: true,
+                      barrierDismissible: true,
+                      builder: (context) {
+                        return Center(
+                          child: Material(
+                            color: Colors.transparent,
+                            child: SizedBox(
+                              width: 400,
+                              child: DatePickerDialog(
+                                initialDate: startDate ?? DateTime.now(),
+                                firstDate: DateTime(2020),
+                                lastDate: DateTime(2035),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    );
                     if (d != null) setState(() => startDate = d);
                   },
                 ),
@@ -802,25 +811,25 @@ class _AddOvernightPageState extends State<AddOvernightPage> {
                   color: Colors.orange,
                   onTap: () async {
                     final d = await showDialog<DateTime>(
-  context: context,
-  useRootNavigator: true,
-  barrierDismissible: true,
-  builder: (context) {
-    return Center(
-      child: Material(
-        color: Colors.transparent,
-        child: SizedBox(
-          width: 400,
-          child: DatePickerDialog(
-            initialDate: endDate ?? DateTime.now(),
-            firstDate: DateTime(2020),
-            lastDate: DateTime(2035),
-          ),
-        ),
-      ),
-    );
-  },
-);
+                      context: context,
+                      useRootNavigator: true,
+                      barrierDismissible: true,
+                      builder: (context) {
+                        return Center(
+                          child: Material(
+                            color: Colors.transparent,
+                            child: SizedBox(
+                              width: 400,
+                              child: DatePickerDialog(
+                                initialDate: endDate ?? DateTime.now(),
+                                firstDate: DateTime(2020),
+                                lastDate: DateTime(2035),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    );
                     if (d != null) setState(() => endDate = d);
                   },
                 ),
@@ -828,109 +837,110 @@ class _AddOvernightPageState extends State<AddOvernightPage> {
                 const SizedBox(height: 16),
 
                 // Customer Selection
-InkWell(
-  onTap: () async {
-    final partner = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => const PartnerListPage(
-          selectionMode: true,
-        ),
-      ),
-    );
+                InkWell(
+                  onTap: () async {
+                    final partner = await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            const PartnerListPage(selectionMode: true),
+                      ),
+                    );
 
-    if (partner != null && partner is Partner) {
-      setState(() {
-        selectedPartner = partner;
-        selectedCustomerName = partner.name;
-      });
-    }
-  },
-  child: Container(
-    padding: const EdgeInsets.all(16),
-    decoration: BoxDecoration(
-      gradient: LinearGradient(
-        colors: [
-          categoryColor.withValues(alpha:0.15),
-          categoryColor.withValues(alpha:0.08),
-        ],
-      ),
-      borderRadius: BorderRadius.circular(16),
-      border: Border.all(
-        color: categoryColor.withValues(alpha:0.4),
-      ),
-    ),
-    child: Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: categoryColor.withValues(alpha:0.15),
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Icon(
-            Icons.business,
-            color: categoryColor,
-            size: 20,
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Customer',
-                style: TextStyle(
-                  fontSize: 11,
-                  color: categoryColor.withValues(alpha:0.8),
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              Text(
-                selectedPartner?.name ?? 'Select Customer',
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: selectedPartner != null
-                      ? FontWeight.w600
-                      : FontWeight.w500,
-                  color: selectedPartner != null
-                      ? categoryColor
-                      : categoryColor.withValues(alpha:0.7),
-                ),
-              ),
-              if (selectedPartner != null) ...[
-                const SizedBox(height: 2),
-                Row(
-                  children: [
-                    Text(
-                      _getCategoryIcon(selectedPartner!.category),
-                      style: const TextStyle(fontSize: 11),
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      selectedPartner!.category,
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: categoryColor,
-                        fontWeight: FontWeight.w600,
+                    if (partner != null && partner is Partner) {
+                      setState(() {
+                        selectedPartner = partner;
+                        selectedCustomerName = partner.name;
+                      });
+                    }
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          categoryColor.withValues(alpha: 0.15),
+                          categoryColor.withValues(alpha: 0.08),
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: categoryColor.withValues(alpha: 0.4),
                       ),
                     ),
-                  ],
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: categoryColor.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Icon(
+                            Icons.business,
+                            color: categoryColor,
+                            size: 20,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Customer',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: categoryColor.withValues(alpha: 0.8),
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              Text(
+                                selectedPartner?.name ?? 'Select Customer',
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: selectedPartner != null
+                                      ? FontWeight.w600
+                                      : FontWeight.w500,
+                                  color: selectedPartner != null
+                                      ? categoryColor
+                                      : categoryColor.withValues(alpha: 0.7),
+                                ),
+                              ),
+                              if (selectedPartner != null) ...[
+                                const SizedBox(height: 2),
+                                Row(
+                                  children: [
+                                    Text(
+                                      _getCategoryIcon(
+                                        selectedPartner!.category,
+                                      ),
+                                      style: const TextStyle(fontSize: 11),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      selectedPartner!.category,
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: categoryColor,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                        Icon(
+                          Icons.arrow_forward_ios,
+                          size: 14,
+                          color: categoryColor,
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-              ],
-            ],
-          ),
-        ),
-        Icon(
-          Icons.arrow_forward_ios,
-          size: 14,
-          color: categoryColor,
-        ),
-      ],
-    ),
-  ),
-),
 
                 const SizedBox(height: 20),
 
@@ -940,13 +950,13 @@ InkWell(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
-                        Colors.purple.withValues(alpha:0.1),
-                        Colors.purple.withValues(alpha:0.05),
+                        Colors.purple.withValues(alpha: 0.1),
+                        Colors.purple.withValues(alpha: 0.05),
                       ],
                     ),
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: Colors.purple.withValues(alpha:0.3),
+                      color: Colors.purple.withValues(alpha: 0.3),
                     ),
                   ),
                   child: Row(
@@ -954,7 +964,7 @@ InkWell(
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: Colors.purple.withValues(alpha:0.15),
+                          color: Colors.purple.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Icon(
@@ -1001,12 +1011,12 @@ InkWell(
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  Colors.white.withValues(alpha:0.2),
-                  Colors.white.withValues(alpha:0.1),
+                  Colors.white.withValues(alpha: 0.2),
+                  Colors.white.withValues(alpha: 0.1),
                 ],
               ),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.white.withValues(alpha:0.3)),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
             ),
             child: Row(
               children: [
@@ -1054,7 +1064,9 @@ InkWell(
           ),
 
           // Preview Card (Mobile)
-          if (startDate != null && endDate != null && selectedPartner != null) ...[
+          if (startDate != null &&
+              endDate != null &&
+              selectedPartner != null) ...[
             const SizedBox(height: 16),
             _glass(
               Column(
@@ -1067,8 +1079,8 @@ InkWell(
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
                             colors: [
-                              Colors.purple.withValues(alpha:0.2),
-                              Colors.purple.withValues(alpha:0.1),
+                              Colors.purple.withValues(alpha: 0.2),
+                              Colors.purple.withValues(alpha: 0.1),
                             ],
                           ),
                           borderRadius: BorderRadius.circular(10),
@@ -1096,13 +1108,13 @@ InkWell(
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
-                          Colors.purple.withValues(alpha:0.1),
-                          Colors.purple.withValues(alpha:0.05),
+                          Colors.purple.withValues(alpha: 0.1),
+                          Colors.purple.withValues(alpha: 0.05),
                         ],
                       ),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: Colors.purple.withValues(alpha:0.3),
+                        color: Colors.purple.withValues(alpha: 0.3),
                       ),
                     ),
                     child: Column(
@@ -1132,7 +1144,7 @@ InkWell(
                             Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: Colors.purple.withValues(alpha:0.15),
+                                color: Colors.purple.withValues(alpha: 0.15),
                                 shape: BoxShape.circle,
                               ),
                               child: const Icon(
@@ -1180,7 +1192,7 @@ InkWell(
                                 vertical: 2,
                               ),
                               decoration: BoxDecoration(
-                                color: categoryColor.withValues(alpha:0.15),
+                                color: categoryColor.withValues(alpha: 0.15),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Text(
@@ -1207,56 +1219,54 @@ InkWell(
   }
 
   Future<DateTime?> showDatePickerOverlay({
-  required BuildContext context,
-  required DateTime initialDate,
-}) async {
-  final overlay = Overlay.of(context, rootOverlay: true);
-  late OverlayEntry entry;
+    required BuildContext context,
+    required DateTime initialDate,
+  }) async {
+    final overlay = Overlay.of(context, rootOverlay: true);
+    late OverlayEntry entry;
 
-  DateTime? selectedDate;
-
-  entry = OverlayEntry(
-    builder: (context) {
-      return Positioned.fill(
-        child: Material(
-          color: Colors.black.withOpacity(0.3),
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(
-                maxWidth: 400,
-                maxHeight: 500,
-              ),
-              child: Material(
-                borderRadius: BorderRadius.circular(16),
-                clipBehavior: Clip.antiAlias,
-                child: DatePickerDialog(
-                  initialDate: initialDate,
-                  firstDate: DateTime(2020),
-                  lastDate: DateTime(2035),
-                  onDatePickerModeChange: (_) {},
+    entry = OverlayEntry(
+      builder: (context) {
+        return Positioned.fill(
+          child: Material(
+            color: Colors.black.withOpacity(0.3),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(
+                  maxWidth: 400,
+                  maxHeight: 500,
+                ),
+                child: Material(
+                  borderRadius: BorderRadius.circular(16),
+                  clipBehavior: Clip.antiAlias,
+                  child: DatePickerDialog(
+                    initialDate: initialDate,
+                    firstDate: DateTime(2020),
+                    lastDate: DateTime(2035),
+                    onDatePickerModeChange: (_) {},
+                  ),
                 ),
               ),
             ),
           ),
-        ),
-      );
-    },
-  );
+        );
+      },
+    );
 
-  overlay.insert(entry);
+    overlay.insert(entry);
 
-  // 🔥 Tunggu user pilih dari Navigator root
-  final result = await Navigator.of(context, rootNavigator: true).push(
-    PageRouteBuilder(
-      opaque: false,
-      pageBuilder: (_, __, ___) => const SizedBox.shrink(),
-    ),
-  );
+    // 🔥 Tunggu user pilih dari Navigator root
+    final result = await Navigator.of(context, rootNavigator: true).push(
+      PageRouteBuilder(
+        opaque: false,
+        pageBuilder: (_, __, ___) => const SizedBox.shrink(),
+      ),
+    );
 
-  entry.remove();
+    entry.remove();
 
-  return result as DateTime?;
-}
+    return result as DateTime?;
+  }
 
   Widget _buildDesktopDateField({
     required String label,
@@ -1272,22 +1282,19 @@ InkWell(
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              color.withValues(alpha:0.1),
-              color.withValues(alpha:0.05),
+              color.withValues(alpha: 0.1),
+              color.withValues(alpha: 0.05),
             ],
           ),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: color.withValues(alpha:0.3),
-            width: 1.5,
-          ),
+          border: Border.all(color: color.withValues(alpha: 0.3), width: 1.5),
         ),
         child: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: color.withValues(alpha:0.15),
+                color: color.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(icon, color: color, size: 20),
@@ -1312,18 +1319,16 @@ InkWell(
                         : '${value.day}/${value.month}/${value.year}',
                     style: TextStyle(
                       fontSize: 16,
-                      fontWeight: value == null ? FontWeight.normal : FontWeight.w600,
+                      fontWeight: value == null
+                          ? FontWeight.normal
+                          : FontWeight.w600,
                       color: value == null ? Colors.grey : Colors.black87,
                     ),
                   ),
                 ],
               ),
             ),
-            Icon(
-              Icons.keyboard_arrow_down,
-              color: color,
-              size: 20,
-            ),
+            Icon(Icons.keyboard_arrow_down, color: color, size: 20),
           ],
         ),
       ),
@@ -1344,14 +1349,12 @@ InkWell(
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              color.withValues(alpha:0.1),
-              color.withValues(alpha:0.05),
+              color.withValues(alpha: 0.1),
+              color.withValues(alpha: 0.05),
             ],
           ),
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: color.withValues(alpha:0.3),
-          ),
+          border: Border.all(color: color.withValues(alpha: 0.3)),
         ),
         child: Row(
           children: [
@@ -1361,30 +1364,22 @@ InkWell(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    label,
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: color,
-                    ),
-                  ),
+                  Text(label, style: TextStyle(fontSize: 11, color: color)),
                   Text(
                     value == null
                         ? 'Select date'
                         : '${value.day}/${value.month}/${value.year}',
                     style: TextStyle(
                       fontSize: 15,
-                      fontWeight: value == null ? FontWeight.normal : FontWeight.w600,
+                      fontWeight: value == null
+                          ? FontWeight.normal
+                          : FontWeight.w600,
                     ),
                   ),
                 ],
               ),
             ),
-            Icon(
-              Icons.keyboard_arrow_down,
-              color: color,
-              size: 18,
-            ),
+            Icon(Icons.keyboard_arrow_down, color: color, size: 18),
           ],
         ),
       ),
@@ -1406,14 +1401,14 @@ Widget _glass(Widget child) {
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              Colors.white.withValues(alpha:0.3),
-              Colors.white.withValues(alpha:0.15),
+              Colors.white.withValues(alpha: 0.3),
+              Colors.white.withValues(alpha: 0.15),
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.white.withValues(alpha:0.4)),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.4)),
         ),
         child: child,
       ),

@@ -8,14 +8,21 @@ class AdminService {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return false;
 
-    final doc = await _firestore
+    final uidDoc = await _firestore
         .collection('admin_whitelist')
         .doc(user.uid)
         .get();
 
-    if (!doc.exists) return false;
+    if (uidDoc.exists && uidDoc.data()?['active'] == true) return true;
 
-    final data = doc.data();
-    return data?['active'] == true;
+    final email = user.email?.toLowerCase().trim();
+    if (email == null || email.isEmpty) return false;
+
+    final emailDoc = await _firestore
+        .collection('admin_whitelist')
+        .doc(email)
+        .get();
+
+    return emailDoc.exists && emailDoc.data()?['active'] == true;
   }
 }

@@ -27,9 +27,16 @@ class ServiceReportSparePart {
     return ServiceReportSparePart(
       partCode: map['partCode'] ?? '',
       name: map['name'] ?? '',
-      qty: map['qty'] ?? 0,
-      currentStock: map['currentStock'] ?? 0,
+      qty: _safeInt(map['qty']),
+      currentStock: _safeInt(map['currentStock']),
       location: map['location'] ?? '',
     );
+  }
+
+  static int _safeInt(dynamic value) {
+    if (value == null) return 0;
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    return int.tryParse(value.toString()) ?? 0;
   }
 }

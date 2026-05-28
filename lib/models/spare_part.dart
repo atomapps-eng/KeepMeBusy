@@ -33,8 +33,6 @@ enum SparePartOrigin {
   }
 }
 
-
-
 class SparePart {
   final String id;
   final String partCode;
@@ -53,7 +51,6 @@ class SparePart {
   final SparePartCategory category;
   final SparePartOrigin origin;
 
-
   SparePart({
     required this.id,
     required this.partCode,
@@ -61,9 +58,9 @@ class SparePart {
     required this.nameEn,
     required this.location,
     required this.stock,
-    required this.initialStock,   // ⬅️ baru
+    required this.initialStock, // ⬅️ baru
     required this.currentStock,
-    required this.minimumStock,   // ⬅️ baru
+    required this.minimumStock, // ⬅️ baru
     required this.weight,
     required this.weightUnit,
     this.basePriceEur = 0.0,
@@ -71,72 +68,71 @@ class SparePart {
     this.imageVersion = 0,
     this.category = SparePartCategory.autoCutting,
     this.origin = SparePartOrigin.local,
-
   });
 
   factory SparePart.fromFirestore(DocumentSnapshot doc) {
-  final data = doc.data() as Map<String, dynamic>;
-  return SparePart.fromMap(data, doc.id);
-}
+    final data = doc.data() as Map<String, dynamic>;
+    return SparePart.fromMap(data, doc.id);
+  }
 
-factory SparePart.fromJson(Map<String, dynamic> json) {
-  return SparePart(
-    id: json['id'],
-    partCode: json['partCode'],
-    name: json['name'],
-    nameEn: json['nameEn'],
-    location: json['location'],
+  factory SparePart.fromJson(Map<String, dynamic> json) {
+    return SparePart(
+      id: json['id'],
+      partCode: json['partCode'],
+      name: json['name'],
+      nameEn: json['nameEn'],
+      location: json['location'],
 
-    stock: json['stock'] ?? 0,
-    initialStock: json['initialStock'] ?? 0,
-    currentStock: json['currentStock'] ?? 0,
-    minimumStock: json['minimumStock'] ?? 0,
+      stock: json['stock'] ?? 0,
+      initialStock: json['initialStock'] ?? 0,
+      currentStock: json['currentStock'] ?? 0,
+      minimumStock: json['minimumStock'] ?? 0,
 
-    weight: (json['weight'] ?? 0).toDouble(),
-    weightUnit: json['weightUnit'] ?? 'Kg',
+      weight: (json['weight'] ?? 0).toDouble(),
+      weightUnit: json['weightUnit'] ?? 'Kg',
 
-    basePriceEur: (json['basePriceEur'] ?? 0).toDouble(),
+      basePriceEur: (json['basePriceEur'] ?? 0).toDouble(),
 
-    imageUrl: json['imageUrl'] ?? '',
-    imageVersion: json['imageVersion'] ?? 0,
+      imageUrl: json['imageUrl'] ?? '',
+      imageVersion: json['imageVersion'] ?? 0,
 
-    category: SparePartCategory.values.firstWhere(
-      (e) => e.name == json['category'],
-      orElse: () => SparePartCategory.autoCutting,
-    ),
+      category: SparePartCategory.values.firstWhere(
+        (e) => e.name == json['category'],
+        orElse: () => SparePartCategory.autoCutting,
+      ),
 
-    origin: SparePartOrigin.values.firstWhere(
-      (e) => e.name == json['origin'],
-      orElse: () => SparePartOrigin.local,
-    ),
-  );
-}
+      origin: SparePartOrigin.values.firstWhere(
+        (e) => e.name == json['origin'],
+        orElse: () => SparePartOrigin.local,
+      ),
+    );
+  }
 
-Map<String, dynamic> toJson() {
-  return {
-    'id': id,
-    'partCode': partCode,
-    'name': name,
-    'nameEn': nameEn,
-    'location': location,
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'partCode': partCode,
+      'name': name,
+      'nameEn': nameEn,
+      'location': location,
 
-    'stock': stock,
-    'initialStock': initialStock,
-    'currentStock': currentStock,
-    'minimumStock': minimumStock,
+      'stock': stock,
+      'initialStock': initialStock,
+      'currentStock': currentStock,
+      'minimumStock': minimumStock,
 
-    'weight': weight,
-    'weightUnit': weightUnit,
+      'weight': weight,
+      'weightUnit': weightUnit,
 
-    'basePriceEur': basePriceEur,
+      'basePriceEur': basePriceEur,
 
-    'imageUrl': imageUrl,
-    'imageVersion': imageVersion,
+      'imageUrl': imageUrl,
+      'imageVersion': imageVersion,
 
-    'category': category.name,
-    'origin': origin.name,
-  };
-}
+      'category': category.name,
+      'origin': origin.name,
+    };
+  }
 
   factory SparePart.fromMap(Map<String, dynamic> data, String id) {
     return SparePart(
@@ -148,35 +144,29 @@ Map<String, dynamic> toJson() {
 
       // ✅ SAFE PARSING (INI KUNCI FIX ERROR)
       stock: _safeInt(data['stock']),
-      initialStock: data['initialStock'] ?? data['stock'] ?? 0,
-      currentStock: data['currentStock'] ?? data['stock'] ?? 0,
-      minimumStock: (data['minimumStock'] ?? 0) as int,
+      initialStock: _safeInt(data['initialStock'] ?? data['stock']),
+      currentStock: _safeInt(data['currentStock'] ?? data['stock']),
+      minimumStock: _safeInt(data['minimumStock']),
       weight: _safeDouble(data['weight']),
 
       weightUnit: (data['weightUnit'] ?? 'Kg').toString(),
-      basePriceEur: (data['basePriceEur'] ?? 0).toDouble(),
+      basePriceEur: _safeDouble(data['basePriceEur']),
       imageUrl: (data['imageUrl'] ?? '').toString(),
       imageVersion: _safeInt(data['imageVersion']),
 
-     category: SparePartCategory.values.firstWhere(
-  (e) =>
-      e.name.replaceAll('_', '').toUpperCase() ==
-      (data['category'] ?? '')
-          .replaceAll(' ', '')
-          .toUpperCase(),
-  orElse: () => SparePartCategory.autoCutting,
-),
+      category: SparePartCategory.values.firstWhere(
+        (e) =>
+            e.name.replaceAll('_', '').toUpperCase() ==
+            (data['category'] ?? '').replaceAll(' ', '').toUpperCase(),
+        orElse: () => SparePartCategory.autoCutting,
+      ),
 
-origin: SparePartOrigin.values.firstWhere(
-  (e) =>
-      e.name.replaceAll('_', '').toUpperCase() ==
-      (data['origin'] ?? '')
-          .replaceAll(' ', '')
-          .toUpperCase(),
-  orElse: () => SparePartOrigin.local,
-),
-
-
+      origin: SparePartOrigin.values.firstWhere(
+        (e) =>
+            e.name.replaceAll('_', '').toUpperCase() ==
+            (data['origin'] ?? '').replaceAll(' ', '').toUpperCase(),
+        orElse: () => SparePartOrigin.local,
+      ),
     );
   }
 
@@ -187,31 +177,30 @@ origin: SparePartOrigin.values.firstWhere(
     return int.tryParse(v.toString()) ?? 0;
   }
 
- static double _safeDouble(dynamic v) {
-  if (v == null) return 0.0;
-  if (v is double) return v;
-  if (v is int) return v.toDouble();
-  return double.tryParse(v.toString()) ?? 0.0;
-}
+  static double _safeDouble(dynamic v) {
+    if (v == null) return 0.0;
+    if (v is double) return v;
+    if (v is int) return v.toDouble();
+    return double.tryParse(v.toString()) ?? 0.0;
+  }
 
-Map<String, dynamic> toMap() {
-  return {
-    'partCode': partCode,
-    'name': name,
-    'nameEn': nameEn,
-    'location': location,
-    'stock': stock,
-    'initialStock': initialStock,
-    'currentStock': currentStock,
-    'minimumStock': minimumStock,
-    'weight': weight,
-    'weightUnit': weightUnit,
-    'basePriceEur': basePriceEur,
-    'imageUrl': imageUrl,
-    'imageVersion': imageVersion,
-    'category': category.name.toUpperCase(),
-    'origin': origin.name.toUpperCase(),
-  };
-}
-
+  Map<String, dynamic> toMap() {
+    return {
+      'partCode': partCode,
+      'name': name,
+      'nameEn': nameEn,
+      'location': location,
+      'stock': stock,
+      'initialStock': initialStock,
+      'currentStock': currentStock,
+      'minimumStock': minimumStock,
+      'weight': weight,
+      'weightUnit': weightUnit,
+      'basePriceEur': basePriceEur,
+      'imageUrl': imageUrl,
+      'imageVersion': imageVersion,
+      'category': category.name.toUpperCase(),
+      'origin': origin.name.toUpperCase(),
+    };
+  }
 }

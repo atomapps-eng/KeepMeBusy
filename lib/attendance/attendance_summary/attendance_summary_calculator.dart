@@ -8,17 +8,18 @@ class AttendanceSummaryCalculator {
     required String employeeId,
     required String period,
   }) async {
-
     // ================= ATTENDANCE =================
-    final daySnap = await CompanyFirestore
-        .collection('attendance')
-        .doc(employeeId)
-        .collection('days')
-        .where('period', isEqualTo: period)
-        .get();
+    var dayQuery = CompanyFirestore.collection(
+      'attendance',
+    ).doc(employeeId).collection('days');
 
-    final days =
-        daySnap.docs.map((d) => AttendanceDay.fromFirestore(d)).toList();
+    final daySnap = period == 'ALL'
+        ? await dayQuery.get()
+        : await dayQuery.where('period', isEqualTo: period).get();
+
+    final days = daySnap.docs
+        .map((d) => AttendanceDay.fromFirestore(d))
+        .toList();
 
     int present = 0;
     int off = 0;
@@ -29,13 +30,12 @@ class AttendanceSummaryCalculator {
     int overtime = 0;
     int office = 0;
     int outstation = 0;
-  
 
     for (final d in days) {
       switch (d.status) {
         case AttendanceStatus.present:
           present++;
-  
+
           if (d.location == AttendanceLocation.office) office++;
           if (d.location == AttendanceLocation.outstation) outstation++;
           if (_isOvertime(d)) overtime++;
@@ -63,37 +63,45 @@ class AttendanceSummaryCalculator {
     final Map<String, int> activityByType = {};
 
     for (final dayDoc in daySnap.docs) {
-      final actSnap = await dayDoc.reference
-          .collection('activities')
-          .orderBy('createdAt')
-          .get();
+      final factorySnap = await dayDoc.reference.collection('factories').get();
 
-      for (final a in actSnap.docs) {
-        final data = a.data();
-        final type = data['activityType'] ?? 'UNKNOWN';
+      for (final factoryDoc in factorySnap.docs) {
+        final actSnap = await factoryDoc.reference
+            .collection('activities')
+            .orderBy('createdAt')
+            .get();
 
-        activityByType[type] = (activityByType[type] ?? 0) + 1;
+        for (final a in actSnap.docs) {
+          final data = a.data();
+          final type = (data['activityType'] ?? 'UNKNOWN').toString();
 
-        activities.add(
-          ActivitySummaryItem(
-            date: (data['date'] as Timestamp).toDate(),
-            factory: data['factoryClient'] ?? '-',
-            machine: data['machine'] ?? '-',
-            serialNumber: data['serialNumber'] ?? '-',
-            activityType: type,
-            description: data['description'] ?? '',
-          ),
-        );
+          activityByType[type] = (activityByType[type] ?? 0) + 1;
+
+          activities.add(
+            ActivitySummaryItem(
+              date: (data['date'] as Timestamp).toDate(),
+              factory:
+                  data['factoryClient'] ??
+                  factoryDoc.data()['factoryName'] ??
+                  '-',
+              machine: data['machine'] ?? '-',
+              serialNumber: data['serialNumber'] ?? '-',
+              activityType: type,
+              description: data['description'] ?? '',
+            ),
+          );
+        }
       }
     }
 
     // ================= OVERNIGHT =================
-    final overnightSnap = await CompanyFirestore
-        .collection('attendance')
-        .doc(employeeId)
-        .collection('overnight')
-        .where('period', isEqualTo: period)
-        .get();
+    var overnightQuery = CompanyFirestore.collection(
+      'attendance',
+    ).doc(employeeId).collection('overnight');
+
+    final overnightSnap = period == 'ALL'
+        ? await overnightQuery.get()
+        : await overnightQuery.where('period', isEqualTo: period).get();
 
     int domesticNights = 0;
     int internationalNights = 0;

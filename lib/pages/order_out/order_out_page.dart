@@ -7,17 +7,11 @@ import '../../models/spare_part.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../order_out/order_out_detail_page.dart';
 
-
-
 class OrderOutPage extends StatefulWidget {
   final bool isCompact;
   final String? searchKeyword;
 
-  const OrderOutPage({
-    super.key,
-    this.isCompact = false,
-    this.searchKeyword,
-  });
+  const OrderOutPage({super.key, this.isCompact = false, this.searchKeyword});
 
   @override
   State<OrderOutPage> createState() => _OrderOutPageState();
@@ -30,10 +24,7 @@ class OrderOutItem {
   final SparePart part;
   final int qty;
 
-  OrderOutItem({
-    required this.part,
-    required this.qty,
-  });
+  OrderOutItem({required this.part, required this.qty});
 }
 
 class _OrderOutPageState extends State<OrderOutPage> {
@@ -47,6 +38,7 @@ class _OrderOutPageState extends State<OrderOutPage> {
     }
     return user.email ?? 'Unknown';
   }
+
   // ================= CREATE ORDER STATE =================
   DateTime? orderDate;
   String? selectedClient;
@@ -56,65 +48,62 @@ class _OrderOutPageState extends State<OrderOutPage> {
 
   void _openEditOrder(Map<String, dynamic> data) {
     editingOrderId = data['id']; // ← sekarang VALID
-  final orderItems = data['items'] as List<dynamic>;
+    final orderItems = data['items'] as List<dynamic>;
 
-  setState(() {
-    isCreateMode = true;
-    isEditMode = true;
-    editingOrderId = data['id'];
+    setState(() {
+      isCreateMode = true;
+      isEditMode = true;
+      editingOrderId = data['id'];
 
-    orderDate = (data['orderDate'] as Timestamp).toDate();
-    selectedClient = data['client'];
-    poController.text = data['poNumber'];
+      orderDate = (data['orderDate'] as Timestamp).toDate();
+      selectedClient = data['client'];
+      poController.text = data['poNumber'];
 
-    items.clear();
-    for (final item in orderItems) {
-      items.add(
-        OrderOutItem(
-          part: SparePart(
-            id: item['partId'],
-            partCode: item['partCode'],
-            name: '',
-            nameEn: item['nameEn'],
-            location: item['location'],
+      items.clear();
+      for (final item in orderItems) {
+        items.add(
+          OrderOutItem(
+            part: SparePart(
+              id: item['partId'],
+              partCode: item['partCode'],
+              name: '',
+              nameEn: item['nameEn'],
+              location: item['location'],
 
-            // ===== FIELD WAJIB (DUMMY AMAN) =====
-            stock: 0,
-            initialStock: 0,
-            currentStock: 0,
-            minimumStock: 0,
-            weight: 0,
-            weightUnit: 'pcs',
-            imageUrl: '',
+              // ===== FIELD WAJIB (DUMMY AMAN) =====
+              stock: 0,
+              initialStock: 0,
+              currentStock: 0,
+              minimumStock: 0,
+              weight: 0,
+              weightUnit: 'pcs',
+              imageUrl: '',
+            ),
+            qty: item['qty'],
           ),
-          qty: item['qty'],
-        ),
-      );
-    }
-  });
-}
+        );
+      }
+    });
+  }
 
   Widget _buildFullscreenHeader() {
-  return Padding(
-    padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-    child: Row(
-      children: [
-        IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
-        ),
-        const SizedBox(width: 8),
-        const Text(
-          'Order Out',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+      child: Row(
+        children: [
+          IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => Navigator.pop(context),
           ),
-        ),
-      ],
-    ),
-  );
-}
+          const SizedBox(width: 8),
+          const Text(
+            'Order Out',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+          ),
+        ],
+      ),
+    );
+  }
 
   // ================= FULLSCREEN SEARCH & FILTER =================
   final TextEditingController fullscreenSearchController =
@@ -124,7 +113,6 @@ class _OrderOutPageState extends State<OrderOutPage> {
   bool isCreateMode = false;
   bool isEditMode = false;
   String? editingOrderId;
-
 
   @override
   void dispose() {
@@ -153,9 +141,7 @@ class _OrderOutPageState extends State<OrderOutPage> {
     final SparePart? selected = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => const SparePartListPage(
-          selectionMode: true,
-        ),
+        builder: (_) => const SparePartListPage(selectionMode: true),
       ),
     );
 
@@ -168,51 +154,46 @@ class _OrderOutPageState extends State<OrderOutPage> {
       items.add(OrderOutItem(part: selected, qty: qty));
     });
   }
-  
-Future<void> _editItemAtIndex(int index) async {
-  final current = items[index];
 
-  final snap = await CompanyFirestore
-      .collection('spare_parts')
-      .doc(current.part.id)
-      .get();
+  Future<void> _editItemAtIndex(int index) async {
+    final current = items[index];
 
-  if (!snap.exists) {
-    _showError('Spare part tidak ditemukan');
-    return;
-  }
+    final snap = await CompanyFirestore.collection(
+      'spare_parts',
+    ).doc(current.part.id).get();
 
-  final currentStock =
-      (snap['currentStock'] as num).toInt();
+    if (!snap.exists) {
+      _showError('Spare part tidak ditemukan');
+      return;
+    }
 
-  // 🔑 STOCK SEBENARNYA SAAT EDIT
-  final availableStock = currentStock + current.qty;
+    final currentStock = (snap['currentStock'] as num).toInt();
 
-  final partForEdit = SparePart(
-    id: current.part.id,
-    partCode: current.part.partCode,
-    name: current.part.name,
-    nameEn: current.part.nameEn,
-    location: current.part.location,
-    stock: availableStock,
-    initialStock: availableStock,
-    currentStock: availableStock,
-    minimumStock: current.part.minimumStock,
-    weight: current.part.weight,
-    weightUnit: current.part.weightUnit,
-    imageUrl: current.part.imageUrl,
-  );
+    // 🔑 STOCK SEBENARNYA SAAT EDIT
+    final availableStock = currentStock + current.qty;
 
-  final int? newQty = await _showQtyDialog(partForEdit);
-  if (newQty == null) return;
-
-  setState(() {
-    items[index] = OrderOutItem(
-      part: current.part,
-      qty: newQty,
+    final partForEdit = SparePart(
+      id: current.part.id,
+      partCode: current.part.partCode,
+      name: current.part.name,
+      nameEn: current.part.nameEn,
+      location: current.part.location,
+      stock: availableStock,
+      initialStock: availableStock,
+      currentStock: availableStock,
+      minimumStock: current.part.minimumStock,
+      weight: current.part.weight,
+      weightUnit: current.part.weightUnit,
+      imageUrl: current.part.imageUrl,
     );
-  });
-}
+
+    final int? newQty = await _showQtyDialog(partForEdit);
+    if (newQty == null) return;
+
+    setState(() {
+      items[index] = OrderOutItem(part: current.part, qty: newQty);
+    });
+  }
 
   // ================= QTY DIALOG =================
   Future<int?> _showQtyDialog(SparePart part) async {
@@ -272,159 +253,138 @@ Future<void> _editItemAtIndex(int index) async {
   }
 
   // ================= COMMIT FIRESTORE =================
-Future<void> _commitOrderOut() async {
-  if (orderDate == null ||
-      selectedClient == null ||
-      poController.text.trim().isEmpty ||
-      items.isEmpty) {
-    _showError('Data belum lengkap');
-    return;
-  }
+  Future<void> _commitOrderOut() async {
+    if (orderDate == null ||
+        selectedClient == null ||
+        poController.text.trim().isEmpty ||
+        items.isEmpty) {
+      _showError('Data belum lengkap');
+      return;
+    }
 
-  final firestore = FirebaseFirestore.instance;
+    final firestore = FirebaseFirestore.instance;
 
-  final aggregatedNew = _aggregateItems(items);
+    final aggregatedNew = _aggregateItems(items);
 
-  try {
-    await firestore.runTransaction((tx) async {
+    try {
+      await firestore.runTransaction((tx) async {
+        DocumentReference orderRef;
 
-      DocumentReference orderRef;
+        Map<String, int> aggregatedOld = {};
 
-      Map<String, int> aggregatedOld = {};
+        if (isEditMode) {
+          if (editingOrderId == null) {
+            throw Exception('Order ID tidak valid');
+          }
 
-      if (isEditMode) {
-        if (editingOrderId == null) {
-          throw Exception('Order ID tidak valid');
+          orderRef = CompanyFirestore.collection(
+            'order_out',
+          ).doc(editingOrderId);
+
+          final oldSnap = await tx.get(orderRef);
+          if (!oldSnap.exists) {
+            throw Exception('Order tidak ditemukan');
+          }
+
+          final oldItemsRaw = oldSnap['items'] as List<dynamic>;
+
+          for (final old in oldItemsRaw) {
+            final partId = old['partId'];
+            final qty = (old['qty'] as num).toInt();
+
+            aggregatedOld.update(
+              partId,
+              (value) => value + qty,
+              ifAbsent: () => qty,
+            );
+          }
+        } else {
+          orderRef = CompanyFirestore.collection('order_out').doc();
         }
 
-        orderRef =
-            CompanyFirestore.collection('order_out').doc(editingOrderId);
+        final allPartIds = {...aggregatedOld.keys, ...aggregatedNew.keys};
 
-        final oldSnap = await tx.get(orderRef);
-        if (!oldSnap.exists) {
-          throw Exception('Order tidak ditemukan');
+        for (final partId in allPartIds) {
+          final partRef = CompanyFirestore.collection(
+            'spare_parts',
+          ).doc(partId);
+
+          final snap = await tx.get(partRef);
+          if (!snap.exists) {
+            throw Exception('Spare part tidak ditemukan');
+          }
+
+          final currentStock = (snap['currentStock'] as num).toInt();
+
+          final oldQty = aggregatedOld[partId] ?? 0;
+          final newQty = aggregatedNew[partId] ?? 0;
+
+          final newStock = currentStock + oldQty - newQty;
+
+          if (newStock < 0) {
+            throw Exception('Stock tidak mencukupi untuk part $partId');
+          }
+
+          if (newStock != currentStock) {
+            tx.update(partRef, {'currentStock': newStock});
+          }
         }
 
-        final oldItemsRaw =
-            oldSnap['items'] as List<dynamic>;
+        final orderData = {
+          'orderDate': Timestamp.fromDate(orderDate!),
+          'client': selectedClient,
+          'poNumber': poController.text.trim(),
+          'items': items
+              .map(
+                (e) => {
+                  'partId': e.part.id,
+                  'partCode': e.part.partCode,
+                  'nameEn': e.part.nameEn,
+                  'qty': e.qty,
+                  'location': e.part.location,
+                },
+              )
+              .toList(),
+          if (!isEditMode) 'createdAt': FieldValue.serverTimestamp(),
+          if (!isEditMode) 'createdBy': _getCurrentUsername(),
+          if (isEditMode) 'updatedAt': FieldValue.serverTimestamp(),
+        };
 
-        for (final old in oldItemsRaw) {
-          final partId = old['partId'];
-          final qty = (old['qty'] as num).toInt();
-
-          aggregatedOld.update(
-            partId,
-            (value) => value + qty,
-            ifAbsent: () => qty,
-          );
+        if (isEditMode) {
+          tx.update(orderRef, orderData);
+        } else {
+          tx.set(orderRef, orderData);
         }
-      } else {
-        orderRef =
-            CompanyFirestore.collection('order_out').doc();
-      }
+      });
 
-      final allPartIds = {
-        ...aggregatedOld.keys,
-        ...aggregatedNew.keys,
-      };
+      final wasEdit = isEditMode;
 
-      for (final partId in allPartIds) {
-        final partRef =
-           CompanyFirestore.collection('spare_parts').doc(partId);
+      setState(() {
+        isEditMode = false;
+        isCreateMode = false;
+        editingOrderId = null;
+        items.clear();
+        orderDate = null;
+        selectedClient = null;
+        poController.clear();
+      });
 
-        final snap = await tx.get(partRef);
-        if (!snap.exists) {
-          throw Exception('Spare part tidak ditemukan');
-        }
+      if (!mounted) return;
 
-        final currentStock =
-            (snap['currentStock'] as num).toInt();
-
-        final oldQty = aggregatedOld[partId] ?? 0;
-        final newQty = aggregatedNew[partId] ?? 0;
-
-        final newStock =
-            currentStock + oldQty - newQty;
-
-        if (newStock < 0) {
-          throw Exception(
-              'Stock tidak mencukupi untuk part $partId');
-        }
-
-        if (newStock != currentStock) {
-          tx.update(partRef, {
-            'currentStock': newStock,
-          });
-        }
-      }
-
-      final orderData = {
-        'orderDate': Timestamp.fromDate(orderDate!),
-        'client': selectedClient,
-        'poNumber': poController.text.trim(),
-        'items': items.map((e) => {
-          'partId': e.part.id,
-          'partCode': e.part.partCode,
-          'nameEn': e.part.nameEn,
-          'qty': e.qty,
-          'location': e.part.location,
-        }).toList(),
-        if (!isEditMode)
-          'createdAt': FieldValue.serverTimestamp(),
-        if (!isEditMode)
-          'createdBy': _getCurrentUsername(),
-        if (isEditMode)
-          'updatedAt': FieldValue.serverTimestamp(),
-      };
-
-      if (isEditMode) {
-        tx.update(orderRef, orderData);
-      } else {
-        tx.set(orderRef, orderData);
-      }
-    });
-
-    setState(() {
-      isEditMode = false;
-      isCreateMode = false;
-      editingOrderId = null;
-      items.clear();
-      orderDate = null;
-      selectedClient = null;
-      poController.clear();
-    });
-
-    if (!mounted) return;
-
-    final wasEdit = isEditMode;
-
-setState(() {
-  isEditMode = false;
-  isCreateMode = false;
-  editingOrderId = null;
-  items.clear();
-  orderDate = null;
-  selectedClient = null;
-  poController.clear();
-});
-
-if (!mounted) return;
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          wasEdit
-              ? 'Order Out berhasil diperbarui'
-              : 'Order Out berhasil dibuat',
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            wasEdit
+                ? 'Order Out berhasil diperbarui'
+                : 'Order Out berhasil dibuat',
+          ),
+          backgroundColor: Colors.green,
         ),
-        backgroundColor: Colors.green,
-      ),
-    );
-
-  } catch (e) {
-    _showError(e.toString());
+      );
+    } catch (e) {
+      _showError(e.toString());
+    }
   }
-}
 
   void _showError(String message) {
     showDialog(
@@ -444,106 +404,102 @@ if (!mounted) return;
 
   // ================= ORDER DETAIL =================//
 
-
   // ================= BUILD =================
   @override
-Widget build(BuildContext context) {
-  return GestureDetector(
-    behavior: HitTestBehavior.translucent,
-    onTap: () {
-      FocusScope.of(context).unfocus();
-    },
-    child: Scaffold(
-      backgroundColor: Colors.transparent,
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.translucent,
+      onTap: () {
+        FocusScope.of(context).unfocus();
+      },
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
 
-      floatingActionButton: (!widget.isCompact && !isCreateMode)
-          ? FloatingActionButton(
-              backgroundColor: Colors.blueGrey,
-              foregroundColor: Colors.white,
-              onPressed: () => setState(() => isCreateMode = true),
-              child: const Icon(Icons.add),
-            )
-          : null,
+        floatingActionButton: (!widget.isCompact && !isCreateMode)
+            ? FloatingActionButton(
+                backgroundColor: Colors.blueGrey,
+                foregroundColor: Colors.white,
+                onPressed: () => setState(() => isCreateMode = true),
+                child: const Icon(Icons.add),
+              )
+            : null,
 
-      body: Stack(
-        children: [
-          Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Color(0xFFFFE0B2),
-                  Color(0xFFFFFFFF),
-                ],
+        body: Stack(
+          children: [
+            Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Color(0xFFFFE0B2), Color(0xFFFFFFFF)],
+                ),
               ),
             ),
-          ),
-          SafeArea(
-            child: widget.isCompact
-                ? const _OrderOutQuickView()
-                : Column(
-                    children: [
-                      _buildFullscreenHeader(),
+            SafeArea(
+              child: widget.isCompact
+                  ? const _OrderOutQuickView()
+                  : Column(
+                      children: [
+                        _buildFullscreenHeader(),
 
-                      if (!isCreateMode)
-                        _OrderOutSearchFilterBar(
-                          controller: fullscreenSearchController,
-                          focusNode: fullscreenSearchFocusNode,
-                          filterDate: fullscreenFilterDate,
-                          onPickDate: () async {
-                            final picked = await showDatePicker(
-                              context: context,
-                              initialDate:
-                                  fullscreenFilterDate ?? DateTime.now(),
-                              firstDate: DateTime(2020),
-                              lastDate: DateTime(2030),
-                            );
-                            if (picked != null) {
-                              setState(() =>
-                                  fullscreenFilterDate = picked);
-                            }
-                          },
-                          onClearDate: () =>
-                              setState(() => fullscreenFilterDate = null),
-                          onSearch: (_) => setState(() {}),
+                        if (!isCreateMode)
+                          _OrderOutSearchFilterBar(
+                            controller: fullscreenSearchController,
+                            focusNode: fullscreenSearchFocusNode,
+                            filterDate: fullscreenFilterDate,
+                            onPickDate: () async {
+                              final picked = await showDatePicker(
+                                context: context,
+                                initialDate:
+                                    fullscreenFilterDate ?? DateTime.now(),
+                                firstDate: DateTime(2020),
+                                lastDate: DateTime(2030),
+                              );
+                              if (picked != null) {
+                                setState(() => fullscreenFilterDate = picked);
+                              }
+                            },
+                            onClearDate: () =>
+                                setState(() => fullscreenFilterDate = null),
+                            onSearch: (_) => setState(() {}),
+                          ),
+
+                        Expanded(
+                          child: isCreateMode
+                              ? _buildCreateForm()
+                              : _OrderOutListView(
+                                  searchKeyword:
+                                      fullscreenSearchController.text,
+                                  filterDate: fullscreenFilterDate,
+                                  onTap: (context, data) async {
+                                    final result =
+                                        await Navigator.push<
+                                          Map<String, dynamic>
+                                        >(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (_) =>
+                                                OrderOutDetailPage(data: data),
+                                          ),
+                                        );
+
+                                    if (result != null) {
+                                      _openEditOrder(result);
+                                    }
+                                  },
+
+                                  onDelete: (_, _) {},
+                                  onEdit: (_) {},
+                                ),
                         ),
-
-                      Expanded(
-  child: isCreateMode
-      ? _buildCreateForm()
-      : _OrderOutListView(
-          searchKeyword: fullscreenSearchController.text,
-          filterDate: fullscreenFilterDate,
-         onTap: (context, data) async {
-  final result = await Navigator.push<Map<String, dynamic>>(
-    context,
-    MaterialPageRoute(
-      builder: (_) => OrderOutDetailPage(
-        data: data,
-      ),
-    ),
-  );
-
-  if (result != null) {
-    _openEditOrder(result);
-  }
-},
-
-
-          onDelete: (_, _) {},
-          onEdit: (_) {},
+                      ],
+                    ),
+            ),
+          ],
         ),
-),
-
-                    ],
-                  ),
-          ),
-        ],
       ),
-    ),
-  );
-}  
+    );
+  }
 
   Widget _buildCreateForm() {
     return Column(
@@ -554,8 +510,7 @@ Widget build(BuildContext context) {
             orderDate: orderDate,
             onPickDate: _selectOrderDate,
             selectedClient: selectedClient,
-            onClientChanged: (v) =>
-                setState(() => selectedClient = v),
+            onClientChanged: (v) => setState(() => selectedClient = v),
             poController: poController,
             onSave: _commitOrderOut,
             onBack: () => setState(() => isCreateMode = false),
@@ -567,14 +522,12 @@ Widget build(BuildContext context) {
               : ListView.builder(
                   padding: const EdgeInsets.all(16),
                   itemCount: items.length,
-                  itemBuilder: (_, i) =>
-                      _ItemCard(
-  item: items[i],
-  onEdit: () {
-    _editItemAtIndex(i);
-  },
-),
-
+                  itemBuilder: (_, i) => _ItemCard(
+                    item: items[i],
+                    onEdit: () {
+                      _editItemAtIndex(i);
+                    },
+                  ),
                 ),
         ),
         Padding(
@@ -588,21 +541,22 @@ Widget build(BuildContext context) {
       ],
     );
   }
+
   Map<String, int> _aggregateItems(List<OrderOutItem> list) {
-  final Map<String, int> result = {};
+    final Map<String, int> result = {};
 
-  for (final item in list) {
-    if (item.qty <= 0) continue;
+    for (final item in list) {
+      if (item.qty <= 0) continue;
 
-    result.update(
-      item.part.id,
-      (value) => value + item.qty,
-      ifAbsent: () => item.qty,
-    );
+      result.update(
+        item.part.id,
+        (value) => value + item.qty,
+        ifAbsent: () => item.qty,
+      );
+    }
+
+    return result;
   }
-
-  return result;
-}
 }
 
 /// =====================================================
@@ -615,8 +569,6 @@ class _OrderOutListView extends StatelessWidget {
   final void Function(String orderId, Map<String, dynamic> data)? onDelete;
   final void Function(Map<String, dynamic> data)? onEdit;
 
-
-
   const _OrderOutListView({
     required this.searchKeyword,
     required this.filterDate,
@@ -628,10 +580,9 @@ class _OrderOutListView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<QuerySnapshot>(
-      stream: CompanyFirestore
-          .collection('order_out')
-          .orderBy('createdAt', descending: true)
-          .snapshots(),
+      stream: CompanyFirestore.collection(
+        'order_out',
+      ).orderBy('createdAt', descending: true).snapshots(),
       builder: (_, snapshot) {
         if (!snapshot.hasData) {
           return const Center(child: CircularProgressIndicator());
@@ -641,20 +592,13 @@ class _OrderOutListView extends StatelessWidget {
           final data = doc.data() as Map<String, dynamic>;
           final keyword = searchKeyword.toLowerCase();
           if (keyword.isNotEmpty &&
-              !data['poNumber']
-                  .toString()
-                  .toLowerCase()
-                  .contains(keyword) &&
-              !data['client']
-                  .toString()
-                  .toLowerCase()
-                  .contains(keyword)) {
+              !data['poNumber'].toString().toLowerCase().contains(keyword) &&
+              !data['client'].toString().toLowerCase().contains(keyword)) {
             return false;
           }
 
           if (filterDate != null) {
-            final date =
-                (data['orderDate'] as Timestamp).toDate();
+            final date = (data['orderDate'] as Timestamp).toDate();
             if (date.year != filterDate!.year ||
                 date.month != filterDate!.month ||
                 date.day != filterDate!.day) {
@@ -672,32 +616,19 @@ class _OrderOutListView extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           itemCount: docs.length,
           itemBuilder: (_, i) {
-  final data = docs[i].data() as Map<String, dynamic>;
-  final orderId = docs[i].id;
+            final data = docs[i].data() as Map<String, dynamic>;
+            final orderId = docs[i].id;
 
-  return InkWell(
-  onTap: () => onTap(
-    context,
-    {
-      ...data,
-      'id': orderId,
-    },
-  ),
-  child: _OrderHistoryCard(
-    data: {
-      ...data,
-      'id': orderId,
-    },
-    // ⛔ JANGAN kirim isFullscreen = true
-    // ⛔ JANGAN kirim onEdit
-    // ⛔ JANGAN kirim onDelete
-  ),
-);
-
-},
-
-
-
+            return InkWell(
+              onTap: () => onTap(context, {...data, 'id': orderId}),
+              child: _OrderHistoryCard(
+                data: {...data, 'id': orderId},
+                // ⛔ JANGAN kirim isFullscreen = true
+                // ⛔ JANGAN kirim onEdit
+                // ⛔ JANGAN kirim onDelete
+              ),
+            );
+          },
         );
       },
     );
@@ -713,11 +644,9 @@ class _OrderOutQuickView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<QuerySnapshot>(
-      stream: CompanyFirestore
-          .collection('order_out')
-          .orderBy('createdAt', descending: true)
-          .limit(10)
-          .snapshots(),
+      stream: CompanyFirestore.collection(
+        'order_out',
+      ).orderBy('createdAt', descending: true).limit(10).snapshots(),
       builder: (_, snapshot) {
         if (!snapshot.hasData) {
           return const Center(child: CircularProgressIndicator());
@@ -727,13 +656,8 @@ class _OrderOutQuickView extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           itemCount: snapshot.data!.docs.length,
           itemBuilder: (_, i) {
-            final data =
-                snapshot.data!.docs[i].data() as Map<String, dynamic>;
-            return _OrderHistoryCard(
-  data: data,
-  isFullscreen: false,
-);
-
+            final data = snapshot.data!.docs[i].data() as Map<String, dynamic>;
+            return _OrderHistoryCard(data: data, isFullscreen: false);
           },
         );
       },
@@ -751,93 +675,84 @@ class _OrderHistoryCard extends StatelessWidget {
   final VoidCallback? onEdit;
 
   const _OrderHistoryCard({
-  required this.data,
-  this.isFullscreen = false,
-  this.onEdit,
-  this.onDelete,
-});
-
+    required this.data,
+    this.isFullscreen = false,
+    this.onEdit,
+    this.onDelete,
+  });
 
   @override
-Widget build(BuildContext context) {
-  final date =
-      (data['orderDate'] as Timestamp?)?.toDate();
+  Widget build(BuildContext context) {
+    final date = (data['orderDate'] as Timestamp?)?.toDate();
 
-  return Container(
-    margin: const EdgeInsets.only(bottom: 12),
-    padding: const EdgeInsets.all(12),
-    decoration: BoxDecoration(
-      color: Colors.white.withValues(alpha: 0.25),
-      borderRadius: BorderRadius.circular(14),
-      border: Border.all(
-        color: Colors.white.withValues(alpha: 0.35),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.25),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.35)),
       ),
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'PO: ${data['poNumber']}',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Text('Client: ${data['client']}'),
-
-                  if (data['createdBy'] != null)
-  Text(
-    'Created By: ${data['createdBy']}',
-    style: const TextStyle(
-      fontSize: 12,
-      color: Colors.black54,
-    ),
-  ),
-
-
-                  if (date != null)
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     Text(
-                      '${date.day}/${date.month}/${date.year}',
-                      style: const TextStyle(fontSize: 12),
+                      'PO: ${data['poNumber']}',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
-                ],
+                    Text('Client: ${data['client']}'),
+
+                    if (data['createdBy'] != null)
+                      Text(
+                        'Created By: ${data['createdBy']}',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.black54,
+                        ),
+                      ),
+
+                    if (date != null)
+                      Text(
+                        '${date.day}/${date.month}/${date.year}',
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                  ],
+                ),
               ),
-            ),
 
-            // ===== ACTIONS (FULLSCREEN ONLY) =====
-            if (isFullscreen) ...[
-  IconButton(
-    icon: const Icon(
-      Icons.edit,
-      size: 20,
-      color: Colors.blueGrey,
-    ),
-    tooltip: 'Edit Order',
-    onPressed: onEdit,
-  ),
-  IconButton(
-    icon: const Icon(
-      Icons.delete,
-      size: 20,
-      color: Colors.redAccent,
-    ),
-    tooltip: 'Delete Order',
-    onPressed: onDelete,
-  ),
-],
-
-          ],
-        ),
-      ],
-    ),
-  );
-}
-
+              // ===== ACTIONS (FULLSCREEN ONLY) =====
+              if (isFullscreen) ...[
+                IconButton(
+                  icon: const Icon(
+                    Icons.edit,
+                    size: 20,
+                    color: Colors.blueGrey,
+                  ),
+                  tooltip: 'Edit Order',
+                  onPressed: onEdit,
+                ),
+                IconButton(
+                  icon: const Icon(
+                    Icons.delete,
+                    size: 20,
+                    color: Colors.redAccent,
+                  ),
+                  tooltip: 'Delete Order',
+                  onPressed: onDelete,
+                ),
+              ],
+            ],
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 /// =====================================================
@@ -873,8 +788,7 @@ class _OrderHeader extends StatelessWidget {
           decoration: BoxDecoration(
             color: Colors.white.withValues(alpha: 0.25),
             borderRadius: BorderRadius.circular(20),
-            border:
-                Border.all(color: Colors.white.withValues(alpha: 0.35)),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.35)),
           ),
           child: Column(
             children: [
@@ -888,10 +802,7 @@ class _OrderHeader extends StatelessWidget {
                   const SizedBox(width: 8),
                   const Text(
                     'Order Out',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                   ),
                 ],
               ),
@@ -915,48 +826,50 @@ class _OrderHeader extends StatelessWidget {
 
               // ===== CLIENT =====
               _HeaderRow(
-  label: 'Client',
-  child: StreamBuilder<QuerySnapshot>(
-    stream: CompanyFirestore
-        .collection('partners')
-        .orderBy('name')
-        .snapshots(),
-    builder: (context, snapshot) {
-      if (!snapshot.hasData) {
-        return const SizedBox(
-          height: 48,
-          child: Center(child: CircularProgressIndicator()),
-        );
-      }
+                label: 'Client',
+                child: StreamBuilder<QuerySnapshot>(
+                  stream: CompanyFirestore.collection(
+                    'partners',
+                  ).orderBy('name').snapshots(),
+                  builder: (context, snapshot) {
+                    if (!snapshot.hasData) {
+                      return const SizedBox(
+                        height: 48,
+                        child: Center(child: CircularProgressIndicator()),
+                      );
+                    }
 
-      final docs = snapshot.data!.docs;
+                    final docs = snapshot.data!.docs;
 
-      final partnerNames = docs
-    .map((doc) => (doc.data() as Map<String, dynamic>)['name'] as String)
-    .toList();
+                    final partnerNames = docs
+                        .map(
+                          (doc) =>
+                              (doc.data() as Map<String, dynamic>)['name']
+                                  as String,
+                        )
+                        .toList();
 
-final safeValue =
-    partnerNames.contains(selectedClient) ? selectedClient : null;
+                    final safeValue = partnerNames.contains(selectedClient)
+                        ? selectedClient
+                        : null;
 
-return DropdownButtonFormField<String>(
-  initialValue: safeValue,
-  items: partnerNames.map((name) {
-    return DropdownMenuItem<String>(
-      value: name,
-      child: Text(name),
-    );
-  }).toList(),
-  onChanged: onClientChanged,
-  decoration: const InputDecoration(
-    border: OutlineInputBorder(),
-    isDense: true,
-  ),
-);
-
-    },
-  ),
-),
-
+                    return DropdownButtonFormField<String>(
+                      initialValue: safeValue,
+                      items: partnerNames.map((name) {
+                        return DropdownMenuItem<String>(
+                          value: name,
+                          child: Text(name),
+                        );
+                      }).toList(),
+                      onChanged: onClientChanged,
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        isDense: true,
+                      ),
+                    );
+                  },
+                ),
+              ),
 
               const SizedBox(height: 8),
 
@@ -965,8 +878,9 @@ return DropdownButtonFormField<String>(
                 label: 'PO Number',
                 child: TextField(
                   controller: poController,
-                  decoration:
-                      const InputDecoration(border: OutlineInputBorder()),
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                  ),
                 ),
               ),
 
@@ -989,7 +903,6 @@ return DropdownButtonFormField<String>(
   }
 }
 
-
 /// =====================================================
 /// ITEM CARD
 /// =====================================================
@@ -997,38 +910,29 @@ class _ItemCard extends StatelessWidget {
   final OrderOutItem item;
   final VoidCallback onEdit;
 
-  const _ItemCard({
-    required this.item,
-    required this.onEdit,
-  });
-
+  const _ItemCard({required this.item, required this.onEdit});
 
   @override
   Widget build(BuildContext context) {
     return ListTile(
-  onTap: onEdit,
-  title: Text(item.part.partCode),
-  subtitle: Text(item.part.nameEn),
-  trailing: Column(
-  mainAxisSize: MainAxisSize.min,
-  crossAxisAlignment: CrossAxisAlignment.end,
-  children: [
-    Text('Qty: ${item.qty}'),
-    const SizedBox(height: 4),
-    Text(
-      item.part.location.isNotEmpty
-          ? 'Loc: ${item.part.location}'
-          : 'Loc: -',
-      style: const TextStyle(
-        fontSize: 12,
-        color: Colors.black54,
+      onTap: onEdit,
+      title: Text(item.part.partCode),
+      subtitle: Text(item.part.nameEn),
+      trailing: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Text('Qty: ${item.qty}'),
+          const SizedBox(height: 4),
+          Text(
+            item.part.location.isNotEmpty
+                ? 'Loc: ${item.part.location}'
+                : 'Loc: -',
+            style: const TextStyle(fontSize: 12, color: Colors.black54),
+          ),
+        ],
       ),
-    ),
-  ],
-),
-
-);
-
+    );
   }
 }
 
@@ -1068,20 +972,15 @@ class _OrderOutSearchFilterBar extends StatelessWidget {
               ),
             ),
           ),
-          IconButton(
-            icon: const Icon(Icons.date_range),
-            onPressed: onPickDate,
-          ),
+          IconButton(icon: const Icon(Icons.date_range), onPressed: onPickDate),
           if (filterDate != null)
-            IconButton(
-              icon: const Icon(Icons.clear),
-              onPressed: onClearDate,
-            ),
+            IconButton(icon: const Icon(Icons.clear), onPressed: onClearDate),
         ],
       ),
     );
   }
 }
+
 /// =====================================================
 /// SHARED HEADER ROW
 /// =====================================================
@@ -1089,10 +988,7 @@ class _HeaderRow extends StatelessWidget {
   final String label;
   final Widget child;
 
-  const _HeaderRow({
-    required this.label,
-    required this.child,
-  });
+  const _HeaderRow({required this.label, required this.child});
 
   @override
   Widget build(BuildContext context) {
@@ -1101,10 +997,7 @@ class _HeaderRow extends StatelessWidget {
       children: [
         SizedBox(
           width: 90,
-          child: Text(
-            label,
-            style: const TextStyle(fontSize: 13),
-          ),
+          child: Text(label, style: const TextStyle(fontSize: 13)),
         ),
         const SizedBox(width: 8),
         Expanded(child: child),
@@ -1124,20 +1017,13 @@ class _Box extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding:
-          const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.7),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Colors.grey.withValues(alpha: 0.3),
-        ),
+        border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
       ),
-      child: Text(
-        text,
-        style: const TextStyle(fontSize: 13),
-      ),
+      child: Text(text, style: const TextStyle(fontSize: 13)),
     );
   }
 }
-

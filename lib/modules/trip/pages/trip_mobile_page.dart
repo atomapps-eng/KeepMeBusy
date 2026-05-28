@@ -8,6 +8,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../../../theme/app_theme.dart';
 import '../../../pages/common/app_background_wrapper.dart';
 import '../../../core/widgets/draggable_window.dart';
+
 //
 class TripMobilePage extends StatelessWidget {
   const TripMobilePage({super.key});
@@ -66,13 +67,13 @@ class TripMobilePage extends StatelessWidget {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    Colors.blue.withValues(alpha:0.2),
-                    Colors.blue.withValues(alpha:0.1),
+                    Colors.blue.withValues(alpha: 0.2),
+                    Colors.blue.withValues(alpha: 0.1),
                   ],
                 ),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: Colors.blue.withValues(alpha:0.3),
+                  color: Colors.blue.withValues(alpha: 0.3),
                   width: 1,
                 ),
               ),
@@ -88,15 +89,15 @@ class TripMobilePage extends StatelessWidget {
               children: [
                 const Text(
                   'Business Trip',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
-                    color: Colors.blue.withValues(alpha:0.1),
+                    color: Colors.blue.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Text(
@@ -120,42 +121,38 @@ class TripMobilePage extends StatelessWidget {
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  Colors.blue.withValues(alpha:0.2),
-                  Colors.blue.withValues(alpha:0.1),
+                  Colors.blue.withValues(alpha: 0.2),
+                  Colors.blue.withValues(alpha: 0.1),
                 ],
               ),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: Colors.blue.withValues(alpha:0.3),
-              ),
+              border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
             ),
             child: IconButton(
               icon: const Icon(Icons.add, color: Colors.blue),
               onPressed: () {
-  final isDesktop = MediaQuery.of(context).size.width >= 900;
+                final isDesktop = MediaQuery.of(context).size.width >= 900;
 
-  if (isDesktop) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      barrierColor: Colors.transparent,
-      builder: (context) {
-        return DraggableResizableWindow(
-          title: "Create Trip",
-          headerColor: Colors.blue,
-          child: const CreateTripPage(),
-        );
-      },
-    );
-  } else {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => const CreateTripPage(),
-      ),
-    );
-  }
-},
+                if (isDesktop) {
+                  showDialog(
+                    context: context,
+                    barrierDismissible: false,
+                    barrierColor: Colors.transparent,
+                    builder: (context) {
+                      return DraggableResizableWindow(
+                        title: "Create Trip",
+                        headerColor: Colors.blue,
+                        child: const CreateTripPage(),
+                      );
+                    },
+                  );
+                } else {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const CreateTripPage()),
+                  );
+                }
+              },
               tooltip: 'Create New Trip',
             ),
           ),
@@ -179,7 +176,7 @@ class TripMobilePage extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: Colors.red.withValues(alpha:0.1),
+                    color: Colors.red.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Column(
@@ -203,7 +200,7 @@ class TripMobilePage extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: Colors.orange.withValues(alpha:0.1),
+                    color: Colors.orange.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Column(
@@ -239,13 +236,17 @@ class TripMobilePage extends StatelessWidget {
                     child: Container(
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        color: Colors.red.withValues(alpha:0.1),
+                        color: Colors.red.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.error_outline, size: 48, color: Colors.red),
+                          Icon(
+                            Icons.error_outline,
+                            size: 48,
+                            color: Colors.red,
+                          ),
                           const SizedBox(height: 12),
                           Text(
                             'Error: ${snapshot.error}',
@@ -262,7 +263,7 @@ class TripMobilePage extends StatelessWidget {
                     child: Container(
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        color: Colors.grey.withValues(alpha:0.1),
+                        color: Colors.grey.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: const Text('No data'),
@@ -277,10 +278,10 @@ class TripMobilePage extends StatelessWidget {
                     child: Container(
                       padding: const EdgeInsets.all(32),
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha:0.1),
+                        color: Colors.white.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
-                          color: Colors.white.withValues(alpha:0.2),
+                          color: Colors.white.withValues(alpha: 0.2),
                         ),
                       ),
                       child: Column(
@@ -289,7 +290,7 @@ class TripMobilePage extends StatelessWidget {
                           Container(
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              color: Colors.blue.withValues(alpha:0.1),
+                              color: Colors.blue.withValues(alpha: 0.1),
                               shape: BoxShape.circle,
                             ),
                             child: Icon(
@@ -310,9 +311,7 @@ class TripMobilePage extends StatelessWidget {
                           const SizedBox(height: 8),
                           Text(
                             'Create your first business trip report',
-                            style: TextStyle(
-                              color: Colors.grey.shade600,
-                            ),
+                            style: TextStyle(color: Colors.grey.shade600),
                           ),
                           const SizedBox(height: 16),
                           ElevatedButton.icon(
@@ -380,8 +379,8 @@ class TripMobilePage extends StatelessWidget {
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
-                            Colors.blue.withValues(alpha:0.2),
-                            Colors.blue.withValues(alpha:0.1),
+                            Colors.blue.withValues(alpha: 0.2),
+                            Colors.blue.withValues(alpha: 0.1),
                           ],
                         ),
                         borderRadius: BorderRadius.circular(10),
@@ -405,7 +404,12 @@ class TripMobilePage extends StatelessWidget {
                 const SizedBox(height: 16),
 
                 // Stats
-                _buildStatItem('Total Trips', trips.length.toString(), Icons.flight, Colors.blue),
+                _buildStatItem(
+                  'Total Trips',
+                  trips.length.toString(),
+                  Icons.flight,
+                  Colors.blue,
+                ),
                 const SizedBox(height: 8),
                 _buildStatItem(
                   'Countries Visited',
@@ -455,13 +459,15 @@ class TripMobilePage extends StatelessWidget {
                 }).toList(),
 
                 const SizedBox(height: 16),
-                
+
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.blue.withValues(alpha:0.1),
+                    color: Colors.blue.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.blue.withValues(alpha:0.2)),
+                    border: Border.all(
+                      color: Colors.blue.withValues(alpha: 0.2),
+                    ),
                   ),
                   child: const Row(
                     children: [
@@ -492,19 +498,24 @@ class TripMobilePage extends StatelessWidget {
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      Colors.white.withValues(alpha:0.2),
-                      Colors.white.withValues(alpha:0.1),
+                      Colors.white.withValues(alpha: 0.2),
+                      Colors.white.withValues(alpha: 0.1),
                     ],
                   ),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.white.withValues(alpha:0.3)),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.3),
+                  ),
                 ),
                 child: Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
-                        color: Colors.blue.withValues(alpha:0.1),
+                        color: Colors.blue.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Row(
@@ -528,9 +539,12 @@ class TripMobilePage extends StatelessWidget {
                     ),
                     const Spacer(),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
-                        color: Colors.green.withValues(alpha:0.1),
+                        color: Colors.green.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: const Text(
@@ -570,7 +584,7 @@ class TripMobilePage extends StatelessWidget {
                         decoration: BoxDecoration(
                           border: Border.all(color: Colors.grey.shade300),
                           borderRadius: BorderRadius.circular(8),
-                          color: Colors.white.withValues(alpha:0.3),
+                          color: Colors.white.withValues(alpha: 0.3),
                         ),
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(8),
@@ -578,7 +592,10 @@ class TripMobilePage extends StatelessWidget {
                             children: [
                               // Header Row
                               Container(
-                                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 12,
+                                  horizontal: 16,
+                                ),
                                 decoration: BoxDecoration(
                                   gradient: LinearGradient(
                                     colors: [
@@ -588,25 +605,48 @@ class TripMobilePage extends StatelessWidget {
                                   ),
                                 ),
                                 child: Row(
-  children: const [
-    SizedBox(width: 40),
-    Expanded(flex: 4, child: Text('Trip Details', style: TextStyle(fontWeight: FontWeight.w600))),
-    Expanded(flex: 2, child: Center(child: Text('Partner / Country', style: TextStyle(fontWeight: FontWeight.w600)))),
-    SizedBox(width: 24),
-  ],
-),
+                                  children: const [
+                                    SizedBox(width: 40),
+                                    Expanded(
+                                      flex: 4,
+                                      child: Text(
+                                        'Trip Details',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ),
+                                    Expanded(
+                                      flex: 2,
+                                      child: Center(
+                                        child: Text(
+                                          'Partner / Country',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    SizedBox(width: 24),
+                                  ],
+                                ),
                               ),
 
                               // List View
                               Container(
                                 constraints: BoxConstraints(
-                                  maxHeight: MediaQuery.of(context).size.height - 350,
+                                  maxHeight:
+                                      MediaQuery.of(context).size.height - 350,
                                 ),
                                 child: ListView.builder(
                                   itemCount: trips.length,
                                   shrinkWrap: true,
                                   itemBuilder: (context, index) {
-                                    return _buildDesktopTripRow(context, trips[index], tripService);
+                                    return _buildDesktopTripRow(
+                                      context,
+                                      trips[index],
+                                      tripService,
+                                    );
                                   },
                                 ),
                               ),
@@ -640,45 +680,43 @@ class TripMobilePage extends StatelessWidget {
         final userData = userSnapshot.data ?? {};
         final accessLevel = userData['accessLevel'];
         final List countryIds = userData['countryIds'] ?? [];
-        
-       bool canOpen = trip.createdBy == uid ||
-    accessLevel == 'admin_countries';
+
+        bool canOpen =
+            trip.createdBy == uid ||
+            (accessLevel == 'admin_countries' &&
+                countryIds.map((e) => e.toString()).contains(trip.country));
 
         return Container(
           decoration: BoxDecoration(
-            border: Border(
-              bottom: BorderSide(color: Colors.grey.shade300),
-            ),
+            border: Border(bottom: BorderSide(color: Colors.grey.shade300)),
           ),
           child: InkWell(
             onTap: canOpen
-    ? () {
-        final isDesktop = MediaQuery.of(context).size.width >= 900;
+                ? () {
+                    final isDesktop = MediaQuery.of(context).size.width >= 900;
 
-        if (isDesktop) {
-          showDialog(
-            context: context,
-            barrierDismissible: false,
-            barrierColor: Colors.transparent,
-            builder: (context) {
-              return DraggableResizableWindow(
-                title: "Trip Detail",
-                headerColor: Colors.blue,
-                child: TripDetailPage(
-                  trip: trip,
-                ),
-              );
-            },
-          );
-        } else {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => TripDetailPage(trip: trip),
-            ),
-          );
-        }
-      }
+                    if (isDesktop) {
+                      showDialog(
+                        context: context,
+                        barrierDismissible: false,
+                        barrierColor: Colors.transparent,
+                        builder: (context) {
+                          return DraggableResizableWindow(
+                            title: "Trip Detail",
+                            headerColor: Colors.blue,
+                            child: TripDetailPage(trip: trip),
+                          );
+                        },
+                      );
+                    } else {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => TripDetailPage(trip: trip),
+                        ),
+                      );
+                    }
+                  }
                 : () {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
@@ -699,7 +737,10 @@ class TripMobilePage extends StatelessWidget {
                     height: 40,
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
-                        colors: [statusColor, statusColor.withValues(alpha:0.5)],
+                        colors: [
+                          statusColor,
+                          statusColor.withValues(alpha: 0.5),
+                        ],
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                       ),
@@ -726,9 +767,12 @@ class TripMobilePage extends StatelessWidget {
                             const SizedBox(width: 8),
                             if (trip.createdBy == uid)
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 2,
+                                ),
                                 decoration: BoxDecoration(
-                                  color: Colors.blue.withValues(alpha:0.1),
+                                  color: Colors.blue.withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: const Text(
@@ -745,7 +789,11 @@ class TripMobilePage extends StatelessWidget {
                         const SizedBox(height: 4),
                         Row(
                           children: [
-                            Icon(Icons.person_outline, size: 10, color: Colors.grey.shade500),
+                            Icon(
+                              Icons.person_outline,
+                              size: 10,
+                              color: Colors.grey.shade500,
+                            ),
                             const SizedBox(width: 4),
                             Expanded(
                               child: Text(
@@ -773,10 +821,7 @@ class TripMobilePage extends StatelessWidget {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Text(
-                                flag,
-                                style: const TextStyle(fontSize: 14),
-                              ),
+                              Text(flag, style: const TextStyle(fontSize: 14)),
                               const SizedBox(width: 4),
                               Text(
                                 trip.partnerName,
@@ -808,7 +853,9 @@ class TripMobilePage extends StatelessWidget {
                     child: Icon(
                       Icons.chevron_right,
                       size: 20,
-                      color: canOpen ? Colors.grey.shade600 : Colors.grey.shade400,
+                      color: canOpen
+                          ? Colors.grey.shade600
+                          : Colors.grey.shade400,
                     ),
                   ),
                 ],
@@ -836,9 +883,11 @@ class TripMobilePage extends StatelessWidget {
             final userData = userSnapshot.data ?? {};
             final accessLevel = userData['accessLevel'];
             final List countryIds = userData['countryIds'] ?? [];
-            
-            bool canOpen = trip.createdBy == uid ||
-    accessLevel == 'admin_countries';
+
+            bool canOpen =
+                trip.createdBy == uid ||
+                (accessLevel == 'admin_countries' &&
+                    countryIds.map((e) => e.toString()).contains(trip.country));
 
             return _buildMobileTripCard(context, trip, canOpen);
           },
@@ -856,9 +905,7 @@ class TripMobilePage extends StatelessWidget {
           ? () {
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (_) => TripDetailPage(trip: trip),
-                ),
+                MaterialPageRoute(builder: (_) => TripDetailPage(trip: trip)),
               );
             }
           : () {
@@ -877,14 +924,12 @@ class TripMobilePage extends StatelessWidget {
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              Colors.white.withValues(alpha:0.15),
-              Colors.white.withValues(alpha:0.05),
+              Colors.white.withValues(alpha: 0.15),
+              Colors.white.withValues(alpha: 0.05),
             ],
           ),
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: Colors.white.withValues(alpha:0.25),
-          ),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
         ),
         child: Row(
           children: [
@@ -894,7 +939,7 @@ class TripMobilePage extends StatelessWidget {
               height: 60,
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [statusColor, statusColor.withValues(alpha:0.5)],
+                  colors: [statusColor, statusColor.withValues(alpha: 0.5)],
                 ),
                 borderRadius: BorderRadius.circular(4),
               ),
@@ -922,13 +967,21 @@ class TripMobilePage extends StatelessWidget {
                       ),
                       const SizedBox(width: 8),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
-                            colors: [statusColor.withValues(alpha:0.15), statusColor.withValues(alpha:0.05)],
+                            colors: [
+                              statusColor.withValues(alpha: 0.15),
+                              statusColor.withValues(alpha: 0.05),
+                            ],
                           ),
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: statusColor.withValues(alpha:0.3)),
+                          border: Border.all(
+                            color: statusColor.withValues(alpha: 0.3),
+                          ),
                         ),
                         child: Text(
                           trip.status ?? 'Draft',
@@ -947,10 +1000,7 @@ class TripMobilePage extends StatelessWidget {
                   // Partner and Country
                   Row(
                     children: [
-                      Text(
-                        flag,
-                        style: const TextStyle(fontSize: 12),
-                      ),
+                      Text(flag, style: const TextStyle(fontSize: 12)),
                       const SizedBox(width: 4),
                       Expanded(
                         child: Text(
@@ -998,7 +1048,7 @@ class TripMobilePage extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha:0.1),
+                color: Colors.white.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -1013,22 +1063,27 @@ class TripMobilePage extends StatelessWidget {
     );
   }
 
-  Widget _buildStatItem(String label, String value, IconData icon, Color color) {
+  Widget _buildStatItem(
+    String label,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [color.withValues(alpha:0.1), color.withValues(alpha:0.05)],
+          colors: [color.withValues(alpha: 0.1), color.withValues(alpha: 0.05)],
         ),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha:0.2)),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: color.withValues(alpha:0.15),
+              color: color.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(icon, color: color, size: 16),
@@ -1046,10 +1101,7 @@ class TripMobilePage extends StatelessWidget {
                     color: color,
                   ),
                 ),
-                Text(
-                  label,
-                  style: const TextStyle(fontSize: 11),
-                ),
+                Text(label, style: const TextStyle(fontSize: 11)),
               ],
             ),
           ),
@@ -1081,14 +1133,14 @@ Widget _glass(Widget child) {
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              Colors.white.withValues(alpha:0.3),
-              Colors.white.withValues(alpha:0.15),
+              Colors.white.withValues(alpha: 0.3),
+              Colors.white.withValues(alpha: 0.15),
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.white.withValues(alpha:0.4)),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.4)),
         ),
         child: child,
       ),

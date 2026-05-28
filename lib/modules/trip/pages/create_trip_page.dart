@@ -12,10 +12,7 @@ import '../../../core/widgets/draggable_window.dart';
 class CreateTripPage extends StatefulWidget {
   final Trip? trip;
 
-  const CreateTripPage({
-    super.key,
-    this.trip,
-  });
+  const CreateTripPage({super.key, this.trip});
 
   @override
   State<CreateTripPage> createState() => _CreateTripPageState();
@@ -50,6 +47,27 @@ class _CreateTripPageState extends State<CreateTripPage> {
   }
 
   Future<void> createTrip() async {
+    if (partnerId == null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Please select a partner')));
+      return;
+    }
+
+    if (_titleController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a trip title')),
+      );
+      return;
+    }
+
+    if (startDate != null && endDate != null && endDate!.isBefore(startDate!)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('End date cannot be before start date')),
+      );
+      return;
+    }
+
     final user = FirebaseAuth.instance.currentUser!;
     final userDoc = await FirebaseFirestore.instance
         .collection('users')
@@ -59,31 +77,28 @@ class _CreateTripPageState extends State<CreateTripPage> {
     final userName = userDoc.data()?['username'] ?? '';
 
     final trip = Trip(
-      id: '',
-      title: _titleController.text,
+      id: widget.trip?.id ?? '',
+      title: _titleController.text.trim(),
       partnerId: partnerId ?? '',
       partnerName: partnerName ?? '',
       country: country,
       currency: currency,
       startDate: startDate ?? DateTime.now(),
       endDate: endDate ?? DateTime.now().add(const Duration(days: 3)),
-      members: [user.uid],
-      createdBy: user.uid,
-      createdByName: userName,
-      createdAt: DateTime.now(),
-      status: 'open',
+      members: widget.trip?.members ?? [user.uid],
+      createdBy: widget.trip?.createdBy ?? user.uid,
+      createdByName: widget.trip?.createdByName ?? userName,
+      createdAt: widget.trip?.createdAt ?? DateTime.now(),
+      status: widget.trip?.status ?? 'open',
     );
 
-    await tripService.createTrip(trip);
+    if (widget.trip == null) {
+      await tripService.createTrip(trip);
+    } else {
+      await tripService.updateTrip(trip);
+    }
 
     Navigator.pop(context);
-
-    if (partnerId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a partner')),
-      );
-      return;
-    }
   }
 
   String _formatDate(DateTime? date) {
@@ -106,13 +121,13 @@ class _CreateTripPageState extends State<CreateTripPage> {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    Colors.blue.withValues(alpha:0.2),
-                    Colors.blue.withValues(alpha:0.1),
+                    Colors.blue.withValues(alpha: 0.2),
+                    Colors.blue.withValues(alpha: 0.1),
                   ],
                 ),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: Colors.blue.withValues(alpha:0.3),
+                  color: Colors.blue.withValues(alpha: 0.3),
                   width: 1,
                 ),
               ),
@@ -134,9 +149,12 @@ class _CreateTripPageState extends State<CreateTripPage> {
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
-                    color: Colors.blue.withValues(alpha:0.1),
+                    color: Colors.blue.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
@@ -159,12 +177,12 @@ class _CreateTripPageState extends State<CreateTripPage> {
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
-                Colors.white.withValues(alpha:0.2),
-                Colors.white.withValues(alpha:0.1),
+                Colors.white.withValues(alpha: 0.2),
+                Colors.white.withValues(alpha: 0.1),
               ],
             ),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.white.withValues(alpha:0.3)),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
           ),
           child: IconButton(
             icon: const Icon(Icons.arrow_back),
@@ -201,8 +219,8 @@ class _CreateTripPageState extends State<CreateTripPage> {
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
                             colors: [
-                              Colors.blue.withValues(alpha:0.2),
-                              Colors.blue.withValues(alpha:0.1),
+                              Colors.blue.withValues(alpha: 0.2),
+                              Colors.blue.withValues(alpha: 0.1),
                             ],
                           ),
                           borderRadius: BorderRadius.circular(10),
@@ -229,7 +247,7 @@ class _CreateTripPageState extends State<CreateTripPage> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.grey.withValues(alpha:0.05),
+                      color: Colors.grey.withValues(alpha: 0.05),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(color: Colors.grey.shade300),
                     ),
@@ -238,7 +256,11 @@ class _CreateTripPageState extends State<CreateTripPage> {
                       children: [
                         Row(
                           children: [
-                            Icon(Icons.title, size: 14, color: Colors.grey.shade600),
+                            Icon(
+                              Icons.title,
+                              size: 14,
+                              color: Colors.grey.shade600,
+                            ),
                             const SizedBox(width: 4),
                             Text(
                               'Trip Title',
@@ -258,7 +280,10 @@ class _CreateTripPageState extends State<CreateTripPage> {
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 12,
+                            ),
                           ),
                         ),
                       ],
@@ -273,13 +298,13 @@ class _CreateTripPageState extends State<CreateTripPage> {
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
-                          Colors.green.withValues(alpha:0.1),
-                          Colors.green.withValues(alpha:0.05),
+                          Colors.green.withValues(alpha: 0.1),
+                          Colors.green.withValues(alpha: 0.05),
                         ],
                       ),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: Colors.green.withValues(alpha:0.3),
+                        color: Colors.green.withValues(alpha: 0.3),
                         width: 1.5,
                       ),
                     ),
@@ -303,71 +328,73 @@ class _CreateTripPageState extends State<CreateTripPage> {
                         const SizedBox(height: 12),
                         InkWell(
                           onTap: () async {
-  final isDesktop = MediaQuery.of(context).size.width >= 900;
+                            final isDesktop =
+                                MediaQuery.of(context).size.width >= 900;
 
-  if (isDesktop) {
-    Partner? selectedPartner;
+                            if (isDesktop) {
+                              Partner? selectedPartner;
 
-    await showDialog(
-      context: context,
-      barrierDismissible: false,
-      barrierColor: Colors.transparent,
-      builder: (context) {
-        return DraggableResizableWindow(
-          title: "Select Partner",
-          headerColor: Colors.green,
-          child: PartnerListPage(
-            selectionMode: true,
-            onSelected: (partner) {
-              selectedPartner = partner;
-              Navigator.pop(context);
-            },
-          ),
-        );
-      },
-    );
+                              await showDialog(
+                                context: context,
+                                barrierDismissible: false,
+                                barrierColor: Colors.transparent,
+                                builder: (context) {
+                                  return DraggableResizableWindow(
+                                    title: "Select Partner",
+                                    headerColor: Colors.green,
+                                    child: PartnerListPage(
+                                      selectionMode: true,
+                                      onSelected: (partner) {
+                                        selectedPartner = partner;
+                                        Navigator.pop(context);
+                                      },
+                                    ),
+                                  );
+                                },
+                              );
 
-    if (selectedPartner != null) {
-      setState(() {
-        partnerId = selectedPartner!.id;
-        partnerName = selectedPartner!.name;
-      });
-    }
-  } else {
-    final Partner? partner = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => const PartnerListPage(
-          selectionMode: true,
-        ),
-      ),
-    );
+                              if (selectedPartner != null) {
+                                setState(() {
+                                  partnerId = selectedPartner!.id;
+                                  partnerName = selectedPartner!.name;
+                                });
+                              }
+                            } else {
+                              final Partner? partner = await Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const PartnerListPage(
+                                    selectionMode: true,
+                                  ),
+                                ),
+                              );
 
-    if (partner != null) {
-      setState(() {
-        partnerId = partner.id;
-        partnerName = partner.name;
-      });
-    }
-  }
-},
+                              if (partner != null) {
+                                setState(() {
+                                  partnerId = partner.id;
+                                  partnerName = partner.name;
+                                });
+                              }
+                            }
+                          },
                           child: Container(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 16,
                               vertical: 14,
                             ),
                             decoration: BoxDecoration(
-                              color: Colors.green.withValues(alpha:0.08),
+                              color: Colors.green.withValues(alpha: 0.08),
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
-                                color: Colors.green.withValues(alpha:0.3),
+                                color: Colors.green.withValues(alpha: 0.3),
                               ),
                             ),
                             child: Row(
                               children: [
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       if (partnerName != null) ...[
                                         Text(
@@ -383,7 +410,9 @@ class _CreateTripPageState extends State<CreateTripPage> {
                                           'Select Client',
                                           style: TextStyle(
                                             fontSize: 14,
-                                            color: Colors.green.withValues(alpha:0.7),
+                                            color: Colors.green.withValues(
+                                              alpha: 0.7,
+                                            ),
                                             fontWeight: FontWeight.w500,
                                           ),
                                         ),
@@ -438,13 +467,13 @@ class _CreateTripPageState extends State<CreateTripPage> {
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
                                 colors: [
-                                  Colors.green.withValues(alpha:0.1),
-                                  Colors.green.withValues(alpha:0.05),
+                                  Colors.green.withValues(alpha: 0.1),
+                                  Colors.green.withValues(alpha: 0.05),
                                 ],
                               ),
                               borderRadius: BorderRadius.circular(16),
                               border: Border.all(
-                                color: Colors.green.withValues(alpha:0.3),
+                                color: Colors.green.withValues(alpha: 0.3),
                                 width: 1.5,
                               ),
                             ),
@@ -453,15 +482,20 @@ class _CreateTripPageState extends State<CreateTripPage> {
                                 Container(
                                   padding: const EdgeInsets.all(8),
                                   decoration: BoxDecoration(
-                                    color: Colors.green.withValues(alpha:0.15),
+                                    color: Colors.green.withValues(alpha: 0.15),
                                     borderRadius: BorderRadius.circular(10),
                                   ),
-                                  child: const Icon(Icons.calendar_today, color: Colors.green, size: 18),
+                                  child: const Icon(
+                                    Icons.calendar_today,
+                                    color: Colors.green,
+                                    size: 18,
+                                  ),
                                 ),
                                 const SizedBox(width: 12),
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       const Text(
                                         'Start Date',
@@ -475,7 +509,9 @@ class _CreateTripPageState extends State<CreateTripPage> {
                                         _formatDate(startDate),
                                         style: TextStyle(
                                           fontSize: 14,
-                                          fontWeight: startDate != null ? FontWeight.w600 : FontWeight.normal,
+                                          fontWeight: startDate != null
+                                              ? FontWeight.w600
+                                              : FontWeight.normal,
                                         ),
                                       ),
                                     ],
@@ -518,13 +554,13 @@ class _CreateTripPageState extends State<CreateTripPage> {
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
                                 colors: [
-                                  Colors.red.withValues(alpha:0.1),
-                                  Colors.red.withValues(alpha:0.05),
+                                  Colors.red.withValues(alpha: 0.1),
+                                  Colors.red.withValues(alpha: 0.05),
                                 ],
                               ),
                               borderRadius: BorderRadius.circular(16),
                               border: Border.all(
-                                color: Colors.red.withValues(alpha:0.3),
+                                color: Colors.red.withValues(alpha: 0.3),
                                 width: 1.5,
                               ),
                             ),
@@ -533,15 +569,20 @@ class _CreateTripPageState extends State<CreateTripPage> {
                                 Container(
                                   padding: const EdgeInsets.all(8),
                                   decoration: BoxDecoration(
-                                    color: Colors.red.withValues(alpha:0.15),
+                                    color: Colors.red.withValues(alpha: 0.15),
                                     borderRadius: BorderRadius.circular(10),
                                   ),
-                                  child: const Icon(Icons.calendar_month, color: Colors.red, size: 18),
+                                  child: const Icon(
+                                    Icons.calendar_month,
+                                    color: Colors.red,
+                                    size: 18,
+                                  ),
                                 ),
                                 const SizedBox(width: 12),
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       const Text(
                                         'End Date',
@@ -555,7 +596,9 @@ class _CreateTripPageState extends State<CreateTripPage> {
                                         _formatDate(endDate),
                                         style: TextStyle(
                                           fontSize: 14,
-                                          fontWeight: endDate != null ? FontWeight.w600 : FontWeight.normal,
+                                          fontWeight: endDate != null
+                                              ? FontWeight.w600
+                                              : FontWeight.normal,
                                         ),
                                       ),
                                     ],
@@ -579,7 +622,7 @@ class _CreateTripPageState extends State<CreateTripPage> {
                         child: Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: Colors.grey.withValues(alpha:0.05),
+                            color: Colors.grey.withValues(alpha: 0.05),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(color: Colors.grey.shade300),
                           ),
@@ -588,7 +631,11 @@ class _CreateTripPageState extends State<CreateTripPage> {
                             children: [
                               Row(
                                 children: [
-                                  Icon(Icons.public, size: 14, color: Colors.grey.shade600),
+                                  Icon(
+                                    Icons.public,
+                                    size: 14,
+                                    color: Colors.grey.shade600,
+                                  ),
                                   const SizedBox(width: 4),
                                   Text(
                                     'Country',
@@ -605,19 +652,45 @@ class _CreateTripPageState extends State<CreateTripPage> {
                                 value: country,
                                 decoration: const InputDecoration(
                                   border: OutlineInputBorder(),
-                                  contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                  contentPadding: EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 8,
+                                  ),
                                 ),
                                 items: const [
-  DropdownMenuItem(value: 'Japan', child: Text('Japan 🇯🇵')),
-  DropdownMenuItem(value: 'Australia', child: Text('Australia 🇦🇺')),
-  DropdownMenuItem(value: 'Malaysia', child: Text('Malaysia 🇲🇾')),
-  DropdownMenuItem(value: 'Singapore', child: Text('Singapore 🇸🇬')),
-  DropdownMenuItem(value: 'Indonesia', child: Text('Indonesia 🇮🇩')),
-  DropdownMenuItem(value: 'China', child: Text('China 🇨🇳')),
-  DropdownMenuItem(value: 'India', child: Text('India 🇮🇳')),
-  DropdownMenuItem(value: 'Taiwan', child: Text('Taiwan 🇹🇼')),
-
-],
+                                  DropdownMenuItem(
+                                    value: 'Japan',
+                                    child: Text('Japan 🇯🇵'),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: 'Australia',
+                                    child: Text('Australia 🇦🇺'),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: 'Malaysia',
+                                    child: Text('Malaysia 🇲🇾'),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: 'Singapore',
+                                    child: Text('Singapore 🇸🇬'),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: 'Indonesia',
+                                    child: Text('Indonesia 🇮🇩'),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: 'China',
+                                    child: Text('China 🇨🇳'),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: 'India',
+                                    child: Text('India 🇮🇳'),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: 'Taiwan',
+                                    child: Text('Taiwan 🇹🇼'),
+                                  ),
+                                ],
                                 onChanged: (v) {
                                   setState(() {
                                     country = v!;
@@ -635,7 +708,7 @@ class _CreateTripPageState extends State<CreateTripPage> {
                         child: Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: Colors.grey.withValues(alpha:0.05),
+                            color: Colors.grey.withValues(alpha: 0.05),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(color: Colors.grey.shade300),
                           ),
@@ -644,7 +717,11 @@ class _CreateTripPageState extends State<CreateTripPage> {
                             children: [
                               Row(
                                 children: [
-                                  Icon(Icons.attach_money, size: 14, color: Colors.grey.shade600),
+                                  Icon(
+                                    Icons.attach_money,
+                                    size: 14,
+                                    color: Colors.grey.shade600,
+                                  ),
                                   const SizedBox(width: 4),
                                   Text(
                                     'Currency',
@@ -661,18 +738,45 @@ class _CreateTripPageState extends State<CreateTripPage> {
                                 value: currency,
                                 decoration: const InputDecoration(
                                   border: OutlineInputBorder(),
-                                  contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                  contentPadding: EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 8,
+                                  ),
                                 ),
-                               items: const [
-  DropdownMenuItem(value: 'JPY', child: Text('JPY 💴')),
-  DropdownMenuItem(value: 'AUD', child: Text('AUD 💵')),
-  DropdownMenuItem(value: 'MYR', child: Text('MYR 💵')),
-  DropdownMenuItem(value: 'SGD', child: Text('SGD 💵')),
-  DropdownMenuItem(value: 'IDR', child: Text('IDR 💵')),
-  DropdownMenuItem(value: 'CNY', child: Text('CNY 💴')),
-  DropdownMenuItem(value: 'INR', child: Text('INR 💵')),
-  DropdownMenuItem(value: 'TWD', child: Text('TWD 💵')),
-],
+                                items: const [
+                                  DropdownMenuItem(
+                                    value: 'JPY',
+                                    child: Text('JPY 💴'),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: 'AUD',
+                                    child: Text('AUD 💵'),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: 'MYR',
+                                    child: Text('MYR 💵'),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: 'SGD',
+                                    child: Text('SGD 💵'),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: 'IDR',
+                                    child: Text('IDR 💵'),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: 'CNY',
+                                    child: Text('CNY 💴'),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: 'INR',
+                                    child: Text('INR 💵'),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: 'TWD',
+                                    child: Text('TWD 💵'),
+                                  ),
+                                ],
                                 onChanged: (v) {
                                   setState(() {
                                     currency = v!;
@@ -718,7 +822,9 @@ class _CreateTripPageState extends State<CreateTripPage> {
                             elevation: 0,
                           ),
                           onPressed: createTrip,
-                          child: Text(isEditing ? 'UPDATE TRIP' : 'CREATE TRIP'),
+                          child: Text(
+                            isEditing ? 'UPDATE TRIP' : 'CREATE TRIP',
+                          ),
                         ),
                       ),
                     ],
@@ -742,8 +848,8 @@ class _CreateTripPageState extends State<CreateTripPage> {
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
-                            Colors.purple.withValues(alpha:0.2),
-                            Colors.purple.withValues(alpha:0.1),
+                            Colors.purple.withValues(alpha: 0.2),
+                            Colors.purple.withValues(alpha: 0.1),
                           ],
                         ),
                         borderRadius: BorderRadius.circular(10),
@@ -767,192 +873,200 @@ class _CreateTripPageState extends State<CreateTripPage> {
                 const SizedBox(height: 20),
 
                 Expanded(
-  child: Center(
-    child: SingleChildScrollView(
-      child: Container(
-                      width: 350,
-                      padding: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            Colors.blue.withValues(alpha:0.1),
-                            Colors.blue.withValues(alpha:0.05),
-                          ],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.circular(24),
-                        border: Border.all(
-                          color: Colors.blue.withValues(alpha:0.3),
-                          width: 2,
-                        ),
-                      ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          // Icon
-                          Container(
-                            padding: const EdgeInsets.all(20),
-                            decoration: BoxDecoration(
-                              color: Colors.blue.withValues(alpha:0.15),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(
-                              Icons.flight_takeoff,
-                              size: 48,
-                              color: Colors.blue.shade700,
-                            ),
+                  child: Center(
+                    child: SingleChildScrollView(
+                      child: Container(
+                        width: 350,
+                        padding: const EdgeInsets.all(24),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              Colors.blue.withValues(alpha: 0.1),
+                              Colors.blue.withValues(alpha: 0.05),
+                            ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
                           ),
-                          const SizedBox(height: 20),
-
-                          // Title
-                          Text(
-                            _titleController.text.isEmpty
-                                ? 'Trip Title'
-                                : _titleController.text,
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                            ),
-                            textAlign: TextAlign.center,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
+                          borderRadius: BorderRadius.circular(24),
+                          border: Border.all(
+                            color: Colors.blue.withValues(alpha: 0.3),
+                            width: 2,
                           ),
-                          const SizedBox(height: 12),
-
-                          // Partner
-                          if (partnerName != null) ...[
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            // Icon
                             Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 8,
-                              ),
+                              padding: const EdgeInsets.all(20),
                               decoration: BoxDecoration(
-                                color: Colors.green.withValues(alpha:0.1),
-                                borderRadius: BorderRadius.circular(30),
+                                color: Colors.blue.withValues(alpha: 0.15),
+                                shape: BoxShape.circle,
                               ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(Icons.business, size: 14, color: Colors.green),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    partnerName!,
-                                    style: const TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w600,
+                              child: Icon(
+                                Icons.flight_takeoff,
+                                size: 48,
+                                color: Colors.blue.shade700,
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+
+                            // Title
+                            Text(
+                              _titleController.text.isEmpty
+                                  ? 'Trip Title'
+                                  : _titleController.text,
+                              style: const TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              textAlign: TextAlign.center,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 12),
+
+                            // Partner
+                            if (partnerName != null) ...[
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 8,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.green.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(30),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(
+                                      Icons.business,
+                                      size: 14,
                                       color: Colors.green,
                                     ),
-                                  ),
-                                ],
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      partnerName!,
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.green,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
-                            const SizedBox(height: 16),
-                          ],
+                              const SizedBox(height: 16),
+                            ],
 
-                          // Country
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.public, size: 16, color: Colors.grey.shade600),
-                              const SizedBox(width: 8),
-                              Text(
-                                country,
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w500,
+                            // Country
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.public,
+                                  size: 16,
+                                  color: Colors.grey.shade600,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  country,
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+
+                            // Dates
+                            if (startDate != null && endDate != null) ...[
+                              const SizedBox(height: 8),
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: Colors.orange.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Column(
+                                      children: [
+                                        const Text(
+                                          'From',
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            color: Colors.grey,
+                                          ),
+                                        ),
+                                        Text(
+                                          '${startDate!.day}/${startDate!.month}',
+                                          style: const TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(width: 20),
+                                    const Icon(
+                                      Icons.arrow_forward,
+                                      size: 16,
+                                      color: Colors.grey,
+                                    ),
+                                    const SizedBox(width: 20),
+                                    Column(
+                                      children: [
+                                        const Text(
+                                          'To',
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            color: Colors.grey,
+                                          ),
+                                        ),
+                                        Text(
+                                          '${endDate!.day}/${endDate!.month}',
+                                          style: const TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
                                 ),
                               ),
                             ],
-                          ),
-                          const SizedBox(height: 8),
 
-                          // Dates
-                          if (startDate != null && endDate != null) ...[
-                            const SizedBox(height: 8),
+                            const SizedBox(height: 16),
+
+                            // Currency
                             Container(
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: Colors.orange.withValues(alpha:0.1),
-                                borderRadius: BorderRadius.circular(12),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 6,
                               ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Column(
-                                    children: [
-                                      const Text(
-                                        'From',
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          color: Colors.grey,
-                                        ),
-                                      ),
-                                      Text(
-                                        '${startDate!.day}/${startDate!.month}',
-                                        style: const TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(width: 20),
-                                  const Icon(
-                                    Icons.arrow_forward,
-                                    size: 16,
-                                    color: Colors.grey,
-                                  ),
-                                  const SizedBox(width: 20),
-                                  Column(
-                                    children: [
-                                      const Text(
-                                        'To',
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          color: Colors.grey,
-                                        ),
-                                      ),
-                                      Text(
-                                        '${endDate!.day}/${endDate!.month}',
-                                        style: const TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
+                              decoration: BoxDecoration(
+                                color: Colors.purple.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text(
+                                'Currency: $currency',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.purple.shade700,
+                                ),
                               ),
                             ),
                           ],
-
-                          const SizedBox(height: 16),
-
-                          // Currency
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 6,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.purple.withValues(alpha:0.1),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Text(
-                              'Currency: $currency',
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.purple.shade700,
-                              ),
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
                     ),
                   ),
-                ),
                 ),
               ],
             ),
@@ -978,8 +1092,8 @@ class _CreateTripPageState extends State<CreateTripPage> {
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
-                            Colors.blue.withValues(alpha:0.2),
-                            Colors.blue.withValues(alpha:0.1),
+                            Colors.blue.withValues(alpha: 0.2),
+                            Colors.blue.withValues(alpha: 0.1),
                           ],
                         ),
                         borderRadius: BorderRadius.circular(10),
@@ -1023,9 +1137,8 @@ class _CreateTripPageState extends State<CreateTripPage> {
                     final Partner? partner = await Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => const PartnerListPage(
-                          selectionMode: true,
-                        ),
+                        builder: (_) =>
+                            const PartnerListPage(selectionMode: true),
                       ),
                     );
 
@@ -1041,13 +1154,13 @@ class _CreateTripPageState extends State<CreateTripPage> {
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
-                          Colors.green.withValues(alpha:0.1),
-                          Colors.green.withValues(alpha:0.05),
+                          Colors.green.withValues(alpha: 0.1),
+                          Colors.green.withValues(alpha: 0.05),
                         ],
                       ),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: Colors.green.withValues(alpha:0.3),
+                        color: Colors.green.withValues(alpha: 0.3),
                       ),
                     ),
                     child: Row(
@@ -1055,7 +1168,7 @@ class _CreateTripPageState extends State<CreateTripPage> {
                         Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: Colors.green.withValues(alpha:0.15),
+                            color: Colors.green.withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: const Icon(
@@ -1073,7 +1186,7 @@ class _CreateTripPageState extends State<CreateTripPage> {
                                 'Client',
                                 style: TextStyle(
                                   fontSize: 11,
-                                  color: Colors.green.withValues(alpha:0.8),
+                                  color: Colors.green.withValues(alpha: 0.8),
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
@@ -1086,7 +1199,7 @@ class _CreateTripPageState extends State<CreateTripPage> {
                                       : FontWeight.w500,
                                   color: partnerName != null
                                       ? Colors.green.shade700
-                                      : Colors.green.withValues(alpha:0.7),
+                                      : Colors.green.withValues(alpha: 0.7),
                                 ),
                               ),
                             ],
@@ -1118,22 +1231,29 @@ class _CreateTripPageState extends State<CreateTripPage> {
                     }
                   },
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
-                          Colors.green.withValues(alpha:0.1),
-                          Colors.green.withValues(alpha:0.05),
+                          Colors.green.withValues(alpha: 0.1),
+                          Colors.green.withValues(alpha: 0.05),
                         ],
                       ),
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(
-                        color: Colors.green.withValues(alpha:0.3),
+                        color: Colors.green.withValues(alpha: 0.3),
                       ),
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.calendar_today, color: Colors.green, size: 20),
+                        const Icon(
+                          Icons.calendar_today,
+                          color: Colors.green,
+                          size: 20,
+                        ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Column(
@@ -1150,7 +1270,9 @@ class _CreateTripPageState extends State<CreateTripPage> {
                                 _formatDate(startDate),
                                 style: TextStyle(
                                   fontSize: 15,
-                                  fontWeight: startDate != null ? FontWeight.w600 : FontWeight.normal,
+                                  fontWeight: startDate != null
+                                      ? FontWeight.w600
+                                      : FontWeight.normal,
                                 ),
                               ),
                             ],
@@ -1182,22 +1304,29 @@ class _CreateTripPageState extends State<CreateTripPage> {
                     }
                   },
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
-                          Colors.red.withValues(alpha:0.1),
-                          Colors.red.withValues(alpha:0.05),
+                          Colors.red.withValues(alpha: 0.1),
+                          Colors.red.withValues(alpha: 0.05),
                         ],
                       ),
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(
-                        color: Colors.red.withValues(alpha:0.3),
+                        color: Colors.red.withValues(alpha: 0.3),
                       ),
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.calendar_month, color: Colors.red, size: 20),
+                        const Icon(
+                          Icons.calendar_month,
+                          color: Colors.red,
+                          size: 20,
+                        ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Column(
@@ -1214,7 +1343,9 @@ class _CreateTripPageState extends State<CreateTripPage> {
                                 _formatDate(endDate),
                                 style: TextStyle(
                                   fontSize: 15,
-                                  fontWeight: endDate != null ? FontWeight.w600 : FontWeight.normal,
+                                  fontWeight: endDate != null
+                                      ? FontWeight.w600
+                                      : FontWeight.normal,
                                 ),
                               ),
                             ],
@@ -1243,15 +1374,30 @@ class _CreateTripPageState extends State<CreateTripPage> {
                     ),
                   ),
                   items: const [
-  DropdownMenuItem(value: 'Japan', child: Text('Japan 🇯🇵')),
-  DropdownMenuItem(value: 'Australia', child: Text('Australia 🇦🇺')),
-  DropdownMenuItem(value: 'Malaysia', child: Text('Malaysia 🇲🇾')),
-  DropdownMenuItem(value: 'Singapore', child: Text('Singapore 🇸🇬')),
-  DropdownMenuItem(value: 'Indonesia', child: Text('Indonesia 🇮🇩')),
-  DropdownMenuItem(value: 'China', child: Text('China 🇨🇳')),
-  DropdownMenuItem(value: 'India', child: Text('India 🇮🇳')),
-  DropdownMenuItem(value: 'Taiwan', child: Text('Taiwan 🇹🇼')),
-],
+                    DropdownMenuItem(value: 'Japan', child: Text('Japan 🇯🇵')),
+                    DropdownMenuItem(
+                      value: 'Australia',
+                      child: Text('Australia 🇦🇺'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'Malaysia',
+                      child: Text('Malaysia 🇲🇾'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'Singapore',
+                      child: Text('Singapore 🇸🇬'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'Indonesia',
+                      child: Text('Indonesia 🇮🇩'),
+                    ),
+                    DropdownMenuItem(value: 'China', child: Text('China 🇨🇳')),
+                    DropdownMenuItem(value: 'India', child: Text('India 🇮🇳')),
+                    DropdownMenuItem(
+                      value: 'Taiwan',
+                      child: Text('Taiwan 🇹🇼'),
+                    ),
+                  ],
                   onChanged: (v) {
                     setState(() {
                       country = v!;
@@ -1272,15 +1418,15 @@ class _CreateTripPageState extends State<CreateTripPage> {
                     ),
                   ),
                   items: const [
-  DropdownMenuItem(value: 'JPY', child: Text('JPY 💴')),
-  DropdownMenuItem(value: 'AUD', child: Text('AUD 💵')),
-  DropdownMenuItem(value: 'MYR', child: Text('MYR 💵')),
-  DropdownMenuItem(value: 'SGD', child: Text('SGD 💵')),
-  DropdownMenuItem(value: 'IDR', child: Text('IDR 💵')),
-  DropdownMenuItem(value: 'CNY', child: Text('CNY 💴')),
-  DropdownMenuItem(value: 'INR', child: Text('INR 💵')),
-  DropdownMenuItem(value: 'TWD', child: Text('TWD 💵')),
-],
+                    DropdownMenuItem(value: 'JPY', child: Text('JPY 💴')),
+                    DropdownMenuItem(value: 'AUD', child: Text('AUD 💵')),
+                    DropdownMenuItem(value: 'MYR', child: Text('MYR 💵')),
+                    DropdownMenuItem(value: 'SGD', child: Text('SGD 💵')),
+                    DropdownMenuItem(value: 'IDR', child: Text('IDR 💵')),
+                    DropdownMenuItem(value: 'CNY', child: Text('CNY 💴')),
+                    DropdownMenuItem(value: 'INR', child: Text('INR 💵')),
+                    DropdownMenuItem(value: 'TWD', child: Text('TWD 💵')),
+                  ],
                   onChanged: (v) {
                     setState(() {
                       currency = v!;
@@ -1309,8 +1455,8 @@ class _CreateTripPageState extends State<CreateTripPage> {
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
                             colors: [
-                              Colors.purple.withValues(alpha:0.2),
-                              Colors.purple.withValues(alpha:0.1),
+                              Colors.purple.withValues(alpha: 0.2),
+                              Colors.purple.withValues(alpha: 0.1),
                             ],
                           ),
                           borderRadius: BorderRadius.circular(10),
@@ -1338,13 +1484,13 @@ class _CreateTripPageState extends State<CreateTripPage> {
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
-                          Colors.blue.withValues(alpha:0.1),
-                          Colors.blue.withValues(alpha:0.05),
+                          Colors.blue.withValues(alpha: 0.1),
+                          Colors.blue.withValues(alpha: 0.05),
                         ],
                       ),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: Colors.blue.withValues(alpha:0.3),
+                        color: Colors.blue.withValues(alpha: 0.3),
                       ),
                     ),
                     child: Column(
@@ -1354,7 +1500,7 @@ class _CreateTripPageState extends State<CreateTripPage> {
                             Container(
                               padding: const EdgeInsets.all(10),
                               decoration: BoxDecoration(
-                                color: Colors.blue.withValues(alpha:0.15),
+                                color: Colors.blue.withValues(alpha: 0.15),
                                 shape: BoxShape.circle,
                               ),
                               child: Icon(
@@ -1402,7 +1548,11 @@ class _CreateTripPageState extends State<CreateTripPage> {
                           children: [
                             Column(
                               children: [
-                                const Icon(Icons.public, size: 16, color: Colors.grey),
+                                const Icon(
+                                  Icons.public,
+                                  size: 16,
+                                  color: Colors.grey,
+                                ),
                                 const SizedBox(height: 4),
                                 Text(
                                   country,
@@ -1416,7 +1566,11 @@ class _CreateTripPageState extends State<CreateTripPage> {
                             if (startDate != null && endDate != null)
                               Column(
                                 children: [
-                                  const Icon(Icons.date_range, size: 16, color: Colors.orange),
+                                  const Icon(
+                                    Icons.date_range,
+                                    size: 16,
+                                    color: Colors.orange,
+                                  ),
                                   const SizedBox(height: 4),
                                   Text(
                                     '${endDate!.difference(startDate!).inDays} days',
@@ -1430,7 +1584,11 @@ class _CreateTripPageState extends State<CreateTripPage> {
                               ),
                             Column(
                               children: [
-                                const Icon(Icons.attach_money, size: 16, color: Colors.purple),
+                                const Icon(
+                                  Icons.attach_money,
+                                  size: 16,
+                                  color: Colors.purple,
+                                ),
                                 const SizedBox(height: 4),
                                 Container(
                                   padding: const EdgeInsets.symmetric(
@@ -1438,7 +1596,7 @@ class _CreateTripPageState extends State<CreateTripPage> {
                                     vertical: 2,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: Colors.purple.withValues(alpha:0.1),
+                                    color: Colors.purple.withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: Text(
@@ -1469,12 +1627,12 @@ class _CreateTripPageState extends State<CreateTripPage> {
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  Colors.white.withValues(alpha:0.2),
-                  Colors.white.withValues(alpha:0.1),
+                  Colors.white.withValues(alpha: 0.2),
+                  Colors.white.withValues(alpha: 0.1),
                 ],
               ),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.white.withValues(alpha:0.3)),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
             ),
             child: Row(
               children: [
@@ -1531,14 +1689,14 @@ Widget _glass(Widget child) {
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              Colors.white.withValues(alpha:0.3),
-              Colors.white.withValues(alpha:0.15),
+              Colors.white.withValues(alpha: 0.3),
+              Colors.white.withValues(alpha: 0.15),
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.white.withValues(alpha:0.4)),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.4)),
         ),
         child: child,
       ),

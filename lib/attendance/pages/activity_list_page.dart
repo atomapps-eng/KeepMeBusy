@@ -26,16 +26,23 @@ class ActivityListPage extends StatelessWidget {
         .collectionGroup('activities')
         .where('companyId', isEqualTo: companyId)
         .where('employeeId', isEqualTo: employeeId)
-       .orderBy('date', descending: true)
+        .orderBy('date', descending: true)
         .snapshots()
         .map((snapshot) {
-          return snapshot.docs.map((doc) {
+          final activities = snapshot.docs.map((doc) {
             final data = doc.data();
+            final factoryDoc = doc.reference.parent.parent;
             data['activityId'] = doc.id;
-            data['factoryId'] = doc.reference.parent.parent?.id;
-data['dayDocId'] = doc.reference.parent.parent?.parent?.parent?.id;
+            data['factoryId'] = factoryDoc?.id;
+            data['dayDocId'] = factoryDoc?.parent.parent?.id;
             return data;
           }).toList();
+
+          if (period == 'ALL') return activities;
+
+          return activities
+              .where((activity) => activity['period'] == period)
+              .toList();
         });
   }
 
@@ -80,7 +87,7 @@ data['dayDocId'] = doc.reference.parent.parent?.parent?.parent?.id;
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: AppTheme.primaryColor.withValues(alpha:0.1),
+                color: AppTheme.primaryColor.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: const Icon(
@@ -95,17 +102,11 @@ data['dayDocId'] = doc.reference.parent.parent?.parent?.parent?.id;
               children: [
                 const Text(
                   'Activities',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
                 Text(
                   period,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey.shade600,
-                  ),
+                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
                 ),
               ],
             ),
@@ -123,7 +124,9 @@ data['dayDocId'] = doc.reference.parent.parent?.parent?.parent?.id;
             if (!snapshot.hasData) {
               return const Center(
                 child: CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    AppTheme.primaryColor,
+                  ),
                 ),
               );
             }
@@ -135,10 +138,10 @@ data['dayDocId'] = doc.reference.parent.parent?.parent?.parent?.id;
                 child: Container(
                   padding: const EdgeInsets.all(32),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha:0.1),
+                    color: Colors.white.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: Colors.white.withValues(alpha:0.2),
+                      color: Colors.white.withValues(alpha: 0.2),
                     ),
                   ),
                   child: Column(
@@ -147,7 +150,7 @@ data['dayDocId'] = doc.reference.parent.parent?.parent?.parent?.id;
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: Colors.blue.withValues(alpha:0.1),
+                          color: Colors.blue.withValues(alpha: 0.1),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
@@ -168,9 +171,7 @@ data['dayDocId'] = doc.reference.parent.parent?.parent?.parent?.id;
                       const SizedBox(height: 8),
                       Text(
                         'Activities will appear here when you add them',
-                        style: TextStyle(
-                          color: Colors.grey.shade600,
-                        ),
+                        style: TextStyle(color: Colors.grey.shade600),
                         textAlign: TextAlign.center,
                       ),
                     ],
@@ -190,7 +191,10 @@ data['dayDocId'] = doc.reference.parent.parent?.parent?.parent?.id;
     );
   }
 
-  Widget _buildDesktopLayout(BuildContext context, List<Map<String, dynamic>> activities) {
+  Widget _buildDesktopLayout(
+    BuildContext context,
+    List<Map<String, dynamic>> activities,
+  ) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -207,7 +211,7 @@ data['dayDocId'] = doc.reference.parent.parent?.parent?.parent?.id;
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: Colors.blue.withValues(alpha:0.1),
+                        color: Colors.blue.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: const Icon(
@@ -261,7 +265,11 @@ data['dayDocId'] = doc.reference.parent.parent?.parent?.parent?.id;
                 ),
                 _buildSummaryItem(
                   'Unique Clients',
-                  activities.map((a) => a['factoryClient']).toSet().length.toString(),
+                  activities
+                      .map((a) => a['factoryClient'])
+                      .toSet()
+                      .length
+                      .toString(),
                   Icons.business,
                   Colors.purple,
                 ),
@@ -279,16 +287,21 @@ data['dayDocId'] = doc.reference.parent.parent?.parent?.parent?.id;
                 margin: const EdgeInsets.only(bottom: 16),
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha:0.2),
+                  color: Colors.white.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.white.withValues(alpha:0.3)),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.3),
+                  ),
                 ),
                 child: Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
-                        color: Colors.blue.withValues(alpha:0.1),
+                        color: Colors.blue.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Row(
@@ -312,9 +325,12 @@ data['dayDocId'] = doc.reference.parent.parent?.parent?.parent?.id;
                     ),
                     const Spacer(),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
-                        color: Colors.green.withValues(alpha:0.1),
+                        color: Colors.green.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: const Text(
@@ -328,81 +344,128 @@ data['dayDocId'] = doc.reference.parent.parent?.parent?.parent?.id;
 
               // Activity List
               Expanded(
-  child: _glass(
-    LayoutBuilder(
-      builder: (context, constraints) {
-        return SingleChildScrollView(
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              minHeight: constraints.maxHeight,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Header
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: Row(
-                    children: [
-                      const Text(
-                        'Activity Records',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const Spacer(),
-                    ],
-                  ),
-                ),
+                child: _glass(
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      return SingleChildScrollView(
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(
+                            minHeight: constraints.maxHeight,
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Header
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 12),
+                                child: Row(
+                                  children: [
+                                    const Text(
+                                      'Activity Records',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    const Spacer(),
+                                  ],
+                                ),
+                              ),
 
-                // Table
-                Container(
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey.shade300),
-                    borderRadius: BorderRadius.circular(8),
-                    color: Colors.white.withValues(alpha:0.3),
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: Column(
-                      children: [
-                        // Header Row
-                        Container(
-                          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                          color: Colors.grey.shade200,
-                          child: Row(
-                            children: const [
-                              Expanded(flex: 2, child: Text('Activity', style: TextStyle(fontWeight: FontWeight.w600))),
-                              Expanded(flex: 2, child: Center(child: Text('Client / Machine', style: TextStyle(fontWeight: FontWeight.w600)))),
-                              Expanded(flex: 2, child: Center(child: Text('Date / Time', style: TextStyle(fontWeight: FontWeight.w600)))),
-                              Expanded(flex: 2, child: Center(child: Text('Hours', style: TextStyle(fontWeight: FontWeight.w600)))),
-                              SizedBox(width: 24),
+                              // Table
+                              Container(
+                                decoration: BoxDecoration(
+                                  border: Border.all(
+                                    color: Colors.grey.shade300,
+                                  ),
+                                  borderRadius: BorderRadius.circular(8),
+                                  color: Colors.white.withValues(alpha: 0.3),
+                                ),
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: Column(
+                                    children: [
+                                      // Header Row
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          vertical: 12,
+                                          horizontal: 16,
+                                        ),
+                                        color: Colors.grey.shade200,
+                                        child: Row(
+                                          children: const [
+                                            Expanded(
+                                              flex: 2,
+                                              child: Text(
+                                                'Activity',
+                                                style: TextStyle(
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                              ),
+                                            ),
+                                            Expanded(
+                                              flex: 2,
+                                              child: Center(
+                                                child: Text(
+                                                  'Client / Machine',
+                                                  style: TextStyle(
+                                                    fontWeight: FontWeight.w600,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                            Expanded(
+                                              flex: 2,
+                                              child: Center(
+                                                child: Text(
+                                                  'Date / Time',
+                                                  style: TextStyle(
+                                                    fontWeight: FontWeight.w600,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                            Expanded(
+                                              flex: 2,
+                                              child: Center(
+                                                child: Text(
+                                                  'Hours',
+                                                  style: TextStyle(
+                                                    fontWeight: FontWeight.w600,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                            SizedBox(width: 24),
+                                          ],
+                                        ),
+                                      ),
+
+                                      // List View (NO HEIGHT LIMIT)
+                                      ListView.builder(
+                                        itemCount: activities.length,
+                                        shrinkWrap: true,
+                                        physics:
+                                            const NeverScrollableScrollPhysics(),
+                                        itemBuilder: (context, index) {
+                                          return _buildDesktopActivityRow(
+                                            context,
+                                            activities[index],
+                                          );
+                                        },
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
                             ],
                           ),
                         ),
-
-                        // List View (NO HEIGHT LIMIT)
-                        ListView.builder(
-                          itemCount: activities.length,
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemBuilder: (context, index) {
-                            return _buildDesktopActivityRow(context, activities[index]);
-                          },
-                        ),
-                      ],
-                    ),
+                      );
+                    },
                   ),
                 ),
-              ],
-            ),
-          ),
-        );
-      },
-    ),
-  ),
-),
+              ),
             ],
           ),
         ),
@@ -422,17 +485,13 @@ data['dayDocId'] = doc.reference.parent.parent?.parent?.parent?.id;
       return Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: color.withValues(alpha:0.1),
+          color: color.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: color.withValues(alpha:0.2)),
+          border: Border.all(color: color.withValues(alpha: 0.2)),
         ),
         child: Row(
           children: [
-            Icon(
-              Icons.circle,
-              color: color,
-              size: 10,
-            ),
+            Icon(Icons.circle, color: color, size: 10),
             const SizedBox(width: 6),
             Expanded(
               child: Column(
@@ -461,7 +520,12 @@ data['dayDocId'] = doc.reference.parent.parent?.parent?.parent?.id;
     }).toList();
   }
 
-  Widget _buildSummaryItem(String label, String value, IconData icon, Color color) {
+  Widget _buildSummaryItem(
+    String label,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
@@ -469,31 +533,26 @@ data['dayDocId'] = doc.reference.parent.parent?.parent?.parent?.id;
           Container(
             padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
-              color: color.withValues(alpha:0.1),
+              color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(6),
             ),
             child: Icon(icon, size: 14, color: color),
           ),
           const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              label,
-              style: const TextStyle(fontSize: 12),
-            ),
-          ),
+          Expanded(child: Text(label, style: const TextStyle(fontSize: 12))),
           Text(
             value,
-            style: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-            ),
+            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildDesktopActivityRow(BuildContext context, Map<String, dynamic> activity) {
+  Widget _buildDesktopActivityRow(
+    BuildContext context,
+    Map<String, dynamic> activity,
+  ) {
     final activityType = activity['activityType'] ?? '-';
     final factoryClient = activity['factoryClient'] ?? '-';
     final machine = activity['machine'] ?? '-';
@@ -503,45 +562,43 @@ data['dayDocId'] = doc.reference.parent.parent?.parent?.parent?.id;
 
     return Container(
       decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(color: Colors.grey.shade300),
-        ),
+        border: Border(bottom: BorderSide(color: Colors.grey.shade300)),
       ),
       child: InkWell(
         onTap: () {
-  final isDesktop = MediaQuery.of(context).size.width >= 900;
+          final isDesktop = MediaQuery.of(context).size.width >= 900;
 
- if (isDesktop) {
-  final overlay = Overlay.of(context, rootOverlay: true);
-  late OverlayEntry entry;
+          if (isDesktop) {
+            final overlay = Overlay.of(context, rootOverlay: true);
+            late OverlayEntry entry;
 
-  entry = OverlayEntry(
-    builder: (context) {
-      return Positioned.fill(
-        child: Material(
-          color: Colors.transparent,
-          child: DraggableResizableWindow(
-            title: "Activity Detail",
-            headerColor: Colors.blue,
-            onClose: () {
-              entry.remove();
-            },
-            child: ActivityDetailPage(
-              employeeId: employeeId,
-              dayDocId: activity['dayDocId'],
-              factoryId: activity['factoryId'],
-              activityId: activity['activityId'],
-              activity: activity,
-            ),
-          ),
-        ),
-      );
-    },
-  );
+            entry = OverlayEntry(
+              builder: (context) {
+                return Positioned.fill(
+                  child: Material(
+                    color: Colors.transparent,
+                    child: DraggableResizableWindow(
+                      title: "Activity Detail",
+                      headerColor: Colors.blue,
+                      onClose: () {
+                        entry.remove();
+                      },
+                      child: ActivityDetailPage(
+                        employeeId: employeeId,
+                        dayDocId: activity['dayDocId'],
+                        factoryId: activity['factoryId'],
+                        activityId: activity['activityId'],
+                        activity: activity,
+                      ),
+                    ),
+                  ),
+                );
+              },
+            );
 
-  overlay.insert(entry);
-}
-},
+            overlay.insert(entry);
+          }
+        },
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
           child: Row(
@@ -566,9 +623,12 @@ data['dayDocId'] = doc.reference.parent.parent?.parent?.parent?.id;
                     Row(
                       children: [
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
-                            color: color.withValues(alpha:0.1),
+                            color: color.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
@@ -648,9 +708,12 @@ data['dayDocId'] = doc.reference.parent.parent?.parent?.parent?.id;
                 flex: 2,
                 child: Center(
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
-                      color: Colors.blue.withValues(alpha:0.1),
+                      color: Colors.blue.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
@@ -674,7 +737,10 @@ data['dayDocId'] = doc.reference.parent.parent?.parent?.parent?.id;
     );
   }
 
-  Widget _buildMobileLayout(BuildContext context, List<Map<String, dynamic>> activities) {
+  Widget _buildMobileLayout(
+    BuildContext context,
+    List<Map<String, dynamic>> activities,
+  ) {
     return ListView.builder(
       itemCount: activities.length,
       itemBuilder: (context, index) {
@@ -701,11 +767,9 @@ data['dayDocId'] = doc.reference.parent.parent?.parent?.parent?.id;
             margin: const EdgeInsets.only(bottom: 12),
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha:0.15),
+              color: Colors.white.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: Colors.white.withValues(alpha:0.25),
-              ),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
             ),
             child: Row(
               children: [
@@ -729,11 +793,16 @@ data['dayDocId'] = doc.reference.parent.parent?.parent?.parent?.id;
                       Row(
                         children: [
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
                             decoration: BoxDecoration(
-                              color: color.withValues(alpha:0.15),
+                              color: color.withValues(alpha: 0.15),
                               borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: color.withValues(alpha:0.3)),
+                              border: Border.all(
+                                color: color.withValues(alpha: 0.3),
+                              ),
                             ),
                             child: Text(
                               a['activityType'] ?? '-',
@@ -745,7 +814,7 @@ data['dayDocId'] = doc.reference.parent.parent?.parent?.parent?.id;
                             ),
                           ),
                           const SizedBox(width: 8),
-                         if (activityDate != null)
+                          if (activityDate != null)
                             Text(
                               _formatTime(activityDate),
                               style: TextStyle(
@@ -783,9 +852,12 @@ data['dayDocId'] = doc.reference.parent.parent?.parent?.parent?.id;
                           ),
                           const SizedBox(width: 12),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
                             decoration: BoxDecoration(
-                              color: Colors.blue.withValues(alpha:0.1),
+                              color: Colors.blue.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(
@@ -818,7 +890,7 @@ data['dayDocId'] = doc.reference.parent.parent?.parent?.parent?.id;
                 Container(
                   padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha:0.1),
+                    color: Colors.white.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
@@ -844,9 +916,9 @@ Widget _glass(Widget child) {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha:0.3),
+          color: Colors.white.withValues(alpha: 0.3),
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.white.withValues(alpha:0.4)),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.4)),
         ),
         child: child,
       ),

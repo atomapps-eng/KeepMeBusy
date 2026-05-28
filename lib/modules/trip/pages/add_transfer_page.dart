@@ -15,11 +15,7 @@ class AddTransferPage extends StatefulWidget {
   final String tripId;
   final String? transferId;
 
-  const AddTransferPage({
-    super.key,
-    required this.tripId,
-    this.transferId,
-  });
+  const AddTransferPage({super.key, required this.tripId, this.transferId});
 
   @override
   State<AddTransferPage> createState() => _AddTransferPageState();
@@ -27,7 +23,7 @@ class AddTransferPage extends StatefulWidget {
 
 class _AddTransferPageState extends State<AddTransferPage> {
   bool isUploading = false;
-double uploadProgress = 0;
+  double uploadProgress = 0;
   TripTransfer? existingTransfer;
   DateTime date = DateTime.now();
   final amountController = TextEditingController();
@@ -35,73 +31,73 @@ double uploadProgress = 0;
   File? transferImage;
   String? existingImageUrl;
 
-final String cloudName = 'djl2sukor';
-final String uploadPreset = 'Receipt';
+  final String cloudName = 'djl2sukor';
+  final String uploadPreset = 'Receipt';
 
   String currency = 'AUD';
   IconData _getCurrencyIcon(String currency) {
-  switch (currency) {
-    case 'IDR':
-      return Icons.payments;
-    case 'JPY':
-      return Icons.currency_yen;
-    case 'CNY':
-      return Icons.currency_yuan;
-    case 'AUD':
-    case 'SGD':
-    case 'MYR':
-    default:
-      return Icons.attach_money;
+    switch (currency) {
+      case 'IDR':
+        return Icons.payments;
+      case 'JPY':
+        return Icons.currency_yen;
+      case 'CNY':
+        return Icons.currency_yuan;
+      case 'AUD':
+      case 'SGD':
+      case 'MYR':
+      default:
+        return Icons.attach_money;
+    }
   }
-}
 
   final transferService = TripTransferService();
   final tripService = TripService();
-List<String> allowedCurrencies = [];
+  List<String> allowedCurrencies = [];
 
   @override
-void initState() {
-  super.initState();
+  void initState() {
+    super.initState();
 
-  loadAllowedCurrencies();
+    loadAllowedCurrencies();
 
-  if (widget.transferId != null) {
-    loadTransfer();
-  }
-}
-
-Future<void> loadAllowedCurrencies() async {
-  final companyId = await tripService.getCompanyId();
-
-  final tripDoc = await FirebaseFirestore.instance
-      .collection('companies')
-      .doc(companyId)
-      .collection('trips')
-      .doc(widget.tripId)
-      .get();
-
-  final tripCurrency = tripDoc.data()?['currency'] ?? 'IDR';
-
-  List<String> baseCurrencies = [];
-
-  if (companyId == 'atomIndonesia') {
-    baseCurrencies = ['IDR'];
-  } else if (companyId == 'atomIndia') {
-    baseCurrencies = ['INR'];
-  } else if (companyId == 'atomVietnam') {
-    baseCurrencies = ['VND'];
-  }
-
-  final result = <String>{...baseCurrencies, tripCurrency}.toList();
-
-  setState(() {
-    allowedCurrencies = result;
-
-    if (!allowedCurrencies.contains(currency)) {
-      currency = allowedCurrencies.first;
+    if (widget.transferId != null) {
+      loadTransfer();
     }
-  });
-}
+  }
+
+  Future<void> loadAllowedCurrencies() async {
+    final companyId = await tripService.getCompanyId();
+
+    final tripDoc = await FirebaseFirestore.instance
+        .collection('companies')
+        .doc(companyId)
+        .collection('trips')
+        .doc(widget.tripId)
+        .get();
+
+    final tripCurrency = tripDoc.data()?['currency'] ?? 'IDR';
+
+    List<String> baseCurrencies = [];
+
+    if (companyId == 'atomIndonesia') {
+      baseCurrencies = ['IDR'];
+    } else if (companyId == 'atomIndia') {
+      baseCurrencies = ['INR'];
+    } else if (companyId == 'atomVietnam') {
+      baseCurrencies = ['VND'];
+    }
+
+    final result = <String>{...baseCurrencies, tripCurrency}.toList();
+
+    setState(() {
+      allowedCurrencies = result;
+
+      if (!allowedCurrencies.contains(currency)) {
+        currency = allowedCurrencies.first;
+      }
+    });
+  }
 
   Future<void> loadTransfer() async {
     final doc = await transferService.getTransfer(
@@ -114,128 +110,124 @@ Future<void> loadAllowedCurrencies() async {
     setState(() {
       existingTransfer = doc;
 
-      final transfer = doc.transfers.first;
+      final transfer = doc.transfers.isNotEmpty
+          ? doc.transfers.first
+          : <String, dynamic>{};
 
-      amountController.text =
-    formatNumber(transfer['amount'].toInt().toString());
-      currency = transfer['currency'];
+      amountController.text = formatNumber(
+        ((transfer['amount'] as num?) ?? 0).toInt().toString(),
+      );
+      currency = transfer['currency'] ?? currency;
       noteController.text = doc.note;
       date = doc.date;
       existingImageUrl = doc.receiptUrl;
     });
   }
 
-    Future<void> saveTransfer() async {
+  Future<void> saveTransfer() async {
+    if (isUploading) return;
 
-  if (isUploading) return;
+    final user = FirebaseAuth.instance.currentUser;
 
-  final user = FirebaseAuth.instance.currentUser;
-
-  if (user == null) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text("User not authenticated"),
-        backgroundColor: Colors.red,
-      ),
-    );
-    return;
-  }
-
-  if (amountController.text.isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text("Amount cannot be empty"),
-        backgroundColor: Colors.orange,
-      ),
-    );
-    return;
-  }
-
-  setState(() {
-    isUploading = true;
-    uploadProgress = 0;
-  });
-
-  String photoUrl = existingImageUrl ?? '';
-
-  try {
-
-    /// ======================
-    /// UPLOAD IMAGE
-    /// ======================
-    if (transferImage != null) {
-      photoUrl = await uploadImageToCloudinary();
-    }
-
-    /// ======================
-    /// CREATE MODEL
-    /// ======================
-    final transfer = TripTransfer(
-      id: '',
-      date: date,
-      createdBy: user.uid,
-      transfers: [
-        {
-          'employeeId': user.uid,
-          'amount': double.tryParse(
-  amountController.text.replaceAll('.', '')
-) ?? 0,
-          'currency': currency,
-        }
-      ],
-      note: noteController.text,
-      receiptUrl: photoUrl,
-    );
-
-    /// ======================
-    /// SAVE FIRESTORE
-    /// ======================
-    if (widget.transferId == null) {
-      await transferService.createTransfer(
-        widget.tripId,
-        transfer,
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("User not authenticated"),
+          backgroundColor: Colors.red,
+        ),
       );
-    } else {
-      await transferService.updateTransfer(
-        widget.tripId,
-        widget.transferId!,
-        transfer,
-      );
+      return;
     }
 
-    if (!mounted) return;
+    if (amountController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Amount cannot be empty"),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text("Transfer saved successfully"),
-        backgroundColor: Colors.green,
-      ),
-    );
+    setState(() {
+      isUploading = true;
+      uploadProgress = 0;
+    });
 
-    Navigator.pop(context);
+    String photoUrl = existingImageUrl ?? '';
 
-  } on SocketException {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text("No internet connection"),
-        backgroundColor: Colors.red,
-      ),
-    );
-  } catch (e) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text("Failed to save transfer: $e"),
-        backgroundColor: Colors.red,
-      ),
-    );
-  } finally {
-    if (mounted) {
-      setState(() {
-        isUploading = false;
-      });
+    try {
+      /// ======================
+      /// UPLOAD IMAGE
+      /// ======================
+      if (transferImage != null) {
+        photoUrl = await uploadImageToCloudinary();
+      }
+
+      /// ======================
+      /// CREATE MODEL
+      /// ======================
+      final transfer = TripTransfer(
+        id: '',
+        date: date,
+        createdBy: user.uid,
+        transfers: [
+          {
+            'employeeId': user.uid,
+            'amount':
+                double.tryParse(amountController.text.replaceAll('.', '')) ?? 0,
+            'currency': currency,
+          },
+        ],
+        note: noteController.text,
+        receiptUrl: photoUrl,
+      );
+
+      /// ======================
+      /// SAVE FIRESTORE
+      /// ======================
+      if (widget.transferId == null) {
+        await transferService.createTransfer(widget.tripId, transfer);
+      } else {
+        await transferService.updateTransfer(
+          widget.tripId,
+          widget.transferId!,
+          transfer,
+        );
+      }
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Transfer saved successfully"),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+      Navigator.pop(context);
+    } on SocketException {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("No internet connection"),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Failed to save transfer: $e"),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          isUploading = false;
+        });
+      }
     }
   }
-}
 
   String _formatDate(DateTime date) {
     return '${date.day}/${date.month}/${date.year}';
@@ -256,13 +248,13 @@ Future<void> loadAllowedCurrencies() async {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    Colors.green.withValues(alpha:0.2),
-                    Colors.green.withValues(alpha:0.1),
+                    Colors.green.withValues(alpha: 0.2),
+                    Colors.green.withValues(alpha: 0.1),
                   ],
                 ),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: Colors.green.withValues(alpha:0.3),
+                  color: Colors.green.withValues(alpha: 0.3),
                   width: 1,
                 ),
               ),
@@ -284,9 +276,12 @@ Future<void> loadAllowedCurrencies() async {
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
-                    color: Colors.green.withValues(alpha:0.1),
+                    color: Colors.green.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
@@ -309,12 +304,12 @@ Future<void> loadAllowedCurrencies() async {
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
-                Colors.white.withValues(alpha:0.2),
-                Colors.white.withValues(alpha:0.1),
+                Colors.white.withValues(alpha: 0.2),
+                Colors.white.withValues(alpha: 0.1),
               ],
             ),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.white.withValues(alpha:0.3)),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
           ),
           child: IconButton(
             icon: const Icon(Icons.arrow_back),
@@ -323,45 +318,41 @@ Future<void> loadAllowedCurrencies() async {
         ),
       ),
       body: Stack(
-  children: [
+        children: [
+          AppBackgroundWrapper(
+            padding: const EdgeInsets.all(16),
+            child: isDesktop
+                ? _buildDesktopLayout(isEditing)
+                : _buildMobileLayout(isEditing),
+          ),
 
-    AppBackgroundWrapper(
-      padding: const EdgeInsets.all(16),
-      child: isDesktop
-          ? _buildDesktopLayout(isEditing)
-          : _buildMobileLayout(isEditing),
-    ),
-
-    if (isUploading)
-      Container(
-        color: Colors.black.withValues(alpha: 0.4),
-        child: Center(
-          child: Container(
-            width: 280,
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: const [
-                CircularProgressIndicator(),
-                SizedBox(height: 16),
-                Text(
-                  "Saving Transfer...",
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
+          if (isUploading)
+            Container(
+              color: Colors.black.withValues(alpha: 0.4),
+              child: Center(
+                child: Container(
+                  width: 280,
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: const [
+                      CircularProgressIndicator(),
+                      SizedBox(height: 16),
+                      Text(
+                        "Saving Transfer...",
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ],
                   ),
                 ),
-              ],
+              ),
             ),
-          ),
-        ),
+        ],
       ),
-
-  ],
-),
     );
   }
 
@@ -385,8 +376,8 @@ Future<void> loadAllowedCurrencies() async {
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
                             colors: [
-                              Colors.green.withValues(alpha:0.2),
-                              Colors.green.withValues(alpha:0.1),
+                              Colors.green.withValues(alpha: 0.2),
+                              Colors.green.withValues(alpha: 0.1),
                             ],
                           ),
                           borderRadius: BorderRadius.circular(10),
@@ -442,33 +433,33 @@ Future<void> loadAllowedCurrencies() async {
                   const SizedBox(height: 16),
 
                   // Currency
-_buildDesktopDropdown(
-  label: 'Currency',
-  value: allowedCurrencies.isNotEmpty
-    ? (allowedCurrencies.contains(currency)
-        ? currency
-        : allowedCurrencies.first)
-    : '',
-  icon: Icons.currency_exchange,
-  items: allowedCurrencies,
-  itemBuilder: (value) => value,
-  onChanged: (v) {
-    if (v != null) {
-      setState(() => currency = v);
-    }
-  },
-),
+                  _buildDesktopDropdown(
+                    label: 'Currency',
+                    value: allowedCurrencies.isNotEmpty
+                        ? (allowedCurrencies.contains(currency)
+                              ? currency
+                              : allowedCurrencies.first)
+                        : '',
+                    icon: Icons.currency_exchange,
+                    items: allowedCurrencies,
+                    itemBuilder: (value) => value,
+                    onChanged: (v) {
+                      if (v != null) {
+                        setState(() => currency = v);
+                      }
+                    },
+                  ),
 
-const SizedBox(height: 16),
+                  const SizedBox(height: 16),
 
-// Amount (WAJIB pakai helper, bukan TextField langsung)
-_buildDesktopTextField(
-  label: 'Amount',
-  icon: _getCurrencyIcon(currency),
-  controller: amountController,
-  keyboardType: TextInputType.number,
-  hint: '0.00',
-),
+                  // Amount (WAJIB pakai helper, bukan TextField langsung)
+                  _buildDesktopTextField(
+                    label: 'Amount',
+                    icon: _getCurrencyIcon(currency),
+                    controller: amountController,
+                    keyboardType: TextInputType.number,
+                    hint: '0.00',
+                  ),
 
                   const SizedBox(height: 16),
 
@@ -480,76 +471,79 @@ _buildDesktopTextField(
                     hint: 'Enter note (optional)',
                     maxLines: 3,
                   ),
-const SizedBox(height: 20),
+                  const SizedBox(height: 20),
 
-// PHOTO BUTTONS
-Row(
-  children: [
+                  // PHOTO BUTTONS
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.blue,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            side: BorderSide(
+                              color: Colors.blue.withValues(alpha: 0.5),
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          onPressed: takePhoto,
+                          icon: const Icon(Icons.camera_alt),
+                          label: const Text('Take Photo'),
+                        ),
+                      ),
 
-    Expanded(
-      child: OutlinedButton.icon(
-        style: OutlinedButton.styleFrom(
-          foregroundColor: Colors.blue,
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          side: BorderSide(color: Colors.blue.withValues(alpha:0.5)),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
-        onPressed: takePhoto,
-        icon: const Icon(Icons.camera_alt),
-        label: const Text('Take Photo'),
-      ),
-    ),
+                      const SizedBox(width: 12),
 
-    const SizedBox(width: 12),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.green,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            side: BorderSide(
+                              color: Colors.green.withValues(alpha: 0.5),
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          onPressed: pickFromGallery,
+                          icon: const Icon(Icons.photo_library),
+                          label: const Text('Gallery'),
+                        ),
+                      ),
+                    ],
+                  ),
 
-   Expanded(
-      child: OutlinedButton.icon(
-        style: OutlinedButton.styleFrom(
-          foregroundColor: Colors.green,
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          side: BorderSide(color: Colors.green.withValues(alpha:0.5)),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
-        onPressed: pickFromGallery,
-        icon: const Icon(Icons.photo_library),
-        label: const Text('Gallery'),
-      ),
-    ),
+                  // PHOTO PREVIEW
+                  if (transferImage != null ||
+                      (existingImageUrl?.isNotEmpty ?? false)) ...[
+                    const SizedBox(height: 16),
 
-  ],
-),
-
-// PHOTO PREVIEW
-if (transferImage != null || (existingImageUrl?.isNotEmpty ?? false)) ...[
-  const SizedBox(height: 16),
-
-  Container(
-    padding: const EdgeInsets.all(12),
-    decoration: BoxDecoration(
-      color: Colors.grey.withValues(alpha:0.05),
-      borderRadius: BorderRadius.circular(12),
-      border: Border.all(color: Colors.grey.shade300),
-    ),
-    child: ClipRRect(
-      borderRadius: BorderRadius.circular(8),
-      child: transferImage != null
-          ? Image.file(
-              transferImage!,
-              height: 120,
-              fit: BoxFit.cover,
-            )
-          : Image.network(
-              existingImageUrl!,
-              height: 120,
-              fit: BoxFit.cover,
-            ),
-    ),
-  ),
-],
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.withValues(alpha: 0.05),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.grey.shade300),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: transferImage != null
+                            ? Image.file(
+                                transferImage!,
+                                height: 120,
+                                fit: BoxFit.cover,
+                              )
+                            : Image.network(
+                                existingImageUrl!,
+                                height: 120,
+                                fit: BoxFit.cover,
+                              ),
+                      ),
+                    ),
+                  ],
 
                   const SizedBox(height: 24),
 
@@ -583,33 +577,36 @@ if (transferImage != null || (existingImageUrl?.isNotEmpty ?? false)) ...[
                             elevation: 0,
                           ),
                           onPressed: isUploading
-    ? null
-    : () async {
-        final confirm = await showDialog<bool>(
-          context: context,
-          builder: (context) {
-            return AlertDialog(
-              title: const Text("Confirm"),
-              content: const Text(
-                  "Are you sure you want to save this transfer?"),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context, false),
-                  child: const Text("Cancel"),
-                ),
-                ElevatedButton(
-                  onPressed: () => Navigator.pop(context, true),
-                  child: const Text("Yes, Save"),
-                ),
-              ],
-            );
-          },
-        );
+                              ? null
+                              : () async {
+                                  final confirm = await showDialog<bool>(
+                                    context: context,
+                                    builder: (context) {
+                                      return AlertDialog(
+                                        title: const Text("Confirm"),
+                                        content: const Text(
+                                          "Are you sure you want to save this transfer?",
+                                        ),
+                                        actions: [
+                                          TextButton(
+                                            onPressed: () =>
+                                                Navigator.pop(context, false),
+                                            child: const Text("Cancel"),
+                                          ),
+                                          ElevatedButton(
+                                            onPressed: () =>
+                                                Navigator.pop(context, true),
+                                            child: const Text("Yes, Save"),
+                                          ),
+                                        ],
+                                      );
+                                    },
+                                  );
 
-        if (confirm == true) {
-          await saveTransfer();
-        }
-      },
+                                  if (confirm == true) {
+                                    await saveTransfer();
+                                  }
+                                },
                           child: Text(isEditing ? 'UPDATE' : 'SAVE'),
                         ),
                       ),
@@ -634,8 +631,8 @@ if (transferImage != null || (existingImageUrl?.isNotEmpty ?? false)) ...[
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
-                            Colors.purple.withValues(alpha:0.2),
-                            Colors.purple.withValues(alpha:0.1),
+                            Colors.purple.withValues(alpha: 0.2),
+                            Colors.purple.withValues(alpha: 0.1),
                           ],
                         ),
                         borderRadius: BorderRadius.circular(10),
@@ -666,15 +663,15 @@ if (transferImage != null || (existingImageUrl?.isNotEmpty ?? false)) ...[
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
-                            Colors.green.withValues(alpha:0.1),
-                            Colors.green.withValues(alpha:0.05),
+                            Colors.green.withValues(alpha: 0.1),
+                            Colors.green.withValues(alpha: 0.05),
                           ],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                         ),
                         borderRadius: BorderRadius.circular(24),
                         border: Border.all(
-                          color: Colors.green.withValues(alpha:0.3),
+                          color: Colors.green.withValues(alpha: 0.3),
                           width: 2,
                         ),
                       ),
@@ -685,7 +682,7 @@ if (transferImage != null || (existingImageUrl?.isNotEmpty ?? false)) ...[
                           Container(
                             padding: const EdgeInsets.all(20),
                             decoration: BoxDecoration(
-                              color: Colors.green.withValues(alpha:0.15),
+                              color: Colors.green.withValues(alpha: 0.15),
                               shape: BoxShape.circle,
                             ),
                             child: const Icon(
@@ -698,9 +695,12 @@ if (transferImage != null || (existingImageUrl?.isNotEmpty ?? false)) ...[
 
                           // Date
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
                             decoration: BoxDecoration(
-                              color: Colors.blue.withValues(alpha:0.1),
+                              color: Colors.blue.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Text(
@@ -718,8 +718,8 @@ if (transferImage != null || (existingImageUrl?.isNotEmpty ?? false)) ...[
                           // Amount
                           Text(
                             amountController.text.isEmpty
-    ? '0'
-    : amountController.text,
+                                ? '0'
+                                : amountController.text,
                             style: TextStyle(
                               fontSize: 36,
                               fontWeight: FontWeight.bold,
@@ -745,7 +745,7 @@ if (transferImage != null || (existingImageUrl?.isNotEmpty ?? false)) ...[
                             Container(
                               padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
-                                color: Colors.grey.withValues(alpha:0.1),
+                                color: Colors.grey.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Text(
@@ -783,8 +783,8 @@ if (transferImage != null || (existingImageUrl?.isNotEmpty ?? false)) ...[
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
-                            Colors.green.withValues(alpha:0.2),
-                            Colors.green.withValues(alpha:0.1),
+                            Colors.green.withValues(alpha: 0.2),
+                            Colors.green.withValues(alpha: 0.1),
                           ],
                         ),
                         borderRadius: BorderRadius.circular(10),
@@ -821,22 +821,29 @@ if (transferImage != null || (existingImageUrl?.isNotEmpty ?? false)) ...[
                     }
                   },
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
-                          Colors.blue.withValues(alpha:0.1),
-                          Colors.blue.withValues(alpha:0.05),
+                          Colors.blue.withValues(alpha: 0.1),
+                          Colors.blue.withValues(alpha: 0.05),
                         ],
                       ),
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(
-                        color: Colors.blue.withValues(alpha:0.3),
+                        color: Colors.blue.withValues(alpha: 0.3),
                       ),
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.calendar_today, color: Colors.blue, size: 20),
+                        const Icon(
+                          Icons.calendar_today,
+                          color: Colors.blue,
+                          size: 20,
+                        ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Column(
@@ -873,138 +880,139 @@ if (transferImage != null || (existingImageUrl?.isNotEmpty ?? false)) ...[
 
                 // Amount
                 // Currency (dipindah ke atas)
-DropdownButtonFormField<String>(
-  value: allowedCurrencies.isNotEmpty
-    ? (allowedCurrencies.contains(currency)
-        ? currency
-        : allowedCurrencies.first)
-    : '',
-  decoration: InputDecoration(
-    labelText: 'Currency',
-    prefixIcon: const Icon(Icons.currency_exchange, size: 20),
-    border: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
-    ),
-  ),
-  items: allowedCurrencies.map((c) {
-    return DropdownMenuItem(
-      value: c,
-      child: Text(c),
-    );
-  }).toList(),
-  onChanged: (v) {
-    if (v != null) {
-      setState(() => currency = v);
-    }
-  },
-),
+                DropdownButtonFormField<String>(
+                  value: allowedCurrencies.isNotEmpty
+                      ? (allowedCurrencies.contains(currency)
+                            ? currency
+                            : allowedCurrencies.first)
+                      : '',
+                  decoration: InputDecoration(
+                    labelText: 'Currency',
+                    prefixIcon: const Icon(Icons.currency_exchange, size: 20),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  items: allowedCurrencies.map((c) {
+                    return DropdownMenuItem(value: c, child: Text(c));
+                  }).toList(),
+                  onChanged: (v) {
+                    if (v != null) {
+                      setState(() => currency = v);
+                    }
+                  },
+                ),
 
-const SizedBox(height: 12),
+                const SizedBox(height: 12),
 
-// Amount (icon dynamic)
-TextField(
-  controller: amountController,
-  keyboardType: TextInputType.number,
-  onChanged: (value) {
-    final formatted = formatNumber(value);
+                // Amount (icon dynamic)
+                TextField(
+                  controller: amountController,
+                  keyboardType: TextInputType.number,
+                  onChanged: (value) {
+                    final formatted = formatNumber(value);
 
-    if (value != formatted) {
-      amountController.value = TextEditingValue(
-        text: formatted,
-        selection: TextSelection.collapsed(offset: formatted.length),
-      );
-    }
-  },
-  decoration: InputDecoration(
-    labelText: 'Amount',
-    prefixIcon: Icon(_getCurrencyIcon(currency), size: 20),
-    border: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
-    ),
-    hintText: '0.00',
-  ),
-),
+                    if (value != formatted) {
+                      amountController.value = TextEditingValue(
+                        text: formatted,
+                        selection: TextSelection.collapsed(
+                          offset: formatted.length,
+                        ),
+                      );
+                    }
+                  },
+                  decoration: InputDecoration(
+                    labelText: 'Amount',
+                    prefixIcon: Icon(_getCurrencyIcon(currency), size: 20),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    hintText: '0.00',
+                  ),
+                ),
 
                 const SizedBox(height: 12),
 
                 // Note
-               // Note
-TextField(
-  controller: noteController,
-  maxLines: 3,
-  decoration: InputDecoration(
-    labelText: 'Note',
-    prefixIcon: const Icon(Icons.note, size: 20),
-    border: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
-    ),
-    hintText: 'Enter note (optional)',
-  ),
-),
+                // Note
+                TextField(
+                  controller: noteController,
+                  maxLines: 3,
+                  decoration: InputDecoration(
+                    labelText: 'Note',
+                    prefixIcon: const Icon(Icons.note, size: 20),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    hintText: 'Enter note (optional)',
+                  ),
+                ),
 
-const SizedBox(height: 20),
+                const SizedBox(height: 20),
 
-// PHOTO BUTTONS
-Row(
-  children: [
+                // PHOTO BUTTONS
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.blue,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          side: BorderSide(
+                            color: Colors.blue.withValues(alpha: 0.5),
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        onPressed: takePhoto,
+                        icon: const Icon(Icons.camera_alt),
+                        label: const Text('Take Photo'),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
 
-    Expanded(
-      child: OutlinedButton.icon(
-        style: OutlinedButton.styleFrom(
-          foregroundColor: Colors.blue,
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          side: BorderSide(color: Colors.blue.withValues(alpha:0.5)),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
-        onPressed: takePhoto,
-        icon: const Icon(Icons.camera_alt),
-        label: const Text('Take Photo'),
-      ),
-    ),
-    const SizedBox(width: 12),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.green,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          side: BorderSide(
+                            color: Colors.green.withValues(alpha: 0.5),
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        onPressed: pickFromGallery,
+                        icon: const Icon(Icons.photo_library),
+                        label: const Text('Gallery'),
+                      ),
+                    ),
+                  ],
+                ),
 
-    Expanded(
-      child: OutlinedButton.icon(
-        style: OutlinedButton.styleFrom(
-          foregroundColor: Colors.green,
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          side: BorderSide(color: Colors.green.withValues(alpha:0.5)),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
-        onPressed: pickFromGallery,
-        icon: const Icon(Icons.photo_library),
-        label: const Text('Gallery'),
-      ),
-    ),
+                // PHOTO PREVIEW
+                if (transferImage != null) ...[
+                  const SizedBox(height: 16),
 
-  ],
-),
-
-// PHOTO PREVIEW
-if (transferImage != null) ...[
-  const SizedBox(height: 16),
-
-  Container(
-    padding: const EdgeInsets.all(12),
-    decoration: BoxDecoration(
-      color: Colors.grey.withValues(alpha:0.05),
-      borderRadius: BorderRadius.circular(12),
-      border: Border.all(color: Colors.grey.shade300),
-    ),
-    child: ClipRRect(
-      borderRadius: BorderRadius.circular(8),
-      child: Image.file(
-        transferImage!,
-        height: 120,
-        fit: BoxFit.cover,
-      ),
-    ),
-  ),
-],
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.withValues(alpha: 0.05),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey.shade300),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.file(
+                        transferImage!,
+                        height: 120,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
@@ -1017,12 +1025,12 @@ if (transferImage != null) ...[
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  Colors.white.withValues(alpha:0.2),
-                  Colors.white.withValues(alpha:0.1),
+                  Colors.white.withValues(alpha: 0.2),
+                  Colors.white.withValues(alpha: 0.1),
                 ],
               ),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.white.withValues(alpha:0.3)),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
             ),
             child: Row(
               children: [
@@ -1053,33 +1061,36 @@ if (transferImage != null) ...[
                       elevation: 0,
                     ),
                     onPressed: isUploading
-    ? null
-    : () async {
-        final confirm = await showDialog<bool>(
-          context: context,
-          builder: (context) {
-            return AlertDialog(
-              title: const Text("Confirm"),
-              content: const Text(
-                  "Are you sure you want to save this transfer?"),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context, false),
-                  child: const Text("Cancel"),
-                ),
-                ElevatedButton(
-                  onPressed: () => Navigator.pop(context, true),
-                  child: const Text("Yes, Save"),
-                ),
-              ],
-            );
-          },
-        );
+                        ? null
+                        : () async {
+                            final confirm = await showDialog<bool>(
+                              context: context,
+                              builder: (context) {
+                                return AlertDialog(
+                                  title: const Text("Confirm"),
+                                  content: const Text(
+                                    "Are you sure you want to save this transfer?",
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () =>
+                                          Navigator.pop(context, false),
+                                      child: const Text("Cancel"),
+                                    ),
+                                    ElevatedButton(
+                                      onPressed: () =>
+                                          Navigator.pop(context, true),
+                                      child: const Text("Yes, Save"),
+                                    ),
+                                  ],
+                                );
+                              },
+                            );
 
-        if (confirm == true) {
-          await saveTransfer();
-        }
-      },
+                            if (confirm == true) {
+                              await saveTransfer();
+                            }
+                          },
                     child: Text(isEditing ? 'UPDATE' : 'SAVE'),
                   ),
                 ),
@@ -1088,10 +1099,12 @@ if (transferImage != null) ...[
           ),
 
           // Preview Card (Mobile)
-          if (amountController.text.isNotEmpty || noteController.text.isNotEmpty)
+          if (amountController.text.isNotEmpty ||
+              noteController.text.isNotEmpty)
             const SizedBox(height: 16),
 
-          if (amountController.text.isNotEmpty || noteController.text.isNotEmpty)
+          if (amountController.text.isNotEmpty ||
+              noteController.text.isNotEmpty)
             _glass(
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -1103,8 +1116,8 @@ if (transferImage != null) ...[
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
                             colors: [
-                              Colors.purple.withValues(alpha:0.2),
-                              Colors.purple.withValues(alpha:0.1),
+                              Colors.purple.withValues(alpha: 0.2),
+                              Colors.purple.withValues(alpha: 0.1),
                             ],
                           ),
                           borderRadius: BorderRadius.circular(10),
@@ -1132,13 +1145,13 @@ if (transferImage != null) ...[
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
-                          Colors.green.withValues(alpha:0.1),
-                          Colors.green.withValues(alpha:0.05),
+                          Colors.green.withValues(alpha: 0.1),
+                          Colors.green.withValues(alpha: 0.05),
                         ],
                       ),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: Colors.green.withValues(alpha:0.3),
+                        color: Colors.green.withValues(alpha: 0.3),
                       ),
                     ),
                     child: Row(
@@ -1146,7 +1159,7 @@ if (transferImage != null) ...[
                         Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: Colors.green.withValues(alpha:0.15),
+                            color: Colors.green.withValues(alpha: 0.15),
                             shape: BoxShape.circle,
                           ),
                           child: const Icon(
@@ -1215,7 +1228,7 @@ if (transferImage != null) ...[
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.grey.withValues(alpha:0.05),
+        color: Colors.grey.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.grey.shade300),
       ),
@@ -1238,19 +1251,19 @@ if (transferImage != null) ...[
           ),
           const SizedBox(height: 8),
           TextField(
-  controller: controller,
-  keyboardType: keyboardType,
-  maxLines: maxLines,
-  onChanged: (value) {
-    final formatted = formatNumber(value);
+            controller: controller,
+            keyboardType: keyboardType,
+            maxLines: maxLines,
+            onChanged: (value) {
+              final formatted = formatNumber(value);
 
-    if (value != formatted) {
-      controller.value = TextEditingValue(
-        text: formatted,
-        selection: TextSelection.collapsed(offset: formatted.length),
-      );
-    }
-  },
+              if (value != formatted) {
+                controller.value = TextEditingValue(
+                  text: formatted,
+                  selection: TextSelection.collapsed(offset: formatted.length),
+                );
+              }
+            },
           ),
         ],
       ),
@@ -1271,22 +1284,19 @@ if (transferImage != null) ...[
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              color.withValues(alpha:0.1),
-              color.withValues(alpha:0.05),
+              color.withValues(alpha: 0.1),
+              color.withValues(alpha: 0.05),
             ],
           ),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: color.withValues(alpha:0.3),
-            width: 1.5,
-          ),
+          border: Border.all(color: color.withValues(alpha: 0.3), width: 1.5),
         ),
         child: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: color.withValues(alpha:0.15),
+                color: color.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(icon, color: color, size: 20),
@@ -1315,11 +1325,7 @@ if (transferImage != null) ...[
                 ],
               ),
             ),
-            const Icon(
-              Icons.keyboard_arrow_down,
-              color: Colors.grey,
-              size: 18,
-            ),
+            const Icon(Icons.keyboard_arrow_down, color: Colors.grey, size: 18),
           ],
         ),
       ),
@@ -1337,7 +1343,7 @@ if (transferImage != null) ...[
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.grey.withValues(alpha:0.05),
+        color: Colors.grey.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.grey.shade300),
       ),
@@ -1378,87 +1384,83 @@ if (transferImage != null) ...[
     );
   }
 
- Future<void> takePhoto() async {
-  final picker = ImagePicker();
+  Future<void> takePhoto() async {
+    final picker = ImagePicker();
 
-  final photo = await picker.pickImage(
-    source: ImageSource.camera,
-    imageQuality: 85,
-  );
+    final photo = await picker.pickImage(
+      source: ImageSource.camera,
+      imageQuality: 85,
+    );
 
-  if (photo == null) return;
+    if (photo == null) return;
 
-  setState(() {
-    transferImage = File(photo.path);
-  });
-}
-
-Future<void> pickFromGallery() async {
-  final picker = ImagePicker();
-
-  final photo = await picker.pickImage(
-    source: ImageSource.gallery,
-    imageQuality: 85,
-  );
-
-  if (photo == null) return;
-
-  setState(() {
-    transferImage = File(photo.path);
-  });
-}
-
-Future<String> uploadImageToCloudinary() async {
-  if (transferImage == null) return '';
-
-  final url = Uri.parse(
-    'https://api.cloudinary.com/v1_1/$cloudName/image/upload',
-  );
-
-  final request = http.MultipartRequest('POST', url);
-
-  request.fields['upload_preset'] = uploadPreset;
-  request.fields['folder'] = 'Transfer';
-
-  final uniqueId = 'transfer_${DateTime.now().millisecondsSinceEpoch}';
-
-  request.fields['public_id'] = uniqueId;
-
-  request.files.add(
-    await http.MultipartFile.fromPath(
-      'file',
-      transferImage!.path,
-    ),
-  );
-
-  final response = await request.send();
-
-  final resBody = await response.stream.bytesToString();
-  final data = json.decode(resBody);
-
-  if (response.statusCode == 200) {
-    return data['secure_url'];
-  } else {
-    debugPrint('Upload failed');
-    return '';
+    setState(() {
+      transferImage = File(photo.path);
+    });
   }
-}
 
-String formatNumber(String value) {
-  if (value.isEmpty) return '';
+  Future<void> pickFromGallery() async {
+    final picker = ImagePicker();
 
-  final clean = value.replaceAll(RegExp(r'[^0-9]'), '');
+    final photo = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 85,
+    );
 
-  if (clean.isEmpty) return '';
+    if (photo == null) return;
 
-  final parsed = int.parse(clean);
+    setState(() {
+      transferImage = File(photo.path);
+    });
+  }
 
-  return parsed.toString().replaceAllMapped(
-    RegExp(r'\B(?=(\d{3})+(?!\d))'),
-    (match) => '.',
-  );
-}
+  Future<String> uploadImageToCloudinary() async {
+    if (transferImage == null) return '';
 
+    final url = Uri.parse(
+      'https://api.cloudinary.com/v1_1/$cloudName/image/upload',
+    );
+
+    final request = http.MultipartRequest('POST', url);
+
+    request.fields['upload_preset'] = uploadPreset;
+    request.fields['folder'] = 'Transfer';
+
+    final uniqueId = 'transfer_${DateTime.now().millisecondsSinceEpoch}';
+
+    request.fields['public_id'] = uniqueId;
+
+    request.files.add(
+      await http.MultipartFile.fromPath('file', transferImage!.path),
+    );
+
+    final response = await request.send();
+
+    final resBody = await response.stream.bytesToString();
+    final data = json.decode(resBody);
+
+    if (response.statusCode == 200) {
+      return data['secure_url'];
+    } else {
+      debugPrint('Upload failed');
+      return '';
+    }
+  }
+
+  String formatNumber(String value) {
+    if (value.isEmpty) return '';
+
+    final clean = value.replaceAll(RegExp(r'[^0-9]'), '');
+
+    if (clean.isEmpty) return '';
+
+    final parsed = int.parse(clean);
+
+    return parsed.toString().replaceAllMapped(
+      RegExp(r'\B(?=(\d{3})+(?!\d))'),
+      (match) => '.',
+    );
+  }
 }
 
 // =======================================================
@@ -1475,14 +1477,14 @@ Widget _glass(Widget child) {
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              Colors.white.withValues(alpha:0.3),
-              Colors.white.withValues(alpha:0.15),
+              Colors.white.withValues(alpha: 0.3),
+              Colors.white.withValues(alpha: 0.15),
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.white.withValues(alpha:0.4)),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.4)),
         ),
         child: child,
       ),

@@ -1,100 +1,119 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../../models/trip_model.dart';
+import '../../../core/session/company_session.dart';
+
 //
 class TripService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-
   /// Ambil companyId dari user login
   Future<String> getCompanyId() async {
-  final uid = FirebaseAuth.instance.currentUser!.uid;
-  final userDoc =
-      await _firestore.collection('users').doc(uid).get();
- final data = userDoc.data();
-  if (data == null) {
-    throw Exception("User document not found");
+    final selectedCompanyId = CompanySession.selectedCompanyId;
+    if (selectedCompanyId != null && selectedCompanyId.isNotEmpty) {
+      return selectedCompanyId;
+    }
+
+    final uid = FirebaseAuth.instance.currentUser!.uid;
+    final userDoc = await _firestore.collection('users').doc(uid).get();
+    final data = userDoc.data();
+    if (data == null) {
+      throw Exception("User document not found");
+    }
+    final List companyIds = data['companyIds'];
+    return companyIds.first;
   }
-  final List companyIds = data['companyIds'];
-  return companyIds.first;
-}
 
-Future<String> _getCompanyId() async {
-  final uid = FirebaseAuth.instance.currentUser!.uid;
+  Future<String> _getCompanyId() async {
+    final selectedCompanyId = CompanySession.selectedCompanyId;
+    if (selectedCompanyId != null && selectedCompanyId.isNotEmpty) {
+      return selectedCompanyId;
+    }
 
-  final userDoc =
-      await _firestore.collection('users').doc(uid).get();
+    final uid = FirebaseAuth.instance.currentUser!.uid;
 
-  final data = userDoc.data()!;
+    final userDoc = await _firestore.collection('users').doc(uid).get();
 
-  final List companyIds = data['companyIds'];
+    final data = userDoc.data()!;
 
-  return companyIds.first;
-}
+    final List companyIds = data['companyIds'];
+
+    return companyIds.first;
+  }
 
   /// CREATE TRIP
   Future<void> createTrip(Trip trip) async {
-  final companyId = await _getCompanyId();
-  final uid = FirebaseAuth.instance.currentUser!.uid;
+    final companyId = await _getCompanyId();
+    final uid = FirebaseAuth.instance.currentUser!.uid;
 
-  await _firestore
-      .collection('companies')
-      .doc(companyId)
-      .collection('trips')
-      .add({
-    ...trip.toMap(),
-    'createdBy': uid,
-    'createdAt': FieldValue.serverTimestamp(),
-  });
-}
+    await _firestore
+        .collection('companies')
+        .doc(companyId)
+        .collection('trips')
+        .add({
+          ...trip.toMap(),
+          'createdBy': uid,
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+  }
 
   /// STREAM TRIPS
   Stream<List<Trip>> streamTrips(String companyId) {
-  return _firestore
-      .collection('companies')
-      .doc(companyId)
-      .collection('trips')
-      .orderBy('startDate', descending: true)
-      .snapshots()
-      .map((snapshot) {
-        return snapshot.docs.map((doc) {
-          return Trip.fromMap(doc.id, doc.data());
-        }).toList();
-      });
-}
+    return _firestore
+        .collection('companies')
+        .doc(companyId)
+        .collection('trips')
+        .orderBy('startDate', descending: true)
+        .snapshots()
+        .map((snapshot) {
+          return snapshot.docs.map((doc) {
+            return Trip.fromMap(doc.id, doc.data());
+          }).toList();
+        });
+  }
 
   /// DELETE TRIP
   Future<void> deleteTrip(String tripId) async {
+    final companyId = await _getCompanyId();
+    final tripRef = _firestore
+        .collection('companies')
+        .doc(companyId)
+        .collection('trips')
+        .doc(tripId);
+
+    final expenses = await tripRef.collection('expenses').get();
+    final transfers = await tripRef.collection('transfers').get();
+
+    final batch = _firestore.batch();
+
+    for (final doc in expenses.docs) {
+      batch.delete(doc.reference);
+    }
+
+    for (final doc in transfers.docs) {
+      batch.delete(doc.reference);
+    }
+
+    batch.delete(tripRef);
+    await batch.commit();
+  }
+
+  Future<Map<String, dynamic>> getCurrentUserData() async {
+    final uid = FirebaseAuth.instance.currentUser!.uid;
+
+    final doc = await _firestore.collection('users').doc(uid).get();
+
+    return doc.data()!;
+  }
+
+  Future<void> updateTrip(Trip trip) async {
     final companyId = await _getCompanyId();
 
     await _firestore
         .collection('companies')
         .doc(companyId)
         .collection('trips')
-        .doc(tripId)
-        .delete();
+        .doc(trip.id)
+        .update(trip.toMap());
   }
-
-Future<Map<String, dynamic>> getCurrentUserData() async {
-
-  final uid = FirebaseAuth.instance.currentUser!.uid;
-
-  final doc =
-      await _firestore.collection('users').doc(uid).get();
-
-  return doc.data()!;
-}
-
-Future<void> updateTrip(Trip trip) async {
-
-  final companyId = await _getCompanyId();
-
-  await _firestore
-      .collection('companies')
-      .doc(companyId)
-      .collection('trips')
-      .doc(trip.id)
-      .update(trip.toMap());
-}
-
 }

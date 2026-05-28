@@ -6,7 +6,6 @@ import '../../models/user_model.dart';
 import 'company_collection_resolver.dart';
 
 class ServiceReportFirestore {
-  
   // Stream untuk SUPER ADMIN - menggunakan collectionGroup
   static Stream<QuerySnapshot<Map<String, dynamic>>> streamAllCompaniesReports({
     required List<String> companyIds,
@@ -35,67 +34,62 @@ class ServiceReportFirestore {
       return Stream.error('User not authenticated');
     }
 
-    return CompanyCollectionResolver
-        .serviceReports()
+    return CompanyCollectionResolver.serviceReports()
         .orderBy("createdAt", descending: true)
         .snapshots();
   }
 
   // Method utama - dipanggil UI
   static Stream<QuerySnapshot<Map<String, dynamic>>> streamReports({
-  required UserModel user,
-}) {
-
-  final firebaseUser = FirebaseAuth.instance.currentUser;
-
-  if (user.role == 'super_admin') {
-    return streamAllCompaniesReports(companyIds: user.companyIds);
-  } else {
-    return streamCompanyReports();
+    required UserModel user,
+  }) {
+    if (user.role == 'super_admin') {
+      return streamAllCompaniesReports(companyIds: user.companyIds);
+    } else {
+      return streamCompanyReports();
+    }
   }
-}
 
   // CREATE
-static Future<String> createServiceReport({
-  required Map<String, dynamic> data,
-}) async {
-  final user = FirebaseAuth.instance.currentUser;
-  if (user == null) throw Exception("User not authenticated");
+  static Future<String> createServiceReport({
+    required Map<String, dynamic> data,
+  }) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) throw Exception("User not authenticated");
 
-  final companyId = CompanySession.selectedCompanyId;
-  if (companyId == null) throw Exception("Company not selected.");
+    final companyId = CompanySession.selectedCompanyId;
+    if (companyId == null) throw Exception("Company not selected.");
 
-  final sheetId = await generateSheetId();
+    final sheetId = await generateSheetId();
 
-  // 🔹 Ambil user document dari root users
-  final userDoc = await FirebaseFirestore.instance
-      .collection('users')
-      .doc(user.uid)
-      .get();
+    // 🔹 Ambil user document dari root users
+    final userDoc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .get();
 
-  final username =
-      userDoc.data()?['username'] ?? user.email ?? user.uid;
+    final username = userDoc.data()?['username'] ?? user.email ?? user.uid;
 
-  final docRef = FirebaseFirestore.instance
-      .collection('companies')
-      .doc(companyId)
-      .collection('service_reports')
-      .doc();
+    final docRef = FirebaseFirestore.instance
+        .collection('companies')
+        .doc(companyId)
+        .collection('service_reports')
+        .doc();
 
-  final reportData = {
-    ...data,
-    "sheetId": sheetId,
-    "status": "Draft",
-    "createdAt": FieldValue.serverTimestamp(),
-    "createdBy": user.uid,
-    "createdByName": username,   // 🔥 SNAPSHOT NAME
-    "companyId": companyId,
-  };
+    final reportData = {
+      ...data,
+      "sheetId": sheetId,
+      "status": data["status"] ?? "Draft",
+      "createdAt": FieldValue.serverTimestamp(),
+      "createdBy": user.uid,
+      "createdByName": username, // 🔥 SNAPSHOT NAME
+      "companyId": companyId,
+    };
 
-  await docRef.set(reportData);
+    await docRef.set(reportData);
 
-  return docRef.id;
-}
+    return docRef.id;
+  }
 
   // UPDATE
   static Future<void> updateServiceReport({
@@ -112,90 +106,86 @@ static Future<String> createServiceReport({
         .collection('service_reports')
         .doc(docId)
         .update({
-      ...data,
-      "updatedAt": FieldValue.serverTimestamp(),
-      "updatedBy": user.uid,
-    });
+          ...data,
+          "updatedAt": FieldValue.serverTimestamp(),
+          "updatedBy": user.uid,
+        });
   }
 
   // SUBMIT
- // SUBMIT (HYBRID SNAPSHOT)
-static Future<void> submitServiceReport({
-  required String companyId,
-  required String docId,
-}) async {
-  final user = FirebaseAuth.instance.currentUser;
-  if (user == null) throw Exception("User not authenticated");
+  // SUBMIT (HYBRID SNAPSHOT)
+  static Future<void> submitServiceReport({
+    required String companyId,
+    required String docId,
+  }) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) throw Exception("User not authenticated");
 
-  final firestore = FirebaseFirestore.instance;
+    final firestore = FirebaseFirestore.instance;
 
-  final userDoc = await firestore
-    .collection('users')
-    .doc(user.uid)
-    .get();
+    final userDoc = await firestore.collection('users').doc(user.uid).get();
 
-  final username =
-    userDoc.data()?['username'] ?? user.email ?? user.uid;
+    final username = userDoc.data()?['username'] ?? user.email ?? user.uid;
 
-  final reportRef = firestore
-      .collection('companies')
-      .doc(companyId)
-      .collection('service_reports')
-      .doc(docId);
-
-  // 1️⃣ Ambil report dulu
-  final reportSnap = await reportRef.get();
-  if (!reportSnap.exists) {
-    throw Exception("Report not found");
-  }
-
-  final reportData = reportSnap.data()!;
-
- Map<String, dynamic> updateData = {
-  "status": "Submitted",
-  "submittedAt": FieldValue.serverTimestamp(),
-  "submittedBy": user.uid,
-  "submittedByName": username,   // 🔥 SNAPSHOT NAME
-};
-
-  // 2️⃣ SNAPSHOT FACTORY
-  if (reportData['factoryId'] != null) {
-    final factoryDoc = await firestore
+    final reportRef = firestore
         .collection('companies')
         .doc(companyId)
-        .collection('partners')
-        .doc(reportData['factoryId'])
-        .get();
+        .collection('service_reports')
+        .doc(docId);
 
-    final factoryData = factoryDoc.data();
+    // 1️⃣ Ambil report dulu
+    final reportSnap = await reportRef.get();
+    if (!reportSnap.exists) {
+      throw Exception("Report not found");
+    }
 
-    updateData.addAll({
-      "factoryCity": factoryData?['city'],
-      "factoryCountry": factoryData?['country'],
-      "factoryAddress": factoryData?['address'],
-    });
+    final reportData = reportSnap.data()!;
+
+    Map<String, dynamic> updateData = {
+      "status": "Submitted",
+      "submittedAt": FieldValue.serverTimestamp(),
+      "submittedBy": user.uid,
+      "submittedByName": username, // 🔥 SNAPSHOT NAME
+    };
+
+    // 2️⃣ SNAPSHOT FACTORY
+    if (reportData['factoryId'] != null) {
+      final factoryDoc = await firestore
+          .collection('companies')
+          .doc(companyId)
+          .collection('partners')
+          .doc(reportData['factoryId'])
+          .get();
+
+      final factoryData = factoryDoc.data();
+
+      updateData.addAll({
+        "factoryCity": factoryData?['city'],
+        "factoryCountry": factoryData?['country'],
+        "factoryAddress": factoryData?['address'],
+      });
+    }
+
+    // 3️⃣ SNAPSHOT END CUSTOMER (optional)
+    if (reportData['endCustomerId'] != null) {
+      final endCustomerDoc = await firestore
+          .collection('companies')
+          .doc(companyId)
+          .collection('partners')
+          .doc(reportData['endCustomerId'])
+          .get();
+
+      final endCustomerData = endCustomerDoc.data();
+
+      updateData.addAll({
+        "endCustomerCity": endCustomerData?['city'],
+        "endCustomerCountry": endCustomerData?['country'],
+      });
+    }
+
+    // 4️⃣ Update report sekali saja
+    await reportRef.update(updateData);
   }
-
-  // 3️⃣ SNAPSHOT END CUSTOMER (optional)
-  if (reportData['endCustomerId'] != null) {
-    final endCustomerDoc = await firestore
-        .collection('companies')
-        .doc(companyId)
-        .collection('partners')
-        .doc(reportData['endCustomerId'])
-        .get();
-
-    final endCustomerData = endCustomerDoc.data();
-
-    updateData.addAll({
-      "endCustomerCity": endCustomerData?['city'],
-      "endCustomerCountry": endCustomerData?['country'],
-    });
-  }
-
-  // 4️⃣ Update report sekali saja
-  await reportRef.update(updateData);
-}
 
   // DELETE
   static Future<void> deleteServiceReport({
@@ -245,15 +235,15 @@ static Future<void> submitServiceReport({
         .doc('service_report_$year');
 
     // Run in transaction untuk keamanan
-    return await FirebaseFirestore.instance.runTransaction<String>(
-      (transaction) async {
-        final snapshot = await transaction.get(counterRef);
-        final current = (snapshot.data()?['current'] ?? 0) + 1;
-        
-        transaction.set(counterRef, {'current': current});
-        
-        return "SR-$year-${current.toString().padLeft(4, '0')}";
-      },
-    );
+    return await FirebaseFirestore.instance.runTransaction<String>((
+      transaction,
+    ) async {
+      final snapshot = await transaction.get(counterRef);
+      final current = (snapshot.data()?['current'] ?? 0) + 1;
+
+      transaction.set(counterRef, {'current': current});
+
+      return "SR-$year-${current.toString().padLeft(4, '0')}";
+    });
   }
 }

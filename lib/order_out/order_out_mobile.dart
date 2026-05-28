@@ -11,6 +11,7 @@ import '../theme/app_theme.dart';
 import '../../models/read_tracker_service.dart';
 import '../core/widgets/draggable_window.dart';
 import '../core/cache/order_out_cache.dart';
+import 'order_out_service.dart';
 import 'dart:async';
 
 class OrderOutMobile extends StatefulWidget {
@@ -38,10 +39,7 @@ class OrderOutItem {
   final SparePart part;
   final int qty;
 
-  OrderOutItem({
-    required this.part,
-    required this.qty,
-  });
+  OrderOutItem({required this.part, required this.qty});
 }
 
 class _OrderOutPageState extends State<OrderOutMobile> {
@@ -51,7 +49,8 @@ class _OrderOutPageState extends State<OrderOutMobile> {
 
   int get totalItem => items.length;
   int get totalQty => items.fold<int>(0, (sum, item) => sum + item.qty);
-  double get totalWeight => items.fold<double>(0, (sum, item) => sum + (item.part.weight * item.qty));
+  double get totalWeight =>
+      items.fold<double>(0, (sum, item) => sum + (item.part.weight * item.qty));
 
   // ================= USER LOGIN HELPER =================
   String _getCurrentUsername() {
@@ -97,9 +96,9 @@ class _OrderOutPageState extends State<OrderOutMobile> {
     final orderItems = data['items'] as List<dynamic>;
 
     if (data['id'] == null) {
-  _showError('Order ID missing (OrderOut)');
-  return;
-}
+      _showError('Order ID missing (OrderOut)');
+      return;
+    }
 
     setState(() {
       isCreateMode = true;
@@ -171,7 +170,9 @@ class _OrderOutPageState extends State<OrderOutMobile> {
           );
         }
         for (final entry in aggregatedOldQty.entries) {
-          final partRef = CompanyFirestore.collection('spare_parts').doc(entry.key);
+          final partRef = CompanyFirestore.collection(
+            'spare_parts',
+          ).doc(entry.key);
           final snap = await tx.get(partRef);
           final currentStock = (snap['currentStock'] as num).toInt();
           stockMap[entry.key] = currentStock + entry.value;
@@ -197,10 +198,9 @@ class _OrderOutPageState extends State<OrderOutMobile> {
       }
 
       for (final entry in stockMap.entries) {
-        tx.update(
-          CompanyFirestore.collection('spare_parts').doc(entry.key),
-          {'currentStock': entry.value},
-        );
+        tx.update(CompanyFirestore.collection('spare_parts').doc(entry.key), {
+          'currentStock': entry.value,
+        });
       }
 
       int totalItem = newItems.length;
@@ -216,13 +216,17 @@ class _OrderOutPageState extends State<OrderOutMobile> {
         'orderDate': Timestamp.fromDate(orderDate!),
         'client': selectedClient,
         'poNumber': poController.text.trim(),
-        'items': newItems.map((e) => {
-              'partId': e.part.id,
-              'partCode': e.part.partCode,
-              'nameEn': e.part.nameEn,
-              'qty': e.qty,
-              'location': e.part.location,
-            }).toList(),
+        'items': newItems
+            .map(
+              (e) => {
+                'partId': e.part.id,
+                'partCode': e.part.partCode,
+                'nameEn': e.part.nameEn,
+                'qty': e.qty,
+                'location': e.part.location,
+              },
+            )
+            .toList(),
         'totalItem': totalItem,
         'totalQty': totalQty,
         'totalWeight': totalWeight,
@@ -234,39 +238,37 @@ class _OrderOutPageState extends State<OrderOutMobile> {
   }
 
   Widget _buildFullscreenHeader() {
-  final isDesktop = MediaQuery.of(context).size.width >= 900;
+    final isDesktop = MediaQuery.of(context).size.width >= 900;
 
-  return Padding(
-    padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-    child: Row(
-      children: [
-        if (!isDesktop)
-          Container(
-            margin: const EdgeInsets.only(right: 8),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(12),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+      child: Row(
+        children: [
+          if (!isDesktop)
+            Container(
+              margin: const EdgeInsets.only(right: 8),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () => Navigator.pop(context),
+              ),
             ),
-            child: IconButton(
-              icon: const Icon(Icons.arrow_back),
-              onPressed: () => Navigator.pop(context),
-            ),
+          const SizedBox(width: 8),
+          const Text(
+            'Order Out',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
-        const SizedBox(width: 8),
-        const Text(
-          'Order Out',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ],
-    ),
-  );
-}
+        ],
+      ),
+    );
+  }
 
   // ================= FULLSCREEN SEARCH & FILTER =================
-  final TextEditingController fullscreenSearchController = TextEditingController();
+  final TextEditingController fullscreenSearchController =
+      TextEditingController();
   DateTime? fullscreenFilterDate;
 
   bool isCreateMode = false;
@@ -310,10 +312,7 @@ class _OrderOutPageState extends State<OrderOutMobile> {
         pageBuilder: (_, __, ___) {
           return DraggableResizableWindow(
             title: "Select Spare Part",
-            child: const SparePartListPage(
-              selectionMode: true,
-              isWindow: true,
-            ),
+            child: const SparePartListPage(selectionMode: true, isWindow: true),
           );
         },
       );
@@ -321,19 +320,22 @@ class _OrderOutPageState extends State<OrderOutMobile> {
       selected = await Navigator.push<SparePart>(
         context,
         MaterialPageRoute(
-          builder: (_) => const SparePartListPage(
-            selectionMode: true,
-          ),
+          builder: (_) => const SparePartListPage(selectionMode: true),
         ),
       );
     }
 
     if (selected == null) return;
 
-    final snap = await CompanyFirestore.collection('spare_parts').doc(selected.id).get();
+    final snap = await CompanyFirestore.collection(
+      'spare_parts',
+    ).doc(selected.id).get();
     final firestoreStock = (snap['currentStock'] as num).toInt();
 
-    final int? qty = await _showQtyDialog(part: selected, firestoreStock: firestoreStock);
+    final int? qty = await _showQtyDialog(
+      part: selected,
+      firestoreStock: firestoreStock,
+    );
     if (qty == null) return;
 
     setState(() {
@@ -343,28 +345,30 @@ class _OrderOutPageState extends State<OrderOutMobile> {
 
   Future<void> _editItemAtIndex(int index) async {
     final current = items[index];
-    final snap = await CompanyFirestore.collection('spare_parts').doc(current.part.id).get();
+    final snap = await CompanyFirestore.collection(
+      'spare_parts',
+    ).doc(current.part.id).get();
 
     final confirm = await showDialog<bool>(
-  context: context,
-  builder: (_) => AlertDialog(
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-    title: const Text('Edit Quantity'),
-    content: const Text('Do you want to change the quantity of this item?'),
-    actions: [
-      TextButton(
-        onPressed: () => Navigator.pop(context, false),
-        child: const Text('Cancel'),
+      context: context,
+      builder: (_) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Edit Quantity'),
+        content: const Text('Do you want to change the quantity of this item?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Continue'),
+          ),
+        ],
       ),
-      ElevatedButton(
-        onPressed: () => Navigator.pop(context, true),
-        child: const Text('Continue'),
-      ),
-    ],
-  ),
-);
+    );
 
-if (confirm != true) return;
+    if (confirm != true) return;
 
     if (!snap.exists) {
       _showError('Spare part tidak ditemukan');
@@ -389,19 +393,19 @@ if (confirm != true) return;
       imageUrl: current.part.imageUrl,
     );
 
-    final int? newQty = await _showQtyDialog(part: partForEdit, firestoreStock: firestoreStock);
+    final int? newQty = await _showQtyDialog(
+      part: partForEdit,
+      firestoreStock: firestoreStock,
+    );
     if (newQty == null) return;
 
     setState(() {
-  final newList = List<OrderOutItem>.from(items);
+      final newList = List<OrderOutItem>.from(items);
 
-  newList[index] = OrderOutItem(
-    part: current.part,
-    qty: newQty,
-  );
+      newList[index] = OrderOutItem(part: current.part, qty: newQty);
 
-  items = newList; // 🔥 penting
-});
+      items = newList; // 🔥 penting
+    });
   }
 
   void _removeItemAtIndex(int index) async {
@@ -410,7 +414,10 @@ if (confirm != true) return;
   }
 
   // ================= QTY DIALOG =================
-  Future<int?> _showQtyDialog({required SparePart part, required int firestoreStock}) async {
+  Future<int?> _showQtyDialog({
+    required SparePart part,
+    required int firestoreStock,
+  }) async {
     int qty = 1;
     final controller = TextEditingController(text: '1');
     String? error;
@@ -441,22 +448,36 @@ if (confirm != true) return;
             }
 
             return AlertDialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-              title: Text(part.partCode, style: const TextStyle(fontWeight: FontWeight.bold)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              title: Text(
+                part.partCode,
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(part.nameEn, style: const TextStyle(color: Color(0xFF64748B))),
+                  Text(
+                    part.nameEn,
+                    style: const TextStyle(color: Color(0xFF64748B)),
+                  ),
                   const SizedBox(height: 8),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.orange.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
                       'Available: $firestoreStock',
-                      style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.w500),
+                      style: const TextStyle(
+                        color: Colors.orange,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -523,32 +544,34 @@ if (confirm != true) return;
 
   // ================= COMMIT FIRESTORE =================
   Future<void> _commitOrderOut() async {
-
     final confirm = await showDialog<bool>(
-  context: context,
-  builder: (_) => AlertDialog(
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-    title: const Text('Save Order'),
-    content: const Text('Are you sure you want to save this order?'),
-    actions: [
-      TextButton(
-        onPressed: () => Navigator.pop(context, false),
-        child: const Text('Cancel'),
+      context: context,
+      builder: (_) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Save Order'),
+        content: const Text('Are you sure you want to save this order?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Save'),
+          ),
+        ],
       ),
-      ElevatedButton(
-        onPressed: () => Navigator.pop(context, true),
-        child: const Text('Save'),
-      ),
-    ],
-  ),
-);
+    );
 
-if (confirm != true) return;
+    if (confirm != true) return;
 
     if (_isSaving) return;
     setState(() => _isSaving = true);
 
-    if (orderDate == null || selectedClient == null || poController.text.trim().isEmpty || items.isEmpty) {
+    if (orderDate == null ||
+        selectedClient == null ||
+        poController.text.trim().isEmpty ||
+        items.isEmpty) {
       setState(() => _isSaving = false);
       _showError('Lengkapi semua data');
       return;
@@ -569,21 +592,21 @@ if (confirm != true) return;
       );
 
       setState(() {
-  isCreateMode = false;
-  isEditMode = false;
-  editingOrderId = null;
-  items.clear();
-  orderDate = null;
-  selectedClient = null;
-  poController.clear();
-  _isSaving = false;
-});
+        isCreateMode = false;
+        isEditMode = false;
+        editingOrderId = null;
+        items.clear();
+        orderDate = null;
+        selectedClient = null;
+        poController.clear();
+        _isSaving = false;
+      });
 
-// 🔥 FORCE REFRESH LIST
-await Future.delayed(const Duration(milliseconds: 200));
-if (mounted) {
-  setState(() {}); // trigger rebuild parent
-}
+      // 🔥 FORCE REFRESH LIST
+      await Future.delayed(const Duration(milliseconds: 200));
+      if (mounted) {
+        setState(() {}); // trigger rebuild parent
+      }
 
       if (!mounted) return;
 
@@ -638,9 +661,7 @@ if (mounted) {
         body: Stack(
           children: [
             Container(
-              decoration: BoxDecoration(
-                gradient: AppTheme.backgroundGradient,
-              ),
+              decoration: BoxDecoration(gradient: AppTheme.backgroundGradient),
             ),
             SafeArea(
               child: Column(
@@ -662,7 +683,8 @@ if (mounted) {
                           setState(() => fullscreenFilterDate = picked);
                         }
                       },
-                      onClearDate: () => setState(() => fullscreenFilterDate = null),
+                      onClearDate: () =>
+                          setState(() => fullscreenFilterDate = null),
                       onSearch: (_) => setState(() {}),
                     ),
                   Expanded(
@@ -679,43 +701,47 @@ if (mounted) {
                                 operation: 'open_detail',
                                 documentsCount: 1,
                               );
-                              final isDesktop = MediaQuery.of(context).size.width >= 900;
+                              final isDesktop =
+                                  MediaQuery.of(context).size.width >= 900;
 
-dynamic result;
+                              dynamic result;
 
-if (isDesktop) {
-  await showDialog(
-    context: context,
-    barrierDismissible: false,
-    barrierColor: Colors.transparent,
-    builder: (context) {
-      return DraggableResizableWindow(
-        title: "Order Out Detail",
-        headerColor: Colors.red,
-        child: OrderOutDetailPage(
-  data: data,
-  isWindow: true,
-  onEdit: (editData) {
-    Navigator.of(context).pop();
-    _openEditOrder(editData);
-  },
-),
-      );
-    },
-  );
-} else {
-  result = await Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (_) => OrderOutDetailPage(data: data),
-    ),
-  );
-}
+                              if (isDesktop) {
+                                await showDialog(
+                                  context: context,
+                                  barrierDismissible: false,
+                                  barrierColor: Colors.transparent,
+                                  builder: (context) {
+                                    return DraggableResizableWindow(
+                                      title: "Order Out Detail",
+                                      headerColor: Colors.red,
+                                      child: OrderOutDetailPage(
+                                        data: data,
+                                        isWindow: true,
+                                        onEdit: (editData) {
+                                          Navigator.of(context).pop();
+                                          _openEditOrder(editData);
+                                        },
+                                      ),
+                                    );
+                                  },
+                                );
+                              } else {
+                                result = await Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) =>
+                                        OrderOutDetailPage(data: data),
+                                  ),
+                                );
+                              }
 
-if (result != null && result is Map<String, dynamic>) {
-  _openEditOrder(result);
-}
-                              if (result != null && result is Map<String, dynamic>) {
+                              if (result != null &&
+                                  result is Map<String, dynamic>) {
+                                _openEditOrder(result);
+                              }
+                              if (result != null &&
+                                  result is Map<String, dynamic>) {
                                 _openEditOrder(result);
                               }
                             },
@@ -741,7 +767,8 @@ if (result != null && result is Map<String, dynamic>) {
     return LayoutBuilder(
       builder: (context, constraints) {
         final isDesktop = constraints.maxWidth > 800;
-        final isFormValid = orderDate != null &&
+        final isFormValid =
+            orderDate != null &&
             selectedClient != null &&
             poController.text.trim().isNotEmpty &&
             items.isNotEmpty;
@@ -757,7 +784,10 @@ if (result != null && result is Map<String, dynamic>) {
                   child: const Text(
                     'EDIT MODE',
                     textAlign: TextAlign.center,
-                    style: TextStyle(fontWeight: FontWeight.bold, color: Colors.orange),
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.orange,
+                    ),
                   ),
                 ),
               Padding(
@@ -768,7 +798,8 @@ if (result != null && result is Map<String, dynamic>) {
                       orderDate: orderDate,
                       onPickDate: _selectOrderDate,
                       selectedClient: selectedClient,
-                      onClientChanged: (v) => setState(() => selectedClient = v),
+                      onClientChanged: (v) =>
+                          setState(() => selectedClient = v),
                       poController: poController,
                       onSave: _commitOrderOut,
                       onBack: () => setState(() {
@@ -781,24 +812,27 @@ if (result != null && result is Map<String, dynamic>) {
                       isEditMode: isEditMode,
                     ),
                     const SizedBox(height: 10),
-if (items.isNotEmpty)
-  Builder(
-    builder: (_) {
-      final qty = totalQty;
-      final itemCount = totalItem;
-      final weight = totalWeight;
+                    if (items.isNotEmpty)
+                      Builder(
+                        builder: (_) {
+                          final qty = totalQty;
+                          final itemCount = totalItem;
+                          final weight = totalWeight;
 
-      return Row(
-        children: [
-          _summaryChip(Icons.list_alt, '$itemCount Item'),
-          const SizedBox(width: 8),
-          _summaryChip(Icons.inventory_2, '$qty Qty'),
-          const SizedBox(width: 8),
-          _summaryChip(Icons.scale, '${weight.toStringAsFixed(2)} kg'),
-        ],
-      );
-    },
-  ),
+                          return Row(
+                            children: [
+                              _summaryChip(Icons.list_alt, '$itemCount Item'),
+                              const SizedBox(width: 8),
+                              _summaryChip(Icons.inventory_2, '$qty Qty'),
+                              const SizedBox(width: 8),
+                              _summaryChip(
+                                Icons.scale,
+                                '${weight.toStringAsFixed(2)} kg',
+                              ),
+                            ],
+                          );
+                        },
+                      ),
                   ],
                 ),
               ),
@@ -862,12 +896,16 @@ if (items.isNotEmpty)
                                       decoration: BoxDecoration(
                                         color: Colors.white,
                                         borderRadius: BorderRadius.circular(12),
-                                        border: Border.all(color: Colors.grey.shade200),
+                                        border: Border.all(
+                                          color: Colors.grey.shade200,
+                                        ),
                                       ),
                                       child: ListTile(
                                         title: Text(
                                           items[i].part.partCode,
-                                          style: const TextStyle(fontWeight: FontWeight.w600),
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.w600,
+                                          ),
                                         ),
                                         subtitle: Text(
                                           items[i].part.nameEn,
@@ -878,15 +916,26 @@ if (items.isNotEmpty)
                                           children: [
                                             Text(
                                               'Qty: ${items[i].qty}',
-                                              style: const TextStyle(fontWeight: FontWeight.w500),
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.w500,
+                                              ),
                                             ),
                                             IconButton(
-                                              icon: const Icon(Icons.edit, size: 18),
-                                              onPressed: () => _editItemAtIndex(i),
+                                              icon: const Icon(
+                                                Icons.edit,
+                                                size: 18,
+                                              ),
+                                              onPressed: () =>
+                                                  _editItemAtIndex(i),
                                             ),
                                             IconButton(
-                                              icon: const Icon(Icons.delete, size: 18, color: Colors.red),
-                                              onPressed: () => _removeItemAtIndex(i),
+                                              icon: const Icon(
+                                                Icons.delete,
+                                                size: 18,
+                                                color: Colors.red,
+                                              ),
+                                              onPressed: () =>
+                                                  _removeItemAtIndex(i),
                                             ),
                                           ],
                                         ),
@@ -928,7 +977,9 @@ if (items.isNotEmpty)
                   SizedBox(
                     width: 220,
                     child: ElevatedButton.icon(
-                      onPressed: (isFormValid && !_isSaving) ? _commitOrderOut : null,
+                      onPressed: (isFormValid && !_isSaving)
+                          ? _commitOrderOut
+                          : null,
                       icon: const Icon(Icons.save),
                       label: const Text('Save Order Out'),
                     ),
@@ -961,7 +1012,10 @@ if (items.isNotEmpty)
             child: InkWell(
               onTap: _selectOrderDate,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 12,
+                ),
                 decoration: BoxDecoration(
                   border: Border.all(color: Colors.grey.shade300),
                   borderRadius: BorderRadius.circular(12),
@@ -979,58 +1033,62 @@ if (items.isNotEmpty)
             label: 'Client *',
             child: InkWell(
               onTap: () async {
-  final isDesktop = MediaQuery.of(context).size.width >= 900;
+                final isDesktop = MediaQuery.of(context).size.width >= 900;
 
-  dynamic partner;
+                dynamic partner;
 
-  if (isDesktop) {
-    final overlay = Overlay.of(context, rootOverlay: true);
-    late OverlayEntry entry;
+                if (isDesktop) {
+                  final overlay = Overlay.of(context, rootOverlay: true);
+                  late OverlayEntry entry;
 
-    final completer = Completer<dynamic>();
+                  final completer = Completer<dynamic>();
 
-    entry = OverlayEntry(
-      builder: (context) {
-        return Positioned.fill(
-          child: Material(
-            color: Colors.transparent,
-            child: DraggableResizableWindow(
-              title: "Select Partner",
-              headerColor: Colors.red,
-              onClose: () {
-                entry.remove();
-                completer.complete(null);
+                  entry = OverlayEntry(
+                    builder: (context) {
+                      return Positioned.fill(
+                        child: Material(
+                          color: Colors.transparent,
+                          child: DraggableResizableWindow(
+                            title: "Select Partner",
+                            headerColor: Colors.red,
+                            onClose: () {
+                              entry.remove();
+                              completer.complete(null);
+                            },
+                            child: PartnerListPage(
+                              selectionMode: true,
+                              onSelected: (p) {
+                                entry.remove();
+                                completer.complete(p);
+                              },
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  );
+
+                  overlay.insert(entry);
+                  partner = await completer.future;
+                } else {
+                  partner = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) =>
+                          const PartnerListPage(selectionMode: true),
+                    ),
+                  );
+                }
+
+                if (partner != null) {
+                  setState(() => selectedClient = partner.name);
+                }
               },
-              child: PartnerListPage(
-                selectionMode: true,
-                onSelected: (p) {
-                  entry.remove();
-                  completer.complete(p);
-                },
-              ),
-            ),
-          ),
-        );
-      },
-    );
-
-    overlay.insert(entry);
-    partner = await completer.future;
-  } else {
-    partner = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => const PartnerListPage(selectionMode: true),
-      ),
-    );
-  }
-
-  if (partner != null) {
-    setState(() => selectedClient = partner.name);
-  }
-},
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 12,
+                ),
                 decoration: BoxDecoration(
                   border: Border.all(color: Colors.grey.shade300),
                   borderRadius: BorderRadius.circular(12),
@@ -1046,8 +1104,12 @@ if (items.isNotEmpty)
               controller: poController,
               readOnly: isEditMode,
               decoration: InputDecoration(
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                suffixIcon: isEditMode ? const Icon(Icons.lock, size: 18) : null,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                suffixIcon: isEditMode
+                    ? const Icon(Icons.lock, size: 18)
+                    : null,
               ),
             ),
           ),
@@ -1088,10 +1150,7 @@ if (items.isNotEmpty)
           const SizedBox(width: 6),
           Text(
             text,
-            style: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-            ),
+            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
           ),
         ],
       ),
@@ -1148,7 +1207,7 @@ if (items.isNotEmpty)
     final confirmed = await _confirmDeleteOrder(context);
     if (!confirmed) return;
 
-    await CompanyFirestore.collection('order_out').doc(orderId).delete();
+    await OrderOutService.deleteOrder(orderId);
 
     ReadTrackerService().trackRead(
       page: 'OrderOutPage',
@@ -1174,7 +1233,9 @@ Future<bool> _confirmDeleteOrder(BuildContext context) async {
     builder: (_) => AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       title: const Text('Hapus Order'),
-      content: const Text('Order ini akan dihapus dan tidak bisa dikembalikan.\nLanjutkan?'),
+      content: const Text(
+        'Order ini akan dihapus dan tidak bisa dikembalikan.\nLanjutkan?',
+      ),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context, false),
@@ -1228,7 +1289,7 @@ class _OrderOutListViewState extends State<_OrderOutListView> {
   bool _isLoadingMore = false;
   bool _hasMore = true;
   bool get _isFiltering =>
-    widget.searchKeyword.isNotEmpty || widget.filterDate != null;
+      widget.searchKeyword.isNotEmpty || widget.filterDate != null;
   final ScrollController _scrollController = ScrollController();
 
   @override
@@ -1251,58 +1312,65 @@ class _OrderOutListViewState extends State<_OrderOutListView> {
     super.dispose();
   }
 
- Future<void> _loadInitial() async {
-  setState(() => _isLoading = true);
+  Future<void> _loadInitial() async {
+    setState(() => _isLoading = true);
 
-  try {
-    Query query = CompanyFirestore
-        .collection('order_out')
-        .orderBy('orderDate', descending: true);
+    try {
+      Query query = CompanyFirestore.collection(
+        'order_out',
+      ).orderBy('orderDate', descending: true);
 
-    // 🔥 kalau filtering → ambil SEMUA (no limit)
-    if (!_isFiltering) {
-      query = query.limit(_limit);
+      // 🔥 kalau filtering → ambil SEMUA (no limit)
+      if (!_isFiltering) {
+        query = query.limit(_limit);
+      }
+
+      final snapshot = await query.get();
+
+      // ✅ TRACK READ
+      ReadTrackerService().trackRead(
+        page: 'OrderOutList',
+        collection: 'order_out',
+        operation: 'load_initial',
+        documentsCount: snapshot.docs.length,
+      );
+
+      _docs = snapshot.docs;
+      _lastDoc = snapshot.docs.isNotEmpty ? snapshot.docs.last : null;
+      _hasMore = !_isFiltering && snapshot.docs.length == _limit;
+
+      // cache tetap aman
+      final safeList = snapshot.docs.map((doc) {
+        final data = doc.data() as Map<String, dynamic>;
+        return {
+          ...data,
+          'id': doc.id,
+          'orderDate': (data['orderDate'] as Timestamp?)
+              ?.toDate()
+              .toIso8601String(),
+          'createdAt': (data['createdAt'] as Timestamp?)
+              ?.toDate()
+              .toIso8601String(),
+          'updatedAt': (data['updatedAt'] as Timestamp?)
+              ?.toDate()
+              .toIso8601String(),
+        };
+      }).toList();
+
+      const maxCache = 100;
+      final limitedList = safeList.length > maxCache
+          ? safeList.sublist(0, maxCache)
+          : safeList;
+
+      await OrderOutCache().save(limitedList);
+    } catch (e) {
+      debugPrint('Error load initial: $e');
     }
 
-    final snapshot = await query.get();
-
-// ✅ TRACK READ
-ReadTrackerService().trackRead(
-  page: 'OrderOutList',
-  collection: 'order_out',
-  operation: 'load_initial',
-  documentsCount: snapshot.docs.length,
-);
-
-_docs = snapshot.docs;
-_lastDoc = snapshot.docs.isNotEmpty ? snapshot.docs.last : null;
-_hasMore = !_isFiltering && snapshot.docs.length == _limit;
-
-    // cache tetap aman
-    final safeList = snapshot.docs.map((doc) {
-      final data = doc.data() as Map<String, dynamic>;
-      return {
-        ...data,
-        'id': doc.id,
-        'orderDate': (data['orderDate'] as Timestamp?)?.toDate().toIso8601String(),
-        'createdAt': (data['createdAt'] as Timestamp?)?.toDate().toIso8601String(),
-        'updatedAt': (data['updatedAt'] as Timestamp?)?.toDate().toIso8601String(),
-      };
-    }).toList();
-
-    const maxCache = 100;
-    final limitedList =
-        safeList.length > maxCache ? safeList.sublist(0, maxCache) : safeList;
-
-    await OrderOutCache().save(limitedList);
-  } catch (e) {
-    debugPrint('Error load initial: $e');
+    if (mounted) {
+      setState(() => _isLoading = false);
+    }
   }
-
-  if (mounted) {
-    setState(() => _isLoading = false);
-  }
-}
 
   Future<void> _loadMore() async {
     if (_isFiltering) return;
@@ -1312,19 +1380,18 @@ _hasMore = !_isFiltering && snapshot.docs.length == _limit;
     _page++;
 
     try {
-      final snapshot = await CompanyFirestore
-          .collection('order_out')
+      final snapshot = await CompanyFirestore.collection('order_out')
           .orderBy('orderDate', descending: true)
           .startAfterDocument(_lastDoc!)
           .limit(_limit)
           .get();
 
-          ReadTrackerService().trackRead(
-  page: 'OrderOutList',
-  collection: 'order_out',
-  operation: 'load_more',
-  documentsCount: snapshot.docs.length,
-);
+      ReadTrackerService().trackRead(
+        page: 'OrderOutList',
+        collection: 'order_out',
+        operation: 'load_more',
+        documentsCount: snapshot.docs.length,
+      );
 
       if (snapshot.docs.isNotEmpty) {
         _docs.addAll(snapshot.docs);
@@ -1334,15 +1401,23 @@ _hasMore = !_isFiltering && snapshot.docs.length == _limit;
           return {
             ...data,
             'id': doc.id,
-            'orderDate': (data['orderDate'] as Timestamp?)?.toDate().toIso8601String(),
-            'createdAt': (data['createdAt'] as Timestamp?)?.toDate().toIso8601String(),
-            'updatedAt': (data['updatedAt'] as Timestamp?)?.toDate().toIso8601String(),
+            'orderDate': (data['orderDate'] as Timestamp?)
+                ?.toDate()
+                .toIso8601String(),
+            'createdAt': (data['createdAt'] as Timestamp?)
+                ?.toDate()
+                .toIso8601String(),
+            'updatedAt': (data['updatedAt'] as Timestamp?)
+                ?.toDate()
+                .toIso8601String(),
           };
         }).toList();
 
         if (_page % 3 == 0) {
           const maxCache = 100;
-          final limitedList = safeList.length > maxCache ? safeList.sublist(0, maxCache) : safeList;
+          final limitedList = safeList.length > maxCache
+              ? safeList.sublist(0, maxCache)
+              : safeList;
           await OrderOutCache().save(limitedList);
         }
         _lastDoc = snapshot.docs.last;
@@ -1422,10 +1497,7 @@ _hasMore = !_isFiltering && snapshot.docs.length == _limit;
         }
 
         final doc = filtered[i];
-        final data = {
-          ...(doc.data() as Map<String, dynamic>),
-          'id': doc.id,
-        };
+        final data = {...(doc.data() as Map<String, dynamic>), 'id': doc.id};
 
         return InkWell(
           onTap: () => widget.onTap(context, data),
@@ -1457,19 +1529,18 @@ _hasMore = !_isFiltering && snapshot.docs.length == _limit;
     }
   }
 
- @override
-void didUpdateWidget(covariant _OrderOutListView oldWidget) {
-  super.didUpdateWidget(oldWidget);
+  @override
+  void didUpdateWidget(covariant _OrderOutListView oldWidget) {
+    super.didUpdateWidget(oldWidget);
 
-  // 🔥 FORCE RELOAD SETIAP ADA PERUBAHAN
-  _loadInitial();
-
-  if (oldWidget.searchKeyword != widget.searchKeyword ||
-      oldWidget.filterDate != widget.filterDate) {
+    // 🔥 FORCE RELOAD SETIAP ADA PERUBAHAN
     _loadInitial();
-  }
-}
 
+    if (oldWidget.searchKeyword != widget.searchKeyword ||
+        oldWidget.filterDate != widget.filterDate) {
+      _loadInitial();
+    }
+  }
 }
 
 /// =====================================================
@@ -1499,7 +1570,8 @@ class _OrderHistoryCard extends StatelessWidget {
 
     final items = (data['items'] ?? []) as List;
     int totalItem = data['totalItem'] ?? items.length;
-    int totalQty = data['totalQty'] ??
+    int totalQty =
+        data['totalQty'] ??
         items.fold<int>(0, (sum, item) => sum + (item['qty'] as int));
     double totalWeight = (data['totalWeight'] ?? 0).toDouble();
 
@@ -1528,11 +1600,15 @@ class _OrderHistoryCard extends StatelessWidget {
                   height: 40,
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
-                       colors: [Color(0xFFDC2626), Color(0xFFEF4444)],
+                      colors: [Color(0xFFDC2626), Color(0xFFEF4444)],
                     ),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(Icons.inventory, color: Colors.white, size: 20),
+                  child: const Icon(
+                    Icons.inventory,
+                    color: Colors.white,
+                    size: 20,
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -1549,17 +1625,26 @@ class _OrderHistoryCard extends StatelessWidget {
                       ),
                       Text(
                         'Client: ${data['client']}',
-                        style: const TextStyle(fontSize: 13, color: Color(0xFF475569)),
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: Color(0xFF475569),
+                        ),
                       ),
                       if (data['createdBy'] != null)
                         Text(
                           'Created By: ${data['createdBy']}',
-                          style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: Color(0xFF64748B),
+                          ),
                         ),
                       if (date != null)
                         Text(
                           '${date.day}/${date.month}/${date.year}',
-                          style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: Color(0xFF64748B),
+                          ),
                         ),
                     ],
                   ),
@@ -1572,7 +1657,10 @@ class _OrderHistoryCard extends StatelessWidget {
               children: [
                 _summaryChip(Icons.list_alt, '$totalItem Item'),
                 _summaryChip(Icons.inventory_2, '$totalQty Qty'),
-                _summaryChip(Icons.scale, '${totalWeight.toStringAsFixed(2)} kg'),
+                _summaryChip(
+                  Icons.scale,
+                  '${totalWeight.toStringAsFixed(2)} kg',
+                ),
               ],
             ),
           ],
@@ -1631,104 +1719,102 @@ class _OrderHeader extends StatelessWidget {
   });
 
   @override
-Widget build(BuildContext context) {
-  final isDesktop = MediaQuery.of(context).size.width >= 900;
+  Widget build(BuildContext context) {
+    final isDesktop = MediaQuery.of(context).size.width >= 900;
 
-  return Container(
-    padding: const EdgeInsets.all(20),
-    decoration: BoxDecoration(
-      color: Colors.white.withOpacity(0.95),
-      borderRadius: BorderRadius.circular(20),
-      boxShadow: [
-        BoxShadow(
-          color: Colors.grey.shade200.withOpacity(0.5),
-          blurRadius: 10,
-          offset: const Offset(0, 4),
-        ),
-      ],
-    ),
-    child: Column(
-      children: [
-        Row(
-          children: [
-            if (!isDesktop)
-              IconButton(
-                icon: const Icon(Icons.arrow_back),
-                onPressed: onBack,
-              ),
-            const SizedBox(width: 8),
-            const Text(
-              'Order Out',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        _formField(
-          label: 'Order Date',
-          child: InkWell(
-            onTap: onPickDate,
-            child: _box(
-              orderDate == null
-                  ? 'Select date'
-                  : '${orderDate!.day}/${orderDate!.month}/${orderDate!.year}',
-            ),
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.95),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.shade200.withOpacity(0.5),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
-        ),
-        const SizedBox(height: 12),
-        _formField(
-          label: 'Client',
-          child: InkWell(
-            onTap: () async {
-              final partner = await Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const PartnerListPage(selectionMode: true),
+        ],
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              if (!isDesktop)
+                IconButton(
+                  icon: const Icon(Icons.arrow_back),
+                  onPressed: onBack,
                 ),
-              );
-              if (partner != null) {
-                onClientChanged(partner.name);
-              }
-            },
-            child: _box(selectedClient ?? 'Select Partner'),
-          ),
-        ),
-        const SizedBox(height: 12),
-        _formField(
-          label: 'PO Number',
-          child: TextField(
-            controller: poController,
-            readOnly: isEditMode,
-            decoration: InputDecoration(
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
+              const SizedBox(width: 8),
+              const Text(
+                'Order Out',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
-              suffixIcon:
-                  isEditMode ? const Icon(Icons.lock, size: 18) : null,
+            ],
+          ),
+          const SizedBox(height: 16),
+          _formField(
+            label: 'Order Date',
+            child: InkWell(
+              onTap: onPickDate,
+              child: _box(
+                orderDate == null
+                    ? 'Select date'
+                    : '${orderDate!.day}/${orderDate!.month}/${orderDate!.year}',
+              ),
             ),
           ),
-        ),
-        const SizedBox(height: 20),
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton(
-            onPressed: (isFormValid && !isSaving) ? onSave : null,
-            child: isSaving
-                ? const SizedBox(
-                    height: 18,
-                    width: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Text('Save Order Out'),
+          const SizedBox(height: 12),
+          _formField(
+            label: 'Client',
+            child: InkWell(
+              onTap: () async {
+                final partner = await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const PartnerListPage(selectionMode: true),
+                  ),
+                );
+                if (partner != null) {
+                  onClientChanged(partner.name);
+                }
+              },
+              child: _box(selectedClient ?? 'Select Partner'),
+            ),
           ),
-        ),
-      ],
-    ),
-  );
-}
+          const SizedBox(height: 12),
+          _formField(
+            label: 'PO Number',
+            child: TextField(
+              controller: poController,
+              readOnly: isEditMode,
+              decoration: InputDecoration(
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                suffixIcon: isEditMode
+                    ? const Icon(Icons.lock, size: 18)
+                    : null,
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: (isFormValid && !isSaving) ? onSave : null,
+              child: isSaving
+                  ? const SizedBox(
+                      height: 18,
+                      width: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Text('Save Order Out'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   Widget _formField({required String label, required Widget child}) {
     return Column(
@@ -1751,10 +1837,7 @@ Widget build(BuildContext context) {
         border: Border.all(color: Colors.grey.shade300),
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Text(
-        text,
-        style: const TextStyle(fontSize: 13),
-      ),
+      child: Text(text, style: const TextStyle(fontSize: 13)),
     );
   }
 }
@@ -1806,7 +1889,10 @@ class _ItemCard extends StatelessWidget {
                 if (item.part.location.isNotEmpty)
                   Text(
                     'Loc: ${item.part.location}',
-                    style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: Color(0xFF64748B),
+                    ),
                   ),
               ],
             ),
@@ -1861,15 +1947,9 @@ class _OrderOutSearchFilterBar extends StatelessWidget {
               ),
             ),
           ),
-          IconButton(
-            icon: const Icon(Icons.date_range),
-            onPressed: onPickDate,
-          ),
+          IconButton(icon: const Icon(Icons.date_range), onPressed: onPickDate),
           if (filterDate != null)
-            IconButton(
-              icon: const Icon(Icons.clear),
-              onPressed: onClearDate,
-            ),
+            IconButton(icon: const Icon(Icons.clear), onPressed: onClearDate),
         ],
       ),
     );

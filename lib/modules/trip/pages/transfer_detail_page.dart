@@ -7,6 +7,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/trip_transfer_service.dart';
 import 'add_transfer_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../../../core/session/company_session.dart';
 
 class TransferDetailPage extends StatelessWidget {
   final TripTransfer transfer;
@@ -21,10 +22,7 @@ class TransferDetailPage extends StatelessWidget {
   Future<void> downloadFile(String url) async {
     final uri = Uri.parse(url);
 
-    await launchUrl(
-      uri,
-      mode: LaunchMode.externalApplication,
-    );
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
   }
 
   String _formatDate(DateTime date) {
@@ -37,88 +35,89 @@ class TransferDetailPage extends StatelessWidget {
 
     /// 🔥 ANCHOR CODE
     /// ini penting → ambil data dari transfer.transfers[0]
-    final data = transfer.transfers.first;
+    final data = transfer.transfers.isNotEmpty
+        ? transfer.transfers.first
+        : <String, dynamic>{};
 
     final amount = data['amount'] ?? 0;
     final currency = data['currency'] ?? '';
-    final employeeId = data['employeeId'] ?? '';
-
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         actions: [
-  /// EDIT
-  IconButton(
-    icon: const Icon(Icons.edit),
-    onPressed: () async {
-      final confirm = await showDialog<bool>(
-        context: context,
-        builder: (_) => AlertDialog(
-          title: const Text("Edit Transfer"),
-          content: const Text("Do you want to edit this transfer?"),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text("Cancel"),
-            ),
-            ElevatedButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text("Edit"),
-            ),
-          ],
-        ),
-      );
+          /// EDIT
+          IconButton(
+            icon: const Icon(Icons.edit),
+            onPressed: () async {
+              final confirm = await showDialog<bool>(
+                context: context,
+                builder: (_) => AlertDialog(
+                  title: const Text("Edit Transfer"),
+                  content: const Text("Do you want to edit this transfer?"),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, false),
+                      child: const Text("Cancel"),
+                    ),
+                    ElevatedButton(
+                      onPressed: () => Navigator.pop(context, true),
+                      child: const Text("Edit"),
+                    ),
+                  ],
+                ),
+              );
 
-      if (confirm == true) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => AddTransferPage(
-              tripId: tripId,
-              transferId: transfer.id,
-            ),
+              if (confirm == true) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => AddTransferPage(
+                      tripId: tripId,
+                      transferId: transfer.id,
+                    ),
+                  ),
+                );
+              }
+            },
           ),
-        );
-      }
-    },
-  ),
 
-  /// DELETE
-  IconButton(
-    icon: const Icon(Icons.delete, color: Colors.red),
-    onPressed: () async {
-      final confirm = await showDialog<bool>(
-        context: context,
-        builder: (_) => AlertDialog(
-          title: const Text("Delete Transfer"),
-          content: const Text(
-              "Are you sure you want to delete this transfer?"),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text("Cancel"),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-              ),
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text("Delete"),
-            ),
-          ],
-        ),
-      );
+          /// DELETE
+          IconButton(
+            icon: const Icon(Icons.delete, color: Colors.red),
+            onPressed: () async {
+              final confirm = await showDialog<bool>(
+                context: context,
+                builder: (_) => AlertDialog(
+                  title: const Text("Delete Transfer"),
+                  content: const Text(
+                    "Are you sure you want to delete this transfer?",
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, false),
+                      child: const Text("Cancel"),
+                    ),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                      ),
+                      onPressed: () => Navigator.pop(context, true),
+                      child: const Text("Delete"),
+                    ),
+                  ],
+                ),
+              );
 
-      if (confirm == true) {
-        await TripTransferService().deleteTransfer(tripId, transfer.id);
+              if (confirm == true) {
+                await TripTransferService().deleteTransfer(tripId, transfer.id);
 
-        if (context.mounted) {
-          Navigator.pop(context);
-        }
-      }
-    },
-  ),
-],
+                if (context.mounted) {
+                  Navigator.pop(context);
+                }
+              }
+            },
+          ),
+        ],
         title: Row(
           children: [
             Container(
@@ -145,10 +144,7 @@ class TransferDetailPage extends StatelessWidget {
             const SizedBox(width: 12),
             const Text(
               'Transfer Detail',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
           ],
         ),
@@ -233,18 +229,18 @@ class TransferDetailPage extends StatelessWidget {
 
                     /// Employee
                     FutureBuilder<String>(
-  future: _getTripCreatorName(),
-  builder: (context, snapshot) {
-    final name = snapshot.data ?? 'Loading...';
+                      future: _getTripCreatorName(),
+                      builder: (context, snapshot) {
+                        final name = snapshot.data ?? 'Loading...';
 
-    return _buildInfoTile(
-      icon: Icons.person,
-      label: 'Employee',
-      value: name,
-      color: Colors.purple,
-    );
-  },
-),
+                        return _buildInfoTile(
+                          icon: Icons.person,
+                          label: 'Employee',
+                          value: name,
+                          color: Colors.purple,
+                        );
+                      },
+                    ),
                     const Divider(height: 24),
 
                     /// Note
@@ -265,9 +261,7 @@ class TransferDetailPage extends StatelessWidget {
                         border: Border.all(color: Colors.grey.shade300),
                       ),
                       child: Text(
-                        transfer.note.isEmpty
-                            ? 'No note'
-                            : transfer.note,
+                        transfer.note.isEmpty ? 'No note' : transfer.note,
                         style: const TextStyle(fontSize: 14),
                       ),
                     ),
@@ -331,18 +325,21 @@ class TransferDetailPage extends StatelessWidget {
                                 ClipRRect(
                                   borderRadius: BorderRadius.circular(8),
                                   child: GestureDetector(
-  onTap: () {
-    _openImagePreview(context, transfer.receiptUrl);
-  },
-  child: ClipRRect(
-    borderRadius: BorderRadius.circular(8),
-    child: Image.network(
-      transfer.receiptUrl,
-      height: 200,
-      fit: BoxFit.contain,
-    ),
-  ),
-),
+                                    onTap: () {
+                                      _openImagePreview(
+                                        context,
+                                        transfer.receiptUrl,
+                                      );
+                                    },
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: Image.network(
+                                        transfer.receiptUrl,
+                                        height: 200,
+                                        fit: BoxFit.contain,
+                                      ),
+                                    ),
+                                  ),
                                 ),
 
                               if (isPdf)
@@ -389,24 +386,22 @@ class TransferDetailPage extends StatelessWidget {
   }
 
   void _openImagePreview(BuildContext context, String imageUrl) {
-  showDialog(
-    context: context,
-    barrierColor: Colors.black,
-    builder: (_) {
-      return GestureDetector(
-        onTap: () => Navigator.pop(context),
-        child: Scaffold(
-          backgroundColor: Colors.black,
-          body: Center(
-            child: InteractiveViewer(
-              child: Image.network(imageUrl),
+    showDialog(
+      context: context,
+      barrierColor: Colors.black,
+      builder: (_) {
+        return GestureDetector(
+          onTap: () => Navigator.pop(context),
+          child: Scaffold(
+            backgroundColor: Colors.black,
+            body: Center(
+              child: InteractiveViewer(child: Image.network(imageUrl)),
             ),
           ),
-        ),
-      );
-    },
-  );
-}
+        );
+      },
+    );
+  }
 
   Widget _buildInfoTile({
     required IconData icon,
@@ -438,43 +433,48 @@ class TransferDetailPage extends StatelessWidget {
   }
 
   Future<String> _getTripCreatorName() async {
-  try {
-    final tripDoc = await FirebaseFirestore.instance
-        .collection('companies')
-        .doc(await _getCompanyId())
-        .collection('trips')
-        .doc(tripId)
-        .get();
+    try {
+      final tripDoc = await FirebaseFirestore.instance
+          .collection('companies')
+          .doc(await _getCompanyId())
+          .collection('trips')
+          .doc(tripId)
+          .get();
 
-    final createdBy = tripDoc.data()?['createdBy'];
+      final createdBy = tripDoc.data()?['createdBy'];
 
-    if (createdBy == null) return '-';
+      if (createdBy == null) return '-';
 
-    final userDoc = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(createdBy)
-        .get();
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(createdBy)
+          .get();
 
-    return userDoc.data()?['username'] ?? '-';
-  } catch (e) {
-    return '-';
+      return userDoc.data()?['username'] ?? '-';
+    } catch (e) {
+      return '-';
+    }
   }
-}
 
-Future<String> _getCompanyId() async {
-  final user = FirebaseAuth.instance.currentUser;
+  Future<String> _getCompanyId() async {
+    final selectedCompanyId = CompanySession.selectedCompanyId;
+    if (selectedCompanyId != null && selectedCompanyId.isNotEmpty) {
+      return selectedCompanyId;
+    }
 
-  if (user == null) return '';
+    final user = FirebaseAuth.instance.currentUser;
 
-  final doc = await FirebaseFirestore.instance
-      .collection('users')
-      .doc(user.uid)
-      .get();
+    if (user == null) return '';
 
-  final companyIds = List<String>.from(doc.data()?['companyIds'] ?? []);
+    final doc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .get();
 
-  return companyIds.isNotEmpty ? companyIds.first : '';
-}
+    final companyIds = List<String>.from(doc.data()?['companyIds'] ?? []);
+
+    return companyIds.isNotEmpty ? companyIds.first : '';
+  }
 
   String formatCurrency(double value) {
     final number = value.toInt().toString();
@@ -486,22 +486,21 @@ Future<String> _getCompanyId() async {
   }
 
   Future<String> _getUserName(String uid) async {
-  try {
-    final doc = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(uid)
-        .get();
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .get();
 
-    if (doc.exists) {
-      return doc.data()?['username'] ?? uid;
+      if (doc.exists) {
+        return doc.data()?['username'] ?? uid;
+      }
+
+      return uid;
+    } catch (e) {
+      return uid;
     }
-
-    return uid;
-  } catch (e) {
-    return uid;
   }
-}
-
 }
 
 /// GLASS HELPER (copy dari expense)
@@ -513,9 +512,7 @@ Widget _glass(Widget child) {
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
-        ),
+        decoration: BoxDecoration(borderRadius: BorderRadius.circular(20)),
         child: child,
       ),
     ),

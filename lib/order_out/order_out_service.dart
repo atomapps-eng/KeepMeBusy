@@ -1,10 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../core/services/company_firestore.dart';
 
 class OrderOutService {
   static final _firestore = FirebaseFirestore.instance;
 
   static Future<void> deleteOrder(String orderId) async {
-    final orderRef = _firestore.collection('order_out').doc(orderId);
+    final orderRef = CompanyFirestore.collection('order_out').doc(orderId);
 
     await _firestore.runTransaction((transaction) async {
       final orderSnap = await transaction.get(orderRef);
@@ -20,6 +21,8 @@ class OrderOutService {
       // 🔁 Rollback stock
       for (var item in items) {
         final sparePartRef = _firestore
+            .collection('companies')
+            .doc(orderRef.parent.parent!.id)
             .collection('spare_parts')
             .doc(item['sparePartId']);
 
@@ -30,9 +33,7 @@ class OrderOutService {
         final currentStock = spareSnap['currentStock'] ?? 0;
         final qty = item['qty'] ?? 0;
 
-        transaction.update(sparePartRef, {
-          'currentStock': currentStock + qty,
-        });
+        transaction.update(sparePartRef, {'currentStock': currentStock + qty});
       }
 
       // 🗑 Delete order
