@@ -28,14 +28,12 @@ class OvernightDetailPage extends StatelessWidget {
           }
 
           return snap.docs.where((doc) {
-            final data = doc.data();
-            final startDate = (data['startDate'] as Timestamp).toDate();
+  final data = doc.data();
 
-            final month = startDate.month.toString().padLeft(2, '0');
-            final docPeriod = '${startDate.year}-$month';
+  final docPeriod = data['period']?.toString() ?? '';
 
-            return docPeriod == period;
-          }).toList();
+  return docPeriod == period;
+}).toList();
         });
   }
 

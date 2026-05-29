@@ -192,13 +192,10 @@ class _AttendancePageState extends State<AttendancePage> {
     ).doc(widget.employeeId).collection('overnight').snapshots().map((snap) {
       final filtered = snap.docs.where((d) {
         final data = d.data();
-        final start = (data['startDate'] as Timestamp).toDate();
+        final docPeriod = data['period']?.toString() ?? '';
 
-        final month = start.month.toString().padLeft(2, '0');
-        final period = '${start.year}-$month';
-
-        if (_isAllPeriod) return true;
-        return period == _selectedPeriod;
+if (_isAllPeriod) return true;
+return docPeriod == _selectedPeriod;
       }).toList();
 
       filtered.sort((a, b) {
@@ -221,11 +218,9 @@ class _AttendancePageState extends State<AttendancePage> {
       for (final d in snap.docs) {
         final data = d.data();
         final start = (data['startDate'] as Timestamp).toDate();
+final docPeriod = data['period']?.toString() ?? '';
 
-        final month = start.month.toString().padLeft(2, '0');
-        final period = '${start.year}-$month';
-
-        if (!_isAllPeriod && period != _selectedPeriod) continue;
+if (!_isAllPeriod && docPeriod != _selectedPeriod) continue;
 
         final nights = (data['totalNights'] ?? 0) as int;
         final category = data['customerCategory'];
@@ -2602,6 +2597,10 @@ class _AttendancePageState extends State<AttendancePage> {
   }
 
   List<AttendanceDay> _applyPeriodFilter(List<AttendanceDay> days) {
+    debugPrint('====================');
+  debugPrint('_selectedPeriod = $_selectedPeriod');
+  debugPrint('_isAllPeriod = $_isAllPeriod');
+  debugPrint('days count = ${days.length}');
     if (_isAllPeriod) return days;
     return days.where((day) {
       final period = AttendancePeriodHelper.resolvePeriod(day.date);
