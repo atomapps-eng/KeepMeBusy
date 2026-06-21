@@ -22,6 +22,7 @@ import '../models/activity_entry.dart';
 import '../../core/services/firestore_tracker.dart';
 import '../../core/widgets/draggable_window.dart';
 
+
 class AttendancePage extends StatefulWidget {
   final String employeeId;
   final String period;

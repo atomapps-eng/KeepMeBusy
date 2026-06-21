@@ -46,10 +46,11 @@ static Future<void> generatePdf({
   final photo3 = await loadImage(data['photo3']);
 
   final parts = (data['spareParts'] as List?) ?? [];
-  final hasSpareParts = parts.isNotEmpty;
+final hasSpareParts = parts.isNotEmpty;
 final hasAttachments = photo1 != null || photo2 != null || photo3 != null;
 
-  final note = data['noteForCustomer']?.toString().trim();
+final note = data['noteForCustomer']?.toString().trim();
+final hasNote = note != null && note.isNotEmpty;
 
   final problemShort = safeText(data['problemDescription'], maxChars: 200);
   final activityShort = safeText(data['activity'], maxChars: 200);
@@ -111,7 +112,7 @@ final hasAttachments = photo1 != null || photo2 != null || photo3 != null;
   );
 
   // ================= PAGE 2 =================
-  if (hasSpareParts || hasAttachments) {
+  if (hasSpareParts || hasAttachments || hasNote) {
   pdf.addPage(
     pw.MultiPage(
     pageFormat: PdfPageFormat.a4,

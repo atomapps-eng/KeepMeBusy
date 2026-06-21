@@ -344,9 +344,19 @@ class TripMobilePage extends StatelessWidget {
                 }
 
                 if (isDesktop) {
-                  return _buildDesktopLayout(context, trips, tripService);
+                  return _buildDesktopLayout(
+                    context,
+                    trips,
+                    tripService,
+                    companyId,
+                  );
                 } else {
-                  return _buildMobileLayout(context, trips, tripService);
+                  return _buildMobileLayout(
+                    context,
+                    trips,
+                    tripService,
+                    companyId,
+                  );
                 }
               },
             );
@@ -360,6 +370,7 @@ class TripMobilePage extends StatelessWidget {
     BuildContext context,
     List<Trip> trips,
     TripService tripService,
+    String companyId,
   ) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -580,77 +591,75 @@ class TripMobilePage extends StatelessWidget {
                       ),
 
                       // Table
-                      Container(
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.grey.shade300),
-                          borderRadius: BorderRadius.circular(8),
-                          color: Colors.white.withValues(alpha: 0.3),
-                        ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: Column(
-                            children: [
-                              // Header Row
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 12,
-                                  horizontal: 16,
-                                ),
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    colors: [
-                                      Colors.grey.shade200,
-                                      Colors.grey.shade100,
-                                    ],
+                      Expanded(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.grey.shade300),
+                            borderRadius: BorderRadius.circular(8),
+                            color: Colors.white.withValues(alpha: 0.3),
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Column(
+                              children: [
+                                // Header Row
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 12,
+                                    horizontal: 16,
                                   ),
-                                ),
-                                child: Row(
-                                  children: const [
-                                    SizedBox(width: 40),
-                                    Expanded(
-                                      flex: 4,
-                                      child: Text(
-                                        'Trip Details',
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      colors: [
+                                        Colors.grey.shade200,
+                                        Colors.grey.shade100,
+                                      ],
                                     ),
-                                    Expanded(
-                                      flex: 2,
-                                      child: Center(
+                                  ),
+                                  child: Row(
+                                    children: const [
+                                      SizedBox(width: 40),
+                                      Expanded(
+                                        flex: 4,
                                         child: Text(
-                                          'Partner / Country',
+                                          'Trip Details',
                                           style: TextStyle(
                                             fontWeight: FontWeight.w600,
                                           ),
                                         ),
                                       ),
-                                    ),
-                                    SizedBox(width: 24),
-                                  ],
+                                      Expanded(
+                                        flex: 2,
+                                        child: Center(
+                                          child: Text(
+                                            'Partner / Country',
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      SizedBox(width: 24),
+                                    ],
+                                  ),
                                 ),
-                              ),
 
-                              // List View
-                              Container(
-                                constraints: BoxConstraints(
-                                  maxHeight:
-                                      MediaQuery.of(context).size.height - 350,
+                                // List View
+                                Expanded(
+                                  child: ListView.builder(
+                                    itemCount: trips.length,
+                                    itemBuilder: (context, index) {
+                                      return _buildDesktopTripRow(
+                                        context,
+                                        trips[index],
+                                        tripService,
+                                        companyId,
+                                      );
+                                    },
+                                  ),
                                 ),
-                                child: ListView.builder(
-                                  itemCount: trips.length,
-                                  shrinkWrap: true,
-                                  itemBuilder: (context, index) {
-                                    return _buildDesktopTripRow(
-                                      context,
-                                      trips[index],
-                                      tripService,
-                                    );
-                                  },
-                                ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         ),
                       ),
@@ -669,6 +678,7 @@ class TripMobilePage extends StatelessWidget {
     BuildContext context,
     Trip trip,
     TripService tripService,
+    String companyId,
   ) {
     final statusColor = _getStatusColor(trip.status ?? 'draft');
     final flag = _getCountryFlag(trip.country);
@@ -678,13 +688,12 @@ class TripMobilePage extends StatelessWidget {
       builder: (context, userSnapshot) {
         final uid = FirebaseAuth.instance.currentUser!.uid;
         final userData = userSnapshot.data ?? {};
-        final accessLevel = userData['accessLevel'];
-        final List countryIds = userData['countryIds'] ?? [];
-
-        bool canOpen =
-            trip.createdBy == uid ||
-            (accessLevel == 'admin_countries' &&
-                countryIds.map((e) => e.toString()).contains(trip.country));
+        final canOpen = _canOpenTrip(
+          trip: trip,
+          uid: uid,
+          userData: userData,
+          companyId: companyId,
+        );
 
         return Container(
           decoration: BoxDecoration(
@@ -721,7 +730,7 @@ class TripMobilePage extends StatelessWidget {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: const Text(
-                          'You can only open trips that you created',
+                          'You do not have access to this trip',
                         ),
                         backgroundColor: Colors.orange,
                       ),
@@ -819,21 +828,24 @@ class TripMobilePage extends StatelessWidget {
                       child: Column(
                         children: [
                           Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(flag, style: const TextStyle(fontSize: 14)),
-                              const SizedBox(width: 4),
-                              Text(
-                                trip.partnerName,
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ],
-                          ),
+  mainAxisAlignment: MainAxisAlignment.center,
+  children: [
+    Text(flag, style: const TextStyle(fontSize: 14)),
+    const SizedBox(width: 4),
+    Expanded(
+      child: Text(
+        trip.partnerName,
+        style: const TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w500,
+        ),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        textAlign: TextAlign.center,
+      ),
+    ),
+  ],
+),
                           const SizedBox(height: 2),
                           Text(
                             trip.country,
@@ -871,6 +883,7 @@ class TripMobilePage extends StatelessWidget {
     BuildContext context,
     List<Trip> trips,
     TripService tripService,
+    String companyId,
   ) {
     return ListView.builder(
       itemCount: trips.length,
@@ -881,19 +894,34 @@ class TripMobilePage extends StatelessWidget {
           builder: (context, userSnapshot) {
             final uid = FirebaseAuth.instance.currentUser!.uid;
             final userData = userSnapshot.data ?? {};
-            final accessLevel = userData['accessLevel'];
-            final List countryIds = userData['countryIds'] ?? [];
-
-            bool canOpen =
-                trip.createdBy == uid ||
-                (accessLevel == 'admin_countries' &&
-                    countryIds.map((e) => e.toString()).contains(trip.country));
+            final canOpen = _canOpenTrip(
+              trip: trip,
+              uid: uid,
+              userData: userData,
+              companyId: companyId,
+            );
 
             return _buildMobileTripCard(context, trip, canOpen);
           },
         );
       },
     );
+  }
+
+  bool _canOpenTrip({
+    required Trip trip,
+    required String uid,
+    required Map<String, dynamic> userData,
+    required String companyId,
+  }) {
+    if (trip.createdBy == uid) return true;
+
+    final companyIds = (userData['companyIds'] as List<dynamic>? ?? const [])
+        .map((id) => id.toString())
+        .toSet();
+
+    return userData['accessLevel'] == 'admin_countries' &&
+        companyIds.contains(companyId);
   }
 
   Widget _buildMobileTripCard(BuildContext context, Trip trip, bool canOpen) {
@@ -911,9 +939,7 @@ class TripMobilePage extends StatelessWidget {
           : () {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: const Text(
-                    'You can only open trips that you created',
-                  ),
+                  content: const Text('You do not have access to this trip'),
                   backgroundColor: Colors.orange,
                 ),
               );

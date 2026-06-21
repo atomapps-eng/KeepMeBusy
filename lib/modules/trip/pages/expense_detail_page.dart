@@ -9,6 +9,7 @@ import 'add_expense_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../../core/session/company_session.dart';
 
+
 class ExpenseDetailPage extends StatelessWidget {
   final TripExpense expense;
   final String tripId;

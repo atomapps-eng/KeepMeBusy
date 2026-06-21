@@ -1,4 +1,4 @@
-package com.example.inventory_app
+package com.techops.app
 
 import io.flutter.embedding.android.FlutterActivity
 
