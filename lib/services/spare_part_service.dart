@@ -6,9 +6,36 @@ import '../core/session/company_session.dart';
 
 class SparePartService {
   // Gunakan method yang sudah ada
+
+Future<DateTime?> getLatestServerUpdateTime() async {
+  try {
+    final snapshot = await CompanyFirestore
+        .collection('spare_parts')
+        .orderBy('updatedAt', descending: true)
+        .limit(1)
+        .get();
+
+    if (snapshot.docs.isEmpty) {
+      return null;
+    }
+
+    final data = snapshot.docs.first.data();
+
+    final timestamp = data['updatedAt'];
+
+    if (timestamp == null) {
+      return null;
+    }
+
+    return (timestamp as Timestamp).toDate();
+  } catch (e) {
+    return null;
+  }
+}
+
   Future<QuerySnapshot> fetchSpareParts({
     DocumentSnapshot? lastDoc,
-    int limit = 50,
+    int limit = 1200,
   }) async {
     Query query = CompanyFirestore
         .collection('spare_parts')
@@ -25,6 +52,17 @@ class SparePartService {
   collection: 'spare_parts',
 );
   }
+
+  Future<QuerySnapshot> fetchAllSpareParts() async {
+  return await FirestoreTracker.get(
+    query: CompanyFirestore
+        .collection('spare_parts')
+        .orderBy('partCode_lower')
+        .limit(2000),
+    page: 'SparePartFullSync',
+    collection: 'spare_parts',
+  );
+}
 
   Future<QuerySnapshot> fetchLowStockParts({
   DocumentSnapshot? lastDoc,
@@ -63,7 +101,7 @@ class SparePartService {
  Future<QuerySnapshot> searchSpareParts({
   required String keyword,
   DocumentSnapshot? lastDoc,
-  int limit = 50,
+  int limit = 1200,
 }) async {
 
   if (keyword.isEmpty) {

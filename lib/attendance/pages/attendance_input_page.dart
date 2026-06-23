@@ -275,16 +275,26 @@ bool _showCheckOutPicker = false;
       };
 
       if (_isPresent) {
-        attendanceData.addAll({
-          'location': location?.name,
-          'customerId': selectedCustomerId,
-          'customerName': selectedCustomerName,
-          'checkInHour': checkIn.hour,
-          'checkInMinute': checkIn.minute,
-          'checkOutHour': checkOut.hour,
-          'checkOutMinute': checkOut.minute,
-        });
-      }
+  attendanceData.addAll({
+    'location': location?.name,
+    'customerId': selectedCustomerId,
+    'customerName': selectedCustomerName,
+    'checkInHour': checkIn.hour,
+    'checkInMinute': checkIn.minute,
+    'checkOutHour': checkOut.hour,
+    'checkOutMinute': checkOut.minute,
+  });
+} else {
+  attendanceData.addAll({
+    'location': FieldValue.delete(),
+    'customerId': FieldValue.delete(),
+    'customerName': FieldValue.delete(),
+    'checkInHour': FieldValue.delete(),
+    'checkInMinute': FieldValue.delete(),
+    'checkOutHour': FieldValue.delete(),
+    'checkOutMinute': FieldValue.delete(),
+  });
+}
 
       final dayRef = CompanyFirestore
           .collection('attendance')

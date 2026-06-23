@@ -117,10 +117,27 @@ class _SparePartDetailPageState extends State<SparePartDetailPage> {
     final ui.Image originalImage = await completer.future;
 
     final recorder = ui.PictureRecorder();
-    final canvas = Canvas(recorder);
+final canvas = Canvas(recorder);
 
-    final paint = Paint();
-    canvas.drawImage(originalImage, Offset.zero, paint);
+const backgroundColor = Color(0xFFFFE0B2);
+
+canvas.drawRect(
+  Rect.fromLTWH(
+    0,
+    0,
+    originalImage.width.toDouble(),
+    originalImage.height.toDouble(),
+  ),
+  Paint()..color = backgroundColor,
+);
+
+final paint = Paint();
+
+canvas.drawImage(
+  originalImage,
+  Offset.zero,
+  paint,
+);
 
     final overlayPaint = Paint()
       ..color = Colors.black.withValues(alpha: 0.6);

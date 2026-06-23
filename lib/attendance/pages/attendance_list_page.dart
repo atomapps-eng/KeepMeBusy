@@ -25,22 +25,20 @@ class _AttendanceListPageState extends State<AttendanceListPage> {
   DateTime? fromDate;
   DateTime? toDate;
 
-  Stream<List<AttendanceDay>> _attendanceStream() async* {
-  final query = CompanyFirestore
+   bool _sortNewestFirst = true;
+
+  Stream<List<AttendanceDay>> _attendanceStream() {
+  return CompanyFirestore
       .collection('attendance')
       .doc(widget.employeeId)
       .collection('days')
-      .orderBy('date', descending: false);
-
-  final snapshot = await FirestoreTracker.get(
-    query: query,
-    page: 'AttendanceListPage',
-    collection: 'attendance_days',
-  );
-
-  yield snapshot.docs
-      .map((d) => AttendanceDay.fromFirestore(d))
-      .toList();
+      .orderBy('date', descending: false)
+      .snapshots()
+      .map(
+        (snapshot) => snapshot.docs
+            .map((d) => AttendanceDay.fromFirestore(d))
+            .toList(),
+      );
 }
 
   String _formatDate(DateTime date) {
@@ -177,14 +175,68 @@ class _AttendanceListPageState extends State<AttendanceListPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Filter by Date Range',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF1E293B),
-            ),
+          Row(
+  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  children: [
+    const Text(
+      'Filter by Date Range',
+      style: TextStyle(
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
+        color: Color(0xFF1E293B),
+      ),
+    ),
+    PopupMenuButton<bool>(
+      tooltip: 'Sort',
+      onSelected: (value) {
+        setState(() {
+          _sortNewestFirst = value;
+        });
+      },
+      itemBuilder: (context) => [
+        const PopupMenuItem(
+          value: true,
+          child: Text('Newest First'),
+        ),
+        const PopupMenuItem(
+          value: false,
+          child: Text('Oldest First'),
+        ),
+      ],
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: 12,
+          vertical: 8,
+        ),
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: const Color(0xFFE2E8F0),
           ),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.sort,
+              size: 16,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              _sortNewestFirst
+                  ? 'Newest'
+                  : 'Oldest',
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  ],
+),
           const SizedBox(height: 12),
           Row(
             children: [
@@ -422,7 +474,13 @@ class _AttendanceListPageState extends State<AttendanceListPage> {
             })
             .toList();
 
-        if (days.isEmpty) {
+            days.sort((a, b) {
+  return _sortNewestFirst
+      ? b.date.compareTo(a.date)
+      : a.date.compareTo(b.date);
+});
+
+        if (days.isEmpty) { 
           return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -622,70 +680,127 @@ class _AttendanceListPageState extends State<AttendanceListPage> {
                                   ),
                                 ),
                                 const SizedBox(width: 8),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 2,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFF1F5F9),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Text(
-                                        _getLocationIcon(d.location),
-                                        style: const TextStyle(fontSize: 10),
-                                      ),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        d.location.name.toUpperCase(),
-                                        style: const TextStyle(
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.w500,
-                                          color: Color(0xFF475569),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
+                                if (d.status == AttendanceStatus.present)
+  Container(
+    padding: const EdgeInsets.symmetric(
+      horizontal: 8,
+      vertical: 2,
+    ),
+    decoration: BoxDecoration(
+      color: const Color(0xFFF1F5F9),
+      borderRadius: BorderRadius.circular(12),
+    ),
+    child: Row(
+      children: [
+        Text(
+          _getLocationIcon(d.location),
+          style: const TextStyle(fontSize: 10),
+        ),
+        const SizedBox(width: 4),
+        Text(
+          d.location.name.toUpperCase(),
+          style: const TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.w500,
+            color: Color(0xFF475569),
+          ),
+        ),
+      ],
+    ),
+  ),
                               ],
                             ),
                           ],
                         ),
                       ],
                     ),
-                    if (isOvertimeValue)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFEF3C7),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: const Color(0xFFFCD34D)),
-                        ),
-                        child: const Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.timer,
-                              size: 12,
-                              color: Color(0xFFB45309),
-                            ),
-                            SizedBox(width: 4),
-                            Text(
-                              'OVERTIME',
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFFB45309),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                    Column(
+  crossAxisAlignment: CrossAxisAlignment.end,
+  children: [
+
+    if (d.note != null &&
+        d.note!.trim().isNotEmpty)
+      Container(
+        constraints: const BoxConstraints(
+          maxWidth: 180,
+        ),
+        padding: const EdgeInsets.symmetric(
+          horizontal: 8,
+          vertical: 4,
+        ),
+        decoration: BoxDecoration(
+          color: const Color(0xFFEFF6FF),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: const Color(0xFFBFDBFE),
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.note_alt_outlined,
+              size: 12,
+              color: Color(0xFF2563EB),
+            ),
+            const SizedBox(width: 4),
+            Flexible(
+              child: Text(
+                d.note!,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.end,
+                style: const TextStyle(
+                  fontSize: 10,
+                  color: Color(0xFF2563EB),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+
+    if (d.note != null &&
+        d.note!.trim().isNotEmpty &&
+        isOvertimeValue)
+      const SizedBox(height: 6),
+
+    if (isOvertimeValue)
+      Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: 8,
+          vertical: 4,
+        ),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFEF3C7),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: const Color(0xFFFCD34D),
+          ),
+        ),
+        child: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.timer,
+              size: 12,
+              color: Color(0xFFB45309),
+            ),
+            SizedBox(width: 4),
+            Text(
+              'OVERTIME',
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFFB45309),
+              ),
+            ),
+          ],
+        ),
+      ),
+  ],
+),
                   ],
                 ),
 
@@ -789,89 +904,59 @@ class _AttendanceListPageState extends State<AttendanceListPage> {
                 ),
 
                 // Customer Info (if outstation)
-                if (d.location == AttendanceLocation.outstation && d.customerName != null) ...[
-                  const SizedBox(height: 12),
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFEFF6FF),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: const Color(0xFFBFDBFE)),
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(6),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Icon(
-                            Icons.business,
-                            size: 14,
-                            color: Color(0xFF2563EB),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text(
-                                'Customer',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  color: Color(0xFF64748B),
-                                ),
-                              ),
-                              Text(
-                                d.customerName!,
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w500,
-                                  color: Color(0xFF0F172A),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+if (d.status == AttendanceStatus.present &&
+    d.location == AttendanceLocation.outstation &&
+    d.customerName != null) ...[
+  const SizedBox(height: 12),
+  Container(
+    padding: const EdgeInsets.all(12),
+    decoration: BoxDecoration(
+      color: const Color(0xFFEFF6FF),
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(color: const Color(0xFFBFDBFE)),
+    ),
+    child: Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: const Icon(
+            Icons.business,
+            size: 14,
+            color: Color(0xFF2563EB),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Customer',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: Color(0xFF64748B),
+                ),
+              ),
+              Text(
+                d.customerName!,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: Color(0xFF0F172A),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    ),
+  ),
+],
                 ],
-
-                // Note
-                if (d.note?.isNotEmpty == true) ...[
-                  const SizedBox(height: 12),
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF1F5F9),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Icon(
-                          Icons.note,
-                          size: 16,
-                          color: Color(0xFF64748B),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            d.note!,
-                            style: const TextStyle(
-                              fontSize: 13,
-                              color: Color(0xFF475569),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ],
             ),
           ),
         ),

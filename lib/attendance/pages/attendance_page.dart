@@ -1390,9 +1390,14 @@ if (!_isAllPeriod && docPeriod != _selectedPeriod) continue;
         ? '${day.checkOutHour!.toString().padLeft(2, '0')}:${day.checkOutMinute!.toString().padLeft(2, '0')}'
         : '';
 
-    String locationText = day.location == AttendanceLocation.office
-        ? 'Office'
-        : 'Outstation';
+    String locationText = '-';
+
+if (day.status == AttendanceStatus.present) {
+  locationText =
+      day.location == AttendanceLocation.office
+          ? 'Office'
+          : 'Outstation';
+}
     if (day.customerName != null && day.customerName!.isNotEmpty) {
       locationText += ' • ${day.customerName}';
     }
@@ -2516,10 +2521,11 @@ if (!_isAllPeriod && docPeriod != _selectedPeriod) continue;
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    day.location == AttendanceLocation.office
-                        ? 'Office'
-                        : (day.customerName ?? 'Outstation'),
-                    style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+  day.status == AttendanceStatus.present
+      ? (day.location == AttendanceLocation.office
+          ? 'Office'
+          : (day.customerName ?? 'Outstation'))
+      : '-',
                   ),
                 ],
               ),

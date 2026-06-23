@@ -6,6 +6,12 @@ import 'package:intl/intl.dart';
 import 'edit_spare_part_page.dart';
 import '../../core/widgets/draggable_window.dart';
 import '../../services/spare_part_service.dart';
+import 'package:http/http.dart' as http;
+import 'dart:typed_data';
+import 'dart:ui' as ui;
+import 'dart:async';
+import 'package:share_plus/share_plus.dart';
+import 'package:flutter/foundation.dart';
 
 class SparePartDetailPageDesktop extends StatelessWidget {
   final SparePart part;
@@ -62,8 +68,9 @@ class _LeftPanel extends StatelessWidget {
   const _LeftPanel({required this.part});
 
   @override
-  Widget build(BuildContext context) {
-    return Column(
+Widget build(BuildContext context) {
+  return SingleChildScrollView(
+    child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // ===== IMAGE =====
@@ -121,6 +128,7 @@ class _LeftPanel extends StatelessWidget {
         _info("Category", part.category.name.replaceAll('_', ' ')),
         _info("Origin", part.origin.name.replaceAll('_', ' ')),
       ],
+    ),
     );
   }
 
@@ -173,6 +181,160 @@ class _RightPanelState extends State<_RightPanel> {
     part = widget.part;
   }
 
+  Future<Uint8List> _createShareImage(
+  Uint8List imageBytes,
+  String partCode,
+) async {
+  final codec = await ui.instantiateImageCodec(
+    imageBytes,
+  );
+
+  final frame = await codec.getNextFrame();
+  final originalImage = frame.image;
+
+  final recorder = ui.PictureRecorder();
+  final canvas = Canvas(recorder);
+
+  const backgroundColor = Color(0xFFFFE0B2);
+
+  canvas.drawRect(
+    Rect.fromLTWH(
+      0,
+      0,
+      originalImage.width.toDouble(),
+      originalImage.height.toDouble(),
+    ),
+    Paint()..color = backgroundColor,
+  );
+
+  canvas.drawImage(
+    originalImage,
+    Offset.zero,
+    Paint(),
+  );
+
+  const overlayHeight = 60.0;
+
+  canvas.drawRect(
+    Rect.fromLTWH(
+      0,
+      originalImage.height - overlayHeight,
+      originalImage.width.toDouble(),
+      overlayHeight,
+    ),
+    Paint()
+      ..color = Colors.black.withValues(alpha: 0.65),
+  );
+
+  final textPainter = TextPainter(
+  text: TextSpan(
+    text:
+        '${part.name}\n'
+        'Part Code: $partCode',
+    style: const TextStyle(
+      color: Colors.white,
+      fontSize: 28,
+      fontWeight: FontWeight.bold,
+    ),
+  ),
+  textDirection: ui.TextDirection.ltr,
+  textAlign: TextAlign.center,
+);
+
+  textPainter.layout();
+
+  textPainter.paint(
+    canvas,
+    Offset(
+      (originalImage.width - textPainter.width) / 2,
+      originalImage.height -
+          overlayHeight +
+          (overlayHeight - textPainter.height) / 2,
+    ),
+  );
+
+  final picture = recorder.endRecording();
+
+  final img = await picture.toImage(
+    originalImage.width,
+    originalImage.height,
+  );
+
+  final byteData = await img.toByteData(
+    format: ui.ImageByteFormat.png,
+  );
+
+  return byteData!.buffer.asUint8List();
+}
+
+  Future<void> _shareImageWithPartCode() async {
+  if (part.imageUrl.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('No image available'),
+      ),
+    );
+    return;
+  }
+
+  try {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
+
+    final response = await http.get(
+      Uri.parse(part.imageUrl),
+    );
+
+    if (mounted) {
+      Navigator.pop(context);
+    }
+
+    if (response.statusCode != 200) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Failed to download image'),
+        ),
+      );
+      return;
+    }
+
+    final processedImage =
+    await _createShareImage(
+  response.bodyBytes,
+  part.partCode,
+);
+
+final xFile = XFile.fromData(
+  processedImage,
+  mimeType: 'image/png',
+  name: '${part.partCode}.png',
+);
+
+    await Share.shareXFiles(
+      [xFile],
+      text:
+          'Part Code: ${part.partCode}\n'
+          'Part Name: ${part.name}',
+      subject: part.partCode,
+    );
+  } catch (e) {
+    if (mounted) {
+      Navigator.pop(context);
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Error: $e'),
+      ),
+    );
+  }
+}
+
   @override
   Widget build(BuildContext context) {
     final isDesktop = MediaQuery.of(context).size.width >= 900;
@@ -194,6 +356,19 @@ class _RightPanelState extends State<_RightPanel> {
 
             Row(
               children: [
+                ElevatedButton.icon(
+  onPressed: _shareImageWithPartCode,
+  icon: const Icon(
+    Icons.share,
+    size: 16,
+  ),
+  label: const Text("Share"),
+  style: ElevatedButton.styleFrom(
+    backgroundColor: Colors.green,
+  ),
+),
+
+const SizedBox(width: 8),
                 // ===== EDIT BUTTON =====
                 ElevatedButton.icon(
                   onPressed: () async {

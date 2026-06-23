@@ -22,6 +22,25 @@ class SparePartCache {
     await box.put('lastUpdated', DateTime.now().toIso8601String());
   }
 
+  Future<void> saveServerSyncTime(DateTime serverTime) async {
+  final box = await _openBox();
+
+  await box.put(
+    'serverSyncTime',
+    serverTime.toIso8601String(),
+  );
+}
+
+Future<DateTime?> getServerSyncTime() async {
+  final box = await _openBox();
+
+  final value = box.get('serverSyncTime');
+
+  if (value == null) return null;
+
+  return DateTime.tryParse(value);
+}
+
   Future<List<SparePart>> load() async {
     final box = await _openBox();
 

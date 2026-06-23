@@ -84,7 +84,6 @@ String serializeAttendanceLocation(AttendanceLocation location) {
 
 AttendanceLocation parseAttendanceLocation(String? raw) {
   if (raw == null) {
-    // default aman
     return AttendanceLocation.office;
   }
 
@@ -92,11 +91,13 @@ AttendanceLocation parseAttendanceLocation(String? raw) {
     case 'office':
     case 'Office':
       return AttendanceLocation.office;
+
     case 'outstation':
     case 'Outstation':
       return AttendanceLocation.outstation;
+
     default:
-      throw Exception('Unknown attendance location: $raw');
+      return AttendanceLocation.office;
   }
 }
 
