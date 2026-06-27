@@ -189,23 +189,28 @@ class _AddSparePartPageState extends State<AddSparePartPage> {
     String imageUrl = await uploadImageToCloudinary(partCode);
 
     await CompanyFirestore.collection('spare_parts').doc(partCode).set({
-      'partCode': partCode,
-      'name': name,
-      'nameEn': nameEn,
-      'location': location,
-      'locationKey': locationKey,
-      'initialStock': stock,
-      'currentStock': stock,
-      'stock': stock,
-      'minimumStock': minimumStock,
-      'weight': weight,
-      'weightUnit': weightUnit,
-      'basePriceEur': basePrice,
-      'imageUrl': imageUrl,
-      'category': _selectedCategory.name.toUpperCase(),
-      'origin': _selectedOrigin.name.toUpperCase(),
-      'createdAt': Timestamp.now(),
-    });
+  'partCode': partCode,
+  'partCode_lower': partCode.toLowerCase(),
+
+  'name': name,
+  'name_lower': name.toLowerCase(),
+
+  'nameEn': nameEn,
+
+  'location': location,
+  'locationKey': locationKey,
+  'initialStock': stock,
+  'currentStock': stock,
+  'stock': stock,
+  'minimumStock': minimumStock,
+  'weight': weight,
+  'weightUnit': weightUnit,
+  'basePriceEur': basePrice,
+  'imageUrl': imageUrl,
+  'category': _selectedCategory.name.toUpperCase(),
+  'origin': _selectedOrigin.name.toUpperCase(),
+  'createdAt': Timestamp.now(),
+});
 
     await CompanyFirestore.doc('spare_parts', partCode).get();
     if (!mounted) return;
